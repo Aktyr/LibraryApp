@@ -1,4 +1,4 @@
-﻿<Window x:Class="LibraryApp.MainWindow"
+﻿<Window x:Class="LibraryApp.MainWindow" x:Name="This"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,8 +7,27 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Button Content="Add book
-" HorizontalAlignment="Center" Margin="0,204,0,0" VerticalAlignment="Top" Click="Button_Click" Height="51" Width="120"/>
+        <Button Content="New User" 
+                HorizontalAlignment="Left" 
+                Margin="10 10" 
+                VerticalAlignment="Top" 
+                Height="50" 
+                Width="120" 
+                Click="Button_Click_User"/>
+        <Button Content="New Book" 
+            HorizontalAlignment="Left" 
+            Margin="10,65,0,0" 
+            VerticalAlignment="Top" 
+            Height="50" 
+            Width="120" 
+            Click="Button_Click_Book"/>
+        <Button Content="New Room" 
+            HorizontalAlignment="Left" 
+            Margin="10,120,0,0" 
+            VerticalAlignment="Top" 
+            Height="50" 
+            Width="120" 
+            Click="Button_Click_Room"/>
 
     </Grid>
 </Window>

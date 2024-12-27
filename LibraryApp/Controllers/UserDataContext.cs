@@ -2,9 +2,9 @@
 
 namespace LibraryApp.Controllers
 {
-    internal class UserDataBase
+    internal class UserDataContext
     {
-        public UserDataBase() 
+        public UserDataContext() 
         {
             var json = File.ReadAllText("users.json");
             Users = JArray.Parse(json).ToObject<List<User>>();

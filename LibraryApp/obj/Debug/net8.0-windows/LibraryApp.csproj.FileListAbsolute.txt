@@ -5,11 +5,9 @@ C:\Users\voilo\source\repos\LibraryApp\LibraryApp\bin\Debug\net8.0-windows\Libra
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\bin\Debug\net8.0-windows\LibraryApp.pdb
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\bin\Debug\net8.0-windows\Newtonsoft.Json.dll
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\LibraryApp.csproj.AssemblyReference.cache
-C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\MainWindow.g.cs
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\App.g.cs
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\LibraryApp_MarkupCompile.cache
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\LibraryApp_MarkupCompile.lref
-C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\MainWindow.baml
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\LibraryApp.g.resources
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\LibraryApp.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\LibraryApp.AssemblyInfoInputs.cache
@@ -21,3 +19,12 @@ C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\refin
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\LibraryApp.pdb
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\LibraryApp.genruntimeconfig.cache
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\ref\LibraryApp.dll
+C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\LibraryApp.sourcelink.json
+C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\MainWindow.g.cs
+C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\MainWindow.baml
+C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\WindowNewUser.g.cs
+C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\WindowNewUser.baml
+C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\WindowNewBook.g.cs
+C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\WindowNewRoom.g.cs
+C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\WindowNewBook.baml
+C:\Users\voilo\source\repos\LibraryApp\LibraryApp\obj\Debug\net8.0-windows\WindowNewRoom.baml

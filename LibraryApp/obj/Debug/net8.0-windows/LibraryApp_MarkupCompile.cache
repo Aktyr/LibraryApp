@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 C:\Users\voilo\source\repos\LibraryApp\LibraryApp\App.xaml
-11407045341
+4470211747
 
-11401316990
+14-563621284
 199-308842971
-MainWindow.xaml;
+MainWindow.xaml;WindowNewBook.xaml;WindowNewRoom.xaml;WindowNewUser.xaml;
 
 False
 

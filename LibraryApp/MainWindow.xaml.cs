@@ -9,11 +9,13 @@ global using System.Windows.Media.Imaging;
 global using System.Windows.Navigation;
 global using System.Windows.Shapes;
 global using Newtonsoft.Json.Linq;
+global using Newtonsoft.Json;
 global using System.Collections.Generic;
 global using System.IO;
 global using System.Threading.Tasks;
 global using System.Xml.Linq;
 global using System.Linq;
+
 using LibraryApp.Controllers;
 using LibraryApp.Models;
 
@@ -29,9 +31,22 @@ namespace LibraryApp
             InitializeComponent();
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void Button_Click_User(object sender, RoutedEventArgs e)
         {
-            //Book book = new Book(); 
+            WindowNewUser windowNewUser = new();
+            windowNewUser.ShowDialog();
+        }
+
+        private void Button_Click_Book(object sender, RoutedEventArgs e)
+        {
+            WindowNewBook windowNewBook = new();
+            windowNewBook.ShowDialog();
+        }
+
+        private void Button_Click_Room(object sender, RoutedEventArgs e)
+        {
+            WindowNewRoom windowNewRoom = new();
+            windowNewRoom.ShowDialog();
         }
     }
 }

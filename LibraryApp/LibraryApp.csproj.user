@@ -7,7 +7,27 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="WindowNewBook.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="WindowNewRoom.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="WindowNewUser.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
     <Page Update="MainWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="WindowNewBook.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="WindowNewRoom.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="WindowNewUser.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
