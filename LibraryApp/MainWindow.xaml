@@ -13,21 +13,21 @@
                 VerticalAlignment="Top" 
                 Height="50" 
                 Width="120" 
-                Click="Button_Click_User"/>
+                Click="Button_Click_NewUser"/>
         <Button Content="New Book" 
             HorizontalAlignment="Left" 
             Margin="10,65,0,0" 
             VerticalAlignment="Top" 
             Height="50" 
             Width="120" 
-            Click="Button_Click_Book"/>
+            Click="Button_Click_NewBook"/>
         <Button Content="New Room" 
             HorizontalAlignment="Left" 
             Margin="10,120,0,0" 
             VerticalAlignment="Top" 
             Height="50" 
             Width="120" 
-            Click="Button_Click_Room"/>
+            Click="Button_Click_NewRoom"/>
 
     </Grid>
 </Window>

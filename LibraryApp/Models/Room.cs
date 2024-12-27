@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LibraryApp.Models
+﻿namespace LibraryApp.Models
 {
-    internal class Room
+    internal class Room(string name)
     {
-        public Guid id {  get; set; }
-        public string name { get; set; }
-       
+        public Guid id { get; set; } = Guid.NewGuid();
+        public string name { get; set; } = name;
+
     }
 }

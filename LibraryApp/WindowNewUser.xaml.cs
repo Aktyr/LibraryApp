@@ -18,8 +18,11 @@ namespace LibraryApp
             string contactInfo = textBox_ContactInfo.Text;
 
             User user = new User(lastName, firstName, middleName, contactInfo);
+            var context = new UserDataContext();
+            context.Users.Add(user);
+            context.SaveChanges();
 
-            MessageBox.Show("Кнопка нажата");
+            MessageBox.Show("Пользователь добавлен");
             Close();
         }
     }

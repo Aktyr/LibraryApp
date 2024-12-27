@@ -31,19 +31,19 @@ namespace LibraryApp
             InitializeComponent();
         }
 
-        private void Button_Click_User(object sender, RoutedEventArgs e)
+        private void Button_Click_NewUser(object sender, RoutedEventArgs e)
         {
             WindowNewUser windowNewUser = new();
             windowNewUser.ShowDialog();
         }
 
-        private void Button_Click_Book(object sender, RoutedEventArgs e)
+        private void Button_Click_NewBook(object sender, RoutedEventArgs e)
         {
             WindowNewBook windowNewBook = new();
             windowNewBook.ShowDialog();
         }
 
-        private void Button_Click_Room(object sender, RoutedEventArgs e)
+        private void Button_Click_NewRoom(object sender, RoutedEventArgs e)
         {
             WindowNewRoom windowNewRoom = new();
             windowNewRoom.ShowDialog();

@@ -3,12 +3,24 @@
   "WorkspaceRootPath": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|c:\\users\\voilo\\source\\repos\\libraryapp\\libraryapp\\models\\book.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|solutionrelative:libraryapp\\models\\book.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|c:\\users\\voilo\\source\\repos\\libraryapp\\libraryapp\\windownewroom.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|solutionrelative:libraryapp\\windownewroom.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|c:\\users\\voilo\\source\\repos\\libraryapp\\libraryapp\\windownewbook.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|solutionrelative:libraryapp\\windownewbook.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|c:\\users\\voilo\\source\\repos\\libraryapp\\libraryapp\\models\\room.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|solutionrelative:libraryapp\\models\\room.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|c:\\users\\voilo\\source\\repos\\libraryapp\\libraryapp\\models\\roombook.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|solutionrelative:libraryapp\\models\\roombook.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|c:\\users\\voilo\\source\\repos\\libraryapp\\libraryapp\\windownewuser.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|solutionrelative:libraryapp\\windownewuser.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|c:\\users\\voilo\\source\\repos\\libraryapp\\libraryapp\\controllers\\actofissue.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|solutionrelative:libraryapp\\controllers\\actofissue.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{2933C7C2-F161-4643-9D2D-D76774A86209}|LibraryApp\\LibraryApp.csproj|c:\\users\\voilo\\source\\repos\\libraryapp\\libraryapp\\controllers\\bookdatacontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -22,7 +34,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -30,41 +42,80 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Book.cs",
-              "DocumentMoniker": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\Models\\Book.cs",
-              "RelativeDocumentMoniker": "LibraryApp\\Models\\Book.cs",
-              "ToolTip": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\Models\\Book.cs",
-              "RelativeToolTip": "LibraryApp\\Models\\Book.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAwAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-26T23:48:24.449Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "WindowNewBook.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\WindowNewBook.xaml.cs",
-              "RelativeDocumentMoniker": "LibraryApp\\WindowNewBook.xaml.cs",
-              "ToolTip": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\WindowNewBook.xaml.cs",
-              "RelativeToolTip": "LibraryApp\\WindowNewBook.xaml.cs",
-              "ViewState": "AgIAAAcAAAAAAAAAAAAqwCIAAAAIAAAAAAAAAA==",
+              "Title": "Room.cs",
+              "DocumentMoniker": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\Models\\Room.cs",
+              "RelativeDocumentMoniker": "LibraryApp\\Models\\Room.cs",
+              "ToolTip": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\Models\\Room.cs",
+              "RelativeToolTip": "LibraryApp\\Models\\Room.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-26T20:50:53.244Z",
+              "WhenOpened": "2024-12-27T18:49:36.856Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "RoomBook.cs",
+              "DocumentMoniker": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\Models\\RoomBook.cs",
+              "RelativeDocumentMoniker": "LibraryApp\\Models\\RoomBook.cs",
+              "ToolTip": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\Models\\RoomBook.cs",
+              "RelativeToolTip": "LibraryApp\\Models\\RoomBook.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-12-27T18:49:05.894Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "WindowNewRoom.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\WindowNewRoom.xaml.cs",
+              "RelativeDocumentMoniker": "LibraryApp\\WindowNewRoom.xaml.cs",
+              "ToolTip": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\WindowNewRoom.xaml.cs",
+              "RelativeToolTip": "LibraryApp\\WindowNewRoom.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-12-27T18:48:56.426Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "WindowNewUser.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\WindowNewUser.xaml.cs",
+              "RelativeDocumentMoniker": "LibraryApp\\WindowNewUser.xaml.cs",
+              "ToolTip": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\WindowNewUser.xaml.cs",
+              "RelativeToolTip": "LibraryApp\\WindowNewUser.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-12-27T18:48:55.139Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "BookDataContext.cs",
               "DocumentMoniker": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\Controllers\\BookDataContext.cs",
               "RelativeDocumentMoniker": "LibraryApp\\Controllers\\BookDataContext.cs",
               "ToolTip": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\Controllers\\BookDataContext.cs",
               "RelativeToolTip": "LibraryApp\\Controllers\\BookDataContext.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAAABoAAAAIAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-26T23:12:09.342Z",
+              "WhenOpened": "2024-12-27T18:46:51.72Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ActOfIssue.cs",
+              "DocumentMoniker": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\Controllers\\ActOfIssue.cs",
+              "RelativeDocumentMoniker": "LibraryApp\\Controllers\\ActOfIssue.cs",
+              "ToolTip": "C:\\Users\\voilo\\source\\repos\\LibraryApp\\LibraryApp\\Controllers\\ActOfIssue.cs",
+              "RelativeToolTip": "LibraryApp\\Controllers\\ActOfIssue.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-12-27T18:46:16.647Z",
               "EditorCaption": ""
             }
           ]
