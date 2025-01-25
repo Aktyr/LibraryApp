@@ -2,17 +2,17 @@
 {
     public class Book(string name, string autor, int year, string publisher)
     {
-        public Guid id {  get; set; } = Guid.NewGuid();
-        public string name { get; set; } = name;
-        public string autor { get; set; } = autor;
-        public int year { get; set; } = year;
-        public string publisher { get; set; } = publisher;
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Name { get; set; } = name;
+        public string Autor { get; set; } = autor;
+        public int Year { get; set; } = year;
+        public string Publisher { get; set; } = publisher;
 
 
         public override string ToString() =>
-          $@"Название: {name}
-Автор: {autor}
-Год: {year}\n"; //Копий на складе: {bookCount}";
+          $@"Название: {Name}
+Автор: {Autor}
+Год: {Year}\n"; //Копий на складе: {bookCount}";
     
     
     }

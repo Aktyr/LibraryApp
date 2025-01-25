@@ -5,48 +5,41 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp"
         mc:Ignorable="d"
-        Title="WindowNewUser" Height="300" Width="200">
+        Title="WindowNewUser" Height="300" Width="500">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition/>
-        </Grid.RowDefinitions>
-        <TextBox x:Name="textBox_LastName"
-                 HorizontalAlignment="Center" 
-                 Margin="0,10,0,0" 
-                 TextWrapping="Wrap" 
-                 Text="Фамилия" 
-                 VerticalAlignment="Top" 
-                 Width="120"/>
-        <TextBox x:Name="textBox_FirstName"
-            HorizontalAlignment="Center" 
-            Margin="0,33,0,0" 
-            TextWrapping="Wrap" 
-            Text="Имя" 
-            VerticalAlignment="Top" 
-            Width="120"/>
-        <TextBox x:Name="textBox_MiddleName"
-            HorizontalAlignment="Center" 
-            Margin="0,56,0,0" 
-            TextWrapping="Wrap" 
-            Text="Отчество" 
-            VerticalAlignment="Top" 
-            Width="120"/>
-        <TextBox x:Name="textBox_ContactInfo"
-            HorizontalAlignment="Center" 
-            Margin="0,79,0,0" 
-            TextWrapping="Wrap" 
-            Text="Контактная информация" 
-            VerticalAlignment="Top" 
-            Width="120"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="36*"/>
+            <ColumnDefinition Width="64*"/>
+        </Grid.ColumnDefinitions>
 
-        <Button x:Name="Button_Add"
-                Content="Add" 
-                HorizontalAlignment="Center" 
-                Margin="0,142,0,0" 
-                VerticalAlignment="Top" 
-                Height="39" Width="120" 
-                Click="Button_Click"/>
-        <StackPanel/>
+        <StackPanel Grid.Column="0" Margin="20,20,20,20" Visibility="Visible" >
 
+            <TextBox x:Name="textBox_LastName"
+                     HorizontalAlignment="Stretch" Margin="0,5" 
+                     Text="Фамилия"   />
+
+            <TextBox x:Name="textBox_FirstName"
+                     HorizontalAlignment="Stretch" Margin="0,5" 
+                     Text="Имя"  />
+            
+            <TextBox x:Name="textBox_MiddleName"
+                     HorizontalAlignment="Stretch" Margin="0,5" 
+                     Text="Отчество"   />
+
+            <TextBox x:Name="textBox_ContactInfo"
+                     HorizontalAlignment="Stretch" Margin="0,5" 
+                     TextWrapping="Wrap" Text="Контактная информация"  />
+
+            <Button  HorizontalAlignment="Stretch"  Margin="0, 5"  Padding="0, 5" 
+                     Content="Add" Click="Button_Click"/>
+
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible">
+            <ListBox Height="100" d:ItemsSource="{d:SampleData ItemCount=5}"/>
+
+
+
+        </StackPanel>
     </Grid>
 </Window>

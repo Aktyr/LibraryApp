@@ -5,38 +5,42 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp"
         mc:Ignorable="d"
-        Title="WindowNewBook" Height="300" Width="200
-        ">
+        Title="WindowNewBook" Height="300" Width="500">
     <Grid>
-        <TextBox x:Name="textBox_Name"
-                 HorizontalAlignment="Center" 
-                 Margin="0,10,0,0" 
-                 TextWrapping="Wrap" 
-                 Text="Название" 
-                 VerticalAlignment="Top" 
-                 Width="120"/>
-        <TextBox x:Name="textBox_Autor"
-            HorizontalAlignment="Center" 
-            Margin="0,33,0,0" 
-            TextWrapping="Wrap" 
-            Text="Автор" 
-            VerticalAlignment="Top" 
-            Width="120"/>
-        <TextBox x:Name="textBox_Year"
-            HorizontalAlignment="Center" 
-            Margin="0,56,0,0" 
-            TextWrapping="Wrap" 
-            Text="Год" 
-            VerticalAlignment="Top" 
-            Width="120"/>
-        <TextBox x:Name="textBox_Publisher"
-            HorizontalAlignment="Center" 
-            Margin="0,79,0,0" 
-            TextWrapping="Wrap" 
-            Text="Издатель" 
-            VerticalAlignment="Top" 
-            Width="120"/>
-        <Button Content="Button" HorizontalAlignment="Center" Margin="0,142,0,0" VerticalAlignment="Top" Width="120" Height="40" Click="Button_Click"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="36*"/>
+            <ColumnDefinition Width="64*"/>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Margin="20,20,20,20" Visibility="Visible" >
+
+            <TextBox x:Name="textBox_Name"
+                     HorizontalAlignment="Stretch" Margin="0,5" 
+                     Text="Название"  />
+
+            <TextBox x:Name="textBox_Autor"
+                     HorizontalAlignment="Stretch" Margin="0,5"             
+                     Text="Автор" />
+
+            <TextBox x:Name="textBox_Year"
+                     HorizontalAlignment="Stretch" Margin="0,5" 
+                     Text="Год"  />
+
+            <TextBox x:Name="textBox_Publisher"
+                     HorizontalAlignment="Stretch" Margin="0,5" 
+                     Text="Издатель" />
+
+            <Button  HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"
+                     Content="Add" Click="Button_Click"/>
+
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible">
+            <ListBox Height="100" d:ItemsSource="{d:SampleData ItemCount=5}"/>
+
+
+
+        </StackPanel>
 
     </Grid>
 </Window>

@@ -7,27 +7,28 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Button Content="New User" 
-                HorizontalAlignment="Left" 
-                Margin="10 10" 
-                VerticalAlignment="Top" 
-                Height="50" 
-                Width="120" 
-                Click="Button_Click_NewUser"/>
-        <Button Content="New Book" 
-            HorizontalAlignment="Left" 
-            Margin="10,65,0,0" 
-            VerticalAlignment="Top" 
-            Height="50" 
-            Width="120" 
-            Click="Button_Click_NewBook"/>
-        <Button Content="New Room" 
-            HorizontalAlignment="Left" 
-            Margin="10,120,0,0" 
-            VerticalAlignment="Top" 
-            Height="50" 
-            Width="120" 
-            Click="Button_Click_NewRoom"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="36*"/>
+            <ColumnDefinition Width="64*"/>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Margin="20,20,20,20" Visibility="Visible" >
+
+            <Button HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"
+                    Content="New User" Click="Button_Click_NewUser"/>
+
+            <Button HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"           
+                    Content="New Book" Click="Button_Click_NewBook"/>
+
+            <Button HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"                         
+                    Content="New Room" Click="Button_Click_NewRoom"/>
+
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible" >
+
+
+        </StackPanel>
 
     </Grid>
 </Window>

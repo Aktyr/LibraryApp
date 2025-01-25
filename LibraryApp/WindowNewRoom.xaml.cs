@@ -15,7 +15,7 @@ namespace LibraryApp
 
             Room room = new(name);
 
-            MessageBox.Show($"Это ещё предстоит доделать \n\nНазвание комнаты: {room.name}\nid комнаты: {room.id}");
+            MessageBox.Show($"Это ещё предстоит доделать \n\nНазвание комнаты: {room.Name}\nid комнаты: {room.Id}");
             Close();
         }
     }

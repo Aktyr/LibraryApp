@@ -16,9 +16,9 @@ namespace LibraryApp.Controllers
             }
 
             var json = File.ReadAllText(UserDataContext.json);
-            Users = JArray.Parse(json).ToObject<List<User>>();
+            Users = JArray.Parse(json).ToObject<List<User>>() ?? [];
         }
-        public List<User> Users { get; set; }
+        public List<User> Users { get; init; }
         public void SaveChanges()
         {
             JArray users = JArray.FromObject(Users);

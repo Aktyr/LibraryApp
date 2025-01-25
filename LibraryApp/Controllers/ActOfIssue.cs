@@ -2,14 +2,14 @@
 
 namespace LibraryApp.Controllers
 {
-    internal class ActOfIssue(User user, Book book, Room room) // может переместить в модели...
+    internal class ActOfIssue(User user, Book book, RoomBook roomBook)
     {
-     
-        public User user { get; set; } // нужнно id
-        public Book book { get; set; } // нужнно id
-        public Room room { get; set; } // ?
-        public DateTime issue {  get; set; } = DateTime.Today;
-        public DateTime deadline { get; set; }
+
+        public User User { get; set; } = user; 
+        public Book Book { get; set; } = book; 
+        public RoomBook RoomBook { get; set; } = roomBook; 
+        public DateTime Issue {  get; set; } = DateTime.Today;
+        public DateTime Deadline { get; set; } = DateTime.Today.AddDays(14);
 
 
     }
