@@ -4,6 +4,6 @@
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = name;
-        public ICollection<Book> books { get; set; }
+        public ICollection<Book> Books { get; set; }
     }
 }
