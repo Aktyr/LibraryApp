@@ -1,4 +1,4 @@
-﻿<Window x:Class="LibraryApp.WindowNewBook"
+﻿<Window x:Class="LibraryApp.WindowNewBook" x:Name="This"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -14,21 +14,18 @@
 
         <StackPanel Grid.Column="0" Margin="20,20,20,20" Visibility="Visible" >
 
-            <TextBox x:Name="textBox_Name"
-                     HorizontalAlignment="Stretch" Margin="0,5" 
-                     Text="Название"  />
+            <TextBox Text="{Binding Book.Name, ElementName=This, Mode=TwoWay}"
+                     HorizontalAlignment="Stretch" Margin="0,5"  />
 
-            <TextBox x:Name="textBox_Autor"
-                     HorizontalAlignment="Stretch" Margin="0,5"             
-                     Text="Автор" />
-
-            <TextBox x:Name="textBox_Year"
+            <TextBox Text="{Binding Book.Autor, ElementName=This, Mode=TwoWay}"
+                     HorizontalAlignment="Stretch" Margin="0,5"  />
+            
+            <TextBox Text="{Binding Book.Year, ElementName=This, Mode=TwoWay}"
                      HorizontalAlignment="Stretch" Margin="0,5" 
-                     Text="Год"  />
+                     x:Name="textBox_Year"  />
 
-            <TextBox x:Name="textBox_Publisher"
-                     HorizontalAlignment="Stretch" Margin="0,5" 
-                     Text="Издатель" />
+            <TextBox Text="{Binding Book.Publisher, ElementName=This, Mode=TwoWay}"
+                     HorizontalAlignment="Stretch" Margin="0,5"  />
 
             <Button  HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"
                      Content="Add" Click="Button_Click"/>

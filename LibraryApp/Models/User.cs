@@ -1,6 +1,6 @@
 ﻿namespace LibraryApp.Models
 {
-    class User(string lastName, string firstName, string middleName, string contactInfo)
+    public class User(string lastName, string firstName, string middleName, string contactInfo)
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string LastName { get; set; } = lastName; //Фамилия

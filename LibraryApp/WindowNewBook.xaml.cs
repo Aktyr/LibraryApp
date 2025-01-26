@@ -1,5 +1,7 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
+using System.Collections.Specialized;
+using System.ComponentModel;
 
 
 namespace LibraryApp
@@ -7,30 +9,36 @@ namespace LibraryApp
     /// <summary>
     /// Логика взаимодействия для WindowNewBook.xaml
     /// </summary>
-    public partial class WindowNewBook : Window
+    public partial class WindowNewBook : Window, INotifyPropertyChanged
     {
+        private Book _book = new("Название", "Автор", 0, "Издатель");
+        public Book Book
+        {
+            get => _book;
+            set
+            {
+                _book = value;
+                PropertyChanged?.Invoke(this, new(nameof(Book)));
+            }
+        }
         public WindowNewBook() => InitializeComponent();
+
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            string name = textBox_Name.Text;
-            string autor = textBox_Autor.Text;
             string yearString = textBox_Year.Text;
-            string publisher = textBox_Publisher.Text;
 
             if (!int.TryParse(yearString, out int year))
             {                
                 MessageBox.Show("Неверный формат года. Пожалуйста, введите целое число.");
                 return;
             }
-
-            Book book = new(name, autor, year, publisher);
+           
             var context = new BookDataContext();
-            context.Books.Add(book);
+            context.Books.Add(Book);
             context.SaveChanges();
-
             MessageBox.Show("Книга добавлена");
-
             Close();
         }
     }

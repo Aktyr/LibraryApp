@@ -14,20 +14,39 @@
 
         <StackPanel Grid.Column="0" Margin="20,20,20,20" Visibility="Visible" >
 
-            <TextBox x:Name="textBox_RoomName"
-                     HorizontalAlignment="Stretch" Margin="0,5" 
-                     Text="Название комнаты"  />
+            <TextBlock TextWrapping="Wrap" 
+                       Text="Сreate new Room"/>
+
+            <TextBox Text="{Binding Room.Name, ElementName=This, Mode=TwoWay}"
+                     HorizontalAlignment="Stretch" Margin="0,5" />
 
             <Button  HorizontalAlignment="Stretch"  Margin="0,5" Padding="0, 5"  
-                     Content="Button" Click="Button_Click"/>
+                     Content="Add Room" Click="Button_AddRoom"/>
+
+            <TextBlock TextWrapping="Wrap" Margin="0,10"  
+                       Text="Add RoomBook in Room"/>
+
+            <ComboBox ItemsSource="{Binding Room, ElementName=This, Mode=TwoWay}"
+                      DisplayMemberPath="Name"
+                      Text="Rooms"
+                      HorizontalAlignment="Stretch"
+                      SelectedValuePath="Code"
+                      IsEditable="True" IsReadOnly="True"/>
+
+            <TextBox Text="{Binding RoomBook.Name, ElementName=This, Mode=TwoWay}"
+                     HorizontalAlignment="Stretch" Margin="0,5" 
+                     x:Name="textBox_RoomBook"/>
+
+            <Button  HorizontalAlignment="Stretch"  Margin="0,5" Padding="0, 5"  
+                     Content="Add RoomBook" Click="Button_AddRoomBook"/>
 
         </StackPanel>
 
         <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible">
+            
             <ListBox Height="100" d:ItemsSource="{d:SampleData ItemCount=5}"/>
 
-
         </StackPanel>
-        
+
     </Grid>
 </Window>

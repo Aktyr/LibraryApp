@@ -14,21 +14,18 @@
 
         <StackPanel Grid.Column="0" Margin="20,20,20,20" Visibility="Visible" >
 
-            <TextBox x:Name="textBox_LastName"
-                     HorizontalAlignment="Stretch" Margin="0,5" 
-                     Text="Фамилия"   />
+            <TextBox Text="{Binding User.LastName, ElementName=This, Mode=TwoWay}"
+                     HorizontalAlignment="Stretch" Margin="0,5" />
 
-            <TextBox x:Name="textBox_FirstName"
-                     HorizontalAlignment="Stretch" Margin="0,5" 
-                     Text="Имя"  />
-            
-            <TextBox x:Name="textBox_MiddleName"
-                     HorizontalAlignment="Stretch" Margin="0,5" 
-                     Text="Отчество"   />
+            <TextBox Text="{Binding User.FirstName, ElementName=This, Mode=TwoWay}"
+                     HorizontalAlignment="Stretch" Margin="0,5"  />
 
-            <TextBox x:Name="textBox_ContactInfo"
+            <TextBox Text="{Binding User.MiddleName, ElementName=This, Mode=TwoWay}"
+                     HorizontalAlignment="Stretch" Margin="0,5"  />
+
+            <TextBox Text="{Binding User.ContactInfo, ElementName=This, Mode=TwoWay}"
                      HorizontalAlignment="Stretch" Margin="0,5" 
-                     TextWrapping="Wrap" Text="Контактная информация"  />
+                     TextWrapping="Wrap"   />
 
             <Button  HorizontalAlignment="Stretch"  Margin="0, 5"  Padding="0, 5" 
                      Content="Add" Click="Button_Click"/>
