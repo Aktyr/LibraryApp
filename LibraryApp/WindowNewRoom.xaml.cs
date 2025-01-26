@@ -48,7 +48,17 @@ namespace LibraryApp
             // прикрутить обращение к Room через ComboBox
             string name = textBox_RoomBook.Text;
             RoomBook roomBook = new(name);
-            Room.RoomBooks.Add(roomBook); // вызывает вылет
+
+            try
+            {
+                Room.RoomBooks.Add(roomBook);
+            }
+            catch (Exception ex) 
+            {
+                MessageBox.Show($"Room не выбран \n\n{ex}");
+                return;
+            }           
+
             MessageBox.Show("Комната добавлена");
         }       
      
