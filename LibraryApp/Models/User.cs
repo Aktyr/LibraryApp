@@ -10,5 +10,7 @@
 
         //public bool subscriptionStatus { get; set; }
 
+        public override string ToString() => $"{lastName} {firstName} {middleName}, {contactInfo}";
+
     }
 }
