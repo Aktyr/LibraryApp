@@ -2,6 +2,8 @@
 using LibraryApp.Controllers;
 using System.ComponentModel;
 using System.Diagnostics.Metrics;
+using System.Collections.ObjectModel;
+using System.Windows.Controls;
 
 namespace LibraryApp
 {
@@ -21,47 +23,46 @@ namespace LibraryApp
             }
         }
 
-        private RoomBook _roomBook = new("Имя комнаты");
-        public RoomBook RoomBook
+        private readonly BookDataContext _context;
+
+        public WindowNewRoom()
         {
-            get => _roomBook;
-            set
-            {
-                _roomBook = value;
-                PropertyChanged?.Invoke(this, new(nameof(RoomBook)));
-            }
+            InitializeComponent();
+            _context = new BookDataContext();
+            this.DataContext = _context;
         }
-        public WindowNewRoom() => InitializeComponent();
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private void Button_AddRoom(object sender, RoutedEventArgs e)
         {
+            ObservableCollection<Room> a;
+
             var context = new RoomDataContext();
             context.Rooms.Add(Room);
             context.SaveChanges();
-            MessageBox.Show("Комната добавлена");            
-        }
 
-        private void Button_AddRoomBook(object sender, RoutedEventArgs e) 
-        {
-            // прикрутить обращение к Room через ComboBox
-            string name = textBox_RoomBook.Text;
-            RoomBook roomBook = new(name);
+            var selectedItems = dataGrid.SelectedItems;
 
-            try
+            foreach (var item in selectedItems)
             {
-                Room.RoomBooks.Add(roomBook);
+                ProcessItem(item); 
             }
-            catch (Exception ex) 
-            {
-                MessageBox.Show($"Room не выбран \n\n{ex}");
-                return;
-            }           
+
 
             MessageBox.Show("Комната добавлена");
-        }       
-     
-        
+
+        }        
+                
+        private void ProcessItem(object item)
+        {           
+            var myObject = item as Book;
+
+            RoomBook RoomBook = new(Room, myObject);
+            var context = new RoomBookDataContext();
+            context.RoomBooks.Add(RoomBook);
+            context.SaveChanges();
+        }
+
     }
 }

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp"
         mc:Ignorable="d"
-        Title="WindowNewUser" Height="300" Width="500">
+        Title="WindowNewUser" Height="300" Width="600">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="36*"/>
@@ -33,7 +33,18 @@
         </StackPanel>
 
         <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible">
-            <ListBox Height="100" d:ItemsSource="{d:SampleData ItemCount=5}"/>
+
+            <DataGrid x:Name="dataGrid" AutoGenerateColumns="False" Margin="10" ItemsSource="{Binding Path=Users}">
+
+                <DataGrid.Columns>
+
+                    <DataGridTextColumn Header="Фамилия" Binding="{Binding LastName}" />
+                    <DataGridTextColumn Header="Имя" Binding="{Binding FirstName}" />
+                    <DataGridTextColumn Header="Отчество" Binding="{Binding MiddleName}" />                    
+
+                </DataGrid.Columns>
+
+            </DataGrid>
 
 
 

@@ -21,12 +21,21 @@ namespace LibraryApp
                 PropertyChanged?.Invoke(this, new(nameof(User)));   
             } 
         }
-        public WindowNewUser() => InitializeComponent();
+
+        private readonly UserDataContext _context;
+        public WindowNewUser()
+        {
+            InitializeComponent();
+            _context = new UserDataContext();
+            this.DataContext = _context;
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
+            ObservableCollection<User> a;
+
             var context = new UserDataContext();
             context.Users.Add(User);
             context.SaveChanges();

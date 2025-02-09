@@ -1,5 +1,6 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 
@@ -21,20 +22,21 @@ namespace LibraryApp
                 PropertyChanged?.Invoke(this, new(nameof(Book)));
             }
         }
-        public WindowNewBook() => InitializeComponent();
+
+        private readonly BookDataContext _context;
+        public WindowNewBook()
+        {
+            InitializeComponent();
+            _context = new BookDataContext();
+            this.DataContext = _context;
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            string yearString = textBox_Year.Text;
+            ObservableCollection<Book> a;
 
-            if (!int.TryParse(yearString, out int year))
-            {                
-                MessageBox.Show("Неверный формат года. Пожалуйста, введите целое число.");
-                return;
-            }
-           
             var context = new BookDataContext();
             context.Books.Add(Book);
             context.SaveChanges();

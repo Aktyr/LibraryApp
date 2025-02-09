@@ -1,12 +1,10 @@
-﻿namespace LibraryApp.Models
+﻿namespace LibraryApp.Models;
+
+public class Room(string name)
 {
-    public class Room(string name)
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public string Name { get; set; } = name;
-        public List<RoomBook> RoomBooks { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = name;
 
-        public override string ToString() => $"Комната {Name}, Кол-во книжных комнат: {RoomBooks.Count}";
-
-    }
+    public List<RoomBook> Books { get; set; }
+    //public override string ToString() => $"Комната {Name}, Кол-во книг: {Books.Select(x => x.Count).Sum()}";
 }
