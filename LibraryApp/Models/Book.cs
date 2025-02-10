@@ -9,8 +9,8 @@
         public string Publisher { get; set; } = publisher;
 
 
-       
-        public List<RoomBook> Rooms { get; set; }
+        //[JsonIgnore]
+        public List<Room> Rooms { get; set; } = [];
         public override string ToString() =>
           $@"Название: {Name}
 Автор: {Autor}

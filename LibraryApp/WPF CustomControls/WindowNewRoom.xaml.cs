@@ -21,8 +21,7 @@ namespace LibraryApp
                 _room = value;
                 PropertyChanged?.Invoke(this, new(nameof(Room)));
             }
-        }
-
+        }    
         private readonly BookDataContext _context;
 
         public WindowNewRoom()
@@ -38,31 +37,72 @@ namespace LibraryApp
         {
             ObservableCollection<Room> a;
 
-            var context = new RoomDataContext();
+            RoomDataContext context = new();
+
+            RoomBookDataContext contextRoomBook = new();
+            RoomDataContext contextRoom = new();
+            BookDataContext contextBook = new();
+
             context.Rooms.Add(Room);
             context.SaveChanges();
-
             var selectedItems = dataGrid.SelectedItems;
 
-            foreach (var item in selectedItems)
-            {
-                ProcessItem(item); 
+            if (selectedItems.Count != 0)
+            {                
+                foreach (var item in selectedItems)
+                {
+                    //ProcessItem(item);
+                    var book = item as Book;
+
+                    RoomBook RoomBook = new(Room, book);
+
+                    Room.Books.Add(book);
+                    book.Rooms.Add(Room);
+                    Room.Books.Remove(book);
+                    Room.Books.Add(book);
+
+                    //contextBook.Books.Add(book);
+                    contextRoomBook.RoomBooks.Add(RoomBook);
+                }
+
+                contextRoom.Rooms.Add(Room);
+
+                contextRoomBook.SaveChanges();
+                contextRoom.SaveChanges();
+                contextBook.SaveChanges();
+
+                MessageBox.Show("Комната добавлена");
+
             }
+            else MessageBox.Show("Комната добавлена, в ней нет книг");
 
-
-            MessageBox.Show("Комната добавлена");
-
-        }        
-                
-        private void ProcessItem(object item)
-        {           
-            var myObject = item as Book;
-
-            RoomBook RoomBook = new(Room, myObject);
-            var context = new RoomBookDataContext();
-            context.RoomBooks.Add(RoomBook);
-            context.SaveChanges();
         }
 
+        private void ProcessItem(object item)
+        {
+            var book = item as Book;
+
+            RoomBookDataContext contextRoomBook = new();
+            RoomDataContext contextRoom = new();
+            BookDataContext contextBook = new();
+
+            RoomBook RoomBook = new(Room, book);
+
+            Room.Books.Add(book);
+            book.Rooms.Add(Room);
+            Room.Books.Remove(book);
+            Room.Books.Add(book);
+
+
+            contextRoomBook.RoomBooks.Add(RoomBook);
+            contextRoom.Rooms.Add(Room);
+            contextBook.Books.Add(book);
+
+            contextRoomBook.SaveChanges();
+            contextRoom.SaveChanges();
+            contextBook.SaveChanges();
+
+
+        }
     }
 }

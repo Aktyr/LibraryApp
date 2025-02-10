@@ -1,4 +1,5 @@
 ﻿using LibraryApp.Models;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace LibraryApp.Controllers
 {
@@ -21,7 +22,14 @@ namespace LibraryApp.Controllers
         public List<RoomBook> RoomBooks { get; init; }
         public void SaveChanges()
         {
-            JArray roomBooks = JArray.FromObject(RoomBooks);
+            // Используем настройки сериализатора для обработки циклических ссылок
+            var serializerSettings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                Formatting = Formatting.Indented
+            };
+
+            var roomBooks = JsonConvert.SerializeObject(RoomBooks, Formatting.Indented, serializerSettings);
             File.WriteAllText(json, roomBooks.ToString());
         }
     }
