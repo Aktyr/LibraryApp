@@ -15,9 +15,11 @@ global using System.IO;
 global using System.Threading.Tasks;
 global using System.Xml.Linq;
 global using System.Linq;
+global using System.ComponentModel;
 
 using LibraryApp.Controllers;
 using LibraryApp.Models;
+using LibraryApp.WPF_CustomControls;
 
 namespace LibraryApp
 {
@@ -47,6 +49,12 @@ namespace LibraryApp
         {
             WindowNewRoom windowNewRoom = new();
             windowNewRoom.ShowDialog();
+        }
+
+        private void Button_Click_BookIssuing(object sender, RoutedEventArgs e)
+        {
+            WindowBookIssuing windowBookIssuing = new();
+            windowBookIssuing.ShowDialog();
         }
     }
 }

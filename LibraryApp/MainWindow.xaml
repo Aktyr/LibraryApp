@@ -23,6 +23,9 @@
             <Button HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"                         
                     Content="New Room" Click="Button_Click_NewRoom"/>
 
+            <Button HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"                         
+                    Content="Give Book" Click="Button_Click_BookIssuing"/>
+
         </StackPanel>
 
         <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible" >
