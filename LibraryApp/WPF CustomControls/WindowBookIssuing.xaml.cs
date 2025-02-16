@@ -60,7 +60,7 @@ namespace LibraryApp.WPF_CustomControls
                     {
                         UserRoomBook userRoomBook = new(User, roomBook);
                         UserRoomBookDataContext.UserRoomBooks.Add(userRoomBook);
-                        roomBook.BookCount -= 1;
+                        roomBook.BookCount -= 1;                        
                     }
                     else ErrorMessage.Add(roomBook.Book.Name);
 
@@ -73,8 +73,9 @@ namespace LibraryApp.WPF_CustomControls
                 }
                 else
                 {
-                    UserRoomBookDataContext.SaveChanges();
-                    RoomBookDataContext.SaveChanges();
+                    dataGrid.Items.Refresh();
+                    UserRoomBookDataContext.SaveChanges();                                        
+                    _contextRoomBook.SaveChanges();
                     MessageBox.Show("Все книги выданны успешно");
                     Close();
                 }

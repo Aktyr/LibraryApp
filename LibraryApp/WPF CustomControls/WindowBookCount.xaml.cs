@@ -41,11 +41,11 @@ namespace LibraryApp.WPF_CustomControls
         public event PropertyChangedEventHandler? PropertyChanged;
         private void AddBookButton_Click(object sender, RoutedEventArgs e)
         {            
-            var row = ((FrameworkElement)e.OriginalSource).DataContext as RoomBook;
+            var roomBook = ((FrameworkElement)e.OriginalSource).DataContext as RoomBook;
 
-            if (row != null)
+            if (roomBook != null)
             {
-                WindowBookLogic windowBookLogic = new(row);
+                WindowBookLogic windowBookLogic = new(roomBook);
                 windowBookLogic.ShowDialog();
                 dataGrid.Items.Refresh();
             }
