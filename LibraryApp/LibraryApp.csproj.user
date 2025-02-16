@@ -7,16 +7,16 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="WPF CustomControls\WindowBookCount.xaml.cs">
+    <Compile Update="WPF CustomControls\Book adding\WindowBookCount.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\WindowBookIssuing.xaml.cs">
+    <Compile Update="WPF CustomControls\Book Issuing\WindowBookIssuing.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\WindowBookLogic.xaml.cs">
+    <Compile Update="WPF CustomControls\Book adding\WindowBookLogic.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\WindowUserСhoice.xaml.cs">
+    <Compile Update="WPF CustomControls\Book Issuing\WindowUserСhoice.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -24,16 +24,16 @@
     <Page Update="MainWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\WindowBookCount.xaml">
+    <Page Update="WPF CustomControls\Book adding\WindowBookCount.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\WindowBookIssuing.xaml">
+    <Page Update="WPF CustomControls\Book Issuing\WindowBookIssuing.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\WindowBookLogic.xaml">
+    <Page Update="WPF CustomControls\Book adding\WindowBookLogic.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\WindowUserСhoice.xaml">
+    <Page Update="WPF CustomControls\Book Issuing\WindowUserСhoice.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
