@@ -76,33 +76,6 @@ namespace LibraryApp
             }
             else MessageBox.Show("Комната добавлена, в ней нет книг");
 
-        }
-
-        private void ProcessItem(object item)
-        {
-            var book = item as Book;
-
-            RoomBookDataContext contextRoomBook = new();
-            RoomDataContext contextRoom = new();
-            BookDataContext contextBook = new();
-
-            RoomBook RoomBook = new(Room, book);
-
-            Room.Books.Add(book);
-            book.Rooms.Add(Room);
-            Room.Books.Remove(book);
-            Room.Books.Add(book);
-
-
-            contextRoomBook.RoomBooks.Add(RoomBook);
-            contextRoom.Rooms.Add(Room);
-            contextBook.Books.Add(book);
-
-            contextRoomBook.SaveChanges();
-            contextRoom.SaveChanges();
-            contextBook.SaveChanges();
-
-
-        }
+        }        
     }
 }

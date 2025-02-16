@@ -62,24 +62,23 @@ namespace LibraryApp.WPF_CustomControls
                         UserRoomBookDataContext.UserRoomBooks.Add(userRoomBook);
                         roomBook.BookCount -= 1;
                     }
-                    else
-                    {
-                        ErrorMessage.Add(roomBook.Book.Name);
-                    }
+                    else ErrorMessage.Add(roomBook.Book.Name);
 
                 }
-
-                UserRoomBookDataContext.SaveChanges();
-                RoomBookDataContext.SaveChanges();
 
                 if (ErrorMessage.Count > 0)
                 {
-                    string message = $"Следующие книги не были выданы, так как отсутствуют на складе:\n\n{string.Join("\n", ErrorMessage)}";
+                    string message = $"Выдача отменена\nСледующие книги не были выданы, так как отсутствуют на складе:\n\n{string.Join("\n", ErrorMessage)}";
                     MessageBox.Show(message);
                 }
-                else MessageBox.Show("Все книги выданны успешно");
+                else
+                {
+                    UserRoomBookDataContext.SaveChanges();
+                    RoomBookDataContext.SaveChanges();
+                    MessageBox.Show("Все книги выданны успешно");
+                    Close();
+                }
 
-                Close();
             }
             else MessageBox.Show("Выберите хотя бы одну книгу");
         }

@@ -43,10 +43,7 @@ namespace LibraryApp.WPF_CustomControls
                 windowBookIssuing.ShowDialog();
                 Close();
             }
-            else if (selectedItems.Count >= 1)
-            {
-                MessageBox.Show("Выберите только одного пользователя");
-            }
+            else if (selectedItems.Count >= 1) MessageBox.Show("Выберите только одного пользователя");          
             else MessageBox.Show("Выберите пользователя");
         }
     }

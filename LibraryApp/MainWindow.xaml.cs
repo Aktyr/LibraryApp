@@ -56,5 +56,11 @@ namespace LibraryApp
             WindowUserСhoice windowUserСhoice = new();
             windowUserСhoice.ShowDialog();
         }
+
+        private void Button_Click_AddBook(object sender, RoutedEventArgs e)
+        {
+            WindowBookCount windowBookCount = new();
+            windowBookCount.ShowDialog();
+        }
     }
 }
