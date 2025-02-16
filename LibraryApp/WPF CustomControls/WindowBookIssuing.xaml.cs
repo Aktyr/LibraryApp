@@ -6,18 +6,8 @@ namespace LibraryApp.WPF_CustomControls
     /// <summary>
     /// Логика взаимодействия для WindowBookIssuing.xaml
     /// </summary>
-    public partial class WindowBookIssuing : Window
+    public partial class WindowBookIssuing : Window, INotifyPropertyChanged
     {
-        private User _user = new("Фамилия", "Имя", "Отчество", "Контактная информация");
-        public User User
-        {
-            get => _user;
-            set
-            {
-                _user = value;
-                PropertyChanged?.Invoke(this, new(nameof(User)));
-            }
-        }
         private RoomBook _roomBook = new(null, null);
         public RoomBook RoomBook
         {
@@ -29,23 +19,69 @@ namespace LibraryApp.WPF_CustomControls
             }
         }
 
-        private readonly BookDataContext _contextBook;
-        private readonly UserDataContext _contextUser;
-        public WindowBookIssuing()
+        private User _user = new("Фамилия", "Имя", "Отчество", "Контактная информация");
+        public User User
+        {
+            get => _user;
+            set
+            {
+                _user = value;
+                PropertyChanged?.Invoke(this, new(nameof(User)));
+            }
+        }
+
+        private readonly RoomBookDataContext _contextRoomBook;
+        private readonly UserRoomBookDataContext _contextUserRoomBook;
+
+        public WindowBookIssuing(User user)
         {
             InitializeComponent();
-            _contextBook = new BookDataContext();
-            _contextUser = new UserDataContext();
-            //dataGrid_RoomBooks.ItemsSource = _contextBook.Books;
-            //dataGrid_Users.ItemsSource = _contextUser.Users;
-            //this.DataContext = _contextUser;
-            //this.DataContext = _contextBook;
+            _contextRoomBook = new RoomBookDataContext();
+            this.DataContext = _contextRoomBook;
+            User = user;
         }
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItems = dataGrid.SelectedItems;
 
+            if (selectedItems.Count > 0)
+            {
+                UserRoomBookDataContext UserRoomBookDataContext = new();
+                RoomBookDataContext RoomBookDataContext = new();
 
+                List<string> ErrorMessage = new();
 
+                foreach (var item in selectedItems)
+                {
+                    var roomBook = item as RoomBook;
+                    if (roomBook.BookCount > 0)
+                    {
+                        UserRoomBook userRoomBook = new(User, roomBook);
+                        UserRoomBookDataContext.UserRoomBooks.Add(userRoomBook);
+                        roomBook.BookCount -= 1;
+                    }
+                    else
+                    {
+                        ErrorMessage.Add(roomBook.Book.Name);
+                    }
 
+                }
+
+                UserRoomBookDataContext.SaveChanges();
+                RoomBookDataContext.SaveChanges();
+
+                if (ErrorMessage.Count > 0)
+                {
+                    string message = $"Следующие книги не были выданы, так как отсутствуют на складе:\n\n{string.Join("\n", ErrorMessage)}";
+                    MessageBox.Show(message);
+                }
+                else MessageBox.Show("Все книги выданны успешно");
+
+                Close();
+            }
+            else MessageBox.Show("Выберите хотя бы одну книгу");
+        }
     }
 }

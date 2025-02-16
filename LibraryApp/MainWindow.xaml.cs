@@ -53,8 +53,8 @@ namespace LibraryApp
 
         private void Button_Click_BookIssuing(object sender, RoutedEventArgs e)
         {
-            WindowBookIssuing windowBookIssuing = new();
-            windowBookIssuing.ShowDialog();
+            WindowUserСhoice windowUserСhoice = new();
+            windowUserСhoice.ShowDialog();
         }
     }
 }

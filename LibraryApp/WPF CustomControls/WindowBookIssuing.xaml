@@ -5,53 +5,38 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp.WPF_CustomControls"
         mc:Ignorable="d"
-        Title="WindowBookIssuing" Height="300" Width="800">
+        Title="WindowBookIssuing" Height="500" Width="800">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="20*"/>
-            <ColumnDefinition Width="50*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="40"/>
+        </Grid.RowDefinitions>
 
-        <StackPanel Grid.Column="0" Margin="20,20,20,20" Visibility="Visible">
-            
-            <DataGrid x:Name="dataGrid_Users" AutoGenerateColumns="False" Margin="10" ItemsSource="{Binding Path=Users}">
+
+        <StackPanel Grid.Row="0" Margin="20,20" Visibility="Visible">
+
+            <DataGrid x:Name="dataGrid" AutoGenerateColumns="False"  ItemsSource="{Binding Path=RoomBooks}">
                 <DataGrid.Columns>
 
-                    <DataGridTextColumn Header="Фамилия" Binding="{Binding LastName}" />
-                    <DataGridTextColumn Header="Имя" Binding="{Binding FirstName}" />
-                    <DataGridTextColumn Header="Отчество" Binding="{Binding MiddleName}" />
-
-                </DataGrid.Columns>
-            </DataGrid>
-            
-
-            <Button  HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"
-                     Content="Заглушка"/>
-            
-
-        </StackPanel>
-        
-        
-
-        <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible">
-            
-            <DataGrid x:Name="dataGrid_RoomBooks" AutoGenerateColumns="False" Margin="10" ItemsSource="{Binding Path=RoomBooks}">
-                <DataGrid.Columns>
-
-                    <DataGridTextColumn Header="Комната" Binding="{Binding Room}" />
-                    <DataGridTextColumn Header="Книга" Binding="{Binding Book}" />
+                    <DataGridTextColumn Header="Комната" Binding="{Binding Room.Name}" />
+                    <DataGridTextColumn Header="Книга" Binding="{Binding Book.Name}" />
+                    <DataGridTextColumn Header="Автор" Binding="{Binding Book.Autor}" />
+                    <DataGridTextColumn Header="Год" Binding="{Binding Book.Year}" />
                     <DataGridTextColumn Header="Количество на складе" Binding="{Binding BookCount}" />
 
                 </DataGrid.Columns>
             </DataGrid>
-            
 
-            <Button  HorizontalAlignment="Stretch" Margin="0, 5" Padding="0, 5"
-                     Content="Заглушка"/>
-            
+
+
+        </StackPanel>
+        <StackPanel Grid.Row="1" Margin="20,0" Visibility="Visible">
+
+            <Button Margin="0,5" Padding="0, 5"
+                        Content="Заглушка" Click="Button_Click"/>
 
         </StackPanel>
 
-        
+
     </Grid>
 </Window>
