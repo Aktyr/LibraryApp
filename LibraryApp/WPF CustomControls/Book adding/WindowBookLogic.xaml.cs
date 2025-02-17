@@ -30,8 +30,7 @@ namespace LibraryApp.WPF_CustomControls
                 _roomBook = value;
                 PropertyChanged?.Invoke(this, new(nameof(RoomBook)));
             }
-        }
-        //private readonly RoomBookDataContext _contextRoomBook;
+        }        
         public WindowBookLogic(RoomBook roomBook)
         {
             InitializeComponent();
@@ -44,10 +43,11 @@ namespace LibraryApp.WPF_CustomControls
             var countBookString = TextBox_Input.Text;
             int сountBook;
             if (int.TryParse(countBookString, out сountBook))
-            {                
+            {
                 RoomBook.BookCount += сountBook;
+                Close();
             }
-            Close();
+            else MessageBox.Show("Введите целое число");
         }
 
 

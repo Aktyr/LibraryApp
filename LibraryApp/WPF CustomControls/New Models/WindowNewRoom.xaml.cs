@@ -21,14 +21,28 @@ namespace LibraryApp
                 _room = value;
                 PropertyChanged?.Invoke(this, new(nameof(Room)));
             }
-        }    
-        private readonly BookDataContext _context;
+        }
+        private Book _book = new("Название", "Автор", 0, "Издатель");
+        public Book Book
+        {
+            get => _book;
+            set
+            {
+                _book = value;
+                PropertyChanged?.Invoke(this, new(nameof(Book)));
+            }
+        }
+        private readonly BookDataContext _contextBook;
+        private readonly RoomBookDataContext _contextRoomBook;
+        private readonly RoomDataContext _contextRoom;
 
         public WindowNewRoom()
         {
             InitializeComponent();
-            _context = new BookDataContext();
-            this.DataContext = _context;
+            _contextBook = new();
+            _contextRoomBook = new();
+            _contextRoom = new();
+            this.DataContext = _contextBook;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -36,46 +50,39 @@ namespace LibraryApp
         private void Button_AddRoom(object sender, RoutedEventArgs e)
         {
             ObservableCollection<Room> a;
-
-            RoomDataContext context = new();
-
-            RoomBookDataContext contextRoomBook = new();
-            RoomDataContext contextRoom = new();
-            BookDataContext contextBook = new();
-
-            context.Rooms.Add(Room);
-            context.SaveChanges();
+            
             var selectedItems = dataGrid.SelectedItems;
 
             if (selectedItems.Count != 0)
-            {                
+            {
                 foreach (var item in selectedItems)
                 {
-                    //ProcessItem(item);
                     var book = item as Book;
 
                     RoomBook RoomBook = new(Room, book);
 
-                    Room.Books.Add(book);
-                    book.Rooms.Add(Room);
-                    Room.Books.Remove(book);
-                    Room.Books.Add(book);
+                    Room.RoomBooks.Add(RoomBook);
+                    book.RoomBooks.Add(RoomBook);
+                    Room.RoomBooks.Remove(RoomBook);
+                    Room.RoomBooks.Add(RoomBook);
 
-                    //contextBook.Books.Add(book);
-                    contextRoomBook.RoomBooks.Add(RoomBook);
+                    //_contextBook.Books.Add(book);
+                    _contextRoomBook.RoomBooks.Add(RoomBook);
                 }
+                   //_contextBook.SaveChanges();
 
-                contextRoom.Rooms.Add(Room);
+                _contextRoom.Rooms.Add(Room);
+                _contextRoom.SaveChanges();
+                _contextRoomBook.SaveChanges();
 
-                contextRoomBook.SaveChanges();
-                contextRoom.SaveChanges();
-                contextBook.SaveChanges();
 
                 MessageBox.Show("Комната добавлена");
 
             }
             else MessageBox.Show("Комната добавлена, в ней нет книг");
 
-        }        
+            Close();
+
+        }
     }
 }

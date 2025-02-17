@@ -10,7 +10,7 @@
 
 
         //[JsonIgnore]
-        public List<Room> Rooms { get; set; } = [];
+        public List<RoomBook> RoomBooks { get; set; } = [];
         public override string ToString() =>
           $@"Название: {Name}
 Автор: {Autor}

@@ -35,7 +35,7 @@ namespace LibraryApp.WPF_CustomControls
         public WindowBookCount()
         {
             InitializeComponent();
-            _contextRoomBook = new RoomBookDataContext();
+            _contextRoomBook = new();
             this.DataContext = _contextRoomBook;
         }
         public event PropertyChangedEventHandler? PropertyChanged;
