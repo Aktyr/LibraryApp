@@ -1,0 +1,23 @@
+﻿<Window x:Class="LibraryApp.WPF_CustomControls.Admin_menu.WindowAdmin"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LibraryApp.WPF_CustomControls.Admin_menu"
+        mc:Ignorable="d"
+        Title="WindowAdmin" Height="300" Width="400">
+    <Grid>
+        <StackPanel Grid.Column="0" Margin="20,20,20,20" Visibility="Visible" >
+
+            <Button HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"                         
+                    Content="Сhange User" Click="Button_Click_СhangeUser"/>
+
+            <Button HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"                         
+                    Content="Сhange Book" Click="Button_Click_СhangeBook"/>
+
+            <Button HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"                         
+                    Content="Сhange Room" Click="Button_Click_СhangeRoom"/>
+
+        </StackPanel>
+    </Grid>
+</Window>

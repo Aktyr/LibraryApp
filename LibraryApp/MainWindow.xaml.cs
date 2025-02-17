@@ -20,6 +20,7 @@ global using System.ComponentModel;
 using LibraryApp.Controllers;
 using LibraryApp.Models;
 using LibraryApp.WPF_CustomControls;
+using LibraryApp.WPF_CustomControls.Admin_menu;
 
 namespace LibraryApp
 {
@@ -61,6 +62,12 @@ namespace LibraryApp
         {
             WindowBookCount windowBookCount = new();
             windowBookCount.ShowDialog();
+        }
+
+        private void Button_Click_Admin(object sender, RoutedEventArgs e)
+        {
+            WindowAdmin windowAdmin = new();
+            windowAdmin.ShowDialog();
         }
     }
 }

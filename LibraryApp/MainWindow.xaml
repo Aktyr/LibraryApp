@@ -32,7 +32,9 @@
         </StackPanel>
 
         <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible" >
-
+            
+            <Button HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"                         
+        Content="Admin menu" Click="Button_Click_Admin"/>
 
         </StackPanel>
 

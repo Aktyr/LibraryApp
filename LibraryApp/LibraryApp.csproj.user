@@ -7,6 +7,18 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="WPF CustomControls\Admin menu\WindowAdmin.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="WPF CustomControls\Admin menu\WindowСhangeBook.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="WPF CustomControls\Admin menu\WindowСhangeRoom.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="WPF CustomControls\Admin menu\WindowСhangeUser.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="WPF CustomControls\Book adding\WindowBookCount.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -22,6 +34,18 @@
   </ItemGroup>
   <ItemGroup>
     <Page Update="MainWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="WPF CustomControls\Admin menu\WindowAdmin.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="WPF CustomControls\Admin menu\WindowСhangeBook.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="WPF CustomControls\Admin menu\WindowСhangeRoom.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="WPF CustomControls\Admin menu\WindowСhangeUser.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="WPF CustomControls\Book adding\WindowBookCount.xaml">
