@@ -27,7 +27,7 @@
 
         <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible">
 
-            <DataGrid x:Name="dataGrid" AutoGenerateColumns="False" Margin="10" ItemsSource="{Binding Path=Books}">
+            <DataGrid x:Name="dataGrid" IsReadOnly="True" AutoGenerateColumns="False" Margin="10" ItemsSource="{Binding Path=Books}">
                 
                 <DataGrid.Columns>
                     
