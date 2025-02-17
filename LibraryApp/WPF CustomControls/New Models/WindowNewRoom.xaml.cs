@@ -50,7 +50,7 @@ namespace LibraryApp
         private void Button_AddRoom(object sender, RoutedEventArgs e)
         {
             ObservableCollection<Room> a;
-            
+
             var selectedItems = dataGrid.SelectedItems;
 
             if (selectedItems.Count != 0)
@@ -58,20 +58,21 @@ namespace LibraryApp
                 foreach (var item in selectedItems)
                 {
                     var book = item as Book;
+                    Book = book;
 
                     RoomBook RoomBook = new(Room, book);
 
                     Room.RoomBooks.Add(RoomBook);
-                    book.RoomBooks.Add(RoomBook);
+                    Book.RoomBooks.Add(RoomBook);
                     Room.RoomBooks.Remove(RoomBook);
                     Room.RoomBooks.Add(RoomBook);
-
-                    //_contextBook.Books.Add(book);
+                    
                     _contextRoomBook.RoomBooks.Add(RoomBook);
                 }
-                   //_contextBook.SaveChanges();
 
                 _contextRoom.Rooms.Add(Room);
+
+                _contextBook.SaveChanges();
                 _contextRoom.SaveChanges();
                 _contextRoomBook.SaveChanges();
 
