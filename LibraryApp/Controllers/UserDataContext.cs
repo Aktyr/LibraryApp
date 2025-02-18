@@ -21,7 +21,14 @@ namespace LibraryApp.Controllers
         public List<User> Users { get; init; }
         public void SaveChanges()
         {
-            JArray users = JArray.FromObject(Users);
+            // Используем настройки сериализатора для обработки циклических ссылок
+            var serializerSettings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                Formatting = Formatting.Indented
+            };
+
+            var users = JsonConvert.SerializeObject(Users, Formatting.Indented, serializerSettings);
             File.WriteAllText(json, users.ToString());
         }
     }

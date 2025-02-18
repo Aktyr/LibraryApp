@@ -36,12 +36,15 @@ namespace LibraryApp
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             ObservableCollection<Book> a;
-
-            var context = new BookDataContext();
-            context.Books.Add(Book);
-            context.SaveChanges();
-            MessageBox.Show("Книга добавлена");
-            Close();
+            if (Book.Year > 0)
+            {
+                var context = new BookDataContext();
+                context.Books.Add(Book);
+                context.SaveChanges();
+                MessageBox.Show("Книга добавлена");
+                Close();
+            }
+            else MessageBox.Show("Неверный формат года\nВведите целое положительное число");
         }
     }
 }

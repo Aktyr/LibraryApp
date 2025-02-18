@@ -1,5 +1,7 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
+using System.Collections.ObjectModel;
+using System.Security.RightsManagement;
 
 namespace LibraryApp.WPF_CustomControls
 {
@@ -30,13 +32,16 @@ namespace LibraryApp.WPF_CustomControls
             }
         }
 
+        private readonly UserDataContext _contextUser;
         private readonly RoomBookDataContext _contextRoomBook;
         private readonly UserRoomBookDataContext _contextUserRoomBook;
 
         public WindowBookIssuing(User user)
         {
             InitializeComponent();
-            _contextRoomBook = new RoomBookDataContext();
+            _contextRoomBook = new();
+            _contextUserRoomBook = new();
+            _contextUser = new();
             this.DataContext = _contextRoomBook;
             User = user;
         }
@@ -48,9 +53,6 @@ namespace LibraryApp.WPF_CustomControls
 
             if (selectedItems.Count > 0)
             {
-                UserRoomBookDataContext UserRoomBookDataContext = new();
-                RoomBookDataContext RoomBookDataContext = new();
-
                 List<string> ErrorMessage = new();
 
                 foreach (var item in selectedItems)
@@ -58,9 +60,10 @@ namespace LibraryApp.WPF_CustomControls
                     var roomBook = item as RoomBook;
                     if (roomBook.BookCount > 0)
                     {
-                        UserRoomBook userRoomBook = new(User, roomBook);
-                        UserRoomBookDataContext.UserRoomBooks.Add(userRoomBook);
-                        roomBook.BookCount -= 1;                        
+                        UserRoomBook UserRoomBook = new(User, roomBook);
+                        //User.UserRoomBook.Add(UserRoomBook); // в пользователя действительно добавляются данные 
+                        _contextUserRoomBook.UserRoomBooks.Add(UserRoomBook);
+                        roomBook.BookCount -= 1;
                     }
                     else ErrorMessage.Add(roomBook.Book.Name);
 
@@ -74,8 +77,9 @@ namespace LibraryApp.WPF_CustomControls
                 else
                 {
                     dataGrid.Items.Refresh();
-                    UserRoomBookDataContext.SaveChanges();                                        
+                    //_contextUser.SaveChanges(); // оно почему-то не сохраняет изменения, но буквально то же самое прокатывает с книгами
                     _contextRoomBook.SaveChanges();
+                    _contextUserRoomBook.SaveChanges();
                     MessageBox.Show("Все книги выданны успешно");
                     Close();
                 }

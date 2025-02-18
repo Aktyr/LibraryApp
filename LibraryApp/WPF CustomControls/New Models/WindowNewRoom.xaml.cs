@@ -66,7 +66,7 @@ namespace LibraryApp
                     Book.RoomBooks.Add(RoomBook);
                     Room.RoomBooks.Remove(RoomBook);
                     Room.RoomBooks.Add(RoomBook);
-                    
+
                     _contextRoomBook.RoomBooks.Add(RoomBook);
                 }
 
@@ -78,9 +78,11 @@ namespace LibraryApp
 
 
                 MessageBox.Show("Комната добавлена");
+                Close();
 
             }
-            else MessageBox.Show("Комната добавлена, в ней нет книг");
+            else MessageBox.Show("Выберите хотябы одну книгу в комнату");
+
 
             Close();
 
