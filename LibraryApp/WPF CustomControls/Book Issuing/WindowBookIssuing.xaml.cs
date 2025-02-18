@@ -62,6 +62,7 @@ namespace LibraryApp.WPF_CustomControls
                     {
                         UserRoomBook UserRoomBook = new(User, roomBook);
                         //User.UserRoomBook.Add(UserRoomBook); // в пользователя действительно добавляются данные 
+                        //User.IssedBooks = User.UserRoomBook.Count; 
                         _contextUserRoomBook.UserRoomBooks.Add(UserRoomBook);
                         roomBook.BookCount -= 1;
                     }

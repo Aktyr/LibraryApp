@@ -1,0 +1,36 @@
+﻿<Window x:Class="LibraryApp.WPF_CustomControls.Show_Issues.Issued_Books.WindowIssuedBooks"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LibraryApp.WPF_CustomControls.Show_Issues.Issued_Books"
+        mc:Ignorable="d"
+        Title="WindowIssuedBooks" Height="450" Width="800">
+    <Grid>
+
+        <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible">
+
+            <DataGrid x:Name="dataGrid" IsReadOnly="True" AutoGenerateColumns="False" Margin="10" ItemsSource="{Binding Path=UserRoomBooks}">
+
+                <DataGrid.Columns>
+
+                    <DataGridTextColumn Header="Комната" Binding="{Binding RoomBook.Room.Name}" />
+                    <DataGridTextColumn Header="Книга" Binding="{Binding RoomBook.Book.Name}" />
+                    <DataGridTextColumn Header="Автор" Binding="{Binding RoomBook.Book.Autor}" />
+                    <DataGridTextColumn Header="Год" Binding="{Binding RoomBook.Book.Year}" />
+                    <DataGridTextColumn Header="Пользователь" Binding="{Binding RoomBook.User}" />
+
+                    <DataGridTemplateColumn Header="Действие">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Заглушка" Click="Button_Click" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+
+    </Grid>
+</Window>

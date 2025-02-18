@@ -1,0 +1,40 @@
+﻿<Window x:Class="LibraryApp.WPF_CustomControls.Show_Issues.WindowUserBooks"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LibraryApp.WPF_CustomControls.Show_Issues"
+        mc:Ignorable="d"
+        Title="WindowUserBooks" Height="450" Width="800">
+    <Grid>
+
+        <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible">
+
+            <DataGrid x:Name="dataGrid" IsReadOnly="True" AutoGenerateColumns="False" Margin="10" ItemsSource="{Binding Path=Users}">
+
+                <DataGrid.Columns>
+
+                    <DataGridTextColumn Header="Фамилия" Binding="{Binding LastName}" />
+                    <DataGridTextColumn Header="Имя" Binding="{Binding FirstName}" />
+                    <DataGridTextColumn Header="Отчество" Binding="{Binding MiddleName}" />
+                    <DataGridTextColumn Header="Кол-во книг" Binding="{Binding IssedBooks}" />
+
+                    <DataGridTemplateColumn Header="Действие">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Посмотреть книги" Click="Button_Click" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                </DataGrid.Columns>
+
+            </DataGrid>
+
+
+
+        </StackPanel>
+
+
+    </Grid>
+</Window>

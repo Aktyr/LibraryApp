@@ -21,6 +21,7 @@ using LibraryApp.Controllers;
 using LibraryApp.Models;
 using LibraryApp.WPF_CustomControls;
 using LibraryApp.WPF_CustomControls.Admin_menu;
+using LibraryApp.WPF_CustomControls.Show_Issues;
 
 namespace LibraryApp
 {
@@ -68,6 +69,12 @@ namespace LibraryApp
         {
             WindowAdmin windowAdmin = new();
             windowAdmin.ShowDialog();
+        }
+
+        private void Button_Click_ShowIssues(object sender, RoutedEventArgs e)
+        {
+            WindowShowIssues windowShowIssues = new();
+            windowShowIssues.ShowDialog();
         }
     }
 }
