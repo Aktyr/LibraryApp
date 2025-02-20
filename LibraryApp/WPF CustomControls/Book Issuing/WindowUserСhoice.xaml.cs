@@ -21,7 +21,7 @@ namespace LibraryApp.WPF_CustomControls
             }
         }
 
-        private readonly UserDataContext _context;
+        public readonly UserDataContext _context;
 
         public WindowUserСhoice()
         {
@@ -39,11 +39,11 @@ namespace LibraryApp.WPF_CustomControls
             {
                 var user = (User)selectedItems[0];
 
-                WindowBookIssuing windowBookIssuing = new(user);
-                windowBookIssuing.ShowDialog();
+                WindowBookIssuing windowBookIssuing = new(user, _context);
+                windowBookIssuing.ShowDialog();                
                 Close();
             }
-            else if (selectedItems.Count >= 1) MessageBox.Show("Выберите только одного пользователя");          
+            else if (selectedItems.Count >= 1) MessageBox.Show("Выберите только одного пользователя");
             else MessageBox.Show("Выберите пользователя");
         }
     }

@@ -2,7 +2,7 @@
 
 namespace LibraryApp.Controllers
 {
-    internal class UserRoomBookDataContext
+    public class UserRoomBookDataContext
     {
         private const string json = "userRoomBooks.json";
 

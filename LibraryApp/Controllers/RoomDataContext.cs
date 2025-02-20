@@ -3,7 +3,7 @@ using static System.Reflection.Metadata.BlobBuilder;
 
 namespace LibraryApp.Controllers
 {
-    internal class RoomDataContext
+    public class RoomDataContext
     {
         private const string json = "rooms.json";
 

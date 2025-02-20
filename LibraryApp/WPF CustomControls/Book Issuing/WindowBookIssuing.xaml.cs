@@ -32,16 +32,16 @@ namespace LibraryApp.WPF_CustomControls
             }
         }
 
-        private readonly UserDataContext _contextUser;
+        private  UserDataContext _contextUser;
         private readonly RoomBookDataContext _contextRoomBook;
         private readonly UserRoomBookDataContext _contextUserRoomBook;
 
-        public WindowBookIssuing(User user)
+        public WindowBookIssuing(User user, UserDataContext contextUser)
         {
             InitializeComponent();
+            _contextUser = contextUser;
             _contextRoomBook = new();
             _contextUserRoomBook = new();
-            _contextUser = new();
             this.DataContext = _contextRoomBook;
             User = user;
         }
@@ -52,7 +52,7 @@ namespace LibraryApp.WPF_CustomControls
             var selectedItems = dataGrid.SelectedItems;
 
             if (selectedItems.Count > 0)
-            {
+            {                
                 List<string> ErrorMessage = new();
 
                 foreach (var item in selectedItems)
@@ -60,9 +60,10 @@ namespace LibraryApp.WPF_CustomControls
                     var roomBook = item as RoomBook;
                     if (roomBook.BookCount > 0)
                     {
-                        UserRoomBook UserRoomBook = new(User, roomBook);
-                        //User.UserRoomBook.Add(UserRoomBook); // в пользователя действительно добавляются данные 
-                        //User.IssedBooks = User.UserRoomBook.Count; 
+
+                        UserRoomBook UserRoomBook = new(User, roomBook);                        
+                        User.UserRoomBook.Add(UserRoomBook); 
+                        User.IssedBooks = User.UserRoomBook.Count; 
                         _contextUserRoomBook.UserRoomBooks.Add(UserRoomBook);
                         roomBook.BookCount -= 1;
                     }
@@ -78,9 +79,9 @@ namespace LibraryApp.WPF_CustomControls
                 else
                 {
                     dataGrid.Items.Refresh();
-                    //_contextUser.SaveChanges(); // оно почему-то не сохраняет изменения, но буквально то же самое прокатывает с книгами
-                    _contextRoomBook.SaveChanges();
                     _contextUserRoomBook.SaveChanges();
+                    _contextRoomBook.SaveChanges();
+                    _contextUser.SaveChanges();
                     MessageBox.Show("Все книги выданны успешно");
                     Close();
                 }

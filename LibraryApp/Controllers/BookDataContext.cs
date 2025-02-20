@@ -2,7 +2,7 @@
 
 namespace LibraryApp.Controllers
 {
-    internal class BookDataContext // Хранение книг в файле
+    public class BookDataContext // Хранение книг в файле
     {
         private const string json = "books.json";
 

@@ -2,7 +2,7 @@
 
 namespace LibraryApp.Controllers
 {
-    internal class UserDataContext
+    public class UserDataContext
     {
         private const string json = "users.json";
 
