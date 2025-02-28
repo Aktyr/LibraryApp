@@ -13,23 +13,24 @@
         </Grid.RowDefinitions>
 
 
-        <StackPanel Grid.Row="0" Margin="20,20" Visibility="Visible">
+        <DataGrid Grid.Row="0" Margin="20,20"
+                  x:Name="dataGrid" IsReadOnly="True" AutoGenerateColumns="False"  ItemsSource="{Binding Path=RoomBooks}"
+                  ScrollViewer.CanContentScroll="True"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto">
+            
+            <DataGrid.Columns>
 
-            <DataGrid x:Name="dataGrid" IsReadOnly="True" AutoGenerateColumns="False"  ItemsSource="{Binding Path=RoomBooks}">
-                <DataGrid.Columns>
+                <DataGridTextColumn Header="Комната" Binding="{Binding Room.Name}" />
+                <DataGridTextColumn Header="Книга" Binding="{Binding Book.Name}" />
+                <DataGridTextColumn Header="Автор" Binding="{Binding Book.Autor}" />
+                <DataGridTextColumn Header="Год" Binding="{Binding Book.Year}" />
+                <DataGridTextColumn Header="Количество на складе" Binding="{Binding BookCount}" />
 
-                    <DataGridTextColumn Header="Комната" Binding="{Binding Room.Name}" />
-                    <DataGridTextColumn Header="Книга" Binding="{Binding Book.Name}" />
-                    <DataGridTextColumn Header="Автор" Binding="{Binding Book.Autor}" />
-                    <DataGridTextColumn Header="Год" Binding="{Binding Book.Year}" />
-                    <DataGridTextColumn Header="Количество на складе" Binding="{Binding BookCount}" />
-
-                </DataGrid.Columns>
-            </DataGrid>
-
-
-
-        </StackPanel>
+            </DataGrid.Columns>
+        </DataGrid>
+        
+        
         <StackPanel Grid.Row="1" Margin="20,0" Visibility="Visible">
 
             <Button Margin="0,5" Padding="0, 5"

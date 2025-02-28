@@ -31,19 +31,10 @@
     <Compile Update="WPF CustomControls\Book Issuing\WindowDateSelection.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\Book Issuing\WindowUserСhoice.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Update="WPF CustomControls\Show Issues\Issued Books\WindowIssuedBooks.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="WPF CustomControls\Show Issues\User Books\WindowOpenUserBooks.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="WPF CustomControls\Show Issues\WindowShowIssues.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="WPF CustomControls\Show Issues\User Books\WindowUserBooks.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="WPF CustomControls\Tabs\BookTab.xaml.cs">
@@ -81,19 +72,10 @@
     <Page Update="WPF CustomControls\Book Issuing\WindowDateSelection.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\Book Issuing\WindowUserСhoice.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Update="WPF CustomControls\Show Issues\Issued Books\WindowIssuedBooks.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="WPF CustomControls\Show Issues\User Books\WindowOpenUserBooks.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="WPF CustomControls\Show Issues\WindowShowIssues.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="WPF CustomControls\Show Issues\User Books\WindowUserBooks.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="WPF CustomControls\Tabs\BookTab.xaml">

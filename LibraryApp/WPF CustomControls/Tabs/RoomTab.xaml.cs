@@ -1,4 +1,5 @@
 ﻿using LibraryApp.Controllers;
+using LibraryApp.Models;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -16,9 +17,33 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
     }
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void AddBookButton_Click(object sender, RoutedEventArgs e) { }
-    private void ShowBooksButton_Click(object sender, RoutedEventArgs e) { }
-    private void EditUserButton_Click(object sender, RoutedEventArgs e) { }
+    private void AddBookButton_Click(object sender, RoutedEventArgs e) 
+    {
+        var room = ((FrameworkElement)e.OriginalSource).DataContext as Room;
+
+        if (room != null)
+        {
+            dataGrid.Items.Refresh();
+        }
+    }
+    private void ShowBooksButton_Click(object sender, RoutedEventArgs e) 
+    {
+        var room = ((FrameworkElement)e.OriginalSource).DataContext as Room;
+
+        if (room != null)
+        {
+            dataGrid.Items.Refresh();
+        }
+    }
+    private void EditUserButton_Click(object sender, RoutedEventArgs e) 
+    {
+        var room = ((FrameworkElement)e.OriginalSource).DataContext as Room;
+
+        if (room != null)
+        {
+            dataGrid.Items.Refresh();
+        }
+    }
     private void AddRoomButton_Click(object sender, RoutedEventArgs e)
     {
         WindowNewRoom windowNewRoom = new();

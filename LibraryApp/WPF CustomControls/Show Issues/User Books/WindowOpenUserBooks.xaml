@@ -8,24 +8,21 @@
         Title="WindowOpenUserBooks" Height="450" Width="800">
     <Grid>
 
-        <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible">
+        <DataGrid Grid.RowSpan="1" Grid.ColumnSpan="2" Margin="20,20,20,20"
+                  x:Name="dataGrid" IsReadOnly="True" AutoGenerateColumns="False" ItemsSource="{Binding Path=UserRoomBooks}"
+                  ScrollViewer.CanContentScroll="True"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto">
 
-            <TextBlock HorizontalAlignment="Stretch"  TextWrapping="Wrap" Text="Здеть будет имя пользователя"/>
+            <DataGrid.Columns>
 
-            <DataGrid x:Name="dataGrid" IsReadOnly="True" AutoGenerateColumns="False" Margin="10" ItemsSource="{Binding Path=UserRoomBooks}">
+                <DataGridTextColumn Header="Комната" Binding="{Binding RoomBook.Room.Name}" />
+                <DataGridTextColumn Header="Книга" Binding="{Binding RoomBook.Book}" />
+                <DataGridTextColumn Header="Когда выдано" Binding="{Binding Issue}" />
+                <DataGridTextColumn Header="Срок сдачи" Binding="{Binding Deadline}" />
 
-                <DataGrid.Columns>
-
-                    <DataGridTextColumn Header="Комната" Binding="{Binding RoomBook.Room.Name}" />
-                    <DataGridTextColumn Header="Книга" Binding="{Binding RoomBook.Book}" />
-                    <DataGridTextColumn Header="Когда выдано" Binding="{Binding Issue}" />
-                    <DataGridTextColumn Header="Срок сдачи" Binding="{Binding Deadline}" />
-
-                </DataGrid.Columns>
-            </DataGrid>
-            
-            
-        </StackPanel>
+            </DataGrid.Columns>
+        </DataGrid>
 
 
 

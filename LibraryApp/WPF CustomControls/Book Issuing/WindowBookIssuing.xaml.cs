@@ -30,17 +30,13 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
         }
     }
 
-    private  UserDataContext _contextUser;
-    private readonly RoomBookDataContext _contextRoomBook;
-    private readonly UserRoomBookDataContext _contextUserRoomBook;
+    private readonly LibraryDataContext _libraryDataContext;
 
-    public WindowBookIssuing(User user, UserDataContext contextUser)
+    public WindowBookIssuing(User user)
     {
         InitializeComponent();
-        _contextUser = contextUser;
-        _contextRoomBook = new();
-        _contextUserRoomBook = new();
-        this.DataContext = _contextRoomBook;
+        _libraryDataContext = LibraryDataContext.Instance;        
+        this.DataContext = _libraryDataContext.RoomBookDataContext;
         User = user;
     }
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -58,11 +54,10 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
                 var roomBook = item as RoomBook;
                 if (roomBook.BookCount > 0)
                 {
-
                     UserRoomBook UserRoomBook = new(User, roomBook);                        
-                    User.UserRoomBook.Add(UserRoomBook); 
-                    User.IssedBooks = User.UserRoomBook.Count; 
-                    _contextUserRoomBook.UserRoomBooks.Add(UserRoomBook);
+                    //User.UserRoomBook.Add(UserRoomBook); 
+                    //User.IssedBooks = User.UserRoomBook.Count; 
+                    _libraryDataContext.UserRoomBookDataContext.UserRoomBooks.Add(UserRoomBook);                    
                     roomBook.BookCount -= 1;
                 }
                 else ErrorMessage.Add(roomBook.Book.Name);
@@ -77,9 +72,11 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
             else
             {
                 dataGrid.Items.Refresh();
-                _contextUserRoomBook.SaveChanges();
-                _contextRoomBook.SaveChanges();
-                _contextUser.SaveChanges();
+
+                _libraryDataContext.UserRoomBookDataContext.SaveChanges();
+                _libraryDataContext.RoomBookDataContext.SaveChanges();
+                _libraryDataContext.UserDataContext.SaveChanges();
+
                 MessageBox.Show("Все книги выданны успешно");
                 Close();
             }

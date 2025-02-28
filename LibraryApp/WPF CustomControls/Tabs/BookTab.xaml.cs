@@ -1,4 +1,5 @@
 ﻿using LibraryApp.Controllers;
+using LibraryApp.Models;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -15,8 +16,24 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
         this.DataContext = _libraryDataContext.BookDataContext;
     }
     public event PropertyChangedEventHandler? PropertyChanged;
-    private void EditBookButton_Click(object sender, RoutedEventArgs e) { }
-    private void DeleteBookButton_Click(object sender, RoutedEventArgs e) { }
+    private void EditBookButton_Click(object sender, RoutedEventArgs e)
+    {
+        var book = ((FrameworkElement)e.OriginalSource).DataContext as Book;
+
+        if (book != null)
+        {
+            dataGrid.Items.Refresh();
+        }
+    }
+    private void DeleteBookButton_Click(object sender, RoutedEventArgs e)
+    {
+        var book = ((FrameworkElement)e.OriginalSource).DataContext as Book;
+
+        if (book != null)
+        {
+            dataGrid.Items.Refresh();
+        }
+    }
     private void AddBookButton_Click(object sender, RoutedEventArgs e)
     {
         WindowNewBook windowNewBook = new();

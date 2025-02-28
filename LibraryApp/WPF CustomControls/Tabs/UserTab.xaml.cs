@@ -1,5 +1,6 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
+using LibraryApp.WPF_CustomControls.Show_Issues.User_Books;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -17,13 +18,46 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
     }
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void AddBookButton_Click(object sender, RoutedEventArgs e) 
+    private void AddBookButton_Click(object sender, RoutedEventArgs e)
     {
-   
+        var user = ((FrameworkElement)e.OriginalSource).DataContext as User;
+
+        if (user != null)
+        {
+            WindowBookIssuing windowBookIssuing = new(user);
+            windowBookIssuing.ShowDialog();
+            dataGrid.Items.Refresh();
+        }
     }
-    private void ShowBooksButton_Click(object sender, RoutedEventArgs e) { }
-    private void EditUserButton_Click(object sender, RoutedEventArgs e) { }
-    private void DeleteUserButton_Click(object sender, RoutedEventArgs e) { }
+    private void ShowBooksButton_Click(object sender, RoutedEventArgs e)
+    {
+        var user = ((FrameworkElement)e.OriginalSource).DataContext as User;
+
+        if (user != null)
+        {
+            WindowOpenUserBooks windowOpenUserBooks = new(user); // передаём пользователя чтобы взглянуть на выданные книги
+            windowOpenUserBooks.ShowDialog();
+            dataGrid.Items.Refresh();
+        }
+    }
+    private void EditUserButton_Click(object sender, RoutedEventArgs e)
+    {
+        var user = ((FrameworkElement)e.OriginalSource).DataContext as User;
+
+        if (user != null)
+        {
+            dataGrid.Items.Refresh();
+        }
+    }
+    private void DeleteUserButton_Click(object sender, RoutedEventArgs e)
+    {
+        var user = ((FrameworkElement)e.OriginalSource).DataContext as User;
+
+        if (user != null)
+        {
+            dataGrid.Items.Refresh();
+        }
+    }
     private void AddUserButton_Click(object sender, RoutedEventArgs e)
     {
         WindowNewUser windowNewUser = new();

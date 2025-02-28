@@ -19,25 +19,26 @@ public partial class WindowOpenUserBooks : Window, INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new(nameof(User)));
         }
     }
-    private UserRoomBook _userRoomBook = new(null, null);
-    public UserRoomBook UserRoomBook
-    {
-        get => _userRoomBook;
-        set
-        {
-            _userRoomBook = value;
-            PropertyChanged?.Invoke(this, new(nameof(UserRoomBook)));
-        }
-    }
+    private readonly LibraryDataContext _libraryDataContext;
+    //private UserRoomBook _userRoomBook = new(null, null);
+    //public UserRoomBook UserRoomBook
+    //{
+    //    get => _userRoomBook;
+    //    set
+    //    {
+    //        _userRoomBook = value;
+    //        PropertyChanged?.Invoke(this, new(nameof(UserRoomBook)));
+    //    }
+    //}
 
-    private readonly UserDataContext _contextUser;
     private readonly UserRoomBookDataContext _contextUserRoomBook;
     public WindowOpenUserBooks(User user)
     {
         InitializeComponent();
+        _libraryDataContext = LibraryDataContext.Instance;
         User = user;
-        this.DataContext = User.UserRoomBook;
-        
+        this.DataContext = _libraryDataContext.UserRoomBookDataContext;
+
     }
     public event PropertyChangedEventHandler? PropertyChanged;
 }
