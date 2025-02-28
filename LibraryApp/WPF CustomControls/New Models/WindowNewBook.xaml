@@ -5,14 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp"
         mc:Ignorable="d"
-        Title="WindowNewBook" Height="300" Width="800">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="9*"/>
-            <ColumnDefinition Width="31*"/>
-        </Grid.ColumnDefinitions>
+        Title="WindowNewBook" Height="300" Width="200">
+    <Grid>   
 
-        <StackPanel Grid.Column="0" Margin="20,20,20,20" Visibility="Visible" >
+        <StackPanel Margin="20,20,20,20" Visibility="Visible" >
 
             <TextBox Text="{Binding Book.Name, ElementName=This, Mode=TwoWay}"
                      HorizontalAlignment="Stretch" Margin="0,5"  />
@@ -28,23 +24,6 @@
 
             <Button  HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"
                      Content="Add" Click="Button_Click"/>
-
-        </StackPanel>
-
-        <StackPanel Grid.Column="1" Margin="20,20,20,20" Visibility="Visible">
-
-            <DataGrid x:Name="dataGrid" IsReadOnly="True" AutoGenerateColumns="False" Margin="10" ItemsSource="{Binding Path=Books}">
-
-                <DataGrid.Columns>
-
-                    <DataGridTextColumn Header="Название" Binding="{Binding Name}" />
-                    <DataGridTextColumn Header="Автор" Binding="{Binding Autor}" />
-                    <DataGridTextColumn Header="Год" Binding="{Binding Year}" />
-                    <DataGridTextColumn Header="Издатель" Binding="{Binding Publisher}" />                   
-
-                </DataGrid.Columns>
-
-            </DataGrid>
 
         </StackPanel>
 

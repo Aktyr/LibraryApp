@@ -46,6 +46,12 @@
     <Compile Update="WPF CustomControls\Show Issues\User Books\WindowUserBooks.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="WPF CustomControls\Tabs\BookTab.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="WPF CustomControls\Tabs\RoomTab.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Update="MainWindow.xaml">
@@ -88,6 +94,15 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="WPF CustomControls\Show Issues\User Books\WindowUserBooks.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="WPF CustomControls\Tabs\BookTab.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="WPF CustomControls\Tabs\RoomTab.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="WPF CustomControls\Tabs\UserTab.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

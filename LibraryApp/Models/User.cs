@@ -11,4 +11,6 @@ public class User(string lastName, string firstName, string middleName, string c
     public List<UserRoomBook> UserRoomBook { get; set; } = [];
 
     public override string ToString() => $"{lastName} {firstName} {middleName}, {contactInfo}";
+    [JsonIgnore] public string FullName => $"{lastName} {firstName} {middleName}";
+
 }

@@ -23,58 +23,16 @@ using LibraryApp.WPF_CustomControls;
 using LibraryApp.WPF_CustomControls.Admin_menu;
 using LibraryApp.WPF_CustomControls.Show_Issues;
 
-namespace LibraryApp
+namespace LibraryApp;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow : Window
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
+    public MainWindow()
     {
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
-
-        private void Button_Click_NewUser(object sender, RoutedEventArgs e)
-        {
-            WindowNewUser windowNewUser = new();
-            windowNewUser.ShowDialog();
-        }
-
-        private void Button_Click_NewBook(object sender, RoutedEventArgs e)
-        {
-            WindowNewBook windowNewBook = new();
-            windowNewBook.ShowDialog();
-        }
-
-        private void Button_Click_NewRoom(object sender, RoutedEventArgs e)
-        {
-            WindowNewRoom windowNewRoom = new();
-            windowNewRoom.ShowDialog();
-        }
-
-        private void Button_Click_BookIssuing(object sender, RoutedEventArgs e)
-        {
-            WindowUserСhoice windowUserСhoice = new();
-            windowUserСhoice.ShowDialog();
-        }
-
-        private void Button_Click_AddBook(object sender, RoutedEventArgs e)
-        {
-            WindowBookCount windowBookCount = new();
-            windowBookCount.ShowDialog();
-        }
-
-        private void Button_Click_Admin(object sender, RoutedEventArgs e)
-        {
-            WindowAdmin windowAdmin = new();
-            windowAdmin.ShowDialog();
-        }
-
-        private void Button_Click_ShowIssues(object sender, RoutedEventArgs e)
-        {
-            WindowShowIssues windowShowIssues = new();
-            windowShowIssues.ShowDialog();
-        }
+        InitializeComponent();
     }
+
 }

@@ -1,36 +1,35 @@
 ﻿using LibraryApp.Models;
 
-namespace LibraryApp.Controllers
+namespace LibraryApp.Controllers;
+
+public class UserDataContext
 {
-    public class UserDataContext
+    private const string json = "users.json";
+
+    public UserDataContext()
     {
-        private const string json = "users.json";
-
-        public UserDataContext()
+        // Проверяем существование файла
+        if (!File.Exists(UserDataContext.json))
         {
-            // Проверяем существование файла
-            if (!File.Exists(UserDataContext.json))
-            {
-                // Создаем новый файл с пустым массивом
-                File.WriteAllText(UserDataContext.json, "[]");
-            }
-
-            var json = File.ReadAllText(UserDataContext.json);
-            Users = JArray.Parse(json).ToObject<List<User>>() ?? [];
+            // Создаем новый файл с пустым массивом
+            File.WriteAllText(UserDataContext.json, "[]");
         }
-        public List<User> Users { get; init; }
-        public void SaveChanges()
+
+        var json = File.ReadAllText(UserDataContext.json);
+        Users = JArray.Parse(json).ToObject<List<User>>() ?? [];
+    }
+    public List<User> Users { get; init; }
+    public void SaveChanges()
+    {
+        // Используем настройки сериализатора для обработки циклических ссылок
+        var serializerSettings = new JsonSerializerSettings
         {
-            // Используем настройки сериализатора для обработки циклических ссылок
-            var serializerSettings = new JsonSerializerSettings
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                Formatting = Formatting.Indented
-            };
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            Formatting = Formatting.Indented
+        };
 
-            var users = JsonConvert.SerializeObject(Users, Formatting.Indented, serializerSettings);
-            File.WriteAllText(json, users.ToString());
-        }
+        var users = JsonConvert.SerializeObject(Users, Formatting.Indented, serializerSettings);
+        File.WriteAllText(json, users.ToString());
     }
 }
 
