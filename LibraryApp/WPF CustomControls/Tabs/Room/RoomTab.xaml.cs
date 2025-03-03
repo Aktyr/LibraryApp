@@ -32,6 +32,8 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
 
         if (room != null)
         {
+            WindowBookCount windowBookCount = new(room);
+            windowBookCount.ShowDialog();
             dataGrid.Items.Refresh();
         }
     }

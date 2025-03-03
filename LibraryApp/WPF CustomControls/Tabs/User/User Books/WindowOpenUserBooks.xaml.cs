@@ -31,13 +31,13 @@ public partial class WindowOpenUserBooks : Window, INotifyPropertyChanged
     //    }
     //}
 
-    private readonly UserRoomBookDataContext _contextUserRoomBook;
+    
     public WindowOpenUserBooks(User user)
     {
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
         User = user;
-        this.DataContext = _libraryDataContext.UserRoomBookDataContext;
+        this.DataContext = _libraryDataContext.UserRoomBookDataContext; // нужно обращаться только к текущему пользователю
 
     }
     public event PropertyChangedEventHandler? PropertyChanged;

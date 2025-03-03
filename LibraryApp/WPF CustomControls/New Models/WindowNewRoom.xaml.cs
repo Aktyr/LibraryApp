@@ -57,12 +57,13 @@ public partial class WindowNewRoom : Window, INotifyPropertyChanged
 
                 RoomBook RoomBook = new(Room, book);
 
-                _libraryDataContext.RoomBookDataContext.RoomBooks.Add(RoomBook);    
+                _libraryDataContext.RoomBookDataContext.RoomBooks.Add(RoomBook);
+                //Room.RoomBooks.Add(RoomBook);
             }
             _libraryDataContext.RoomDataContext.Rooms.Add(Room);
 
-            //_libraryDataContext.BookDataContext.SaveChanges(); // сейчас книги не узнают в какие комнаты попадают
-            _libraryDataContext.RoomDataContext.SaveChanges();
+            //_libraryDataContext.BookDataContext.SaveChanges(); 
+            //_libraryDataContext.RoomDataContext.SaveChanges();
             _libraryDataContext.RoomBookDataContext.SaveChanges();
 
             MessageBox.Show("Комната добавлена");

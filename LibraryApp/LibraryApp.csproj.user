@@ -19,28 +19,25 @@
     <Compile Update="WPF CustomControls\Admin menu\WindowСhangeUser.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\Book adding\WindowBookCount.xaml.cs">
+    <Compile Update="WPF CustomControls\Tabs\Room\Book adding\WindowBookCount.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\Book Issuing\WindowBookIssuing.xaml.cs">
+    <Compile Update="WPF CustomControls\Tabs\User\Book Issuing\WindowBookIssuing.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\Book adding\WindowBookLogic.xaml.cs">
+    <Compile Update="WPF CustomControls\Tabs\Room\Book adding\WindowBookLogic.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\Book Issuing\WindowDateSelection.xaml.cs">
+    <Compile Update="WPF CustomControls\Tabs\User\Book Issuing\WindowDateSelection.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\Show Issues\Issued Books\WindowIssuedBooks.xaml.cs">
+    <Compile Update="WPF CustomControls\Tabs\User\User Books\WindowOpenUserBooks.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\Show Issues\User Books\WindowOpenUserBooks.xaml.cs">
+    <Compile Update="WPF CustomControls\Tabs\Book\BookTab.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\Tabs\BookTab.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="WPF CustomControls\Tabs\RoomTab.xaml.cs">
+    <Compile Update="WPF CustomControls\Tabs\Room\RoomTab.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -60,31 +57,28 @@
     <Page Update="WPF CustomControls\Admin menu\WindowСhangeUser.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\Book adding\WindowBookCount.xaml">
+    <Page Update="WPF CustomControls\Tabs\Room\Book adding\WindowBookCount.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\Book Issuing\WindowBookIssuing.xaml">
+    <Page Update="WPF CustomControls\Tabs\User\Book Issuing\WindowBookIssuing.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\Book adding\WindowBookLogic.xaml">
+    <Page Update="WPF CustomControls\Tabs\Room\Book adding\WindowBookLogic.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\Book Issuing\WindowDateSelection.xaml">
+    <Page Update="WPF CustomControls\Tabs\User\Book Issuing\WindowDateSelection.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\Show Issues\Issued Books\WindowIssuedBooks.xaml">
+    <Page Update="WPF CustomControls\Tabs\User\User Books\WindowOpenUserBooks.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\Show Issues\User Books\WindowOpenUserBooks.xaml">
+    <Page Update="WPF CustomControls\Tabs\Book\BookTab.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\Tabs\BookTab.xaml">
+    <Page Update="WPF CustomControls\Tabs\Room\RoomTab.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="WPF CustomControls\Tabs\RoomTab.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="WPF CustomControls\Tabs\UserTab.xaml">
+    <Page Update="WPF CustomControls\Tabs\User\UserTab.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

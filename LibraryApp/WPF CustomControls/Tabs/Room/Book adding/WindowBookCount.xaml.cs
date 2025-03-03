@@ -18,13 +18,25 @@ public partial class WindowBookCount : Window, INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new(nameof(RoomBook)));
         }
     }
-    private readonly LibraryDataContext _libraryDataContext;
 
-    public WindowBookCount()
+    private Room _room = new("Название комнаты");
+    public Room Room
+    {
+        get => _room;
+        set
+        {
+            _room = value;
+            PropertyChanged?.Invoke(this, new(nameof(RoomBook)));
+        }
+    }
+    private readonly LibraryDataContext _libraryDataContext;
+    public string RoomName => Room.Name;
+    public WindowBookCount(Room room)
     {
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
-        this.DataContext = _libraryDataContext.RoomBookDataContext;
+        Room = room;
+        this.DataContext = _libraryDataContext.RoomBookDataContext; // нужно обратиться только к книгам в текущей комнате
     }
     public event PropertyChangedEventHandler? PropertyChanged;
     private void AddBookButton_Click(object sender, RoutedEventArgs e)
@@ -40,7 +52,7 @@ public partial class WindowBookCount : Window, INotifyPropertyChanged
     }
 
     private void Button_Click(object sender, RoutedEventArgs e)
-    {
+    {        
         _libraryDataContext.RoomBookDataContext.SaveChanges();
 
         Close();

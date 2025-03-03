@@ -10,7 +10,7 @@ public class Book(string name, string autor, int year, string publisher)
 
 
     //[JsonIgnore]
-    public List<RoomBook> RoomBooks { get; set; } = [];
+    //public List<RoomBook> RoomBooks { get; set; } = [];
     public override string ToString() =>
       $@"Название: {Name}
 Автор: {Autor}
