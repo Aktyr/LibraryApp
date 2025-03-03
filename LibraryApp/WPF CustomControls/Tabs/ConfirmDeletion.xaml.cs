@@ -7,10 +7,11 @@ namespace LibraryApp.WPF_CustomControls;
 /// </summary>
 public partial class ConfirmDeletion : Window
 {
-    public bool Confirm = false;
+    public bool Confirm;
     public ConfirmDeletion()
     {
         InitializeComponent();
+        Confirm = false;
     }
 
     private void Button_Click(object sender, RoutedEventArgs e)

@@ -1,6 +1,7 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
 using LibraryApp.WPF_CustomControls.Show_Issues.User_Books;
+using LibraryApp.WPF_CustomControls.Tabs;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -46,6 +47,8 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
 
         if (user != null)
         {
+            //EditObject editObject = new(user);
+            //editObject.ShowDialog();
             dataGrid.Items.Refresh();
         }
     }
