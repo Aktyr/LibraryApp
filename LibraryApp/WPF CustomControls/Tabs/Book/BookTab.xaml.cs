@@ -31,7 +31,15 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
 
         if (book != null)
         {
-            dataGrid.Items.Refresh();
+            ConfirmDeletion confirmDeletion = new();
+            confirmDeletion.ShowDialog();
+
+            if (confirmDeletion.Confirm == true)
+            {
+                _libraryDataContext.BookDataContext.Books.Remove(book);
+                _libraryDataContext.BookDataContext.SaveChanges();
+                dataGrid.Items.Refresh();
+            }
         }
     }
     private void AddBookButton_Click(object sender, RoutedEventArgs e)

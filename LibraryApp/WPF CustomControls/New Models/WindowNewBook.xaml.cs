@@ -1,6 +1,7 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
 using System.Collections.ObjectModel;
+using System.Media;
 
 
 namespace LibraryApp;
@@ -42,6 +43,10 @@ public partial class WindowNewBook : Window, INotifyPropertyChanged
             MessageBox.Show("Книга добавлена");
             Close();
         }
-        else MessageBox.Show("Неверный формат года\nВведите целое положительное число");
+        else
+        {
+            SystemSounds.Beep.Play();
+            MessageBox.Show("Неверный формат года\nВведите целое положительное число");
+        }
     }
 }

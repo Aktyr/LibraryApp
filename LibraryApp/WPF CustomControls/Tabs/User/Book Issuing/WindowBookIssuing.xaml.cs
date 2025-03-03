@@ -1,5 +1,6 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
+using System.Media;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -35,7 +36,7 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
     public WindowBookIssuing(User user)
     {
         InitializeComponent();
-        _libraryDataContext = LibraryDataContext.Instance;        
+        _libraryDataContext = LibraryDataContext.Instance;
         this.DataContext = _libraryDataContext.RoomBookDataContext;
         User = user;
     }
@@ -46,7 +47,7 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
         var selectedItems = dataGrid.SelectedItems;
 
         if (selectedItems.Count > 0)
-        {                
+        {
             List<string> ErrorMessage = new();
 
             foreach (var item in selectedItems)
@@ -54,10 +55,10 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
                 var roomBook = item as RoomBook;
                 if (roomBook.BookCount > 0)
                 {
-                    UserRoomBook UserRoomBook = new(User, roomBook);                        
+                    UserRoomBook UserRoomBook = new(User, roomBook);
                     //User.UserRoomBook.Add(UserRoomBook); 
                     //User.IssedBooks = User.UserRoomBook.Count; 
-                    _libraryDataContext.UserRoomBookDataContext.UserRoomBooks.Add(UserRoomBook);                    
+                    _libraryDataContext.UserRoomBookDataContext.UserRoomBooks.Add(UserRoomBook);
                     roomBook.BookCount -= 1;
                 }
                 else ErrorMessage.Add(roomBook.Book.Name);
@@ -67,6 +68,7 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
             if (ErrorMessage.Count > 0)
             {
                 string message = $"Выдача отменена\nСледующие книги не были выданы, так как отсутствуют на складе:\n\n{string.Join("\n", ErrorMessage)}";
+                SystemSounds.Beep.Play();
                 MessageBox.Show(message);
             }
             else
@@ -82,6 +84,10 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
             }
 
         }
-        else MessageBox.Show("Выберите хотя бы одну книгу");
+        else
+        {
+            SystemSounds.Beep.Play();
+            MessageBox.Show("Выберите хотя бы одну книгу");
+        }
     }
 }

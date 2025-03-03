@@ -1,4 +1,5 @@
 ﻿using LibraryApp.Models;
+using System.Media;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -16,7 +17,7 @@ public partial class WindowBookLogic : Window, INotifyPropertyChanged
             _roomBook = value;
             PropertyChanged?.Invoke(this, new(nameof(RoomBook)));
         }
-    }        
+    }
     public WindowBookLogic(RoomBook roomBook)
     {
         InitializeComponent();
@@ -33,7 +34,11 @@ public partial class WindowBookLogic : Window, INotifyPropertyChanged
             RoomBook.BookCount += сountBook;
             Close();
         }
-        else MessageBox.Show("Введите целое число");
+        else
+        {
+            SystemSounds.Beep.Play();
+            MessageBox.Show("Введите целое число");
+        }
     }
 
 

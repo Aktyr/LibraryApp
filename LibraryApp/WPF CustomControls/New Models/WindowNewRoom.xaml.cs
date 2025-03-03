@@ -1,6 +1,7 @@
 ﻿using LibraryApp.Models;
 using LibraryApp.Controllers;
 using System.Collections.ObjectModel;
+using System.Media;
 
 namespace LibraryApp;
 
@@ -70,10 +71,11 @@ public partial class WindowNewRoom : Window, INotifyPropertyChanged
             Close();
 
         }
-        else MessageBox.Show("Выберите хотябы одну книгу в комнату");
-
-
-        Close();
+        else
+        {
+            SystemSounds.Beep.Play();
+            MessageBox.Show("Выберите хотябы одну книгу в комнату");
+        }
 
     }
 }

@@ -49,13 +49,21 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
             dataGrid.Items.Refresh();
         }
     }
-    private void DeleteUserButton_Click(object sender, RoutedEventArgs e)
+    private void DeleteUserButton_Click(object sender, RoutedEventArgs e) // сделать проверку на наличие выданных книг чтобы удалять пользователей без долгов
     {
         var user = ((FrameworkElement)e.OriginalSource).DataContext as User;
 
         if (user != null)
         {
-            dataGrid.Items.Refresh();
+            ConfirmDeletion confirmDeletion = new();
+            confirmDeletion.ShowDialog();
+
+            if (confirmDeletion.Confirm == true)
+            {
+                _libraryDataContext.UserDataContext.Users.Remove(user);
+                _libraryDataContext.UserDataContext.SaveChanges();
+                dataGrid.Items.Refresh();
+            }
         }
     }
     private void AddUserButton_Click(object sender, RoutedEventArgs e)
