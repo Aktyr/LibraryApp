@@ -1,5 +1,6 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
+using LibraryApp.WPF_CustomControls.Tabs;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -43,6 +44,12 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
 
         if (room != null)
         {
+            EditObject editObject = new(room);
+            editObject.ShowDialog();
+
+            if (editObject.saveChanges == true)
+                _libraryDataContext.RoomDataContext.SaveChanges();
+
             dataGrid.Items.Refresh();
         }
     }

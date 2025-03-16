@@ -47,8 +47,12 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
 
         if (user != null)
         {
-            //EditObject editObject = new(user);
-            //editObject.ShowDialog();
+            EditObject editObject = new(user);            
+            editObject.ShowDialog();
+
+            if (editObject.saveChanges == true)
+                _libraryDataContext.UserDataContext.SaveChanges();
+
             dataGrid.Items.Refresh();
         }
     }

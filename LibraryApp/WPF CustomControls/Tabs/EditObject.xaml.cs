@@ -1,36 +1,30 @@
-﻿using LibraryApp.Controllers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+﻿namespace LibraryApp.WPF_CustomControls.Tabs;
 
-namespace LibraryApp.WPF_CustomControls.Tabs
+/// <summary>
+/// Логика взаимодействия для EditObject.xaml
+/// </summary>
+public partial class EditObject : Window
 {
-    /// <summary>
-    /// Логика взаимодействия для EditObject.xaml
-    /// </summary>
-    public partial class EditObject : Window
+    public bool saveChanges;
+    public EditObject(object editObject)
     {
-        public bool Confirm;
-        public EditObject(object editObject)
+        InitializeComponent();
+        SetData(editObject);
+        saveChanges = false;
+    }
+    private void SetData(object data)
+    {
+        if (data != null)
         {
-            InitializeComponent();
-            Confirm = false;
-            this.DataContext = editObject;
+            var collection = new List<object> { data };
+            dataGrid.ItemsSource = collection;
         }
+    }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
 
-        }
+    private void Button_Click(object sender, RoutedEventArgs e)
+    {
+        saveChanges = true; // изменения сохраняются и без кнопки....
+        Close();
     }
 }

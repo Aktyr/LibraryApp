@@ -1,5 +1,6 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
+using LibraryApp.WPF_CustomControls.Tabs;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -22,6 +23,12 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
 
         if (book != null)
         {
+            EditObject editObject = new(book);
+            editObject.ShowDialog();
+
+            if (editObject.saveChanges == true)
+                _libraryDataContext.BookDataContext.SaveChanges();
+
             dataGrid.Items.Refresh();
         }
     }
