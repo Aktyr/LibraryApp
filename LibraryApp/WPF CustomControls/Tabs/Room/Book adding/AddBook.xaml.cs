@@ -40,6 +40,7 @@ public partial class AddBook : Window, INotifyPropertyChanged
             {
                 var book = item as Book;
                 RoomBook roomBook = new(Room, book);
+
                 //проверка существует ли уже такая комната с книгой
                 if (!_libraryDataContext.RoomBookDataContext.RoomBooks.Any
                     (rb =>

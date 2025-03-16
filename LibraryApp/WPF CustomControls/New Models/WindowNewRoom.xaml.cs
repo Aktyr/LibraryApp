@@ -64,7 +64,7 @@ public partial class WindowNewRoom : Window, INotifyPropertyChanged
             _libraryDataContext.RoomDataContext.Rooms.Add(Room);
 
             //_libraryDataContext.BookDataContext.SaveChanges(); 
-            //_libraryDataContext.RoomDataContext.SaveChanges();
+            _libraryDataContext.RoomDataContext.SaveChanges();
             _libraryDataContext.RoomBookDataContext.SaveChanges();
 
             MessageBox.Show("Комната добавлена");

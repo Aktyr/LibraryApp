@@ -36,11 +36,11 @@ public partial class WindowBookCount : Window, INotifyPropertyChanged
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
         Room = room;
-        this.DataContext = _libraryDataContext.RoomBookDataContext; // нужно обратиться только к книгам в текущей комнате
+        DisplayedInformation();
     }
     public event PropertyChangedEventHandler? PropertyChanged;
     private void AddBookButton_Click(object sender, RoutedEventArgs e)
-    {            
+    {
         var roomBook = ((FrameworkElement)e.OriginalSource).DataContext as RoomBook;
 
         if (roomBook != null)
@@ -51,8 +51,19 @@ public partial class WindowBookCount : Window, INotifyPropertyChanged
         }
     }
 
-    private void Button_Click(object sender, RoutedEventArgs e)
-    {        
+    private void DisplayedInformation()
+    {
+        List<RoomBook> Data = [];
+        var matchingRoomBooks = _libraryDataContext.RoomBookDataContext.RoomBooks
+                                .Where(rb =>
+                                       rb.Room.Id == Room.Id)
+                                .ToList();
+
+        Data.AddRange(matchingRoomBooks);
+        dataGrid.ItemsSource = Data;
+    }
+    private void SaveButton_Click(object sender, RoutedEventArgs e)
+    {
         _libraryDataContext.RoomBookDataContext.SaveChanges();
 
         Close();
