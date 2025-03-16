@@ -54,12 +54,12 @@ public partial class WindowBookCount : Window, INotifyPropertyChanged
     private void DisplayedInformation()
     {
         List<RoomBook> Data = [];
-        var matchingRoomBooks = _libraryDataContext.RoomBookDataContext.RoomBooks
+        var matchingData = _libraryDataContext.RoomBookDataContext.RoomBooks
                                 .Where(rb =>
                                        rb.Room.Id == Room.Id)
                                 .ToList();
 
-        Data.AddRange(matchingRoomBooks);
+        Data.AddRange(matchingData);
         dataGrid.ItemsSource = Data;
     }
     private void SaveButton_Click(object sender, RoutedEventArgs e)

@@ -37,8 +37,19 @@ public partial class WindowOpenUserBooks : Window, INotifyPropertyChanged
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
         User = user;
-        this.DataContext = _libraryDataContext.UserRoomBookDataContext; // нужно обращаться только к текущему пользователю
-
+        DisplayedInformation();
     }
     public event PropertyChangedEventHandler? PropertyChanged;
+    private void DisplayedInformation()
+    {
+        List<UserRoomBook> Data = [];
+        var matchingData = _libraryDataContext.UserRoomBookDataContext.UserRoomBooks
+                                .Where(us =>
+                                       us.User.Id == User.Id)
+                                .ToList();
+
+        Data.AddRange(matchingData);
+        
+        dataGrid.ItemsSource = Data;
+    }
 }
