@@ -79,7 +79,7 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
                 _libraryDataContext.RoomBookDataContext.SaveChanges();
                 _libraryDataContext.UserDataContext.SaveChanges();
 
-                MessageBox.Show("Все книги выданны успешно");
+                MessageBox.Show("Все книги выданы успешно");
                 Close();
             }
 

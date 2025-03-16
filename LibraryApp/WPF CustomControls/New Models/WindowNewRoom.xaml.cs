@@ -74,7 +74,7 @@ public partial class WindowNewRoom : Window, INotifyPropertyChanged
         else
         {
             SystemSounds.Beep.Play();
-            MessageBox.Show("Выберите хотябы одну книгу в комнату");
+            MessageBox.Show("Выберите хотя бы одну книгу в комнату");
         }
 
     }

@@ -1,6 +1,7 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
 using LibraryApp.WPF_CustomControls.Tabs;
+using LibraryApp.WPF_CustomControls.Tabs.Room.Book_adding;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -24,6 +25,8 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
 
         if (room != null)
         {
+            AddBook addBook = new(room);
+            addBook.ShowDialog();
             dataGrid.Items.Refresh();
         }
     }
