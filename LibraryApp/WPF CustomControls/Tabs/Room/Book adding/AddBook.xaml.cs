@@ -63,8 +63,8 @@ public partial class AddBook : Window, INotifyPropertyChanged
             else
             {
                 MessageBox.Show("Все книги выданы успешно");
-                Close();
             }
+                Close();
 
         }
         else

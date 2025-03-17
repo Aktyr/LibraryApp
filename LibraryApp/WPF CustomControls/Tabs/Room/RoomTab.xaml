@@ -27,7 +27,7 @@
                 <DataGridTextColumn Header="Название" Binding="{Binding Name}" />
                 <DataGridTextColumn Header="Кол-во книг" Binding="{Binding ContactInfo}" />
 
-                <DataGridTemplateColumn Header="Добавить книгу" >
+                <DataGridTemplateColumn Header="Добавить новую книгу" >
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="Добавить" Click="AddBookButton_Click" />
