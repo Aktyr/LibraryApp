@@ -1,55 +1,80 @@
-﻿using LibraryApp.Controllers;
+﻿using System.Collections.ObjectModel;
+using LibraryApp.Controllers;
 using LibraryApp.Models;
 
 
-namespace LibraryApp.WPF_CustomControls.Show_Issues.User_Books;
-
-/// <summary>
-/// Логика взаимодействия для WindowOpenUserBooks.xaml
-/// </summary>
-public partial class WindowOpenUserBooks : Window, INotifyPropertyChanged
+namespace LibraryApp.WPF_CustomControls.Show_Issues.User_Books
 {
-    private User _user = new("Фамилия", "Имя", "Отчество", "Контактная информация");
-    public User User
+    public partial class WindowOpenUserBooks : Window, INotifyPropertyChanged
     {
-        get => _user;
-        set
+        private User _user = new("Фамилия", "Имя", "Отчество", "Контактная информация");
+        public User User
         {
-            _user = value;
-            PropertyChanged?.Invoke(this, new(nameof(User)));
+            get => _user;
+            set
+            {
+                _user = value;
+                PropertyChanged?.Invoke(this, new(nameof(User)));
+            }
+        }       
+
+        private ObservableCollection<UserRoomBook> _userRoomBook;
+        public ObservableCollection<UserRoomBook> UserRoomBook
+        {
+            get => _userRoomBook;
+            set
+            {
+                _userRoomBook = value;
+                PropertyChanged?.Invoke(this, new(nameof(UserRoomBook)));
+            }
         }
-    }
-    private readonly LibraryDataContext _libraryDataContext;
-    //private UserRoomBook _userRoomBook = new(null, null);
-    //public UserRoomBook UserRoomBook
-    //{
-    //    get => _userRoomBook;
-    //    set
-    //    {
-    //        _userRoomBook = value;
-    //        PropertyChanged?.Invoke(this, new(nameof(UserRoomBook)));
-    //    }
-    //}
 
-    
-    public WindowOpenUserBooks(User user)
-    {
-        InitializeComponent();
-        _libraryDataContext = LibraryDataContext.Instance;
-        User = user;
-        DisplayedInformation();
-    }
-    public event PropertyChangedEventHandler? PropertyChanged;
-    private void DisplayedInformation()
-    {
-        List<UserRoomBook> Data = [];
-        var matchingData = _libraryDataContext.UserRoomBookDataContext.UserRoomBooks
-                                .Where(us =>
-                                       us.User.Id == User.Id)
-                                .ToList();
+        private readonly LibraryDataContext _libraryDataContext;
+        public WindowOpenUserBooks(User user)
+        {
+            InitializeComponent();
+            _libraryDataContext = LibraryDataContext.Instance;
+            UserRoomBook = new ObservableCollection<UserRoomBook>();
+            User = user;
+            DisplayedInformation();
+        }
 
-        Data.AddRange(matchingData);
-        
-        dataGrid.ItemsSource = Data;
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        private void DisplayedInformation()
+        {
+            var matchingData = _libraryDataContext.UserRoomBookDataContext.UserRoomBooks
+                                    .Where(us => us.User.Id == User.Id)
+                                    .ToList();
+
+            UserRoomBook.Clear();
+            foreach (var item in matchingData)
+            {
+                UserRoomBook.Add(item);
+            }
+
+            dataGrid.ItemsSource = UserRoomBook;
+        }
+
+        private void WriteOffBookButton_Click(object sender, RoutedEventArgs e)
+        {
+            var userRoomBook = ((FrameworkElement)e.OriginalSource).DataContext as UserRoomBook;
+
+            if (userRoomBook != null)
+            {
+                var foundId = _libraryDataContext.RoomBookDataContext.RoomBooks.Find
+                    (x => x.Id == userRoomBook.RoomBook.Id);
+                _libraryDataContext.UserRoomBookDataContext.UserRoomBooks.Remove(userRoomBook);
+
+                foundId.BookCount += 1;
+
+                _libraryDataContext.UserRoomBookDataContext.SaveChanges();
+                _libraryDataContext.RoomBookDataContext.SaveChanges();
+
+                UserRoomBook.Remove(userRoomBook);
+
+                MessageBox.Show("Книга списана");                
+            }
+        }
     }
 }

@@ -20,6 +20,14 @@
                 <DataGridTextColumn Header="Книга" Binding="{Binding RoomBook.Book}" />
                 <DataGridTextColumn Header="Когда выдано" Binding="{Binding Issue}" />
                 <DataGridTextColumn Header="Срок сдачи" Binding="{Binding Deadline}" />
+                
+                <DataGridTemplateColumn Header="Списать книгу" >
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Списать" Click="WriteOffBookButton_Click" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
             </DataGrid.Columns>
         </DataGrid>

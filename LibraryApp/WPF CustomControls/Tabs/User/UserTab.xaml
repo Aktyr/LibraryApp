@@ -26,6 +26,7 @@
 
                 <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" />
                 <DataGridTextColumn Header="Контактная информация" Binding="{Binding ContactInfo}" />
+                <DataGridTextColumn Header="Ближайшая сдача" />
 
                 <DataGridTemplateColumn Header="Выдать книгу" >
                     <DataGridTemplateColumn.CellTemplate>
