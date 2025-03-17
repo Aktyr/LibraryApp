@@ -34,9 +34,6 @@
     <Compile Update="WPF CustomControls\Tabs\Room\Book adding\WindowBookLogic.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="WPF CustomControls\Tabs\User\Book Issuing\WindowDateSelection.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Update="WPF CustomControls\Tabs\User\User Books\WindowOpenUserBooks.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -76,9 +73,6 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="WPF CustomControls\Tabs\Room\Book adding\WindowBookLogic.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="WPF CustomControls\Tabs\User\Book Issuing\WindowDateSelection.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="WPF CustomControls\Tabs\User\User Books\WindowOpenUserBooks.xaml">

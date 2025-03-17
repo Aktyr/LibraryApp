@@ -9,6 +9,17 @@ namespace LibraryApp.WPF_CustomControls;
 /// </summary>
 public partial class WindowBookIssuing : Window, INotifyPropertyChanged
 {
+    private DateTime? _selectedDate;
+    public DateTime? SelectedDate
+    {
+        get => _selectedDate;
+        set
+        {
+            _selectedDate = value;
+            PropertyChanged?.Invoke(this, new(nameof(SelectedDate)));
+        }
+    }
+
     private RoomBook _roomBook = new(null, null);
     public RoomBook RoomBook
     {
@@ -38,51 +49,77 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
         this.DataContext = _libraryDataContext.RoomBookDataContext;
-        User = user;
+        User = user;        
+        CalendarSettings();
     }
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void CalendarSettings()
+    {
+        SelectedDate = null;
+        DateTime startDate = DateTime.Now;
+        DateTime endDate = startDate.AddMonths(1);
+
+        //Calendar_WPF.DisplayDateStart = startDate;
+        //Calendar_WPF.DisplayDateEnd = endDate;
+
+        // Заблокируем все даты до начала диапазона
+        Calendar_WPF.BlackoutDates.Add(new CalendarDateRange(DateTime.MinValue, startDate));
+
+        // Заблокируем все даты после конца диапазона
+        Calendar_WPF.BlackoutDates.Add(new CalendarDateRange(endDate, DateTime.MaxValue));
+    }
+
 
     private void Button_Click(object sender, RoutedEventArgs e)
     {
         var selectedItems = dataGrid.SelectedItems;
 
+        SelectedDate = Calendar_WPF.SelectedDate;
+
         if (selectedItems.Count > 0)
         {
-            List<string> ErrorMessage = new();
-
-            foreach (var item in selectedItems)
+            if (SelectedDate != null)
             {
-                var roomBook = item as RoomBook;
-                if (roomBook.BookCount > 0)
+                List<string> ErrorMessage = new();
+
+                foreach (var item in selectedItems)
                 {
-                    UserRoomBook UserRoomBook = new(User, roomBook);
-                    //User.UserRoomBook.Add(UserRoomBook); 
-                    //User.IssedBooks = User.UserRoomBook.Count; 
-                    _libraryDataContext.UserRoomBookDataContext.UserRoomBooks.Add(UserRoomBook);
-                    roomBook.BookCount -= 1;
+                    var roomBook = item as RoomBook;
+                    if (roomBook.BookCount > 0)
+                    {
+                        UserRoomBook UserRoomBook = new(User, roomBook, SelectedDate);
+
+                        _libraryDataContext.UserRoomBookDataContext.UserRoomBooks.Add(UserRoomBook);
+                        roomBook.BookCount -= 1;
+                    }
+                    else ErrorMessage.Add(roomBook.Book.Name);
+
                 }
-                else ErrorMessage.Add(roomBook.Book.Name);
 
-            }
+                if (ErrorMessage.Count > 0)
+                {
+                    string message = $"Выдача отменена\nСледующие книги не были выданы, так как отсутствуют на складе:\n\n{string.Join("\n", ErrorMessage)}";
+                    SystemSounds.Beep.Play();
+                    MessageBox.Show(message);
+                }
+                else
+                {
+                    dataGrid.Items.Refresh();
 
-            if (ErrorMessage.Count > 0)
-            {
-                string message = $"Выдача отменена\nСледующие книги не были выданы, так как отсутствуют на складе:\n\n{string.Join("\n", ErrorMessage)}";
-                SystemSounds.Beep.Play();
-                MessageBox.Show(message);
+                    _libraryDataContext.UserRoomBookDataContext.SaveChanges();
+                    _libraryDataContext.RoomBookDataContext.SaveChanges();
+                    _libraryDataContext.UserDataContext.SaveChanges();
+
+                    MessageBox.Show("Все книги выданы успешно");
+                    Close();
+                }
             }
             else
             {
-                dataGrid.Items.Refresh();
-
-                _libraryDataContext.UserRoomBookDataContext.SaveChanges();
-                _libraryDataContext.RoomBookDataContext.SaveChanges();
-                _libraryDataContext.UserDataContext.SaveChanges();
-
-                MessageBox.Show("Все книги выданы успешно");
-                Close();
+                SystemSounds.Beep.Play();
+                MessageBox.Show("Выберите дату");
             }
-
         }
         else
         {

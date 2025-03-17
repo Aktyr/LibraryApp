@@ -7,18 +7,21 @@
         mc:Ignorable="d"
         Title="WindowBookIssuing" Height="500" Width="800">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="220"/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="10*"/>
-            <RowDefinition Height="40"/>
+            <RowDefinition/>
         </Grid.RowDefinitions>
 
 
-        <DataGrid Grid.Row="0" Margin="20,20"
+        <DataGrid Grid.Row="0" Grid.Column="0" Margin="20,20,20,20"
                   x:Name="dataGrid" IsReadOnly="True" AutoGenerateColumns="False"  ItemsSource="{Binding Path=RoomBooks}"
                   ScrollViewer.CanContentScroll="True"
                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
                   ScrollViewer.VerticalScrollBarVisibility="Auto">
-            
+
             <DataGrid.Columns>
 
                 <DataGridTextColumn Header="Комната" Binding="{Binding Room.Name}" />
@@ -29,12 +32,15 @@
 
             </DataGrid.Columns>
         </DataGrid>
-        
-        
-        <StackPanel Grid.Row="1" Margin="20,0" Visibility="Visible">
 
-            <Button Margin="0,5" Padding="0, 5"
-                        Content="Выдать" Click="Button_Click"/>
+        <StackPanel Grid.Column="1" Margin="20,20,20,20">
+
+            <Calendar x:Name="Calendar_WPF" SelectedDate="{Binding SelectedDate, Mode=TwoWay}"
+
+                      HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+
+            <Button Margin="0,5" Padding="0, 5" VerticalAlignment="Bottom"
+                    Content="Выдать" Click="Button_Click" />
 
         </StackPanel>
 

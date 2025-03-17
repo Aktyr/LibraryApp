@@ -56,7 +56,7 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
             dataGrid.Items.Refresh();
         }
     }
-    private void DeleteRoomButton_Click(object sender, RoutedEventArgs e) // сделать чтобы так же удалялись все RoomBook в текущей Room
+    private void DeleteRoomButton_Click(object sender, RoutedEventArgs e) // ?сделать чтобы так же удалялись все RoomBook в текущей Room?
     {
         var room = ((FrameworkElement)e.OriginalSource).DataContext as Room;
 
