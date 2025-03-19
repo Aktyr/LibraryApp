@@ -26,7 +26,16 @@
 
                 <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" />
                 <DataGridTextColumn Header="Контактная информация" Binding="{Binding ContactInfo}" />
-                <DataGridTextColumn Header="Ближайшая сдача" />
+                
+                <DataGridTextColumn Header="Ближайшая сдача">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="NearestReturnDate" StringFormat="dd">
+                            <Binding.TargetNullValue>
+                                Нет долгов
+                            </Binding.TargetNullValue>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
 
                 <DataGridTemplateColumn Header="Выдать книгу" >
                     <DataGridTemplateColumn.CellTemplate>

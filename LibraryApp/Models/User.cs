@@ -7,8 +7,7 @@ public class User(string lastName, string firstName, string middleName, string c
     public string FirstName { get; set; } = firstName; //Имя
     public string MiddleName { get; set; } = middleName; //Отчетво
     public string ContactInfo { get; set; } = contactInfo;
-    //public int IssedBooks { get; set; } 
-    //public List<UserRoomBook> UserRoomBook { get; set; } = [];
+    [JsonIgnore] public TimeSpan? NearestReturnDate { get; set; }
 
     public override string ToString() => $"{lastName} {firstName} {middleName}, {contactInfo}";
     [JsonIgnore] public string FullName => $"{lastName} {firstName} {middleName}";
