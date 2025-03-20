@@ -2,7 +2,6 @@
 using LibraryApp.Models;
 using LibraryApp.WPF_CustomControls.Show_Issues.User_Books;
 using LibraryApp.WPF_CustomControls.Tabs;
-using System.Globalization;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -21,7 +20,7 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
     }
     public event PropertyChangedEventHandler? PropertyChanged;
 
-
+    // сделать что-то с отображением данных только в днях
     private void CalculateNearestReturnDates()
     {
         foreach (var user in _libraryDataContext.UserDataContext.Users)
@@ -36,17 +35,17 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
                 .OrderBy(x => x.Deadline)
                 .FirstOrDefault()?.Deadline;
 
-            var daysLeft = nearestReturnDate - DateTime.Today;            
-
             if (nearestReturnDate != null)
             {
-                user.NearestReturnDate = daysLeft;
+                user.NearestReturnDate = nearestReturnDate - DateTime.Today;
             }
             else
             {
                 user.NearestReturnDate = null; // если нет долгов
             }
         }
+
+
     }
     private void AddBookButton_Click(object sender, RoutedEventArgs e)
     {
@@ -56,6 +55,7 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
         {
             WindowBookIssuing windowBookIssuing = new(user);
             windowBookIssuing.ShowDialog();
+            CalculateNearestReturnDates();
             dataGrid.Items.Refresh();
         }
     }
@@ -67,6 +67,7 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
         {
             WindowOpenUserBooks windowOpenUserBooks = new(user); // передаём пользователя чтобы взглянуть на выданные книги
             windowOpenUserBooks.ShowDialog();
+            CalculateNearestReturnDates();
             dataGrid.Items.Refresh();
         }
     }

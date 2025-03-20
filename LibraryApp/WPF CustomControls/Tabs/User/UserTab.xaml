@@ -29,7 +29,7 @@
                 
                 <DataGridTextColumn Header="Ближайшая сдача">
                     <DataGridTextColumn.Binding>
-                        <Binding Path="NearestReturnDate" StringFormat="dd">
+                        <Binding Path="NearestReturnDate">
                             <Binding.TargetNullValue>
                                 Нет долгов
                             </Binding.TargetNullValue>

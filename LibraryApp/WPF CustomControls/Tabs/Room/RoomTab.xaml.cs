@@ -1,4 +1,5 @@
-﻿using LibraryApp.Controllers;
+﻿using System.Xml.Serialization;
+using LibraryApp.Controllers;
 using LibraryApp.Models;
 using LibraryApp.WPF_CustomControls.Tabs;
 using LibraryApp.WPF_CustomControls.Tabs.Room.Book_adding;
@@ -16,8 +17,25 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
         this.DataContext = _libraryDataContext.RoomDataContext;
+        CalculateNumOfBooks();
     }
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void CalculateNumOfBooks()
+    {
+        foreach (var books in _libraryDataContext.BookDataContext.Books)
+        {
+            // Проходим по всем комнатам
+            foreach (var room in _libraryDataContext.RoomDataContext.Rooms)
+            {
+                var roomBooks = _libraryDataContext.RoomBookDataContext.RoomBooks
+                    .Where(rb => rb.Room.Id == room.Id)
+                    .ToList();
+
+                room.SumOfBooks = roomBooks.Sum(rb => rb.BookCount);
+            }
+        }
+    }
 
     private void AddBookButton_Click(object sender, RoutedEventArgs e)
     {
@@ -38,6 +56,7 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
         {
             WindowBookCount windowBookCount = new(room);
             windowBookCount.ShowDialog();
+            CalculateNumOfBooks();
             dataGrid.Items.Refresh();
         }
     }
