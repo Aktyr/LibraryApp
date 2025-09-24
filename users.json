@@ -1,0 +1,23 @@
+[
+  {
+    "Id": "0ce747b4-928d-402a-9f9a-ef6b677ba871",
+    "LastName": "Фамилия",
+    "FirstName": "Имя",
+    "MiddleName": "Отчество",
+    "ContactInfo": "Контактная информация"
+  },
+  {
+    "Id": "763a9c09-441d-40d3-9258-dcaf3f12cc8d",
+    "LastName": "Фамилия2",
+    "FirstName": "2Имя",
+    "MiddleName": "2Отчество",
+    "ContactInfo": "2Контактная информация"
+  },
+  {
+    "Id": "dbbb79cc-6fec-407e-a554-e06bce8ba56f",
+    "LastName": "Фамилия3",
+    "FirstName": "3Имя",
+    "MiddleName": "3Отчество",
+    "ContactInfo": "3Контактная информация"
+  }
+]

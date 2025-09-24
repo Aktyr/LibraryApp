@@ -1,0 +1,29 @@
+[
+  {
+    "Issue": "2025-09-18T00:00:00+03:00",
+    "Deadline": "2025-10-01T00:00:00",
+    "User": {
+      "Id": "0ce747b4-928d-402a-9f9a-ef6b677ba871",
+      "LastName": "Фамилия",
+      "FirstName": "Имя",
+      "MiddleName": "Отчество",
+      "ContactInfo": "Контактная информация"
+    },
+    "RoomBook": {
+      "Id": "8f2a733b-4f9a-4b4e-ae8f-9ab57ca5c0b2",
+      "Room": {
+        "Id": "bbf36bf9-76c2-44c8-85f4-934a2a21eb91",
+        "Name": "ЧЗ1",
+        "SumOfBooks": 50
+      },
+      "BookCount": 19,
+      "Book": {
+        "Id": "135c3030-9b46-4efa-9536-6d62e2fe24ca",
+        "Name": "Название",
+        "Autor": "Автор",
+        "Year": 1313,
+        "Publisher": "Издатель"
+      }
+    }
+  }
+]

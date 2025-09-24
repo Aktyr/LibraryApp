@@ -1,0 +1,82 @@
+[
+  {
+    "Id": "d7efb506-dc7e-410a-9a22-92d2e07d20e5",
+    "Room": {
+      "Id": "bbf36bf9-76c2-44c8-85f4-934a2a21eb91",
+      "Name": "ЧЗ1",
+      "SumOfBooks": 50
+    },
+    "BookCount": 30,
+    "Book": {
+      "Id": "719c26ca-355e-4c69-b878-bc63be97ed25",
+      "Name": "Название",
+      "Autor": "Автор",
+      "Year": 2017,
+      "Publisher": "Издатель"
+    }
+  },
+  {
+    "Id": "8f2a733b-4f9a-4b4e-ae8f-9ab57ca5c0b2",
+    "Room": {
+      "Id": "bbf36bf9-76c2-44c8-85f4-934a2a21eb91",
+      "Name": "ЧЗ1",
+      "SumOfBooks": 50
+    },
+    "BookCount": 19,
+    "Book": {
+      "Id": "135c3030-9b46-4efa-9536-6d62e2fe24ca",
+      "Name": "Название",
+      "Autor": "Автор",
+      "Year": 1313,
+      "Publisher": "Издатель"
+    }
+  },
+  {
+    "Id": "c265a7cb-8b3e-4e53-81ea-25bc738c697a",
+    "Room": {
+      "Id": "4d7f1319-9611-4457-a24d-4f28370aacd8",
+      "Name": "ЧЗ2",
+      "SumOfBooks": 0
+    },
+    "BookCount": 10,
+    "Book": {
+      "Id": "20ba2adc-974c-464f-b1b0-0b6205c7af07",
+      "Name": "Названиеннн",
+      "Autor": "кккАвтор",
+      "Year": 10,
+      "Publisher": "ааИздатель"
+    }
+  },
+  {
+    "Id": "95236da3-6507-4e79-b375-2568fd05f8de",
+    "Room": {
+      "Id": "4d7f1319-9611-4457-a24d-4f28370aacd8",
+      "Name": "ЧЗ2",
+      "SumOfBooks": 0
+    },
+    "BookCount": 20,
+    "Book": {
+      "Id": "719c26ca-355e-4c69-b878-bc63be97ed25",
+      "Name": "Название",
+      "Autor": "Автор",
+      "Year": 2017,
+      "Publisher": "Издатель"
+    }
+  },
+  {
+    "Id": "5373227b-1a97-4004-8f1c-90250c4cb529",
+    "Room": {
+      "Id": "fcf03c0d-2d7a-4e79-95cf-36a34de7f02f",
+      "Name": "XIK1",
+      "SumOfBooks": 0
+    },
+    "BookCount": 54789,
+    "Book": {
+      "Id": "135c3030-9b46-4efa-9536-6d62e2fe24ca",
+      "Name": "Название",
+      "Autor": "Автор",
+      "Year": 1313,
+      "Publisher": "Издатель"
+    }
+  }
+]
