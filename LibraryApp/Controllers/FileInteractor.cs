@@ -75,14 +75,10 @@ public static class InteractorFactory
 }
 
 /* ИСПОЛЬЗОВАНИЕ
- // Теперь использование абсолютно безопасно
+
 var bookInteractor = InteractorFactory.Create<Book>();
 var roomInteractor = InteractorFactory.Create<Room>();
 var userInteractor = InteractorFactory.Create<User>();
-
-// Работаем с данными
-bookInteractor.Data.Add(new Book { Title = "New Book" });
-bookInteractor.SaveChanges();
 
 // Все интеракторы кэшируются - повторные вызовы возвращают тот же объект
 var sameBookInteractor = InteractorFactory.Create<Book>();

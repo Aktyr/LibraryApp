@@ -26,7 +26,7 @@ public partial class WindowNewUser : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
-        this.DataContext = _libraryDataContext.UserDataContext; 
+        //this.DataContext = _libraryDataContext.UserInteractor; 
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -35,8 +35,8 @@ public partial class WindowNewUser : Window, INotifyPropertyChanged
     {
         ObservableCollection<User> a;
 
-        _libraryDataContext.UserDataContext.Users.Add(User);
-        _libraryDataContext.UserDataContext.SaveChanges();
+        _libraryDataContext.Add(User);
+        _libraryDataContext.Save<User>();
 
         MessageBox.Show("Пользователь добавлен");
         Close();

@@ -24,7 +24,7 @@ public partial class AddBook : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
-        this.DataContext = _libraryDataContext.BookDataContext;
+        this.DataContext = _libraryDataContext;
         Room = room;
     }
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -42,16 +42,16 @@ public partial class AddBook : Window, INotifyPropertyChanged
                 RoomBook roomBook = new(Room, book);
 
                 //проверка существует ли уже такая комната с книгой
-                if (!_libraryDataContext.RoomBookDataContext.RoomBooks.Any
+                if (!_libraryDataContext.GetAll<RoomBook>().Any
                     (rb =>
                      rb.Room.Id == roomBook.Room.Id &&
                      rb.Book.Id == roomBook.Book.Id))
                 {
-                    _libraryDataContext.RoomBookDataContext.RoomBooks.Add(roomBook);
+                    _libraryDataContext.Add(roomBook);
                 }
                 else ErrorMessage.Add(roomBook.Book.Name);
             }
-            _libraryDataContext.RoomBookDataContext.SaveChanges();
+            _libraryDataContext.Save<RoomBook>();  
             dataGrid.Items.Refresh();
 
             if (ErrorMessage.Count > 0)

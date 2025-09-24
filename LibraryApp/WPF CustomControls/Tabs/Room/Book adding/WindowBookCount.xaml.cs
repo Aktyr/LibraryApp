@@ -54,7 +54,7 @@ public partial class WindowBookCount : Window, INotifyPropertyChanged
     private void DisplayedInformation()
     {
         List<RoomBook> Data = [];
-        var matchingData = _libraryDataContext.RoomBookDataContext.RoomBooks
+        var matchingData = _libraryDataContext.GetAll<RoomBook>()
                                 .Where(rb =>
                                        rb.Room.Id == Room.Id)
                                 .ToList();
@@ -64,7 +64,7 @@ public partial class WindowBookCount : Window, INotifyPropertyChanged
     }
     private void SaveButton_Click(object sender, RoutedEventArgs e)
     {
-        _libraryDataContext.RoomBookDataContext.SaveChanges();
+        _libraryDataContext.Save<RoomBook>();
 
         Close();
     }

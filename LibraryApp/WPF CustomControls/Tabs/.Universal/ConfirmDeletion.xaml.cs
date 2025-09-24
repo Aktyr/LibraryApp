@@ -7,18 +7,18 @@ namespace LibraryApp.WPF_CustomControls;
 /// </summary>
 public partial class ConfirmDeletion : Window
 {
-    public bool Confirm;
+    public bool IsConfirm;
     public ConfirmDeletion()
     {
         InitializeComponent();
-        Confirm = false;
+        IsConfirm = false;
     }
 
     private void Button_Click(object sender, RoutedEventArgs e)
     {
         if (Confirm_TextBlock.Text.ToLower() == "удалить")
         {
-            Confirm = true;
+            IsConfirm = true;
             Close();
         }
         else SystemSounds.Beep.Play();

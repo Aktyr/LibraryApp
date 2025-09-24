@@ -26,8 +26,8 @@ public partial class WindowNewBook : Window, INotifyPropertyChanged
     public WindowNewBook()
     {
         InitializeComponent();
-        _libraryDataContext = LibraryDataContext.Instance;
-        this.DataContext = _libraryDataContext.BookDataContext;
+        _libraryDataContext = LibraryDataContext.Instance; 
+       // this.DataContext = _libraryDataContext.BookInteractor; // А зачем это здеть вообще?
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -37,8 +37,8 @@ public partial class WindowNewBook : Window, INotifyPropertyChanged
         ObservableCollection<Book> a;
         if (Book.Year > 0)
         {
-            _libraryDataContext.BookDataContext.Books.Add(Book);
-            _libraryDataContext.BookDataContext.SaveChanges();
+            _libraryDataContext.Add(Book);
+            _libraryDataContext.Save<Book>();
 
             MessageBox.Show("Книга добавлена");
             Close();

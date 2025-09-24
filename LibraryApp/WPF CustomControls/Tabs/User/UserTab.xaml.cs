@@ -15,7 +15,7 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
     {
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
-        this.DataContext = _libraryDataContext.UserDataContext;
+        this.DataContext = _libraryDataContext;
         CalculateNearestReturnDates();
     }
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -23,10 +23,10 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
     // сделать что-то с отображением данных только в днях
     private void CalculateNearestReturnDates()
     {
-        foreach (var user in _libraryDataContext.UserDataContext.Users)
+        foreach (var user in _libraryDataContext.UserList)
         {
             // Находим все записи о выданных книгах для текущего пользователя
-            var userBooks = _libraryDataContext.UserRoomBookDataContext.UserRoomBooks
+            var userBooks = _libraryDataContext.UserRoomBookList
                 .Where(x => x.User.Id == user.Id && x.Deadline != null)
                 .ToList();
 
@@ -81,7 +81,7 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
             editObject.ShowDialog();
 
             if (editObject.saveChanges == true)
-                _libraryDataContext.UserDataContext.SaveChanges();
+                _libraryDataContext.Save<User>();
 
             dataGrid.Items.Refresh();
         }
@@ -89,7 +89,7 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
     private void DeleteUserButton_Click(object sender, RoutedEventArgs e)
     {
         var user = ((FrameworkElement)e.OriginalSource).DataContext as User;
-        var debts = _libraryDataContext.UserRoomBookDataContext.UserRoomBooks.Find(x => x.User.Id == user.Id);
+        var debts = _libraryDataContext.UserRoomBookList.Find(x => x.User.Id == user.Id);
 
         if (debts != null)
         {
@@ -102,10 +102,10 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
                 ConfirmDeletion confirmDeletion = new();
                 confirmDeletion.ShowDialog();
 
-                if (confirmDeletion.Confirm == true)
+                if (confirmDeletion.IsConfirm == true)
                 {
-                    _libraryDataContext.UserDataContext.Users.Remove(user);
-                    _libraryDataContext.UserDataContext.SaveChanges();
+                    _libraryDataContext.Remove(user);
+                    _libraryDataContext.Save<User>();
                     dataGrid.Items.Refresh();
                 }
             }

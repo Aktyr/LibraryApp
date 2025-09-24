@@ -16,19 +16,19 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
     {
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
-        this.DataContext = _libraryDataContext.RoomDataContext;
+        this.DataContext = _libraryDataContext;
         CalculateNumOfBooks();
     }
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void CalculateNumOfBooks()
     {
-        foreach (var books in _libraryDataContext.BookDataContext.Books)
+        foreach (var books in _libraryDataContext.BookList)
         {
             // Проходим по всем комнатам
-            foreach (var room in _libraryDataContext.RoomDataContext.Rooms)
+            foreach (var room in _libraryDataContext.RoomList)
             {
-                var roomBooks = _libraryDataContext.RoomBookDataContext.RoomBooks
+                var roomBooks = _libraryDataContext.GetAll<RoomBook>()
                     .Where(rb => rb.Room.Id == room.Id)
                     .ToList();
 
@@ -70,7 +70,7 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
             editObject.ShowDialog();
 
             if (editObject.saveChanges == true)
-                _libraryDataContext.RoomDataContext.SaveChanges();
+                _libraryDataContext.Save<Room>();
 
             dataGrid.Items.Refresh();
         }
@@ -84,10 +84,10 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
             ConfirmDeletion confirmDeletion = new();
             confirmDeletion.ShowDialog();
 
-            if (confirmDeletion.Confirm == true)
+            if (confirmDeletion.IsConfirm == true)
             {
-                _libraryDataContext.RoomDataContext.Rooms.Remove(room);
-                _libraryDataContext.RoomDataContext.SaveChanges();
+                _libraryDataContext.Remove(room);
+                _libraryDataContext.Save<Room>();
                 dataGrid.Items.Refresh();
             }
         }

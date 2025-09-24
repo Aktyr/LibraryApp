@@ -48,7 +48,7 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
-        this.DataContext = _libraryDataContext.RoomBookDataContext;
+        this.DataContext = _libraryDataContext;
         User = user;        
         CalendarSettings();
     }
@@ -90,7 +90,7 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
                     {
                         UserRoomBook UserRoomBook = new(User, roomBook, SelectedDate);
 
-                        _libraryDataContext.UserRoomBookDataContext.UserRoomBooks.Add(UserRoomBook);
+                        _libraryDataContext.Add(UserRoomBook);
                         roomBook.BookCount -= 1;
                     }
                     else ErrorMessage.Add(roomBook.Book.Name);
@@ -107,9 +107,9 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
                 {
                     dataGrid.Items.Refresh();
 
-                    _libraryDataContext.UserRoomBookDataContext.SaveChanges();
-                    _libraryDataContext.RoomBookDataContext.SaveChanges();
-                    _libraryDataContext.UserDataContext.SaveChanges();
+                    _libraryDataContext.Save<UserRoomBook>();
+                    _libraryDataContext.Save<RoomBook>();
+                    _libraryDataContext.Save<User>();
 
                     MessageBox.Show("Все книги выданы успешно");
                     Close();

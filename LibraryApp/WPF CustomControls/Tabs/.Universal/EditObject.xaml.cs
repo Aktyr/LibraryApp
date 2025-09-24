@@ -24,7 +24,7 @@ public partial class EditObject : Window
 
     private void Button_Click(object sender, RoutedEventArgs e)
     {
-        saveChanges = true; // изменения сохраняются и без кнопки....
+        saveChanges = true; // BUG изменения сохраняются и без кнопки....
         Close();
     }
 }

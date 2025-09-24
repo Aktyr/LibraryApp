@@ -14,7 +14,7 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
     {
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
-        this.DataContext = _libraryDataContext.BookDataContext;
+        this.DataContext = _libraryDataContext;
     }
     public event PropertyChangedEventHandler? PropertyChanged;
     private void EditBookButton_Click(object sender, RoutedEventArgs e)
@@ -27,7 +27,7 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
             editObject.ShowDialog();
 
             if (editObject.saveChanges == true)
-                _libraryDataContext.BookDataContext.SaveChanges();
+                _libraryDataContext.Save<Book>();
 
             dataGrid.Items.Refresh();
         }
@@ -41,10 +41,14 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
             ConfirmDeletion confirmDeletion = new();
             confirmDeletion.ShowDialog();
 
-            if (confirmDeletion.Confirm == true)
+            if (confirmDeletion.IsConfirm == true)
             {
-                _libraryDataContext.BookDataContext.Books.Remove(book);
-                _libraryDataContext.BookDataContext.SaveChanges();
+                //_libraryDataContext.BookDataContext.Books.Remove(book);
+                //_libraryDataContext.BookDataContext.SaveChanges();
+
+                _libraryDataContext.Remove(book); // проверить работу
+                _libraryDataContext.Save<Book>();
+
                 dataGrid.Items.Refresh();
             }
         }

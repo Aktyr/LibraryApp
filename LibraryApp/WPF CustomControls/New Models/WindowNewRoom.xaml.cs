@@ -38,7 +38,7 @@ public partial class WindowNewRoom : Window, INotifyPropertyChanged
         InitializeComponent();
         _libraryDataContext = LibraryDataContext.Instance;
 
-        this.DataContext = _libraryDataContext.BookDataContext;
+        this.DataContext = _libraryDataContext;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -58,14 +58,14 @@ public partial class WindowNewRoom : Window, INotifyPropertyChanged
 
                 RoomBook RoomBook = new(Room, book);
 
-                _libraryDataContext.RoomBookDataContext.RoomBooks.Add(RoomBook);
+                _libraryDataContext.Add(RoomBook);
                 //Room.RoomBooks.Add(RoomBook);
             }
-            _libraryDataContext.RoomDataContext.Rooms.Add(Room);
+            _libraryDataContext.Add(Room);
 
-            //_libraryDataContext.BookDataContext.SaveChanges(); 
-            _libraryDataContext.RoomDataContext.SaveChanges();
-            _libraryDataContext.RoomBookDataContext.SaveChanges();
+            //_libraryDataContext.BookDataContext.SaveChanges();          
+            _libraryDataContext.Save<Room>();
+            _libraryDataContext.Save<RoomBook>();
 
             MessageBox.Show("Комната добавлена");
             Close();

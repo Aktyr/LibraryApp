@@ -43,7 +43,7 @@ namespace LibraryApp.WPF_CustomControls.Show_Issues.User_Books
 
         private void DisplayedInformation()
         {
-            var matchingData = _libraryDataContext.UserRoomBookDataContext.UserRoomBooks
+            var matchingData = _libraryDataContext.GetAll<UserRoomBook>()
                                     .Where(us => us.User.Id == User.Id)
                                     .ToList();
 
@@ -53,7 +53,7 @@ namespace LibraryApp.WPF_CustomControls.Show_Issues.User_Books
                 UserRoomBook.Add(item);
             }
 
-            dataGrid.ItemsSource = UserRoomBook;
+            dataGrid.ItemsSource = UserRoomBook; //
         }
 
         private void WriteOffBookButton_Click(object sender, RoutedEventArgs e)
@@ -62,16 +62,16 @@ namespace LibraryApp.WPF_CustomControls.Show_Issues.User_Books
 
             if (userRoomBook != null)
             {
-                var foundId = _libraryDataContext.RoomBookDataContext.RoomBooks.Find
+                var foundId = _libraryDataContext.GetAll<RoomBook>().Find
                     (x => x.Id == userRoomBook.RoomBook.Id);
-                _libraryDataContext.UserRoomBookDataContext.UserRoomBooks.Remove(userRoomBook);
+                _libraryDataContext.Remove(userRoomBook);
 
                 foundId.BookCount += 1;
 
-                _libraryDataContext.UserRoomBookDataContext.SaveChanges();
-                _libraryDataContext.RoomBookDataContext.SaveChanges();
+                _libraryDataContext.Save<UserRoomBook>();
+                _libraryDataContext.Save<RoomBook>();
 
-                UserRoomBook.Remove(userRoomBook);
+                _libraryDataContext.Remove(userRoomBook);
 
                 MessageBox.Show("Книга списана");                
             }

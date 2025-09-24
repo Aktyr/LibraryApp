@@ -13,12 +13,14 @@ public class LibraryDataContext
 
     private LibraryDataContext()
     {
+        #region Легаси
         // Старые DataContext'ы
-        this.UserDataContext = new UserDataContext();
-        this.RoomDataContext = new RoomDataContext();
-        this.BookDataContext = new BookDataContext();
-        this.RoomBookDataContext = new RoomBookDataContext();
-        this.UserRoomBookDataContext = new UserRoomBookDataContext();
+        //this.UserDataContext = new UserDataContext();
+        //this.RoomDataContext = new RoomDataContext();
+        //this.BookDataContext = new BookDataContext();
+        //this.RoomBookDataContext = new RoomBookDataContext();
+        //this.UserRoomBookDataContext = new UserRoomBookDataContext();
+        #endregion
 
         // Новые универсальные интеракторы
         this.BookInteractor = InteractorFactory.Create<Book>();
@@ -29,7 +31,7 @@ public class LibraryDataContext
     }
     #region Легаси
     // Старые DataContext'ы - УСТАРЕЛИ
-    [Obsolete("Используйте вместо этого соответствующий Interactor свойство, например BookInteractor вместо BookDataContext")]
+    [Obsolete("Используйте BookInteractor вместо BookDataContext")]
     public BookDataContext BookDataContext { get; set; }
 
     [Obsolete("Используйте RoomInteractor вместо RoomDataContext")]
@@ -67,7 +69,7 @@ public class LibraryDataContext
         [typeof(RoomBook)] = RoomBookInteractor,
         [typeof(UserRoomBook)] = UserRoomBookInteractor
     };
-
+    #region Легаси
     // Старый метод Add - УСТАРЕЛ
     [Obsolete("Используйте новый универсальный метод Add<T>(T entity)")]
     public void Add(object entity)
@@ -80,7 +82,7 @@ public class LibraryDataContext
         var genericMethod = method.MakeGenericMethod(entity.GetType());
         genericMethod.Invoke(this, new[] { entity });
     }
-
+    #endregion
     // Новый универсальный метод Add (без dynamic)
     public void AddGeneric<T>(T entity) where T : class
     {
@@ -117,23 +119,49 @@ public class LibraryDataContext
             {
                 case FileInteractor<Book> bookInteractor when entity is Book book:
                     bookInteractor.Data.Add(book);
-                    bookInteractor.SaveChanges();
                     break;
                 case FileInteractor<Room> roomInteractor when entity is Room room:
                     roomInteractor.Data.Add(room);
-                    roomInteractor.SaveChanges();
                     break;
                 case FileInteractor<User> userInteractor when entity is User user:
                     userInteractor.Data.Add(user);
-                    userInteractor.SaveChanges();
                     break;
                 case FileInteractor<RoomBook> roomBookInteractor when entity is RoomBook roomBook:
                     roomBookInteractor.Data.Add(roomBook);
-                    roomBookInteractor.SaveChanges();
                     break;
                 case FileInteractor<UserRoomBook> userRoomBookInteractor when entity is UserRoomBook userRoomBook:
                     userRoomBookInteractor.Data.Add(userRoomBook);
-                    userRoomBookInteractor.SaveChanges();
+                    break;
+                default:
+                    throw new InvalidOperationException($"Type mismatch for {typeof(T).Name}");
+            }
+        }
+        else
+        {
+            throw new ArgumentException($"No interactor registered for type {typeof(T).Name}");
+        }
+    }
+
+    public void Remove<T>(T entity) where T : class
+    {
+        if (Interactors.TryGetValue(typeof(T), out var interactor))
+        {
+            switch (interactor)
+            {
+                case FileInteractor<Book> bookInteractor when entity is Book book:
+                    bookInteractor.Data.Remove(book);
+                    break;
+                case FileInteractor<Room> roomInteractor when entity is Room room:
+                    roomInteractor.Data.Remove(room);
+                    break;
+                case FileInteractor<User> userInteractor when entity is User user:
+                    userInteractor.Data.Remove(user);
+                    break;
+                case FileInteractor<RoomBook> roomBookInteractor when entity is RoomBook roomBook:
+                    roomBookInteractor.Data.Remove(roomBook);
+                    break;
+                case FileInteractor<UserRoomBook> userRoomBookInteractor when entity is UserRoomBook userRoomBook:
+                    userRoomBookInteractor.Data.Remove(userRoomBook);
                     break;
                 default:
                     throw new InvalidOperationException($"Type mismatch for {typeof(T).Name}");
@@ -210,11 +238,4 @@ public class LibraryDataContext
         RoomBookInteractor.SaveChanges();
         UserRoomBookInteractor.SaveChanges();
     }
-
-    // Вспомогательные методы для удобства (без устаревших пометок)
-    public Book[] GetAllBooks() => BookInteractor.Data.ToArray();
-    public Room[] GetAllRooms() => RoomInteractor.Data.ToArray();
-    public User[] GetAllUsers() => UserInteractor.Data.ToArray();
-    public RoomBook[] GetAllRoomBooks() => RoomBookInteractor.Data.ToArray();
-    public UserRoomBook[] GetAllUserRoomBooks() => UserRoomBookInteractor.Data.ToArray();
 }
