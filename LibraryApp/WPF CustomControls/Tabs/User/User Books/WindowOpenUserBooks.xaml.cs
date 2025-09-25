@@ -58,23 +58,47 @@ namespace LibraryApp.WPF_CustomControls.Show_Issues.User_Books
 
         private void WriteOffBookButton_Click(object sender, RoutedEventArgs e)
         {
-            var userRoomBook = ((FrameworkElement)e.OriginalSource).DataContext as UserRoomBook;
+            if (((FrameworkElement)e.OriginalSource).DataContext is not UserRoomBook userRoomBook)
+                return;
 
-            if (userRoomBook != null)
+            // Проверяем, что у UserRoomBook есть ссылка на RoomBook
+            if (userRoomBook.RoomBook == null)
             {
-                var foundId = _libraryDataContext.GetAll<RoomBook>().Find
-                    (x => x.Id == userRoomBook.RoomBook.Id);
-                _libraryDataContext.Remove(userRoomBook);
-
-                foundId.BookCount += 1;
-
-                _libraryDataContext.Save<UserRoomBook>();
-                _libraryDataContext.Save<RoomBook>();
-
-                _libraryDataContext.Remove(userRoomBook);
-
-                MessageBox.Show("Книга списана");                
+                MessageBox.Show("Ошибка: отсутствует информация о связи с комнатой и книгой");
+                return;
             }
+
+            // Получаем книгу и комнату из RoomBook
+            var book = userRoomBook.RoomBook.Book;
+            var room = userRoomBook.RoomBook.Room;
+
+            if (book == null || room == null)
+            {
+                MessageBox.Show("Ошибка: не найдена информация о книге или комнате");
+                return;
+            }
+
+            // Находим запись RoomBook для этой комнаты и книги
+            var roomBook = _libraryDataContext.GetAll<RoomBook>()
+                .FirstOrDefault(rb =>
+                    rb.Room.Id == room.Id &&
+                    rb.Book.Id == book.Id);
+
+            if (roomBook == null)
+            {
+                MessageBox.Show("Ошибка: книга не найдена в указанной комнате");
+                return;
+            }
+
+            roomBook.BookCount += 1;
+
+            _libraryDataContext.Remove(userRoomBook);
+            _libraryDataContext.SaveAll();
+            DisplayedInformation();
+
+            // проверку на случайное списывание
+
+            MessageBox.Show("Книга успешно списана у пользователя");
         }
     }
 }

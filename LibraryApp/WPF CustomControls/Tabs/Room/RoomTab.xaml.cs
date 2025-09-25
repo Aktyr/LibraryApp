@@ -90,9 +90,20 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
 
             if (confirmDeletion.IsConfirm == true)
             {
+                // Находим все RoomBook записи, связанные с этой комнатой
+                var roomBooksToDelete = _libraryDataContext.GetAll<RoomBook>()
+                .Where(rb => rb.Room.Id == room.Id)
+                .ToList();
+
+                // Удаляем все связанные RoomBook записи
+                foreach (var roomBook in roomBooksToDelete)                
+                    _libraryDataContext.Remove(roomBook);            
+
                 _libraryDataContext.Remove(room);
-                _libraryDataContext.Save<Room>();
+                _libraryDataContext.SaveAll(); 
                 dataGrid.Items.Refresh();
+                MessageBox.Show($"Комната '{room.Name}' и все связанные книги удалены");
+
             }
         }
         dataGrid.SelectedItem = null;

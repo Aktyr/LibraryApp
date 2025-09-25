@@ -12,7 +12,9 @@
                   x:Name="dataGrid" IsReadOnly="True" AutoGenerateColumns="False"
                   ScrollViewer.CanContentScroll="True"
                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                  ScrollViewer.VerticalScrollBarVisibility="Auto">
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ItemsSource="{Binding Mode=OneWay}"
+>
 
             <DataGrid.Columns>
 

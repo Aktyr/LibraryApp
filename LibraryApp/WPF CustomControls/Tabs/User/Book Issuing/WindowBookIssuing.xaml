@@ -6,6 +6,10 @@
         xmlns:local="clr-namespace:LibraryApp.WPF_CustomControls"
         mc:Ignorable="d"
         Title="WindowBookIssuing" Height="500" Width="800">
+    <Window.Resources>
+        <local:NullToFalseConverter x:Key="NullToFalseConverter"/>
+    </Window.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>
@@ -40,7 +44,8 @@
                       HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
 
             <Button Margin="0,5" Padding="0, 5" VerticalAlignment="Bottom"
-                    Content="Выдать" Click="Button_Click" />
+                    Content="Выдать" Click="Button_Click" 
+                    IsEnabled="{Binding ElementName=dataGrid, Path=SelectedItem, Converter={StaticResource NullToFalseConverter}}"/>
 
         </StackPanel>
 
