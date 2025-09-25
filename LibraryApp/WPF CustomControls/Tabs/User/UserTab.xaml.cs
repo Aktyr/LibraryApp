@@ -2,6 +2,7 @@
 using LibraryApp.Models;
 using LibraryApp.WPF_CustomControls.Show_Issues.User_Books;
 using LibraryApp.WPF_CustomControls.Tabs;
+using System.Globalization;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -49,31 +50,33 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
     }
     private void AddBookButton_Click(object sender, RoutedEventArgs e)
     {
-        var user = ((FrameworkElement)e.OriginalSource).DataContext as User;
-
+        var user = dataGrid.SelectedItem as User;
+            
         if (user != null)
         {
             WindowBookIssuing windowBookIssuing = new(user);
             windowBookIssuing.ShowDialog();
             CalculateNearestReturnDates();
             dataGrid.Items.Refresh();
+            dataGrid.SelectedItem = null;
         }
     }
     private void ShowBooksButton_Click(object sender, RoutedEventArgs e)
     {
-        var user = ((FrameworkElement)e.OriginalSource).DataContext as User;
+        var user = dataGrid.SelectedItem as User;
 
         if (user != null)
         {
             WindowOpenUserBooks windowOpenUserBooks = new(user); // передаём пользователя чтобы взглянуть на выданные книги
             windowOpenUserBooks.ShowDialog();
             CalculateNearestReturnDates();
-            dataGrid.Items.Refresh();
+            dataGrid.Items.Refresh(); 
+            dataGrid.SelectedItem = null;
         }
     }
     private void EditUserButton_Click(object sender, RoutedEventArgs e)
     {
-        var user = ((FrameworkElement)e.OriginalSource).DataContext as User;
+        var user = dataGrid.SelectedItem as User;
 
         if (user != null)
         {
@@ -84,11 +87,12 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
                 _libraryDataContext.Save<User>();
 
             dataGrid.Items.Refresh();
+            dataGrid.SelectedItem = null;
         }
     }
     private void DeleteUserButton_Click(object sender, RoutedEventArgs e)
     {
-        var user = ((FrameworkElement)e.OriginalSource).DataContext as User;
+        var user = dataGrid.SelectedItem as User;
         var debts = _libraryDataContext.UserRoomBookList.Find(x => x.User.Id == user.Id);
 
         if (debts != null)
@@ -106,15 +110,17 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
                 {
                     _libraryDataContext.Remove(user);
                     _libraryDataContext.Save<User>();
-                    dataGrid.Items.Refresh();
+                    dataGrid.Items.Refresh();                    
                 }
             }
         }
+        dataGrid.SelectedItem = null;
     }
     private void AddUserButton_Click(object sender, RoutedEventArgs e)
     {
         WindowNewUser windowNewUser = new();
         windowNewUser.ShowDialog();
         dataGrid.Items.Refresh();
+        dataGrid.SelectedItem = null;
     }
 }

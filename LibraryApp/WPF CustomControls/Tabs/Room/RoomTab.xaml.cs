@@ -1,8 +1,9 @@
-﻿using System.Xml.Serialization;
-using LibraryApp.Controllers;
+﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
 using LibraryApp.WPF_CustomControls.Tabs;
 using LibraryApp.WPF_CustomControls.Tabs.Room.Book_adding;
+using System.Globalization;
+using System.Xml.Serialization;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -39,7 +40,7 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
 
     private void AddBookButton_Click(object sender, RoutedEventArgs e)
     {
-        var room = ((FrameworkElement)e.OriginalSource).DataContext as Room;
+        var room = dataGrid.SelectedItem as Room;
 
         if (room != null)
         {
@@ -47,10 +48,11 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
             addBook.ShowDialog();
             dataGrid.Items.Refresh();
         }
+        dataGrid.SelectedItem = null;
     }
     private void ShowBooksButton_Click(object sender, RoutedEventArgs e)
     {
-        var room = ((FrameworkElement)e.OriginalSource).DataContext as Room;
+        var room = dataGrid.SelectedItem as Room;
 
         if (room != null)
         {
@@ -58,11 +60,12 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
             windowBookCount.ShowDialog();
             CalculateNumOfBooks();
             dataGrid.Items.Refresh();
+            dataGrid.SelectedItem = null;
         }
     }
     private void EditRoomButton_Click(object sender, RoutedEventArgs e)
     {
-        var room = ((FrameworkElement)e.OriginalSource).DataContext as Room;
+        var room = dataGrid.SelectedItem as Room;
 
         if (room != null)
         {
@@ -74,10 +77,11 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
 
             dataGrid.Items.Refresh();
         }
+        dataGrid.SelectedItem = null;
     }
     private void DeleteRoomButton_Click(object sender, RoutedEventArgs e) // ?сделать чтобы так же удалялись все RoomBook в текущей Room?
     {
-        var room = ((FrameworkElement)e.OriginalSource).DataContext as Room;
+        var room = dataGrid.SelectedItem as Room;
 
         if (room != null)
         {
@@ -91,11 +95,13 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
                 dataGrid.Items.Refresh();
             }
         }
+        dataGrid.SelectedItem = null;
     }
     private void AddRoomButton_Click(object sender, RoutedEventArgs e)
     {
         WindowNewRoom windowNewRoom = new();
         windowNewRoom.ShowDialog();
         dataGrid.Items.Refresh();
+        dataGrid.SelectedItem = null;
     }
 }

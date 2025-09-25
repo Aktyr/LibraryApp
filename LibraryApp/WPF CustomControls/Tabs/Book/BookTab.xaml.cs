@@ -1,6 +1,7 @@
 ﻿using LibraryApp.Controllers;
 using LibraryApp.Models;
 using LibraryApp.WPF_CustomControls.Tabs;
+using System.Globalization;
 
 namespace LibraryApp.WPF_CustomControls;
 
@@ -19,7 +20,7 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     private void EditBookButton_Click(object sender, RoutedEventArgs e)
     {
-        var book = ((FrameworkElement)e.OriginalSource).DataContext as Book;
+        var book = dataGrid.SelectedItem as Book;
 
         if (book != null)
         {
@@ -30,11 +31,12 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
                 _libraryDataContext.Save<Book>();
 
             dataGrid.Items.Refresh();
+            dataGrid.SelectedItem = null;
         }
     }
     private void DeleteBookButton_Click(object sender, RoutedEventArgs e)
     {
-        var book = ((FrameworkElement)e.OriginalSource).DataContext as Book;
+        var book = dataGrid.SelectedItem as Book;
 
         if (book != null)
         {
@@ -52,11 +54,13 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
                 dataGrid.Items.Refresh();
             }
         }
+        dataGrid.SelectedItem = null;
     }
     private void AddBookButton_Click(object sender, RoutedEventArgs e)
     {
         WindowNewBook windowNewBook = new();
         windowNewBook.ShowDialog();
         dataGrid.Items.Refresh();
+        dataGrid.SelectedItem = null;
     }
 }

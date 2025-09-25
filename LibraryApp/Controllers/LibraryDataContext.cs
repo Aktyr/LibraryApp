@@ -30,21 +30,21 @@ public class LibraryDataContext
         this.UserRoomBookInteractor = InteractorFactory.Create<UserRoomBook>();
     }
     #region Легаси
-    // Старые DataContext'ы - УСТАРЕЛИ
-    [Obsolete("Используйте BookInteractor вместо BookDataContext")]
-    public BookDataContext BookDataContext { get; set; }
+    //// Старые DataContext'ы - УСТАРЕЛИ
+    //[Obsolete("Используйте BookInteractor вместо BookDataContext")]
+    //public BookDataContext BookDataContext { get; set; }
 
-    [Obsolete("Используйте RoomInteractor вместо RoomDataContext")]
-    public RoomDataContext RoomDataContext { get; set; }
+    //[Obsolete("Используйте RoomInteractor вместо RoomDataContext")]
+    //public RoomDataContext RoomDataContext { get; set; }
 
-    [Obsolete("Используйте UserInteractor вместо UserDataContext")]
-    public UserDataContext UserDataContext { get; set; }
+    //[Obsolete("Используйте UserInteractor вместо UserDataContext")]
+    //public UserDataContext UserDataContext { get; set; }
 
-    [Obsolete("Используйте RoomBookInteractor вместо RoomBookDataContext")]
-    public RoomBookDataContext RoomBookDataContext { get; set; }
+    //[Obsolete("Используйте RoomBookInteractor вместо RoomBookDataContext")]
+    //public RoomBookDataContext RoomBookDataContext { get; set; }
 
-    [Obsolete("Используйте UserRoomBookInteractor вместо UserRoomBookDataContext")]
-    public UserRoomBookDataContext UserRoomBookDataContext { get; set; }
+    //[Obsolete("Используйте UserRoomBookInteractor вместо UserRoomBookDataContext")]
+    //public UserRoomBookDataContext UserRoomBookDataContext { get; set; }
     #endregion
     // Новые универсальные интеракторы
     public FileInteractor<Book> BookInteractor { get; set; }

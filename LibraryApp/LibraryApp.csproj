@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="WPF CustomControls\Tabs\.Universal\ConfirmDeletion.xaml.cs" />
     <Compile Include="WPF CustomControls\Tabs\.Universal\EditObject.xaml.cs" />
+    <Compile Include="WPF CustomControls\Tabs\.Universal\NullToFalseConverter .cs" />
   </ItemGroup>
 
   <ItemGroup>
