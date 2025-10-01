@@ -1,5 +1,6 @@
-﻿using LibraryApp.Models;
-using LibraryApp.Controllers;
+﻿using LibraryApp.Controllers;
+using LibraryApp.Models;
+using LibraryApp.WPF_CustomControls;
 using System.Collections.ObjectModel;
 using System.Media;
 
@@ -10,7 +11,7 @@ namespace LibraryApp;
 /// </summary>
 public partial class WindowNewRoom : Window, INotifyPropertyChanged
 {
-    private Room _room = new("Имя комнаты");
+    private Room _room = new("");
     public Room Room
     {
         get => _room;
@@ -46,6 +47,17 @@ public partial class WindowNewRoom : Window, INotifyPropertyChanged
     private void Button_AddRoom(object sender, RoutedEventArgs e)
     {
         ObservableCollection<Room> a;
+
+        // Сбросить подсветку перед проверкой
+        FieldHighlighter.ResetAllFields(RoomNameTextBox);
+
+        // Проверка обязательных полей
+        if (string.IsNullOrWhiteSpace(Room.Name))
+        {
+            FieldHighlighter.HighlightField(RoomNameTextBox);
+            MessageBox.Show("Введите имя комнаты", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         var selectedItems = dataGrid.SelectedItems;
 

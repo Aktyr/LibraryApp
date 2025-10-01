@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp"
+        xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"        
         mc:Ignorable="d"
         Title="WindowNewRoom" Height="300" Width="700">
     <Grid>
@@ -17,7 +18,9 @@
             <TextBlock TextWrapping="Wrap" 
                        Text="Сreate new Room"/>
 
-            <TextBox Text="{Binding Room.Name, ElementName=This, Mode=TwoWay}"
+            <TextBox x:Name="RoomNameTextBox"
+                     Text="{Binding Room.Name, ElementName=This, Mode=TwoWay}"
+                     behaviors:TextBoxHelper.Placeholder="Имя комнаты*"
                      HorizontalAlignment="Stretch" Margin="0,5" />
 
             <Button  HorizontalAlignment="Stretch"  Margin="0,5" Padding="0, 5"  

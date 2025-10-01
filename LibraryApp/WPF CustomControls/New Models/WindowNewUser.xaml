@@ -4,21 +4,30 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp"
+        xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"
         mc:Ignorable="d"
-        Title="WindowNewUser" Height="300" Width="200">
+        Title="WindowNewUser" Height="300" Width="250">
     <Grid>
         <StackPanel Margin="20,20,20,20" Visibility="Visible" >
 
-            <TextBox Text="{Binding User.LastName, ElementName=This, Mode=TwoWay}"
+            <TextBox x:Name="LastNameTextBox"
+                     Text="{Binding User.LastName, ElementName=This, Mode=TwoWay}"
+                     behaviors:TextBoxHelper.Placeholder="Фамилия*" 
                      HorizontalAlignment="Stretch" Margin="0,5" />
 
-            <TextBox Text="{Binding User.FirstName, ElementName=This, Mode=TwoWay}"
+            <TextBox x:Name="FirstNameTextBox"
+                     Text="{Binding User.FirstName, ElementName=This, Mode=TwoWay}"
+                     behaviors:TextBoxHelper.Placeholder="Имя*" 
                      HorizontalAlignment="Stretch" Margin="0,5"  />
 
-            <TextBox Text="{Binding User.MiddleName, ElementName=This, Mode=TwoWay}"
+            <TextBox x:Name="MiddleNameTextBox"
+                     Text="{Binding User.MiddleName, ElementName=This, Mode=TwoWay}"
+                     behaviors:TextBoxHelper.Placeholder="Отчество" 
                      HorizontalAlignment="Stretch" Margin="0,5"  />
 
-            <TextBox Text="{Binding User.ContactInfo, ElementName=This, Mode=TwoWay}"
+            <TextBox x:Name="ContactInfoTextBox" 
+                     Text="{Binding User.ContactInfo, ElementName=This, Mode=TwoWay}"
+                     behaviors:TextBoxHelper.Placeholder="Контактная информация*" 
                      HorizontalAlignment="Stretch" Margin="0,5" 
                      TextWrapping="Wrap"   />
 

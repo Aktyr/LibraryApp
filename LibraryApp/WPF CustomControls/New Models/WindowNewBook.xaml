@@ -4,22 +4,34 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp"
+        xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"
         mc:Ignorable="d"
         Title="WindowNewBook" Height="300" Width="200">
-    <Grid>   
+
+
+    <Grid>
 
         <StackPanel Margin="20,20,20,20" Visibility="Visible" >
 
-            <TextBox Text="{Binding Book.Name, ElementName=This, Mode=TwoWay}"
+            <TextBox x:Name="NameTextBox"
+                     Text="{Binding Book.Name, ElementName=This, Mode=TwoWay}"
+                     behaviors:TextBoxHelper.Placeholder="Название*"
                      HorizontalAlignment="Stretch" Margin="0,5"  />
 
-            <TextBox Text="{Binding Book.Autor, ElementName=This, Mode=TwoWay}"
+            <TextBox x:Name="AuthorTextBox"
+                     Text="{Binding Book.Autor, ElementName=This, Mode=TwoWay}"
+                     behaviors:TextBoxHelper.Placeholder="Автор*"
                      HorizontalAlignment="Stretch" Margin="0,5"  />
-            
-            <TextBox Text="{Binding Book.Year, ElementName=This, Mode=TwoWay}"
-                     HorizontalAlignment="Stretch" Margin="0,5"   />
 
-            <TextBox Text="{Binding Book.Publisher, ElementName=This, Mode=TwoWay}"
+            <TextBox x:Name="YearTextBox"
+                     Text="{Binding Book.Year, ElementName=This, Mode=TwoWay}"
+                     behaviors:TextBoxHelper.Placeholder="Год*"
+                     HorizontalAlignment="Stretch" Margin="0,5" 
+                     TextChanged="YearTextBox_TextChanged"  />
+
+            <TextBox x:Name="PublisherTextBox"
+                     Text="{Binding Book.Publisher, ElementName=This, Mode=TwoWay}"
+                     behaviors:TextBoxHelper.Placeholder="Издатель*"
                      HorizontalAlignment="Stretch" Margin="0,5"  />
 
             <Button  HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"
