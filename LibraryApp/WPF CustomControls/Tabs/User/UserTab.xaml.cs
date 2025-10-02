@@ -21,33 +21,44 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
     }
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    // сделать что-то с отображением данных только в днях
+    // Расчёт и сортировка дней сдачи
     private void CalculateNearestReturnDates()
     {
         foreach (var user in _libraryDataContext.UserList)
         {
-            // Находим все записи о выданных книгах для текущего пользователя
-            var userBooks = _libraryDataContext.UserRoomBookList
+            var nearestDeadline = _libraryDataContext.UserRoomBookList
                 .Where(x => x.User.Id == user.Id && x.Deadline != null)
-                .ToList();
-
-            // Находим ближайшую дату сдачи
-            var nearestReturnDate = userBooks
                 .OrderBy(x => x.Deadline)
                 .FirstOrDefault()?.Deadline;
 
-            if (nearestReturnDate != null)
+            if (nearestDeadline != null)
             {
-                user.NearestReturnDate = nearestReturnDate - DateTime.Today;
+                var days = (nearestDeadline.Value - DateTime.Today).Days;
+
+                if (days < 0)
+                {
+                    user.ReturnDateInfo = $"Просрочено на {Math.Abs(days)} дн.";
+                    user.SortDays = days; // отрицательные числа (просрочка)
+                }
+                else if (days == 0)
+                {
+                    user.ReturnDateInfo = "Сдать сегодня";
+                    user.SortDays = 0;
+                }
+                else
+                {
+                    user.ReturnDateInfo = $"Осталось {days} дн.";
+                    user.SortDays = days; // положительные числа
+                }
             }
             else
             {
-                user.NearestReturnDate = null; // если нет долгов
+                user.ReturnDateInfo = "Нет долгов";
+                user.SortDays = int.MaxValue; // нет долгов в конце
             }
         }
-
-
     }
+    #region Кнопки
     private void AddBookButton_Click(object sender, RoutedEventArgs e)
     {
         var user = dataGrid.SelectedItem as User;
@@ -123,4 +134,5 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
         dataGrid.Items.Refresh();
         dataGrid.SelectedItem = null;
     }
+    #endregion
 }

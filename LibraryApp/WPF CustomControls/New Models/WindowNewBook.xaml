@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:LibraryApp"
         xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"
         mc:Ignorable="d"
-        Title="WindowNewBook" Height="300" Width="200">
+        Title="WindowNewBook" Height="300" Width="250">
 
 
     <Grid>

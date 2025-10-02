@@ -18,6 +18,8 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
         this.DataContext = _libraryDataContext;
     }
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    #region Кнопки
     private void EditBookButton_Click(object sender, RoutedEventArgs e)
     {
         var book = dataGrid.SelectedItem as Book;
@@ -63,4 +65,5 @@ public partial class BookTab : UserControl, INotifyPropertyChanged
         dataGrid.Items.Refresh();
         dataGrid.SelectedItem = null;
     }
+    #endregion
 }

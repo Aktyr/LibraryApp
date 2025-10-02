@@ -30,17 +30,9 @@
 
                 <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" />
                 <DataGridTextColumn Header="Контактная информация" Binding="{Binding ContactInfo}" />
-
-                <DataGridTextColumn Header="Ближайшая сдача">
-                    <DataGridTextColumn.Binding>
-                        <Binding Path="NearestReturnDate">
-                            <Binding.TargetNullValue>
-                                Нет долгов
-                            </Binding.TargetNullValue>
-                        </Binding>
-                    </DataGridTextColumn.Binding>
-                </DataGridTextColumn>
-
+                <DataGridTextColumn Header="Ближайшая сдача" SortMemberPath="SortDays" 
+                                    Binding="{Binding ReturnDateInfo}"/>
+                
             </DataGrid.Columns>
         </DataGrid>
 

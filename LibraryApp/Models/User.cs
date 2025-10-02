@@ -8,6 +8,9 @@ public class User(string lastName, string firstName, string middleName, string c
     public string MiddleName { get; set; } = middleName; //Отчетво
     public string ContactInfo { get; set; } = contactInfo;
     [JsonIgnore] public TimeSpan? NearestReturnDate { get; set; }
+    [JsonIgnore] public string ReturnDateInfo { get; set; } = "Нет долгов"; // Для отображения
+    [JsonIgnore] public int SortDays { get; set; } = int.MaxValue; // MaxValue = нет долгов
+
 
     public override string ToString() => $"{lastName} {firstName} {middleName}, {contactInfo}";
     [JsonIgnore] public string FullName => $"{lastName} {firstName} {middleName}";

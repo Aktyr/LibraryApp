@@ -37,7 +37,7 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
             }
         }
     }
-
+    #region Кнопки
     private void AddBookButton_Click(object sender, RoutedEventArgs e)
     {
         var room = dataGrid.SelectedItem as Room;
@@ -115,4 +115,5 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
         dataGrid.Items.Refresh();
         dataGrid.SelectedItem = null;
     }
+    #endregion
 }
