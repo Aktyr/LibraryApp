@@ -108,7 +108,8 @@ public partial class UserTab : UserControl, INotifyPropertyChanged
 
         if (debts != null)
         {
-            MessageBox.Show($"Удаление невозможно. У пользователя \n{user.FullName} \nЕщё есть долги");
+            MessageBox.Show($"Удаление невозможно. У пользователя \n{user.FullName} \nЕщё есть долги",
+                "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         else
         {

@@ -37,7 +37,8 @@ public partial class WindowBookLogic : Window, INotifyPropertyChanged
         else
         {
             SystemSounds.Beep.Play();
-            MessageBox.Show("Введите целое число");
+            MessageBox.Show("Введите целое число",
+                "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

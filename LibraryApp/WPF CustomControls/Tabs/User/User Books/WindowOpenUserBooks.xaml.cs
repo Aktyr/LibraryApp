@@ -64,7 +64,8 @@ namespace LibraryApp.WPF_CustomControls.Show_Issues.User_Books
             // Проверяем, что у UserRoomBook есть ссылка на RoomBook
             if (userRoomBook.RoomBook == null)
             {
-                MessageBox.Show("Ошибка: отсутствует информация о связи с комнатой и книгой");
+                MessageBox.Show("Ошибка: отсутствует информация о связи с комнатой и книгой", 
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -74,7 +75,8 @@ namespace LibraryApp.WPF_CustomControls.Show_Issues.User_Books
 
             if (book == null || room == null)
             {
-                MessageBox.Show("Ошибка: не найдена информация о книге или комнате");
+                MessageBox.Show("Ошибка: не найдена информация о книге или комнате",
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -86,7 +88,8 @@ namespace LibraryApp.WPF_CustomControls.Show_Issues.User_Books
 
             if (roomBook == null)
             {
-                MessageBox.Show("Ошибка: книга не найдена в указанной комнате");
+                MessageBox.Show("Ошибка: книга не найдена в указанной комнате",
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

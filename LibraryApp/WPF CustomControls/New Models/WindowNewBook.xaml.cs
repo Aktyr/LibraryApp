@@ -73,10 +73,17 @@ public partial class WindowNewBook : Window, INotifyPropertyChanged
             hasError = true;
         }
 
-        if (Book.Year <= 0)
+        if (Book.Year <= 0 || Book.Year > 9999)
         {
             FieldHighlighter.HighlightField(YearTextBox);
-            errors.Add("Год (должен быть положительным числом)");
+            errors.Add("Год (Должен быть положительным числом)");
+            hasError = true;
+        }
+
+        if (Book.Year > 9999)
+        {
+            FieldHighlighter.HighlightField(YearTextBox);
+            errors.Add("Год (Не может превышать 9999)");
             hasError = true;
         }
 

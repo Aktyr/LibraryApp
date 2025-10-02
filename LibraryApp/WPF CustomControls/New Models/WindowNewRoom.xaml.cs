@@ -55,7 +55,8 @@ public partial class WindowNewRoom : Window, INotifyPropertyChanged
         if (string.IsNullOrWhiteSpace(Room.Name))
         {
             FieldHighlighter.HighlightField(RoomNameTextBox);
-            MessageBox.Show("Введите имя комнаты", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Введите имя комнаты", 
+                "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -86,7 +87,8 @@ public partial class WindowNewRoom : Window, INotifyPropertyChanged
         else
         {
             SystemSounds.Beep.Play();
-            MessageBox.Show("Выберите хотя бы одну книгу в комнату");
+            MessageBox.Show("Выберите хотя бы одну книгу в комнату",
+                "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
     }

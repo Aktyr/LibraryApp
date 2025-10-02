@@ -58,7 +58,8 @@ public partial class AddBook : Window, INotifyPropertyChanged
             {
                 string message = $"Книги добавлены успешно\nНо следующие дубликаты проигнорированы:\n\n{string.Join("\n", ErrorMessage)}";
                 SystemSounds.Beep.Play();
-                MessageBox.Show(message);
+                MessageBox.Show(message,
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             else
             {
@@ -70,7 +71,8 @@ public partial class AddBook : Window, INotifyPropertyChanged
         else
         {
             SystemSounds.Beep.Play();
-            MessageBox.Show("Выберите хотя бы одну книгу в комнату");
+            MessageBox.Show("Выберите хотя бы одну книгу в комнату",
+                "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

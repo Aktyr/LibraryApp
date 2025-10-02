@@ -101,7 +101,8 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
                 {
                     string message = $"Выдача отменена\nСледующие книги не были выданы, так как отсутствуют на складе:\n\n{string.Join("\n", ErrorMessage)}";
                     SystemSounds.Beep.Play();
-                    MessageBox.Show(message);
+                    MessageBox.Show(message, 
+                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
                 else
                 {
@@ -118,13 +119,15 @@ public partial class WindowBookIssuing : Window, INotifyPropertyChanged
             else
             {
                 SystemSounds.Beep.Play();
-                MessageBox.Show("Выберите дату");
+                MessageBox.Show("Выберите дату",
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
         else
         {
             SystemSounds.Beep.Play();
-            MessageBox.Show("Выберите хотя бы одну книгу");
+            MessageBox.Show("Выберите хотя бы одну книгу",
+                "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }
