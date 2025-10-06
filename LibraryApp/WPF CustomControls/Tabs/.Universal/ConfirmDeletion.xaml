@@ -4,6 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp.WPF_CustomControls"
+        xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"
+        
+        behaviors:WindowBehaviors.CloseOnEsc="True"
+
         mc:Ignorable="d"
         Title="ConfirmDeletion" Height="200" Width="300">
     <Grid>
@@ -12,10 +16,13 @@
             <TextBlock  TextWrapping="Wrap" Text="Подтвердите удаление, введите УДАЛИТЬ"/>
 
             <TextBox HorizontalAlignment="Stretch" Margin="0,5" 
-                     x:Name="Confirm_TextBlock"/>
+                     x:Name="Confirm_TextBlock"
+                     behaviors:FieldNavigationHelper.AutoFocus="True"
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"/>
 
             <Button HorizontalAlignment="Stretch" Padding="0, 5" 
-                    Content="Подтвердить удаление" Click="Button_Click" />
+                    Content="Подтвердить удаление" Click="Button_Click" 
+                    IsDefault="True"/>
         </StackPanel>
 
     </Grid>

@@ -4,6 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp.WPF_CustomControls.Tabs.Room.Book_adding"
+        xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"
+        
+        behaviors:WindowBehaviors.CloseOnEsc="True"
+
         mc:Ignorable="d"
         Title="AddBook" Height="450" Width="800">
 
@@ -32,7 +36,8 @@
         </DataGrid>
 
         <Button  HorizontalAlignment="Stretch" Padding="20, 5" Grid.Row="1  " Margin="0,5"
-         Content="Добавить" Click="Button_Click"/>
+                 Content="Добавить" Click="Button_Click"
+                 IsDefault="True"/>
 
     </Grid>
 </Window>

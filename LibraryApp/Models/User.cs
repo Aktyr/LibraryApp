@@ -12,7 +12,7 @@ public class User(string lastName, string firstName, string middleName, string c
     [JsonIgnore] public int SortDays { get; set; } = int.MaxValue; // MaxValue = нет долгов
 
 
-    public override string ToString() => $"{lastName} {firstName} {middleName}, {contactInfo}";
-    [JsonIgnore] public string FullName => $"{lastName} {firstName} {middleName}";
+    public override string ToString() => $"{LastName} {FirstName} {MiddleName}, {ContactInfo}";
+    [JsonIgnore] public string FullName => $"{LastName} {FirstName} {MiddleName}";
 
 }

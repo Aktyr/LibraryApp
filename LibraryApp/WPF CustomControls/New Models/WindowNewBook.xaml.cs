@@ -33,16 +33,6 @@ public partial class WindowNewBook : Window, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    // Убирает ноль в поле с годом
-    private void YearTextBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (YearTextBox.Text == "0")
-            YearTextBox.Text = "";
-
-        FieldHighlighter.ResetFieldColor(YearTextBox);
-    }
-
-
     private void Button_Click(object sender, RoutedEventArgs e)
     {
         // Сбросить все подсветки перед проверкой

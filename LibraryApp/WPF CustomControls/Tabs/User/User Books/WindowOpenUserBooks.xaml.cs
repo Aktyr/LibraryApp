@@ -101,7 +101,7 @@ namespace LibraryApp.WPF_CustomControls.Show_Issues.User_Books
 
             // проверку на случайное списывание
 
-            MessageBox.Show("Книга успешно списана у пользователя");
+            MessageBox.Show($"Книга успешно списана у пользователя \n\n{book} ");
         }
     }
 }

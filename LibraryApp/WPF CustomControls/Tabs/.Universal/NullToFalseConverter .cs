@@ -2,6 +2,8 @@
 
 namespace LibraryApp.WPF_CustomControls;
 
+
+// Этот класс делает кнопки кликабельными/не кликабельными
 public class NullToFalseConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

@@ -5,6 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp"
         xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"
+        
+        behaviors:WindowBehaviors.CloseOnEsc="True"
+
         mc:Ignorable="d"
         Title="WindowNewBook" Height="300" Width="250">
 
@@ -16,26 +19,33 @@
             <TextBox x:Name="NameTextBox"
                      Text="{Binding Book.Name, ElementName=This, Mode=TwoWay}"
                      behaviors:TextBoxHelper.Placeholder="Название*"
-                     HorizontalAlignment="Stretch" Margin="0,5"  />
+                     HorizontalAlignment="Stretch" Margin="0,5"  
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"
+                     behaviors:FieldNavigationHelper.AutoFocus="True"/>
 
             <TextBox x:Name="AuthorTextBox"
                      Text="{Binding Book.Autor, ElementName=This, Mode=TwoWay}"
                      behaviors:TextBoxHelper.Placeholder="Автор*"
-                     HorizontalAlignment="Stretch" Margin="0,5"  />
-
+                     HorizontalAlignment="Stretch" Margin="0,5"
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"/>
+            
             <TextBox x:Name="YearTextBox"
                      Text="{Binding Book.Year, ElementName=This, Mode=TwoWay}"
                      behaviors:TextBoxHelper.Placeholder="Год*"
                      HorizontalAlignment="Stretch" Margin="0,5" 
-                     TextChanged="YearTextBox_TextChanged"  />
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"
+                     behaviors:TextBoxHandlers.ClearZero="True"
+                     behaviors:TextBoxHandlers.NumbersOnly="True"/>
 
             <TextBox x:Name="PublisherTextBox"
                      Text="{Binding Book.Publisher, ElementName=This, Mode=TwoWay}"
                      behaviors:TextBoxHelper.Placeholder="Издатель*"
-                     HorizontalAlignment="Stretch" Margin="0,5"  />
+                     HorizontalAlignment="Stretch" Margin="0,5"  
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"/>
 
             <Button  HorizontalAlignment="Stretch" Margin="0,5" Padding="0, 5"
-                     Content="Add" Click="Button_Click"/>
+                     Content="Add" Click="Button_Click"
+                     IsDefault="True"/>
 
         </StackPanel>
 

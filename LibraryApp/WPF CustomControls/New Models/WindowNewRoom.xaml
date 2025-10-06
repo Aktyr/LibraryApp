@@ -4,7 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp"
-        xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"        
+        xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"
+        
+        behaviors:WindowBehaviors.CloseOnEsc="True"
+        
         mc:Ignorable="d"
         Title="WindowNewRoom" Height="300" Width="700">
     <Grid>
@@ -21,10 +24,14 @@
             <TextBox x:Name="RoomNameTextBox"
                      Text="{Binding Room.Name, ElementName=This, Mode=TwoWay}"
                      behaviors:TextBoxHelper.Placeholder="Имя комнаты*"
-                     HorizontalAlignment="Stretch" Margin="0,5" />
+                     HorizontalAlignment="Stretch" Margin="0,5" 
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"
+                     behaviors:FieldNavigationHelper.AutoFocus="True"
+/>
 
             <Button  HorizontalAlignment="Stretch"  Margin="0,5" Padding="0, 5"  
-                     Content="Add Room" Click="Button_AddRoom"/>
+                     Content="Add Room" Click="Button_AddRoom"
+                     IsDefault="True"/>
 
         </StackPanel>
 

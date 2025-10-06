@@ -4,16 +4,26 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp.WPF_CustomControls"
+        xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"        
+
+        behaviors:WindowBehaviors.CloseOnEsc="True"
+
         mc:Ignorable="d"
         Title="WindowBookLogic" Height="200" Width="300">
     <Grid>
         <StackPanel Grid.Column="0" Margin="20,20,20,20" Visibility="Visible" >
 
             <TextBox HorizontalAlignment="Stretch"  Margin="0,5" Padding="0, 5"
-                     Text="0" x:Name="TextBox_Input" />
-
+                     Text="0" x:Name="TextBox_Input" 
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"
+                     behaviors:FieldNavigationHelper.AutoFocus="True"
+                     behaviors:TextBoxHandlers.ClearZero="True"
+                     behaviors:TextBoxHandlers.NumbersOnly="True"
+                     behaviors:TextBoxHelper.Placeholder="Сколько добавить книг*"/>
+            
             <Button HorizontalAlignment="Stretch"  Margin="0, 5" Padding="0, 5"
-                Content="Add Book" Click="Button_AddBook"/>
+                    Content="Add Book" Click="Button_AddBook"
+                    IsDefault="True"/>
 
 
 

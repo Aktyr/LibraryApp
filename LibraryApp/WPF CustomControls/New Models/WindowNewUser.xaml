@@ -5,6 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LibraryApp"
         xmlns:behaviors="clr-namespace:LibraryApp.WPF_CustomControls"
+        
+        behaviors:WindowBehaviors.CloseOnEsc="True"
+
         mc:Ignorable="d"
         Title="WindowNewUser" Height="300" Width="250">
     <Grid>
@@ -13,26 +16,35 @@
             <TextBox x:Name="LastNameTextBox"
                      Text="{Binding User.LastName, ElementName=This, Mode=TwoWay}"
                      behaviors:TextBoxHelper.Placeholder="Фамилия*" 
-                     HorizontalAlignment="Stretch" Margin="0,5" />
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"
+                     behaviors:FieldNavigationHelper.AutoFocus="True"
+                     HorizontalAlignment="Stretch" Margin="0,5"/>
 
             <TextBox x:Name="FirstNameTextBox"
                      Text="{Binding User.FirstName, ElementName=This, Mode=TwoWay}"
                      behaviors:TextBoxHelper.Placeholder="Имя*" 
-                     HorizontalAlignment="Stretch" Margin="0,5"  />
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"
+                     HorizontalAlignment="Stretch" Margin="0,5"/>
 
             <TextBox x:Name="MiddleNameTextBox"
                      Text="{Binding User.MiddleName, ElementName=This, Mode=TwoWay}"
                      behaviors:TextBoxHelper.Placeholder="Отчество" 
-                     HorizontalAlignment="Stretch" Margin="0,5"  />
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"
+                     HorizontalAlignment="Stretch" Margin="0,5"/>
 
             <TextBox x:Name="ContactInfoTextBox" 
                      Text="{Binding User.ContactInfo, ElementName=This, Mode=TwoWay}"
                      behaviors:TextBoxHelper.Placeholder="Контактная информация*" 
+                     behaviors:FieldNavigationHelper.EnableEnterNavigation="True"
                      HorizontalAlignment="Stretch" Margin="0,5" 
-                     TextWrapping="Wrap"   />
+                     TextWrapping="Wrap"/>
 
-            <Button  HorizontalAlignment="Stretch"  Margin="0, 5"  Padding="0, 5" 
-                     Content="Add" Click="Button_Click"/>
+            <Button x:Name="AddButton" 
+                    HorizontalAlignment="Stretch"  Margin="0, 5"  Padding="0, 5" 
+                    Content="Add" Click="Button_Click"
+                    IsDefault="True"/>
+
+
 
         </StackPanel>
 
