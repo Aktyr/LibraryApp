@@ -231,46 +231,55 @@ public class FieldNavigationHelper
     #endregion
 }
 
-
-// Данная функция перебивает фокус!
-public static class ButtonFocusKeeper
+public static class SmartButtonFocus
 {
-    public static bool GetKeepFocus(DependencyObject obj)
+    public static bool GetSmartFocus(DependencyObject obj)
     {
-        return (bool)obj.GetValue(KeepFocusProperty);
+        return (bool)obj.GetValue(SmartFocusProperty);
     }
 
-    public static void SetKeepFocus(DependencyObject obj, bool value)
+    public static void SetSmartFocus(DependencyObject obj, bool value)
     {
-        obj.SetValue(KeepFocusProperty, value);
+        obj.SetValue(SmartFocusProperty, value);
     }
 
-    public static readonly DependencyProperty KeepFocusProperty =
-        DependencyProperty.RegisterAttached("KeepFocus", typeof(bool),
-        typeof(ButtonFocusKeeper), new PropertyMetadata(false, OnKeepFocusChanged));
+    public static readonly DependencyProperty SmartFocusProperty =
+        DependencyProperty.RegisterAttached("SmartFocus", typeof(bool),
+        typeof(SmartButtonFocus), new PropertyMetadata(false, OnSmartFocusChanged));
 
-    private static void OnKeepFocusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnSmartFocusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is Button button && (bool)e.NewValue)
         {
-            // Простой таймер как запасной вариант
-            var timer = new System.Windows.Threading.DispatcherTimer();
-            timer.Interval = TimeSpan.FromMilliseconds(50);
-            timer.Tick += (s, args) =>
+            bool isFirstEnter = false;
+
+            // Обработчик для всего окна
+            if (Window.GetWindow(button) is Window window)
             {
-                if (!button.IsFocused)
+                window.PreviewKeyDown += (s, e) =>
                 {
-                    button.Focus();
-                }
-            };
+                    if (e.Key == Key.Enter && button.IsEnabled)
+                    {
+                        if (!button.IsFocused && !isFirstEnter)
+                        {
+                            // Первый Enter - фокус
+                            button.Focus();
+                            isFirstEnter = true;
+                            e.Handled = true;
+                        }
+                        else if (button.IsFocused && isFirstEnter)
+                        {
+                            // Второй Enter - клик
+                            isFirstEnter = false;
+                            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            e.Handled = true;
+                        }
+                    }
+                };
+            }
 
-            button.Loaded += (s, args) =>
-            {
-                button.Focus();
-                timer.Start();
-            };
-
-            button.Unloaded += (s, args) => timer.Stop();
+            // Сброс при потере фокуса
+            button.LostFocus += (s, e) => isFirstEnter = false;
         }
     }
 }

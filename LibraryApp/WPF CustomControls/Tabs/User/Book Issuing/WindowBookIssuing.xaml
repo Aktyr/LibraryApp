@@ -49,10 +49,9 @@
 
             <Button x:Name="issueButton" 
                     Margin="0,5" Padding="0, 5" VerticalAlignment="Bottom"
-                    Content="Выдать" Click="Button_Click" 
+                    Content="[Enter] Выдать" Click="Button_Click" 
                     IsEnabled="{Binding ElementName=dataGrid, Path=SelectedItem, Converter={StaticResource NullToFalseConverter}}"
-                    IsDefault="True"
-                    behaviors:ButtonFocusKeeper.KeepFocus="True"/> <!--Данная функция перебивает фокус-->
+                    behaviors:SmartButtonFocus.SmartFocus="True"/>
         </StackPanel>
 
 
