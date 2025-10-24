@@ -32,11 +32,9 @@
                 <DataGridTextColumn Header="Контактная информация" Binding="{Binding ContactInfo}" />
                 <DataGridTextColumn Header="Ближайшая сдача" SortMemberPath="SortDays" 
                                     Binding="{Binding ReturnDateInfo}"/>
-                
+
             </DataGrid.Columns>
         </DataGrid>
-
-        <StackPanel Grid.Row="1" Margin="5,5,5,5"/>
 
         <StackPanel Grid.Column="1" Grid.Row="1" Margin="-10,20,5,5">
 

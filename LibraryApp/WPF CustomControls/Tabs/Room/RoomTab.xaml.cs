@@ -38,18 +38,18 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
         }
     }
     #region Кнопки
-    private void AddBookButton_Click(object sender, RoutedEventArgs e)
-    {
-        var room = dataGrid.SelectedItem as Room;
+    //private void AddBookButton_Click(object sender, RoutedEventArgs e)
+    //{
+    //    var room = dataGrid.SelectedItem as Room;
 
-        if (room != null)
-        {
-            AddBook addBook = new(room);
-            addBook.ShowDialog();
-            dataGrid.Items.Refresh();
-        }
-        dataGrid.SelectedItem = null;
-    }
+    //    if (room != null)
+    //    {
+    //        AddBook addBook = new(room);
+    //        addBook.ShowDialog();
+    //        dataGrid.Items.Refresh();
+    //    }
+    //    dataGrid.SelectedItem = null;
+    //}
     private void ShowBooksButton_Click(object sender, RoutedEventArgs e)
     {
         var room = dataGrid.SelectedItem as Room;
@@ -79,7 +79,7 @@ public partial class RoomTab : UserControl, INotifyPropertyChanged
         }
         dataGrid.SelectedItem = null;
     }
-    private void DeleteRoomButton_Click(object sender, RoutedEventArgs e) // ?сделать чтобы так же удалялись все RoomBook в текущей Room?
+    private void DeleteRoomButton_Click(object sender, RoutedEventArgs e)
     {
         var room = dataGrid.SelectedItem as Room;
 
