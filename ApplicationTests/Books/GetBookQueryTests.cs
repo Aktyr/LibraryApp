@@ -1,6 +1,4 @@
-﻿using LibApp.Application.Entities.Books.Read;
-
-namespace LibApp.ApplicationTests.Books;
+﻿namespace LibApp.ApplicationTests.Books;
 
 [TestFixture]
 public class GetBookQueryTests
@@ -59,11 +57,9 @@ public class GetBookQueryTests
         var getBookQuery = new GetBookQuery(bookRepo);
         var getBookRequest = new GetBookRequest { Id = nonExistingId };
 
-        // Act
-        var result = await getBookQuery.Execute(getBookRequest, CancellationToken.None);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+            await getBookQuery.Execute(getBookRequest, CancellationToken.None));
     }
 
     [Test]
@@ -74,10 +70,8 @@ public class GetBookQueryTests
         var getBookQuery = new GetBookQuery(bookRepo);
         var getBookRequest = new GetBookRequest { Id = new Id(Guid.NewGuid()) };
 
-        // Act
-        var result = await getBookQuery.Execute(getBookRequest, CancellationToken.None);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+            await getBookQuery.Execute(getBookRequest, CancellationToken.None));
     }
 }

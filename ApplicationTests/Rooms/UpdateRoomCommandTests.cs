@@ -45,39 +45,7 @@ public class UpdateRoomCommandTests
     }
 
     [Test]
-    public async Task Execute_UpdateNonExistingRoom_ReturnsError()
-    {
-        // Arrange
-        var roomRepo = new FakeRepository<Room>();
-        await roomRepo.AddRange(new Bogus.Faker<Room>()
-                                   .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
-                                   .RuleFor(x => x.Name, f => f.Name.FirstName())
-                                   .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
-                                   .Generate(10)
-                                   .AsEnumerable());
-
-        var nonExistingId = new Id(Guid.NewGuid());
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo);
-        var updateRoomRequest = new UpdateRoomRequest
-        {
-            Id = nonExistingId,
-            Name = "New Room Name",
-            RoomBooks = new List<RoomBook>()
-        };
-
-        // Act
-        var response = await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None);
-
-        // Assert
-        Assert.Multiple(() =>
-        {
-            Assert.That(response.Status, Is.EqualTo("Error"));
-            Assert.That(response.Message, Is.EqualTo("Room not found."));
-        });
-    }
-
-    [Test]
-    public async Task Execute_UpdateRoomInEmptyRepository_ReturnsError()
+    public async Task Execute_UpdateNonExistingRoom_ThrowsException()
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
@@ -85,19 +53,32 @@ public class UpdateRoomCommandTests
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
-            Name = "New Room Name",
+            Name = "Room Name",
             RoomBooks = new List<RoomBook>()
         };
 
-        // Act
-        var response = await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None);
+        // Act & Assert
+        Assert.ThrowsAsync<RoomNotFoundException>(async () =>
+            await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None));
+    }
 
-        // Assert
-        Assert.Multiple(() =>
+
+    [Test]
+    public async Task Execute_UpdateRoomInEmptyRepository_ThrowsException()
+    {
+        // Arrange
+        var roomRepo = new FakeRepository<Room>();
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo);
+        var updateRoomRequest = new UpdateRoomRequest
         {
-            Assert.That(response.Status, Is.EqualTo("Error"));
-            Assert.That(response.Message, Is.EqualTo("Room not found."));
-        });
+            Id = new Id(Guid.NewGuid()),
+            Name = "Room Name",
+            RoomBooks = new List<RoomBook>()
+        };
+
+        // Act & Assert
+        Assert.ThrowsAsync<RoomNotFoundException>(async () =>
+            await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None));
     }
 
     [Test]

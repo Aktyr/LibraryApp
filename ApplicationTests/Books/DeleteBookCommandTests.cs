@@ -37,7 +37,7 @@ public class DeleteBookCommandTests
     }
 
     [Test]
-    public async Task Execute_DeleteNonExistingBook_ReturnsError()
+    public async Task Execute_DeleteNonExistingBook_ThrowsBookNotFoundException()
     {
         // Arrange
         var bookRepo = new FakeRepository<Book>();
@@ -55,34 +55,23 @@ public class DeleteBookCommandTests
         var deleteBookCommand = new DeleteBookCommand(bookRepo);
         var deleteBookRequest = new DeleteBookRequest { Id = nonExistingId };
 
-        // Act
-        var response = await deleteBookCommand.Execute(deleteBookRequest, CancellationToken.None);
-
-        // Assert
-        Assert.Multiple(() =>
-        {
-            Assert.That(response.Status, Is.EqualTo("Error"));
-            Assert.That(response.Message, Is.EqualTo("Book not found."));
-        });
+        // Act & Assert
+        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+            await deleteBookCommand.Execute(deleteBookRequest, CancellationToken.None));
     }
 
+
     [Test]
-    public async Task Execute_DeleteBookFromEmptyRepository_ReturnsError()
+    public async Task Execute_DeleteBookFromEmptyRepository_ThrowsBookNotFoundException()
     {
         // Arrange
         var bookRepo = new FakeRepository<Book>();
         var deleteBookCommand = new DeleteBookCommand(bookRepo);
         var deleteBookRequest = new DeleteBookRequest { Id = new Id(Guid.NewGuid()) };
 
-        // Act
-        var response = await deleteBookCommand.Execute(deleteBookRequest, CancellationToken.None);
-
-        // Assert
-        Assert.Multiple(() =>
-        {
-            Assert.That(response.Status, Is.EqualTo("Error"));
-            Assert.That(response.Message, Is.EqualTo("Book not found."));
-        });
+        // Act & Assert
+        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+            await deleteBookCommand.Execute(deleteBookRequest, CancellationToken.None));
     }
 
     [Test]

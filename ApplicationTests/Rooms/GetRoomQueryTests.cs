@@ -34,7 +34,7 @@ public class GetRoomQueryTests
     }
 
     [Test]
-    public async Task Execute_GetNonExistingRoom_ReturnsNull()
+    public async Task Execute_GetNonExistingRoom_ThrowsException()
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
@@ -49,26 +49,22 @@ public class GetRoomQueryTests
         var getRoomQuery = new GetRoomQuery(roomRepo);
         var getRoomRequest = new GetRoomRequest { Id = nonExistingId };
 
-        // Act
-        var result = await getRoomQuery.Execute(getRoomRequest, CancellationToken.None);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        Assert.ThrowsAsync<RoomNotFoundException>(() =>
+            getRoomQuery.Execute(getRoomRequest, CancellationToken.None));
     }
 
     [Test]
-    public async Task Execute_GetRoomFromEmptyRepository_ReturnsNull()
+    public async Task Execute_GetRoomFromEmptyRepository_ThrowsException()
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
         var getRoomQuery = new GetRoomQuery(roomRepo);
         var getRoomRequest = new GetRoomRequest { Id = new Id(Guid.NewGuid()) };
 
-        // Act
-        var result = await getRoomQuery.Execute(getRoomRequest, CancellationToken.None);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        Assert.ThrowsAsync<RoomNotFoundException>(() =>
+            getRoomQuery.Execute(getRoomRequest, CancellationToken.None));
     }
 
     [Test]
@@ -116,7 +112,6 @@ public class GetRoomQueryTests
             Assert.That(result, Is.Not.Null);
             Assert.That(result!.Room.RoomBooks.Count, Is.EqualTo(2));
 
-            // Используем First() и Last() вместо индексации
             var firstBook = result.Room.RoomBooks.First();
             var lastBook = result.Room.RoomBooks.Last();
 
@@ -140,15 +135,15 @@ public class GetRoomQueryTests
             Id = roomId,
             Name = "Test Room",
             RoomBooks = new List<RoomBook>
+        {
+            new RoomBook
             {
-                new RoomBook
-                {
-                    Id = new Id(Guid.NewGuid()),
-                    BookCount = 5,
-                    Book = new Book { Id = bookId, Title = "Test Book" }
-                    // Room не устанавливаем - это может быть null
-                }
+                Id = new Id(Guid.NewGuid()),
+                BookCount = 5,
+                Book = new Book { Id = bookId, Title = "Test Book" }
+                // Room не устанавливаем - это может быть null
             }
+        }
         };
         await roomRepo.AddRange([room]);
 
@@ -165,8 +160,10 @@ public class GetRoomQueryTests
             Assert.That(result!.Room.RoomBooks.Count, Is.EqualTo(1));
             Assert.That(result.Room.RoomBooks.First().BookCount, Is.EqualTo(5));
             // RoomId может быть Guid.Empty если rb.Room == null
+            Assert.That(result.Room.RoomBooks.First().RoomId, Is.EqualTo(Guid.Empty));
         });
     }
+
 
     [Test]
     public async Task Execute_GetRoomWithoutBooks_ReturnsEmptyRoomBooksCollection()

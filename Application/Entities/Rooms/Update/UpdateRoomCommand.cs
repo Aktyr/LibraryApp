@@ -9,9 +9,7 @@ public class UpdateRoomCommand(IRepository<Room> roomRepo)
         var room = rooms.FirstOrDefault();
 
         if (room == null)
-        {
-            return new BasicCreateDeleteResponse("Error", "Room not found.");
-        }
+            throw new RoomNotFoundException();
 
         room.Name = request.Name;
         room.RoomBooks = request.RoomBooks;

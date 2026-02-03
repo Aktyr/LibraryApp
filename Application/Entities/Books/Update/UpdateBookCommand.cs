@@ -9,8 +9,7 @@ public class UpdateBookCommand(IRepository<Book> bookRepo)
         var book = books.FirstOrDefault();
 
         if (book == null)
-            return new BasicCreateDeleteResponse("Error", "Book not found.");
-
+            throw new BookNotFoundException();
 
         book.Title = request.Title;
         book.Author = request.Author;

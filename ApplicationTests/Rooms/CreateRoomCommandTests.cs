@@ -49,9 +49,8 @@ public class CreateRoomCommandTests
         var createRoomCommand = new CreateRoomCommand(roomRepo);
         var createRoomRequest = new CreateRoomRequest(roomName, []);
 
-        // Act
-        // Assert
-        Assert.ThrowsAsync<RoomNotFoundException>(() => createRoomCommand.Execute(createRoomRequest, CancellationToken.None));
-
+        // Act & Assert
+        Assert.ThrowsAsync<RoomExistsException>(() =>
+            createRoomCommand.Execute(createRoomRequest, CancellationToken.None));
     }
 }

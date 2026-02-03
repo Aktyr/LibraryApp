@@ -53,10 +53,12 @@ public class UpdateBookCommandTests
     }
 
     [Test]
-    public async Task Execute_UpdateNonExistingBook_ReturnsError()
+    public async Task Execute_UpdateNonExistingBook_ThrowsBookNotFoundException()
     {
         // Arrange
         var bookRepo = new FakeRepository<Book>();
+
+        // Создаем 10 тестовых книг
         await bookRepo.AddRange(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -67,52 +69,41 @@ public class UpdateBookCommandTests
                                    .Generate(10)
                                    .AsEnumerable());
 
-        var nonExistingId = new Id(Guid.NewGuid());
         var updateBookCommand = new UpdateBookCommand(bookRepo);
         var updateBookRequest = new UpdateBookRequest
         {
-            Id = nonExistingId,
-            Title = "New Title",
-            Author = "New Author",
+            Id = new Id(Guid.NewGuid()), // ID, которого нет в репозитории
+            Title = "Title",
+            Author = "Author",
             Year = 2023,
-            Publisher = "New Publisher"
+            Publisher = "Publisher"
         };
 
-        // Act
-        var response = await updateBookCommand.Execute(updateBookRequest, CancellationToken.None);
-
-        // Assert
-        Assert.Multiple(() =>
-        {
-            Assert.That(response.Status, Is.EqualTo("Error"));
-            Assert.That(response.Message, Is.EqualTo("Book not found."));
-        });
+        // Act & Assert
+        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+            await updateBookCommand.Execute(updateBookRequest, CancellationToken.None));
     }
 
     [Test]
-    public async Task Execute_UpdateBookInEmptyRepository_ReturnsError()
+    public async Task Execute_UpdateBookInEmptyRepository_ThrowsBookNotFoundException()
     {
         // Arrange
         var bookRepo = new FakeRepository<Book>();
+        // Не добавляем книги - репозиторий пустой
+
         var updateBookCommand = new UpdateBookCommand(bookRepo);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = new Id(Guid.NewGuid()),
-            Title = "New Title",
-            Author = "New Author",
+            Title = "Title",
+            Author = "Author",
             Year = 2023,
-            Publisher = "New Publisher"
+            Publisher = "Publisher"
         };
 
-        // Act
-        var response = await updateBookCommand.Execute(updateBookRequest, CancellationToken.None);
-
-        // Assert
-        Assert.Multiple(() =>
-        {
-            Assert.That(response.Status, Is.EqualTo("Error"));
-            Assert.That(response.Message, Is.EqualTo("Book not found."));
-        });
+        // Act & Assert
+        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+            await updateBookCommand.Execute(updateBookRequest, CancellationToken.None));
     }
 
     [Test]

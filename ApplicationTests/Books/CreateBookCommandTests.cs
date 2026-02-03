@@ -68,14 +68,8 @@ public class CreateBookCommandTests
             Publisher = publisher
         };
 
-        // Act
-        var response = await createBookCommand.Execute(createBookRequest, CancellationToken.None);
-
-        // Assert
-        Assert.Multiple(() =>
-        {
-            Assert.That(response.Status, Is.EqualTo("Error"));
-            Assert.That(response.Message, Contains.Substring("Ошибки валидации"));
-        });
+        // Act & Assert
+        Assert.ThrowsAsync<ValidationException>(async () =>
+            await createBookCommand.Execute(createBookRequest, CancellationToken.None));
     }
 }
