@@ -8,10 +8,9 @@ public class GetRoomQuery(IRepository<Room> roomRepo)
         var rooms = await roomRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
         var room = rooms.FirstOrDefault();
 
-        if (room == null)
-        {
-            throw new Exception(); // todo fix!!!
-        }
+        if (room == null)        
+            throw new RoomNotFoundException(); // todo fix!!! -- Исправлено?
+        
 
         var roomDTO = new RoomDTO(
             room.Id.Value,

@@ -16,12 +16,10 @@ public class CreateBookCommand(IRepository<Book> bookRepo)
             Publisher = request.Publisher
         });
 
-        
-        if (!validationResult.IsValid)
-        {
-            return new BasicCreateDeleteResponse("Error",
-                $"Ошибки валидации: {string.Join(", ", validationResult.Errors)}");
-        }
+
+        if (!validationResult.IsValid)        
+            throw new ValidationException{ExceptionDetails = validationResult.Errors.ToList()};
+
         // Создание 
         var book = new Book
         {

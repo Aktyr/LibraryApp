@@ -9,9 +9,7 @@ public class GetBookQuery(IRepository<Book> bookRepo)
         var book = books.FirstOrDefault();
 
         if (book == null)
-        {
-            return null;
-        }
+            throw new BookNotFoundException();
 
         return new BooksResponse("Ok", [new(
             book.Id.Value,

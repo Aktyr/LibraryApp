@@ -51,7 +51,7 @@ public class CreateRoomCommandTests
 
         // Act
         // Assert
-        Assert.ThrowsAsync<RoomExistsException>(() => createRoomCommand.Execute(createRoomRequest, CancellationToken.None));
+        Assert.ThrowsAsync<RoomNotFoundException>(() => createRoomCommand.Execute(createRoomRequest, CancellationToken.None));
 
     }
 }

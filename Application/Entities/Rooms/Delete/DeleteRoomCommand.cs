@@ -9,9 +9,10 @@ public class DeleteRoomCommand(IRepository<Room> roomRepo)
         var room = rooms.FirstOrDefault();
 
         if (room == null)
-        {
-            return new BasicCreateDeleteResponse("Error", "Room not found.");
-        }
+            throw new RoomNotFoundException();
+
+        if (room.RoomBooks != null)
+            throw new RoomDeletionException("Not possible to delete a room containing books");
 
         await roomRepo.Remove(room, cancellationToken);
         return new BasicCreateDeleteResponse("Ok", "Room deleted successfully.");
