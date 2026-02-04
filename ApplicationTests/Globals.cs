@@ -13,6 +13,8 @@ global using LibApp.Application.Entities.Books.Update;
 global using LibApp.Application.Entities.Rooms.Delete;
 global using LibApp.Application.Entities.Rooms.Read;
 global using LibApp.Application.Entities.Rooms.Update;
+global using LibApp.Application.Validation;
+
 
 
 

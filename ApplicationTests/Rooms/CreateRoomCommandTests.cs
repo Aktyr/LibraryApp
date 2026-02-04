@@ -3,6 +3,8 @@
 [TestFixture]
 public class CreateRoomCommandTests
 {
+    private RoomValidatorAsync CreateRoomValidator() => new();
+
     [TestCase("newRoom")]
     [TestCase("newRoom32")]
     [TestCase("nqweewRoom")]
@@ -16,7 +18,9 @@ public class CreateRoomCommandTests
                                    .RuleFor(x => x.Name, f => f.Name.FirstName())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createRoomCommand = new CreateRoomCommand(roomRepo);
+
+
+        var createRoomCommand = new CreateRoomCommand(roomRepo, CreateRoomValidator());
         var createRoomRequest = new CreateRoomRequest(roomName, []);
 
         // Act
@@ -46,7 +50,7 @@ public class CreateRoomCommandTests
                                    .AsEnumerable());
         (await roomRepo.Get()).Last().Name = roomName;
 
-        var createRoomCommand = new CreateRoomCommand(roomRepo);
+        var createRoomCommand = new CreateRoomCommand(roomRepo, CreateRoomValidator());
         var createRoomRequest = new CreateRoomRequest(roomName, []);
 
         // Act & Assert

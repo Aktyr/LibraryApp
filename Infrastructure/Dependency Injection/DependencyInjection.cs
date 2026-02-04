@@ -1,4 +1,6 @@
-﻿namespace LibApp.Infrastructure.DependencyInjection;
+﻿using LibApp.Application.Validation;
+
+namespace LibApp.Infrastructure.DependencyInjection;
 
 // Пока не применяется 
 public static class DependencyInjection
@@ -17,6 +19,16 @@ public static class DependencyInjection
          services.AddScoped<Room>();
          services.AddScoped<RoomBook>();
          services.AddScoped<UserRoomBook>();
+
+        return services;
+    }
+    public static IServiceCollection AddValidation(this IServiceCollection services)
+    {
+        services.AddScoped<BookValidatorAsync>();
+        services.AddScoped<RoomValidatorAsync>();
+        services.AddScoped<RoomBookValidatorAsync>();
+        services.AddScoped<UserValidatorAsync>();
+        services.AddScoped<UserRoomBookValidatorAsync>();
 
         return services;
     }

@@ -1,8 +1,8 @@
 ﻿namespace LibApp.Application.Validation;
 
-public class UserRoomBookValidator
+public class UserRoomBookValidatorAsync
 {
-    public static ValidationResult Validate(UserRoomBook userRoomBook)
+    public async Task<ValidationResult> ValidateAsync(UserRoomBook userRoomBook, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -12,19 +12,17 @@ public class UserRoomBookValidator
         if (userRoomBook.Deadline.HasValue && userRoomBook.Deadline < userRoomBook.Issue)
             errors.Add("Срок возврата не может быть раньше даты выдачи");
 
-        //if (userRoomBook.Deadline.HasValue && userRoomBook.Deadline > DateTime.Now.AddYears(1))
-        //    errors.Add("Срок возврата не может быть более чем через год");
-
         if (userRoomBook.User == null)
             errors.Add("Пользователь обязателен");
 
         if (userRoomBook.RoomBook == null)
             errors.Add("Книга обязательна");
 
-        return new ValidationResult
-        {
-            IsValid = errors.Count == 0,
-            Errors = errors
-        };
+        //if (userRoomBook.Deadline.HasValue && userRoomBook.Deadline > DateTime.Now.AddYears(1))
+        //    errors.Add("Срок возврата не может быть более чем через год");
+
+        await Task.CompletedTask;
+
+        return new ValidationResult(!errors.Any(), errors);
     }
 }

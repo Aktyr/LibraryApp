@@ -1,8 +1,10 @@
-﻿namespace LibApp.Application.Validation;
+﻿using LibApp.Core.Entities;
 
-public class UserValidator
+namespace LibApp.Application.Validation;
+
+public class UserValidatorAsync
 {
-    public static ValidationResult Validate(User user)
+    public async Task<ValidationResult> ValidateAsync(User user, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -18,11 +20,8 @@ public class UserValidator
         //if (user.ContactInfo.Length > 200)
         //    errors.Add("Контактная информация не может превышать 200 символов");
 
+        await Task.CompletedTask;
 
-        return new ValidationResult
-        {
-            IsValid = errors.Count == 0,
-            Errors = errors
-        };
+        return new ValidationResult(!errors.Any(), errors);
     }
 }

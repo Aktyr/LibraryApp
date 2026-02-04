@@ -1,9 +1,10 @@
-﻿
-namespace LibApp.ApplicationTests.Books;
+﻿namespace LibApp.ApplicationTests.Books;
 
 [TestFixture]
 public class UpdateBookCommandTests
 {
+    private BookValidatorAsync CreateBookValidator() => new();
+
     [Test]
     public async Task Execute_UpdateExistingBookWithValidData_UpdatesBook()
     {
@@ -21,7 +22,7 @@ public class UpdateBookCommandTests
         await bookRepo.AddRange(books.AsEnumerable());
 
         var bookToUpdate = books[4];
-        var updateBookCommand = new UpdateBookCommand(bookRepo);
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = bookToUpdate.Id,
@@ -68,8 +69,7 @@ public class UpdateBookCommandTests
                                    .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-
-        var updateBookCommand = new UpdateBookCommand(bookRepo);
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = new Id(Guid.NewGuid()), // ID, которого нет в репозитории
@@ -91,7 +91,7 @@ public class UpdateBookCommandTests
         var bookRepo = new FakeRepository<Book>();
         // Не добавляем книги - репозиторий пустой
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo);
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = new Id(Guid.NewGuid()),
@@ -121,7 +121,7 @@ public class UpdateBookCommandTests
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo);
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -147,7 +147,7 @@ public class UpdateBookCommandTests
     }
 
     [Test]
-    public async Task Execute_UpdateBookWithEmptyFields_UpdatesWithEmptyValues()
+    public async Task Execute_UpdateBookWithEmptyFields_ThrowsValidationException()
     {
         // Arrange
         var bookRepo = new FakeRepository<Book>();
@@ -161,35 +161,24 @@ public class UpdateBookCommandTests
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo);
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
-            Title = "", // Пустые значения
+            Title = "",
             Author = "",
             Year = 0,
             Publisher = ""
         };
 
-        // Act
-        var response = await updateBookCommand.Execute(updateBookRequest, CancellationToken.None);
-
-        // Assert
-        Assert.Multiple(async () =>
-        {
-            Assert.That(response.Status, Is.EqualTo("Ok"));
-
-            var updatedBook = (await bookRepo.Get(x => x.Id.Value == book.Id.Value)).FirstOrDefault();
-            Assert.That(updatedBook, Is.Not.Null);
-            Assert.That(updatedBook!.Title, Is.EqualTo(""));
-            Assert.That(updatedBook.Author, Is.EqualTo(""));
-            Assert.That(updatedBook.Year, Is.EqualTo(0));
-            Assert.That(updatedBook.Publisher, Is.EqualTo(""));
-        });
+        // Act & Assert
+        Assert.ThrowsAsync<ValidationException>(async () =>
+            await updateBookCommand.Execute(updateBookRequest, CancellationToken.None));
     }
 
+
     [Test]
-    public async Task Execute_UpdateBookWithInvalidYear_StillUpdates()
+    public async Task Execute_UpdateBookWithInvalidYear_ThrowsValidationException()
     {
         // Arrange
         var bookRepo = new FakeRepository<Book>();
@@ -203,7 +192,7 @@ public class UpdateBookCommandTests
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo);
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -213,18 +202,50 @@ public class UpdateBookCommandTests
             Publisher = "Updated Publisher"
         };
 
+        // Act & Assert
+        Assert.ThrowsAsync<ValidationException>(async () =>
+            await updateBookCommand.Execute(updateBookRequest, CancellationToken.None));
+    }
+    [Test]
+    public async Task Execute_UpdateBookWithMinimalValidData_UpdatesSuccessfully()
+    {
+        // Arrange
+        var bookRepo = new FakeRepository<Book>();
+        var book = new Bogus.Faker<Book>()
+            .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
+            .RuleFor(x => x.Title, f => "Original Title")
+            .RuleFor(x => x.Author, f => "Original Author")
+            .RuleFor(x => x.Year, f => 2000)
+            .RuleFor(x => x.Publisher, f => "Original Publisher")
+            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .Generate();
+        await bookRepo.AddRange([book]);
+
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
+        var updateBookRequest = new UpdateBookRequest
+        {
+            Id = book.Id,
+            Title = "T",
+            Author = "A",
+            Year = 0,
+            Publisher = "P"
+        };
+
         // Act
         var response = await updateBookCommand.Execute(updateBookRequest, CancellationToken.None);
 
         // Assert
         Assert.Multiple(async () =>
         {
-            // Команда обновления не валидирует данные, только находит и обновляет
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
             var updatedBook = (await bookRepo.Get(x => x.Id.Value == book.Id.Value)).FirstOrDefault();
             Assert.That(updatedBook, Is.Not.Null);
-            Assert.That(updatedBook!.Year, Is.EqualTo(-100));
+            Assert.That(updatedBook!.Title, Is.EqualTo("T"));
+            Assert.That(updatedBook.Author, Is.EqualTo("A"));
+            Assert.That(updatedBook.Year, Is.EqualTo(0));
+            Assert.That(updatedBook.Publisher, Is.EqualTo("P"));
         });
     }
+
 }

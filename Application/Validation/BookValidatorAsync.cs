@@ -1,8 +1,8 @@
 ﻿namespace LibApp.Application.Validation;
 
-public class BookValidator
+public class BookValidatorAsync
 {
-    public static ValidationResult Validate(Book book)
+    public async Task<ValidationResult> ValidateAsync(Book book, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -18,10 +18,9 @@ public class BookValidator
         if (string.IsNullOrWhiteSpace(book.Publisher))
             errors.Add("Издательство обязательно");
 
-        return new ValidationResult
-        {
-            IsValid = errors.Count == 0,
-            Errors = errors
-        };
+        await Task.CompletedTask;
+
+        return new ValidationResult(!errors.Any(), errors);
     }
+
 }

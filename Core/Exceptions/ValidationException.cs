@@ -2,6 +2,6 @@
 
 public class ValidationException : Exception
 {
-    public override string Message => new([.. ExceptionDetails.SelectMany(x => $"{x}\n".ToCharArray())]);
+    public override string Message => string.Join("\n", ExceptionDetails);
     public virtual List<string> ExceptionDetails { get; set; } = [];
 }

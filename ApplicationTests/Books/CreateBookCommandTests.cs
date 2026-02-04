@@ -1,8 +1,10 @@
 ﻿namespace LibApp.ApplicationTests.Books;
 
-[TestFixture]
+[TestFixture]   
 public class CreateBookCommandTests
 {
+    private BookValidatorAsync CreateBookValidator() => new();
+
     [TestCase("Clean Code", "Robert C. Martin", 2008, "Prentice Hall")]
     [TestCase("Design Patterns", "Erich Gamma", 1994, "Addison-Wesley")]
     [TestCase("Refactoring", "Martin Fowler", 1999, "Addison-Wesley")]
@@ -20,7 +22,7 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createBookCommand = new CreateBookCommand(bookRepo);
+        var createBookCommand = new CreateBookCommand(bookRepo, CreateBookValidator());
         var createBookRequest = new CreateBookRequest
         {
             Title = title,
@@ -59,7 +61,7 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createBookCommand = new CreateBookCommand(bookRepo);
+        var createBookCommand = new CreateBookCommand(bookRepo, CreateBookValidator());
         var createBookRequest = new CreateBookRequest
         {
             Title = title,

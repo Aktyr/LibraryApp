@@ -3,6 +3,8 @@
 [TestFixture]
 public class UpdateRoomCommandTests
 {
+    private RoomValidatorAsync CreateRoomValidator() => new();
+
     [Test]
     public async Task Execute_UpdateExistingRoomWithNewName_UpdatesRoom()
     {
@@ -17,7 +19,7 @@ public class UpdateRoomCommandTests
         await roomRepo.AddRange(rooms.AsEnumerable());
 
         var roomToUpdate = rooms[4];
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo);
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomToUpdate.Id,
@@ -49,7 +51,7 @@ public class UpdateRoomCommandTests
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo);
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
@@ -68,7 +70,7 @@ public class UpdateRoomCommandTests
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo);
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
@@ -93,7 +95,7 @@ public class UpdateRoomCommandTests
             .Generate();
         await roomRepo.AddRange([room]);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo);
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
@@ -117,7 +119,7 @@ public class UpdateRoomCommandTests
     }
 
     [Test]
-    public async Task Execute_UpdateRoomWithEmptyName_UpdatesWithEmptyName()
+    public async Task Execute_UpdateRoomWithEmptyName_ThrowsValidationException()
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
@@ -128,26 +130,17 @@ public class UpdateRoomCommandTests
             .Generate();
         await roomRepo.AddRange([room]);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo);
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
-            Name = "", // Пустое имя
+            Name = "", // Пустое имя - невалидно
             RoomBooks = new List<RoomBook>()
         };
 
-        // Act
-        var response = await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None);
-
-        // Assert
-        Assert.Multiple(async () =>
-        {
-            Assert.That(response.Status, Is.EqualTo("Ok"));
-
-            var updatedRoom = (await roomRepo.Get(x => x.Id.Value == room.Id.Value)).FirstOrDefault();
-            Assert.That(updatedRoom, Is.Not.Null);
-            Assert.That(updatedRoom!.Name, Is.EqualTo(""));
-        });
+        // Act & Assert
+        Assert.ThrowsAsync<ValidationException>(async () =>
+            await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None));
     }
 
     [Test]
@@ -167,7 +160,7 @@ public class UpdateRoomCommandTests
         };
         await roomRepo.AddRange([room]);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo);
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomId,
@@ -230,7 +223,7 @@ public class UpdateRoomCommandTests
         };
         await roomRepo.AddRange([room]);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo);
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
@@ -279,7 +272,7 @@ public class UpdateRoomCommandTests
         await roomRepo.AddRange([room]);
 
         var newBookId = new Id(Guid.NewGuid());
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo);
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomId,
@@ -310,4 +303,37 @@ public class UpdateRoomCommandTests
             Assert.That(updatedRoom.RoomBooks.First().BookCount, Is.EqualTo(7));
         });
     }
+    public async Task Execute_UpdateRoomWithMinimalValidName_UpdatesSuccessfully()
+    {
+        // Arrange
+        var roomRepo = new FakeRepository<Room>();
+        var room = new Bogus.Faker<Room>()
+            .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
+            .RuleFor(x => x.Name, f => "Original Name")
+            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .Generate();
+        await roomRepo.AddRange([room]);
+
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
+        var updateRoomRequest = new UpdateRoomRequest
+        {
+            Id = room.Id,
+            Name = "R", // Минимально допустимое имя
+            RoomBooks = new List<RoomBook>()
+        };
+
+        // Act
+        var response = await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(async () =>
+        {
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+
+            var updatedRoom = (await roomRepo.Get(x => x.Id.Value == room.Id.Value)).FirstOrDefault();
+            Assert.That(updatedRoom, Is.Not.Null);
+            Assert.That(updatedRoom!.Name, Is.EqualTo("R"));
+        });
+    }
+
 }

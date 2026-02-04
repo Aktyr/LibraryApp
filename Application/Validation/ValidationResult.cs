@@ -1,7 +1,6 @@
 ﻿namespace LibApp.Application.Validation;
 
-public class ValidationResult
+public record ValidationResult(bool IsValid, List<string> Errors)
 {
-    public bool IsValid { get; set; }
-    public List<string> Errors { get; set; } = new();
+    public ValidationResult() : this(false, new List<string>()) { }
 }
