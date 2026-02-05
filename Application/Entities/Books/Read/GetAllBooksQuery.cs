@@ -14,6 +14,6 @@ public class GetAllBooksQuery(IRepository<Book> bookRepo)
             book.Publisher
         )).ToArray();
 
-        return new BooksResponse("Ok", bookDTOs);
+        return new BooksResponse("Ok", "List of books issued successfully.", bookDTOs);
     }
 }

@@ -22,6 +22,6 @@ public class GetRoomQuery(IRepository<Room> roomRepo)
         ))]
         );
 
-        return new RoomResponse("Ok", roomDTO);
+        return new RoomResponse("Ok", "Room issued successfully", roomDTO);
     }
 }

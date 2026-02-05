@@ -14,6 +14,6 @@ public class GetAllRooms(IRepository<Room> roomRepo)
             )
         ).ToArray();
 
-        return new RoomsListResponse("Ok", roomDTOs);
+        return new RoomsListResponse("Ok", "List of rooms issued successfully", roomDTOs);
     }
 }

@@ -1,7 +1,6 @@
 ﻿namespace LibApp.Core.Responses.Room;
 
-public record RoomResponse(string Status,
-                          RoomDTO Room) : IGetResponse;
+public record RoomResponse(string Status, string Message, RoomDTO Room) : IGetResponse;
 public record RoomDTO(Guid Id,
                       string Name,
                       ICollection<RoomBookDTO> RoomBooks);

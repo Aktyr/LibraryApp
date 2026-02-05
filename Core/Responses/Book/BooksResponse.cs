@@ -5,4 +5,4 @@ public record BookDTO(Guid Id,
                       string Author,
                       int Year,
                       string Publisher); // может нужно ICollection<RoomBook>
-public record BooksResponse(string Status, BookDTO[] Books) : IGetResponse;
+public record BooksResponse(string Status, string Message, BookDTO[] Books) : IGetResponse;

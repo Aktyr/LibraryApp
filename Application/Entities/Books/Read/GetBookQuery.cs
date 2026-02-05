@@ -11,7 +11,7 @@ public class GetBookQuery(IRepository<Book> bookRepo)
         if (book == null)
             throw new BookNotFoundException();
 
-        return new BooksResponse("Ok", [new(
+        return new BooksResponse("Ok", "Book issued successfully.", [new(
             book.Id.Value,
             book.Title,
             book.Author,
