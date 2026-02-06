@@ -1,9 +1,9 @@
-﻿namespace LibApp.Application.Entities.Rooms.Read;
+﻿namespace LibApp.Application.Entities.Rooms;
 
 public class GetAllRooms(IRepository<Room> roomRepo)
-    : IGetQuery<EmptyRequest, RoomsListResponse>
+    : IGetQuery<EmptyRequest, RoomResponse>
 {
-    public async Task<RoomsListResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
+    public async Task<RoomResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
     {
         var rooms = await roomRepo.GetWithoutTracking(cancellationToken);
         var roomDTOs = rooms.Select(room => 
@@ -14,6 +14,6 @@ public class GetAllRooms(IRepository<Room> roomRepo)
             )
         ).ToArray();
 
-        return new RoomsListResponse("Ok", "List of rooms issued successfully", roomDTOs);
+        return new RoomResponse("Ok", "List of rooms issued successfully", roomDTOs);
     }
 }

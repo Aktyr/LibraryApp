@@ -18,6 +18,13 @@ public class BookValidatorAsync
         if (string.IsNullOrWhiteSpace(book.Publisher))
             errors.Add("Издательство обязательно");
 
+        if (book.Title.Length > 100)
+            errors.Add("Название книги не может превышать 100 символов");
+
+        if (book.Author.Length > 100)
+            errors.Add("Имя Автора не может превышать 100 символов");
+
+
         await Task.CompletedTask;
 
         return new ValidationResult(!errors.Any(), errors);

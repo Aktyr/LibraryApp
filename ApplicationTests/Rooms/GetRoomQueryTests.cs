@@ -27,8 +27,8 @@ public class GetRoomQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.Room.Id, Is.EqualTo(targetRoom.Id.Value));
-            Assert.That(result.Room.Name, Is.EqualTo(targetRoom.Name));
+            Assert.That(result!.Room[0].Id, Is.EqualTo(targetRoom.Id.Value));
+            Assert.That(result.Room[0].Name, Is.EqualTo(targetRoom.Name));
             Assert.That(result.Status, Is.EqualTo("Ok"));
         });
     }
@@ -110,10 +110,10 @@ public class GetRoomQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.Room.RoomBooks.Count, Is.EqualTo(2));
+            Assert.That(result!.Room[0].RoomBook.Count, Is.EqualTo(2));
 
-            var firstBook = result.Room.RoomBooks.First();
-            var lastBook = result.Room.RoomBooks.Last();
+            var firstBook = result.Room[0].RoomBook.First();
+            var lastBook = result.Room[0].RoomBook.Last();
 
             Assert.That(firstBook.BookCount, Is.EqualTo(10));
             Assert.That(lastBook.BookCount, Is.EqualTo(15));
@@ -157,10 +157,10 @@ public class GetRoomQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.Room.RoomBooks.Count, Is.EqualTo(1));
-            Assert.That(result.Room.RoomBooks.First().BookCount, Is.EqualTo(5));
+            Assert.That(result!.Room[0].RoomBook.Count, Is.EqualTo(1));
+            Assert.That(result.Room[0].RoomBook.First().BookCount, Is.EqualTo(5));
             // RoomId может быть Guid.Empty если rb.Room == null
-            Assert.That(result.Room.RoomBooks.First().RoomId, Is.EqualTo(Guid.Empty));
+            Assert.That(result.Room[0].RoomBook.First().RoomId, Is.EqualTo(Guid.Empty));
         });
     }
 
@@ -188,8 +188,8 @@ public class GetRoomQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.Room.RoomBooks, Is.Not.Null);
-            Assert.That(result.Room.RoomBooks, Is.Empty);
+            Assert.That(result!.Room[0].RoomBook, Is.Not.Null);
+            Assert.That(result.Room[0].RoomBook, Is.Empty);
         });
     }
 }

@@ -1,9 +1,9 @@
-﻿namespace LibApp.Application.Entities.Books.Read;
+﻿namespace LibApp.Application.Entities.Books;
 
 public class GetBookQuery(IRepository<Book> bookRepo)
-    : IGetQuery<GetBookRequest, BooksResponse>
+    : IGetQuery<GetBookRequest, BookResponse>
 {
-    public async Task<BooksResponse?> Execute(GetBookRequest request, CancellationToken cancellationToken)
+    public async Task<BookResponse?> Execute(GetBookRequest request, CancellationToken cancellationToken)
     {
         var books = await bookRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
         var book = books.FirstOrDefault();
@@ -11,7 +11,7 @@ public class GetBookQuery(IRepository<Book> bookRepo)
         if (book == null)
             throw new BookNotFoundException();
 
-        return new BooksResponse("Ok", "Book issued successfully.", [new(
+        return new BookResponse("Ok", "Book issued successfully.", [new(
             book.Id.Value,
             book.Title,
             book.Author,

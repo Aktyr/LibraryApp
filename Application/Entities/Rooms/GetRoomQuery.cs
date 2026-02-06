@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Entities.Rooms.Read;
+﻿namespace LibApp.Application.Entities.Rooms;
 
 public class GetRoomQuery(IRepository<Room> roomRepo)
     : IGetQuery<GetRoomRequest, RoomResponse>
@@ -22,6 +22,6 @@ public class GetRoomQuery(IRepository<Room> roomRepo)
         ))]
         );
 
-        return new RoomResponse("Ok", "Room issued successfully", roomDTO);
+        return new RoomResponse("Ok", "Room issued successfully", [roomDTO]);
     }
 }

@@ -9,7 +9,7 @@ public class RoomValidatorAsync
         if (string.IsNullOrWhiteSpace(room.Name))
             errors.Add("Название комнаты обязательно");
 
-        if (room.Name?.Length > 100)
+        if (room.Name.Length > 100)
             errors.Add("Название комнаты не может превышать 100 символов");
 
         await Task.CompletedTask;

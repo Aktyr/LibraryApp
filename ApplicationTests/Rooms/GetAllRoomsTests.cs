@@ -26,12 +26,12 @@ public class GetAllRoomsTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Rooms, Has.Length.EqualTo(7));
+            Assert.That(result.Room, Has.Length.EqualTo(7));
 
             for (int i = 0; i < rooms.Count; i++)
             {
-                Assert.That(result.Rooms[i].Id, Is.EqualTo(rooms[i].Id.Value));
-                Assert.That(result.Rooms[i].Name, Is.EqualTo(rooms[i].Name));
+                Assert.That(result.Room[i].Id, Is.EqualTo(rooms[i].Id.Value));
+                Assert.That(result.Room[i].Name, Is.EqualTo(rooms[i].Name));
                 Assert.That(result.Status, Is.EqualTo("Ok"));
             }
         });
@@ -52,8 +52,8 @@ public class GetAllRoomsTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Rooms, Is.Not.Null);
-            Assert.That(result.Rooms, Has.Length.EqualTo(0));
+            Assert.That(result.Room, Is.Not.Null);
+            Assert.That(result.Room, Has.Length.EqualTo(0));
         });
     }
 
@@ -99,9 +99,9 @@ public class GetAllRoomsTests
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(result.Rooms, Has.Length.EqualTo(1));
+            Assert.That(result.Room, Has.Length.EqualTo(1));
             // GetAllRooms возвращает [] для RoomBooks (как указано в комментарии "todo maybe its too harsh")
-            Assert.That(result.Rooms[0].RoomBooks, Is.Empty);
+            Assert.That(result.Room[0].RoomBook, Is.Empty);
         });
     }
 
@@ -136,9 +136,9 @@ public class GetAllRoomsTests
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(result.Rooms, Has.Length.EqualTo(2));
-            Assert.That(result.Rooms[0].RoomBooks, Is.Empty);
-            Assert.That(result.Rooms[1].RoomBooks, Is.Empty);
+            Assert.That(result.Room, Has.Length.EqualTo(2));
+            Assert.That(result.Room[0].RoomBook, Is.Empty);
+            Assert.That(result.Room[1].RoomBook, Is.Empty);
         });
     }
 
@@ -164,7 +164,7 @@ public class GetAllRoomsTests
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(result.Rooms, Has.Length.EqualTo(3));
+            Assert.That(result.Room, Has.Length.EqualTo(3));
             // Косвенная проверка: если GetWithoutTracking работает, данные возвращаются
         });
     }

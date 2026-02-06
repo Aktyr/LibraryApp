@@ -29,15 +29,15 @@ public class GetAllBooksQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Books, Has.Length.EqualTo(7));
+            Assert.That(result.Book, Has.Length.EqualTo(7));
 
             for (int i = 0; i < books.Count; i++)
             {
-                Assert.That(result.Books[i].Id, Is.EqualTo(books[i].Id.Value));
-                Assert.That(result.Books[i].Title, Is.EqualTo(books[i].Title));
-                Assert.That(result.Books[i].Author, Is.EqualTo(books[i].Author));
-                Assert.That(result.Books[i].Year, Is.EqualTo(books[i].Year));
-                Assert.That(result.Books[i].Publisher, Is.EqualTo(books[i].Publisher));
+                Assert.That(result.Book[i].Id, Is.EqualTo(books[i].Id.Value));
+                Assert.That(result.Book[i].Title, Is.EqualTo(books[i].Title));
+                Assert.That(result.Book[i].Author, Is.EqualTo(books[i].Author));
+                Assert.That(result.Book[i].Year, Is.EqualTo(books[i].Year));
+                Assert.That(result.Book[i].Publisher, Is.EqualTo(books[i].Publisher));
             }
         });
     }
@@ -57,8 +57,8 @@ public class GetAllBooksQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Books, Is.Not.Null);
-            Assert.That(result.Books, Has.Length.EqualTo(0));
+            Assert.That(result.Book, Is.Not.Null);
+            Assert.That(result.Book, Has.Length.EqualTo(0));
         });
     }
 
@@ -87,9 +87,9 @@ public class GetAllBooksQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Books, Has.Length.EqualTo(1));
-            Assert.That(result.Books[0].Title, Is.EqualTo("Single Book"));
-            Assert.That(result.Books[0].Author, Is.EqualTo("Test Author"));
+            Assert.That(result.Book, Has.Length.EqualTo(1));
+            Assert.That(result.Book[0].Title, Is.EqualTo("Single Book"));
+            Assert.That(result.Book[0].Author, Is.EqualTo("Test Author"));
         });
     }
 
@@ -118,6 +118,6 @@ public class GetAllBooksQueryTests
         // Assert
         // Проверяем, что метод GetWithoutTracking был вызван (косвенно)
         // Если FakeRepository правильно реализует GetWithoutTracking, просто проверяем, что данные возвращаются корректно
-        Assert.That(result.Books, Has.Length.EqualTo(5));
+        Assert.That(result.Book, Has.Length.EqualTo(5));
     }
 }

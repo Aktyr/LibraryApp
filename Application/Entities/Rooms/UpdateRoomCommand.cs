@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Entities.Rooms.Update;
+﻿namespace LibApp.Application.Entities.Rooms;
 
 public class UpdateRoomCommand(IRepository<Room> roomRepo, RoomValidatorAsync roomValidator)
     : ICreateOrUpdateCommand<UpdateRoomRequest, BasicCreateDeleteResponse>

@@ -30,11 +30,11 @@ public class GetBookQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.Books[0].Id, Is.EqualTo(targetBook.Id.Value));
-            Assert.That(result.Books[0].Title, Is.EqualTo(targetBook.Title));
-            Assert.That(result.Books[0].Author, Is.EqualTo(targetBook.Author));
-            Assert.That(result.Books[0].Year, Is.EqualTo(targetBook.Year));
-            Assert.That(result.Books[0].Publisher, Is.EqualTo(targetBook.Publisher));
+            Assert.That(result!.Book[0].Id, Is.EqualTo(targetBook.Id.Value));
+            Assert.That(result.Book[0].Title, Is.EqualTo(targetBook.Title));
+            Assert.That(result.Book[0].Author, Is.EqualTo(targetBook.Author));
+            Assert.That(result.Book[0].Year, Is.EqualTo(targetBook.Year));
+            Assert.That(result.Book[0].Publisher, Is.EqualTo(targetBook.Publisher));
         });
     }
 

@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Entities.Rooms.Delete;
+﻿namespace LibApp.Application.Entities.Rooms;
 
 public class DeleteRoomCommand(IRepository<Room> roomRepo)
     : IDeleteCommand<DeleteRoomRequest, BasicCreateDeleteResponse>

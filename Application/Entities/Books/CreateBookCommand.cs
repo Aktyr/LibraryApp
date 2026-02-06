@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Entities.Books.Create;
+﻿namespace LibApp.Application.Entities.Books;
 
 public class CreateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bookValidator)
     : ICreateOrUpdateCommand<CreateBookRequest, BasicCreateDeleteResponse>

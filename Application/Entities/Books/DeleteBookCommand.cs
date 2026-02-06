@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Entities.Books.Delete;
+﻿namespace LibApp.Application.Entities.Books;
 
 public class DeleteBookCommand(IRepository<Book> bookRepo)
     : IDeleteCommand<DeleteBookRequest, BasicCreateDeleteResponse>
