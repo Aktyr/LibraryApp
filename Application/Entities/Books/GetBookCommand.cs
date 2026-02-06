@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Entities.Books;
 
-public class GetBookQuery(IRepository<Book> bookRepo)
+public class GetBookCommand(IRepository<Book> bookRepo)
     : IGetQuery<GetBookRequest, BookResponse>
 {
     public async Task<BookResponse?> Execute(GetBookRequest request, CancellationToken cancellationToken)

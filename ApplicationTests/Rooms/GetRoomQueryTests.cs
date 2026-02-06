@@ -17,7 +17,7 @@ public class GetRoomQueryTests
         await roomRepo.AddRange(rooms.AsEnumerable());
 
         var targetRoom = rooms[3];
-        var getRoomQuery = new GetRoomQuery(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo);
         var getRoomRequest = new GetRoomRequest { Id = targetRoom.Id };
 
         // Act
@@ -46,7 +46,7 @@ public class GetRoomQueryTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var getRoomQuery = new GetRoomQuery(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo);
         var getRoomRequest = new GetRoomRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -59,7 +59,7 @@ public class GetRoomQueryTests
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
-        var getRoomQuery = new GetRoomQuery(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo);
         var getRoomRequest = new GetRoomRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -100,7 +100,7 @@ public class GetRoomQueryTests
         };
         await roomRepo.AddRange([room]);
 
-        var getRoomQuery = new GetRoomQuery(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo);
         var getRoomRequest = new GetRoomRequest { Id = roomId };
 
         // Act
@@ -147,7 +147,7 @@ public class GetRoomQueryTests
         };
         await roomRepo.AddRange([room]);
 
-        var getRoomQuery = new GetRoomQuery(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo);
         var getRoomRequest = new GetRoomRequest { Id = roomId };
 
         // Act
@@ -178,7 +178,7 @@ public class GetRoomQueryTests
         };
         await roomRepo.AddRange([room]);
 
-        var getRoomQuery = new GetRoomQuery(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo);
         var getRoomRequest = new GetRoomRequest { Id = room.Id };
 
         // Act

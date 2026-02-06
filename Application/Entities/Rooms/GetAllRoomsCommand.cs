@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Entities.Rooms;
 
-public class GetAllRooms(IRepository<Room> roomRepo)
+public class GetAllRoomsCommand(IRepository<Room> roomRepo)
     : IGetQuery<EmptyRequest, RoomResponse>
 {
     public async Task<RoomResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)

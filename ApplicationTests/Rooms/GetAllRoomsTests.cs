@@ -16,7 +16,7 @@ public class GetAllRoomsTests
             .ToList();
         await roomRepo.AddRange(rooms.AsEnumerable());
 
-        var getAllRooms = new GetAllRooms(roomRepo);
+        var getAllRooms = new GetAllRoomsCommand(roomRepo);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -42,7 +42,7 @@ public class GetAllRoomsTests
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
-        var getAllRooms = new GetAllRooms(roomRepo);
+        var getAllRooms = new GetAllRoomsCommand(roomRepo);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -90,7 +90,7 @@ public class GetAllRoomsTests
         };
         await roomRepo.AddRange([room]);
 
-        var getAllRooms = new GetAllRooms(roomRepo);
+        var getAllRooms = new GetAllRoomsCommand(roomRepo);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -127,7 +127,7 @@ public class GetAllRoomsTests
         };
         await roomRepo.AddRange(rooms.AsEnumerable());
 
-        var getAllRooms = new GetAllRooms(roomRepo);
+        var getAllRooms = new GetAllRoomsCommand(roomRepo);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -155,7 +155,7 @@ public class GetAllRoomsTests
             .ToList();
         await roomRepo.AddRange(rooms.AsEnumerable());
 
-        var getAllRooms = new GetAllRooms(roomRepo);
+        var getAllRooms = new GetAllRoomsCommand(roomRepo);
         var emptyRequest = new EmptyRequest();
 
         // Act

@@ -20,7 +20,7 @@ public class GetBookQueryTests
         await bookRepo.AddRange(books.AsEnumerable());
 
         var targetBook = books[3];
-        var getBookQuery = new GetBookQuery(bookRepo);
+        var getBookQuery = new GetBookCommand(bookRepo);
         var getBookRequest = new GetBookRequest { Id = targetBook.Id };
 
         // Act
@@ -54,7 +54,7 @@ public class GetBookQueryTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var getBookQuery = new GetBookQuery(bookRepo);
+        var getBookQuery = new GetBookCommand(bookRepo);
         var getBookRequest = new GetBookRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -67,7 +67,7 @@ public class GetBookQueryTests
     {
         // Arrange
         var bookRepo = new FakeRepository<Book>();
-        var getBookQuery = new GetBookQuery(bookRepo);
+        var getBookQuery = new GetBookCommand(bookRepo);
         var getBookRequest = new GetBookRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert

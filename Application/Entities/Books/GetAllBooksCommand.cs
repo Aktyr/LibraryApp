@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Entities.Books;
 
-public class GetAllBooksQuery(IRepository<Book> bookRepo)
+public class GetAllBooksCommand(IRepository<Book> bookRepo)
     : IGetQuery<EmptyRequest, BookResponse>
 {
     public async Task<BookResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)

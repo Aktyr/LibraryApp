@@ -19,7 +19,7 @@ public class GetAllBooksQueryTests
             .ToList();
         await bookRepo.AddRange(books.AsEnumerable());
 
-        var getAllBooksQuery = new GetAllBooksQuery(bookRepo);
+        var getAllBooksQuery = new GetAllBooksCommand(bookRepo);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -47,7 +47,7 @@ public class GetAllBooksQueryTests
     {
         // Arrange
         var bookRepo = new FakeRepository<Book>();
-        var getAllBooksQuery = new GetAllBooksQuery(bookRepo);
+        var getAllBooksQuery = new GetAllBooksCommand(bookRepo);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -77,7 +77,7 @@ public class GetAllBooksQueryTests
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var getAllBooksQuery = new GetAllBooksQuery(bookRepo);
+        var getAllBooksQuery = new GetAllBooksCommand(bookRepo);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -109,7 +109,7 @@ public class GetAllBooksQueryTests
             .ToList();
         await bookRepo.AddRange(books.AsEnumerable());
 
-        var getAllBooksQuery = new GetAllBooksQuery(bookRepo);
+        var getAllBooksQuery = new GetAllBooksCommand(bookRepo);
         var emptyRequest = new EmptyRequest();
 
         // Act
