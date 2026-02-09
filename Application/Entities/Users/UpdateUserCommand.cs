@@ -1,26 +1,23 @@
 ﻿namespace LibApp.Application.Entities.Users;
 
-public class UpdateUserCommand(IRepository<User> userRepo, UserValidatorAsync userValidator)
+public class UpdateUserCommand(IRepository<User> userRepo, UserValidatorAsync userValidator, IConverter<User, UserDTO> userConverter)
     : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var users = await userRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
-        var user = users.FirstOrDefault();
+        var user = users.FirstOrDefault() ?? throw new UserNotFoundException();
 
-        if (user == null)
-            throw new UserNotFoundException();
+        // Временное DTO для валидации
+        var userDto = new UserDTO(request.Id.Value,
+                              request.LastName,
+                              request.FirstName,
+                              request.MiddleName,
+                              request.ContactInfo,
+                              user.NearestReturnTimeSpan, []);
 
-        // Создаем временного пользователя для валидации
-        var userForValidation = new User
-        {
-            LastName = request.LastName,
-            FirstName = request.FirstName,
-            MiddleName = request.MiddleName,
-            ContactInfo = request.ContactInfo
-        };
+        var userForValidation = userConverter.ToEntity(userDto);
 
-        // Асинхронная валидация
         var validationResult = await userValidator.ValidateAsync(userForValidation, cancellationToken);
 
         if (!validationResult.IsValid)

@@ -1,32 +1,27 @@
 ﻿namespace LibApp.Application.Entities.Users;
 
-public class CreateUserCommand(IRepository<User> userRepo, UserValidatorAsync userValidator)
+public class CreateUserCommand(IRepository<User> userRepo, UserValidatorAsync userValidator, IConverter<User, UserDTO> userConverter)
     : ICreateOrUpdateCommand<CreateUserRequest, BasicCreateDeleteResponse>
 {
     public async Task<BasicCreateDeleteResponse> Execute(CreateUserRequest request, CancellationToken cancellationToken)
     {
+        // Создание
+        var userDto = new UserDTO(Guid.NewGuid(),
+                              request.LastName,
+                              request.FirstName,
+                              request.MiddleName,
+                              request.ContactInfo,
+                              null, []);
+
+        var user = userConverter.ToEntity(userDto);
+
         // Валидация
-        var validationResult = await userValidator.ValidateAsync(new User
-        {
-            LastName = request.LastName,
-            FirstName = request.FirstName,
-            MiddleName = request.MiddleName,
-            ContactInfo = request.ContactInfo
-        }, cancellationToken);
+        var validationResult = await userValidator.ValidateAsync(user, cancellationToken);
 
         if (!validationResult.IsValid)
             throw new ValidationException { ExceptionDetails = validationResult.Errors };
 
-        // Создание 
-        var user = new User
-        {
-            LastName = request.LastName,
-            FirstName = request.FirstName,
-            MiddleName = request.MiddleName,
-            ContactInfo = request.ContactInfo,
-            RoomBooks = []
-        };
-
+        // Добавление
         await userRepo.Add(user, cancellationToken);
         return new BasicCreateDeleteResponse("Ok", "User is created.");
     }

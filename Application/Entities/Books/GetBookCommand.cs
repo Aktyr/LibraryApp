@@ -1,22 +1,14 @@
 ﻿namespace LibApp.Application.Entities.Books;
 
-public class GetBookCommand(IRepository<Book> bookRepo)
+public class GetBookCommand(IRepository<Book> bookRepo, IConverter<Book, BookDTO> bookConverter)
     : IGetQuery<GetBookRequest, BookResponse>
 {
     public async Task<BookResponse?> Execute(GetBookRequest request, CancellationToken cancellationToken)
     {
         var books = await bookRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
-        var book = books.FirstOrDefault();
+        var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
 
-        if (book == null)
-            throw new BookNotFoundException();
-
-        return new BookResponse("Ok", "Book issued successfully.", [new(
-            book.Id.Value,
-            book.Title,
-            book.Author,
-            book.Year,
-            book.Publisher)]
-        );
+        var bookDto = bookConverter.ToDto(book);
+        return new BookResponse("Ok", "Book issued successfully.", [bookDto]);
     }
 }

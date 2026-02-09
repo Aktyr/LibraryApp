@@ -11,6 +11,7 @@ global using LibApp.Core.Requests.Book;
 global using LibApp.Core.Requests.Room;
 global using LibApp.Core.Requests.User;
 global using LibApp.Core.Responses.User;
+global using LibApp.Core.DTO;
 
 
 

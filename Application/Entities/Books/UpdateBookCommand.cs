@@ -1,26 +1,21 @@
 ﻿namespace LibApp.Application.Entities.Books;
 
-public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bookValidator)
+public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bookValidator, IConverter<Book, BookDTO> bookConverter)
     : ICreateOrUpdateCommand<UpdateBookRequest, BasicCreateDeleteResponse>
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateBookRequest request, CancellationToken cancellationToken)
     {
         var books = await bookRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
-        var book = books.FirstOrDefault();
+        var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
 
-        if (book == null)
-            throw new BookNotFoundException();
+        // Временное DTO для валидации
+        var bookDTO = new BookDTO(Guid.NewGuid(),
+                                  request.Title,
+                                  request.Author,
+                                  request.Year,
+                                  request.Publisher);
+        var bookForValidation = bookConverter.ToEntity(bookDTO);   
 
-        // Создаем временную книгу для валидации
-        var bookForValidation = new Book
-        {
-            Title = request.Title,
-            Author = request.Author,
-            Year = request.Year,
-            Publisher = request.Publisher
-        };
-
-        // Асинхронная валидация
         var validationResult = await bookValidator.ValidateAsync(bookForValidation, cancellationToken);
 
         if (!validationResult.IsValid)

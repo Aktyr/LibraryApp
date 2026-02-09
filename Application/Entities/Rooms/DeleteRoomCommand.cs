@@ -6,11 +6,7 @@ public class DeleteRoomCommand(IRepository<Room> roomRepo)
     public async Task<BasicCreateDeleteResponse> Execute(DeleteRoomRequest request, CancellationToken cancellationToken)
     {
         var rooms = await roomRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
-        var room = rooms.FirstOrDefault();
-
-        if (room == null)
-            throw new RoomNotFoundException();
-
+        var room = rooms.FirstOrDefault() ?? throw new RoomNotFoundException();
         if (room.RoomBooks != null)
             throw new RoomDeletionException("Not possible to delete a room containing books");
 

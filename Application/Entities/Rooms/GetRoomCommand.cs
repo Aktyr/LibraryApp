@@ -1,27 +1,14 @@
 ﻿namespace LibApp.Application.Entities.Rooms;
 
-public class GetRoomCommand(IRepository<Room> roomRepo)
+public class GetRoomCommand(IRepository<Room> roomRepo, IConverter<Room, RoomDTO> RoomConverter)
     : IGetQuery<GetRoomRequest, RoomResponse>
 {
     public async Task<RoomResponse?> Execute(GetRoomRequest request, CancellationToken cancellationToken)
     {
         var rooms = await roomRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
-        var room = rooms.FirstOrDefault();
+        var room = rooms.FirstOrDefault() ?? throw new RoomNotFoundException();
 
-        if (room == null)
-            throw new RoomNotFoundException(); // todo fix!!! -- Исправлено?
-
-        var roomDTO = new RoomDTO(
-            room.Id.Value,
-            room.Name,
-            [.. room.RoomBooks.Select(rb => new RoomBookDTO(
-            rb.Id.Value,
-            rb.Room?.Id.Value ?? Guid.Empty, // Защита от null
-            rb.Book?.Id.Value ?? Guid.Empty,
-            rb.BookCount
-        ))]
-        );
-
+        var roomDTO = RoomConverter.ToDto(room);
         return new RoomResponse("Ok", "Room issued successfully", [roomDTO]);
     }
 }

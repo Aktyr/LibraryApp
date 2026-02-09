@@ -12,3 +12,5 @@ global using LibApp.Core.Responses;
 global using LibApp.Core.Responses.Book;
 global using LibApp.Core.Responses.Room;
 global using LibApp.Core.Responses.User;
+global using LibApp.Core.DTO;
+global using System.Collections;

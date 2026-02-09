@@ -1,19 +1,13 @@
 ﻿namespace LibApp.Application.Entities.Rooms;
 
-public class GetAllRoomsCommand(IRepository<Room> roomRepo)
+public class GetAllRoomsCommand(IRepository<Room> roomRepo, IConverter<Room, RoomDTO> RoomConverter)
     : IGetQuery<EmptyRequest, RoomResponse>
 {
     public async Task<RoomResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
     {
         var rooms = await roomRepo.GetWithoutTracking(cancellationToken);
-        var roomDTOs = rooms.Select(room => 
-            new RoomDTO( 
-                room.Id.Value,
-                room.Name,
-                []    // todo maybe its too harsh
-            )
-        ).ToArray();
+        var roomDTOs = rooms.Select(room => RoomConverter.ToDto(room)).ToArray();
 
-        return new RoomResponse("Ok", "List of rooms issued successfully", roomDTOs);
+        return new RoomResponse("Ok", "List of rooms issued successfully.", roomDTOs);
     }
 }
