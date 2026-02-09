@@ -6,12 +6,14 @@ namespace LibApp.ApplicationTests.Users;
 [TestFixture]
 public class GetAllUsersQueryTests
 {
+    private IConverter<User, UserDTO> Converter => new UserDTOConverter();
+
     [Test]
     public async Task Execute_GetAllUsersFromEmptyRepository_ReturnsEmptyArray()
     {
         // Arrange
         var userRepo = new FakeRepository<User>(); // Пустой репозиторий
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo);
+        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -45,7 +47,7 @@ public class GetAllUsersQueryTests
 
         await userRepo.AddRange(users.AsEnumerable());
 
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo);
+        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -89,7 +91,7 @@ public class GetAllUsersQueryTests
 
         await userRepo.AddRange([user1, user2]);
 
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo);
+        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -164,7 +166,7 @@ public class GetAllUsersQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo);
+        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -197,7 +199,7 @@ public class GetAllUsersQueryTests
 
         await userRepo.AddRange(users);
 
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo);
+        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -221,7 +223,7 @@ public class GetAllUsersQueryTests
         mockUserRepo.Setup(repo => repo.GetWithoutTracking(It.IsAny<CancellationToken>()))
                    .ReturnsAsync(users);
 
-        var getAllUsersQuery = new GetAllUsersQuery(mockUserRepo.Object);
+        var getAllUsersQuery = new GetAllUsersQuery(mockUserRepo.Object, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -243,7 +245,7 @@ public class GetAllUsersQueryTests
             .Generate(3)
             .AsEnumerable());
 
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo);
+        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
         var emptyRequest = new EmptyRequest();
         var cancellationToken = new CancellationToken();
 
@@ -260,7 +262,7 @@ public class GetAllUsersQueryTests
     {
         // Arrange
         var userRepo = new FakeRepository<User>();
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo);
+        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act

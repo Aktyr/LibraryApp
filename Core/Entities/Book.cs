@@ -12,7 +12,7 @@ public class Book : IEntity
     public string Author { get; set; } = string.Empty;
     public int Year { get; set; }
     public string Publisher { get; set; } = string.Empty;
-    public ICollection<RoomBook> RoomBooks { get; set; } = [];
+    public ICollection<RoomBook> RoomBook { get; set; } = [];
 
     public override string ToString() =>
         $"Название: {Title}\nАвтор: {Author}\nГод: {Year}";

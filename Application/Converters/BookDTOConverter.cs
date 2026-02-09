@@ -1,3 +1,3 @@
 ﻿namespace LibApp.Application.Converters;
 
-internal class BookDTOConverter : BaseConverter<Book, BookDTO> { }
+public class BookDTOConverter : BaseConverter<Book, BookDTO> { }

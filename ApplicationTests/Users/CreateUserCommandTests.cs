@@ -3,7 +3,9 @@
 [TestFixture]
 public class CreateUserCommandTests
 {
-    private UserValidatorAsync CreateUserValidator() => new();
+    private UserValidatorAsync CreateUserValidator => new();
+    private IConverter<User, UserDTO> Converter => new UserDTOConverter();
+
 
     [TestCase("Иванов", "Иван", "Иванович", "ivanov@example.com")]
     [TestCase("Петров", "Петр", "", "petrov@example.com")] // MiddleName может быть пустым
@@ -22,7 +24,7 @@ public class CreateUserCommandTests
                                    .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator());
+        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
         var createUserRequest = new CreateUserRequest
         {
             LastName = lastName,
@@ -67,7 +69,7 @@ public class CreateUserCommandTests
                                    .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator());
+        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
         var createUserRequest = new CreateUserRequest
         {
             LastName = lastName,
@@ -86,7 +88,7 @@ public class CreateUserCommandTests
     {
         // Arrange
         var userRepo = new FakeRepository<User>();
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator());
+        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
 
         // Генерируем слишком длинные строки (предполагая, что валидатор имеет ограничения по длине)
         var createUserRequest = new CreateUserRequest
@@ -118,7 +120,7 @@ public class CreateUserCommandTests
         };
         await userRepo.AddRange([existingUser]);
 
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator());
+        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
 
         // Пытаемся создать пользователя с такими же данными (допустимо, если нет ограничения на уникальность)
         var createUserRequest = new CreateUserRequest
@@ -146,7 +148,7 @@ public class CreateUserCommandTests
     {
         // Arrange
         var userRepo = new FakeRepository<User>();
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator());
+        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
         var createUserRequest = new CreateUserRequest
         {
             LastName = "Новиков",

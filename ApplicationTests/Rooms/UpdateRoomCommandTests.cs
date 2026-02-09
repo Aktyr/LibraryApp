@@ -3,7 +3,9 @@
 [TestFixture]
 public class UpdateRoomCommandTests
 {
-    private RoomValidatorAsync CreateRoomValidator() => new();
+    private RoomValidatorAsync CreateRoomValidator => new();
+    private IConverter<Room, RoomDTO> Converter => new RoomDTOConverter();
+
 
     [Test]
     public async Task Execute_UpdateExistingRoomWithNewName_UpdatesRoom()
@@ -19,7 +21,7 @@ public class UpdateRoomCommandTests
         await roomRepo.AddRange(rooms.AsEnumerable());
 
         var roomToUpdate = rooms[4];
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomToUpdate.Id,
@@ -51,7 +53,7 @@ public class UpdateRoomCommandTests
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
@@ -70,7 +72,7 @@ public class UpdateRoomCommandTests
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
@@ -95,7 +97,7 @@ public class UpdateRoomCommandTests
             .Generate();
         await roomRepo.AddRange([room]);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
@@ -130,7 +132,7 @@ public class UpdateRoomCommandTests
             .Generate();
         await roomRepo.AddRange([room]);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
@@ -160,7 +162,7 @@ public class UpdateRoomCommandTests
         };
         await roomRepo.AddRange([room]);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomId,
@@ -223,7 +225,7 @@ public class UpdateRoomCommandTests
         };
         await roomRepo.AddRange([room]);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
@@ -272,7 +274,7 @@ public class UpdateRoomCommandTests
         await roomRepo.AddRange([room]);
 
         var newBookId = new Id(Guid.NewGuid());
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomId,
@@ -314,7 +316,7 @@ public class UpdateRoomCommandTests
             .Generate();
         await roomRepo.AddRange([room]);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator());
+        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,

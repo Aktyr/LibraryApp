@@ -3,6 +3,8 @@
 [TestFixture]
 public class GetUserQueryTests
 {
+    private IConverter<User, UserDTO> Converter => new UserDTOConverter();
+
     [Test]
     public async Task Execute_GetExistingUser_ReturnsUserResponse()
     {
@@ -21,7 +23,7 @@ public class GetUserQueryTests
         await userRepo.AddRange(users.AsEnumerable());
 
         var targetUser = users[4];
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = targetUser.Id };
 
         // Act
@@ -59,7 +61,7 @@ public class GetUserQueryTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -72,7 +74,7 @@ public class GetUserQueryTests
     {
         // Arrange
         var userRepo = new FakeRepository<User>(); // Пустой репозиторий
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -125,7 +127,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
 
         // Act
@@ -163,7 +165,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
 
         // Act
@@ -215,7 +217,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
 
         // Act
@@ -250,7 +252,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = new Id(specificGuid) };
 
         // Act
@@ -289,7 +291,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
 
         // Act
@@ -320,7 +322,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = user.Id };
 
         // Act
@@ -347,7 +349,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
         var cancellationToken = new CancellationToken();
 
@@ -385,7 +387,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user1, user2]);
 
-        var getUserQuery = new GetUserQuery(userRepo);
+        var getUserQuery = new GetUserQuery(userRepo, Converter);
         var getUserRequest = new GetUserRequest { Id = user2.Id };
 
         // Act

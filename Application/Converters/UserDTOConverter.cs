@@ -1,3 +1,3 @@
 ﻿namespace LibApp.Application.Converters;
 
-internal class UserDTOConverter : BaseConverter<User, UserDTO> { }
+public class UserDTOConverter : BaseConverter<User, UserDTO> { }

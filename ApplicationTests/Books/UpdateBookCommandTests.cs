@@ -3,7 +3,9 @@
 [TestFixture]
 public class UpdateBookCommandTests
 {
-    private BookValidatorAsync CreateBookValidator() => new();
+    private BookValidatorAsync CreateBookValidator => new();
+    private IConverter<Book, BookDTO> Converter => new BookDTOConverter();
+
 
     [Test]
     public async Task Execute_UpdateExistingBookWithValidData_UpdatesBook()
@@ -16,13 +18,13 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(10)
             .ToList();
         await bookRepo.AddRange(books.AsEnumerable());
 
         var bookToUpdate = books[4];
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = bookToUpdate.Id,
@@ -66,10 +68,10 @@ public class UpdateBookCommandTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = new Id(Guid.NewGuid()), // ID, которого нет в репозитории
@@ -91,7 +93,7 @@ public class UpdateBookCommandTests
         var bookRepo = new FakeRepository<Book>();
         // Не добавляем книги - репозиторий пустой
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = new Id(Guid.NewGuid()),
@@ -117,11 +119,11 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Author, f => "Original Author")
             .RuleFor(x => x.Year, f => 2000)
             .RuleFor(x => x.Publisher, f => "Original Publisher")
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -157,11 +159,11 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Author, f => "Original Author")
             .RuleFor(x => x.Year, f => 2000)
             .RuleFor(x => x.Publisher, f => "Original Publisher")
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -188,11 +190,11 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Author, f => "Original Author")
             .RuleFor(x => x.Year, f => 2000)
             .RuleFor(x => x.Publisher, f => "Original Publisher")
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -217,11 +219,11 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Author, f => "Original Author")
             .RuleFor(x => x.Year, f => 2000)
             .RuleFor(x => x.Publisher, f => "Original Publisher")
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator());
+        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,

@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Converters;
 
-internal class RoomBookDTOConverter : BaseConverter<RoomBook, RoomBookDTO>
+public class RoomBookDTOConverter : BaseConverter<RoomBook, RoomBookDTO>
 {
     protected override Dictionary<string, Func<object?, object?>> ToDtoConverters
     {
@@ -8,12 +8,31 @@ internal class RoomBookDTOConverter : BaseConverter<RoomBook, RoomBookDTO>
         {
             var converters = base.ToDtoConverters;
 
-            converters["RoomId"] = value => ((RoomBook)value!).Room?.Id.Value ?? Guid.Empty;
-            converters["BookId"] = value => ((RoomBook)value!).Book?.Id.Value ?? Guid.Empty;
+            // Удаляем неправильные конвертеры
+            converters.Remove("RoomId");
+            converters.Remove("BookId");
 
             return converters;
         }
     }
+
+    public override RoomBookDTO ToDto(RoomBook entity)
+    {
+        // Создаем базовый DTO
+        var dto = base.ToDto(entity);
+
+        // Вручную устанавливаем RoomId и BookId
+        var roomId = entity.Room?.Id.Value ?? Guid.Empty;
+        var bookId = entity.Book?.Id.Value ?? Guid.Empty;
+
+        // Для record используем with выражение
+        return dto with
+        {
+            RoomId = roomId,
+            BookId = bookId
+        };
+    }
+
     public override RoomBook ToEntity(RoomBookDTO dto)
     {
         var entity = base.ToEntity(dto);
@@ -26,6 +45,4 @@ internal class RoomBookDTOConverter : BaseConverter<RoomBook, RoomBookDTO>
 
         return entity;
     }
-
 }
-

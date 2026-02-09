@@ -3,7 +3,8 @@
 [TestFixture]
 public class UpdateUserCommandTests
 {
-    private UserValidatorAsync CreateUserValidator() => new();
+    private UserValidatorAsync CreateUserValidator => new();
+    private IConverter<User, UserDTO> Converter => new UserDTOConverter();
 
     [Test]
     public async Task Execute_UpdateExistingUserWithValidData_UpdatesSuccessfully()
@@ -24,7 +25,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator());
+        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -67,7 +68,7 @@ public class UpdateUserCommandTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator());
+        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = nonExistingId,
@@ -100,7 +101,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator());
+        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
 
         // Пытаемся обновить с пустой фамилией (невалидные данные)
         var updateUserRequest = new UpdateUserRequest
@@ -135,7 +136,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator());
+        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -185,7 +186,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator());
+        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -228,7 +229,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator());
+        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -272,7 +273,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator());
+        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
 
         // Обновляем теми же данными
         var updateUserRequest = new UpdateUserRequest
@@ -310,7 +311,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator());
+        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
 
         // Слишком длинная фамилия (предполагая, что валидатор проверяет длину)
         var updateUserRequest = new UpdateUserRequest
@@ -353,7 +354,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator());
+        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -396,7 +397,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator());
+        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,

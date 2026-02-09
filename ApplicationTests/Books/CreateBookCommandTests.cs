@@ -3,7 +3,8 @@
 [TestFixture]   
 public class CreateBookCommandTests
 {
-    private BookValidatorAsync CreateBookValidator() => new();
+    private BookValidatorAsync CreateBookValidator => new();
+    private IConverter<Book, BookDTO> Converter => new BookDTOConverter();
 
     [TestCase("Clean Code", "Robert C. Martin", 2008, "Prentice Hall")]
     [TestCase("Design Patterns", "Erich Gamma", 1994, "Addison-Wesley")]
@@ -19,10 +20,10 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createBookCommand = new CreateBookCommand(bookRepo, CreateBookValidator());
+        var createBookCommand = new CreateBookCommand(bookRepo, CreateBookValidator, Converter);
         var createBookRequest = new CreateBookRequest
         {
             Title = title,
@@ -45,9 +46,14 @@ public class CreateBookCommandTests
 
     [TestCase("", "Author", 2000, "Publisher")]
     [TestCase("Title", "", 2000, "Publisher")]
-    [TestCase("Title", "Author", -1, "Publisher")] // Не валидно
-    [TestCase("Title", "Author", 3020, "Publisher")] // Не валидно
-    [TestCase("Title", "Author", 2000, "")]
+    [TestCase("Title", "Author", -1, "Publisher")] 
+    [TestCase("Title", "Author", 3000, "Publisher")] 
+    [TestCase("", "", 3000, "")]
+    [TestCase("Title", "Author", 3000, "")]
+    [TestCase("", "Author", 2000, "")]
+    [TestCase("Title", "", 3000, "Publisher")]
+    [TestCase("", "", 3000, "Publisher")]
+    [TestCase("Title", "", 3000, "")]
     public async Task Execute_CreateBookWithInvalidData_ReturnsError(string title, string author, int year, string publisher)
     {
         // Arrange
@@ -58,10 +64,10 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createBookCommand = new CreateBookCommand(bookRepo, CreateBookValidator());
+        var createBookCommand = new CreateBookCommand(bookRepo, CreateBookValidator, Converter);
         var createBookRequest = new CreateBookRequest
         {
             Title = title,

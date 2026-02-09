@@ -13,7 +13,7 @@ public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bo
                                   request.Title,
                                   request.Author,
                                   request.Year,
-                                  request.Publisher);
+                                  request.Publisher, []);
         var bookForValidation = bookConverter.ToEntity(bookDTO);   
 
         var validationResult = await bookValidator.ValidateAsync(bookForValidation, cancellationToken);
@@ -26,6 +26,7 @@ public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bo
         book.Author = request.Author;
         book.Year = request.Year;
         book.Publisher = request.Publisher;
+        //book.RoomBook = request.RoomBook;
 
         await bookRepo.Update(book, cancellationToken);
         return new BasicCreateDeleteResponse("Ok", "Book updated successfully.");

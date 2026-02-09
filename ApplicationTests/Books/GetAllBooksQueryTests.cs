@@ -3,6 +3,8 @@
 [TestFixture]
 public class GetAllBooksQueryTests
 {
+    private IConverter<Book, BookDTO> Converter => new BookDTOConverter();
+
     [Test]
     public async Task Execute_GetAllBooksFromRepositoryWithBooks_ReturnsAllBooks()
     {
@@ -14,12 +16,12 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(7)
             .ToList();
         await bookRepo.AddRange(books.AsEnumerable());
 
-        var getAllBooksQuery = new GetAllBooksCommand(bookRepo);
+        var getAllBooksQuery = new GetAllBooksCommand(bookRepo, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -47,7 +49,7 @@ public class GetAllBooksQueryTests
     {
         // Arrange
         var bookRepo = new FakeRepository<Book>();
-        var getAllBooksQuery = new GetAllBooksCommand(bookRepo);
+        var getAllBooksQuery = new GetAllBooksCommand(bookRepo, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -73,11 +75,11 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.Author, f => "Test Author")
             .RuleFor(x => x.Year, f => 2020)
             .RuleFor(x => x.Publisher, f => "Test Publisher")
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var getAllBooksQuery = new GetAllBooksCommand(bookRepo);
+        var getAllBooksQuery = new GetAllBooksCommand(bookRepo, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -104,12 +106,12 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(5)
             .ToList();
         await bookRepo.AddRange(books.AsEnumerable());
 
-        var getAllBooksQuery = new GetAllBooksCommand(bookRepo);
+        var getAllBooksQuery = new GetAllBooksCommand(bookRepo, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act

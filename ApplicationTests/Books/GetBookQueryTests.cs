@@ -3,6 +3,8 @@
 [TestFixture]
 public class GetBookQueryTests
 {
+    private IConverter<Book, BookDTO> Converter => new BookDTOConverter();
+
     [Test]
     public async Task Execute_GetExistingBook_ReturnsBookResponse()
     {
@@ -14,13 +16,13 @@ public class GetBookQueryTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(10)
             .ToList();
         await bookRepo.AddRange(books.AsEnumerable());
 
         var targetBook = books[3];
-        var getBookQuery = new GetBookCommand(bookRepo);
+        var getBookQuery = new GetBookCommand(bookRepo, Converter);
         var getBookRequest = new GetBookRequest { Id = targetBook.Id };
 
         // Act
@@ -49,12 +51,12 @@ public class GetBookQueryTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var getBookQuery = new GetBookCommand(bookRepo);
+        var getBookQuery = new GetBookCommand(bookRepo, Converter);
         var getBookRequest = new GetBookRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -67,7 +69,7 @@ public class GetBookQueryTests
     {
         // Arrange
         var bookRepo = new FakeRepository<Book>();
-        var getBookQuery = new GetBookCommand(bookRepo);
+        var getBookQuery = new GetBookCommand(bookRepo, Converter);
         var getBookRequest = new GetBookRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert

@@ -14,7 +14,7 @@ public class DeleteBookCommandTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(10)
             .ToList();
         await bookRepo.AddRange(books.AsEnumerable());
@@ -47,7 +47,7 @@ public class DeleteBookCommandTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
 
@@ -85,7 +85,7 @@ public class DeleteBookCommandTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
         await bookRepo.AddRange([book]);
 

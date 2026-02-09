@@ -3,6 +3,8 @@
 [TestFixture]
 public class GetRoomQueryTests
 {
+    private IConverter<Room, RoomDTO> Converter => new RoomDTOConverter();
+
     [Test]
     public async Task Execute_GetExistingRoom_ReturnsRoomResponse()
     {
@@ -17,7 +19,7 @@ public class GetRoomQueryTests
         await roomRepo.AddRange(rooms.AsEnumerable());
 
         var targetRoom = rooms[3];
-        var getRoomQuery = new GetRoomCommand(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
         var getRoomRequest = new GetRoomRequest { Id = targetRoom.Id };
 
         // Act
@@ -46,7 +48,7 @@ public class GetRoomQueryTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var getRoomQuery = new GetRoomCommand(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
         var getRoomRequest = new GetRoomRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -59,7 +61,7 @@ public class GetRoomQueryTests
     {
         // Arrange
         var roomRepo = new FakeRepository<Room>();
-        var getRoomQuery = new GetRoomCommand(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
         var getRoomRequest = new GetRoomRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -81,26 +83,26 @@ public class GetRoomQueryTests
             Id = roomId,
             Name = "Library Room",
             RoomBooks = new List<RoomBook>
+        {
+            new RoomBook
             {
-                new RoomBook
-                {
-                    Id = new Id(Guid.NewGuid()),
-                    BookCount = 10,
-                    Book = new Book { Id = bookId1, Title = "Book 1" },
-                    Room = new Room { Id = roomId, Name = "Library Room" }
-                },
-                new RoomBook
-                {
-                    Id = new Id(Guid.NewGuid()),
-                    BookCount = 15,
-                    Book = new Book { Id = bookId2, Title = "Book 2" },
-                    Room = new Room { Id = roomId, Name = "Library Room" }
-                }
+                Id = new Id(Guid.NewGuid()),
+                BookCount = 10,
+                Book = new Book { Id = bookId1, Title = "Book 1" },
+                Room = new Room { Id = roomId, Name = "Library Room" }
+            },
+            new RoomBook
+            {
+                Id = new Id(Guid.NewGuid()),
+                BookCount = 15,
+                Book = new Book { Id = bookId2, Title = "Book 2" },
+                Room = new Room { Id = roomId, Name = "Library Room" }
             }
+        }
         };
         await roomRepo.AddRange([room]);
 
-        var getRoomQuery = new GetRoomCommand(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
         var getRoomRequest = new GetRoomRequest { Id = roomId };
 
         // Act
@@ -112,13 +114,15 @@ public class GetRoomQueryTests
             Assert.That(result, Is.Not.Null);
             Assert.That(result!.Room[0].RoomBook.Count, Is.EqualTo(2));
 
-            var firstBook = result.Room[0].RoomBook.First();
-            var lastBook = result.Room[0].RoomBook.Last();
+            // Используем ToList() для индексирования или First()/Last()
+            var roomBookList = result.Room[0].RoomBook.ToList();
 
-            Assert.That(firstBook.BookCount, Is.EqualTo(10));
-            Assert.That(lastBook.BookCount, Is.EqualTo(15));
-            Assert.That(firstBook.RoomId, Is.EqualTo(roomId.Value));
-            Assert.That(lastBook.RoomId, Is.EqualTo(roomId.Value));
+            Assert.That(roomBookList[0].BookCount, Is.EqualTo(10));
+            Assert.That(roomBookList[1].BookCount, Is.EqualTo(15));
+            Assert.That(roomBookList[0].RoomId, Is.EqualTo(roomId.Value));
+            Assert.That(roomBookList[1].RoomId, Is.EqualTo(roomId.Value));
+            Assert.That(roomBookList[0].BookId, Is.EqualTo(bookId1.Value));
+            Assert.That(roomBookList[1].BookId, Is.EqualTo(bookId2.Value));
         });
     }
 
@@ -147,7 +151,7 @@ public class GetRoomQueryTests
         };
         await roomRepo.AddRange([room]);
 
-        var getRoomQuery = new GetRoomCommand(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
         var getRoomRequest = new GetRoomRequest { Id = roomId };
 
         // Act
@@ -178,7 +182,7 @@ public class GetRoomQueryTests
         };
         await roomRepo.AddRange([room]);
 
-        var getRoomQuery = new GetRoomCommand(roomRepo);
+        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
         var getRoomRequest = new GetRoomRequest { Id = room.Id };
 
         // Act
