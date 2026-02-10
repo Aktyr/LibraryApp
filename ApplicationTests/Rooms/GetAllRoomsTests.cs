@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace LibApp.ApplicationTests.Rooms;
+﻿namespace LibApp.ApplicationTests.Rooms;
 
 [TestFixture]
 public class GetAllRoomsTests
@@ -103,11 +101,7 @@ public class GetAllRoomsTests
         Assert.Multiple(() =>
         {
             Assert.That(result.Room, Has.Length.EqualTo(1));
-            // Комментарий "todo maybe its too harsh" указывает, что GetAllRooms может не возвращать RoomBooks
-            // Но если мы хотим проверить конвертацию, изменим проверку:
-            // Assert.That(result.Room[0].RoomBook, Is.Empty); // Оригинальная проверка
 
-            // Новая проверка - если RoomBooks возвращаются, проверяем их
             var roomBookList = result.Room[0].RoomBook.ToList(); // Конвертируем в List для индексирования
             if (roomBookList.Any())
             {

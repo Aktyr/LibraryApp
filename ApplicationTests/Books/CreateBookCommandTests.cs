@@ -10,6 +10,8 @@ public class CreateBookCommandTests
     [TestCase("Design Patterns", "Erich Gamma", 1994, "Addison-Wesley")]
     [TestCase("Refactoring", "Martin Fowler", 1999, "Addison-Wesley")]
     [TestCase("The Clean Coder", "Robert C. Martin", 2011, "Prentice Hall")]
+    [TestCase("A", "A", 0, "A")]
+    [TestCase("1", "1", 0, "1")]
     public async Task Execute_CreateBookWithValidData_CreatesBook(string title, string author, int year, string publisher)
     {
         // Arrange

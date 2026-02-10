@@ -1,7 +1,4 @@
-﻿using LibApp.Core.Responses;
-using LibApp.Core.Responses.User;
-
-namespace LibApp.ApplicationTests.Users;
+﻿namespace LibApp.ApplicationTests.Users;
 
 [TestFixture]
 public class DeleteUserCommandTests

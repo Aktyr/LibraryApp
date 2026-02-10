@@ -11,6 +11,8 @@ public class CreateRoomCommandTests
     [TestCase("newRoom32")]
     [TestCase("nqweewRoom")]
     [TestCase("newRooqwem")]
+    [TestCase("a")]
+    [TestCase("1")]
     public async Task Execute_CreateRoomWithNewName_CreatesRoom(string roomName)
     {
         // Arrange
@@ -41,6 +43,8 @@ public class CreateRoomCommandTests
     [TestCase("newRoom32")]
     [TestCase("nqweewRoom")]
     [TestCase("newRooqwem")]
+    [TestCase("a")]
+    [TestCase("1")]
     public async Task Execute_CreateRoomWithExistingName_ThrowsRoomExistsException(string roomName)
     {
         // Arrange

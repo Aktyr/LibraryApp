@@ -11,6 +11,8 @@ public class CreateUserCommandTests
     [TestCase("Петров", "Петр", "", "petrov@example.com")] // MiddleName может быть пустым
     [TestCase("Сидорова", "Анна", "Сергеевна", "+7-999-123-45-67")]
     [TestCase("Smith", "John", "Doe", "john.smith@company.com")]
+    [TestCase("A", "A", "A", "A")]
+    [TestCase("A", "A", "", "A")]
     public async Task Execute_CreateUserWithValidData_CreatesUser(string lastName, string firstName, string middleName, string contactInfo)
     {
         // Arrange
@@ -55,6 +57,9 @@ public class CreateUserCommandTests
     [TestCase("", "Иван", "Иванович", "ivanov@example.com")] // Пустая фамилия
     [TestCase("Иванов", "", "Иванович", "ivanov@example.com")] // Пустое имя
     [TestCase("Иванов", "Иван", "Иванович", "")] // Пустой контакт
+    [TestCase("", "", "", "")] 
+    [TestCase("", "", "Иванович", "")] 
+    [TestCase(" ", " ", "Иванович", " ")] 
     public async Task Execute_CreateUserWithInvalidData_ThrowsValidationException(
         string lastName, string firstName, string middleName, string contactInfo)
     {

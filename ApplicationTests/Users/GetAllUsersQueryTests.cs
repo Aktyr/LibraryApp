@@ -1,7 +1,4 @@
-﻿using LibApp.Core.Responses.User;
-using Moq;
-
-namespace LibApp.ApplicationTests.Users;
+﻿namespace LibApp.ApplicationTests.Users;
 
 [TestFixture]
 public class GetAllUsersQueryTests

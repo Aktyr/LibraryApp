@@ -336,6 +336,7 @@ public class UpdateUserCommandTests
     [TestCase("Петрова", "Анна", "", "anna@company.com")]
     [TestCase("Smith", "John", "Doe", "john.smith@mail.com")]
     [TestCase("Сидоров", "Сидор", "Сидорович", "+7-999-123-45-67")]
+    [TestCase("A", "A", "", "A")]
     public async Task Execute_UpdateUserWithVariousValidData_UpdatesSuccessfully(
         string lastName, string firstName, string middleName, string contactInfo)
     {
