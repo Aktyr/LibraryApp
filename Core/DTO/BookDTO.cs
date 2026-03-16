@@ -5,5 +5,5 @@ public record BookDTO(Guid Id,
                       string Author,
                       int Year,
                       string Publisher,
-                      ICollection<RoomBook> RoomBook) // может нужно ICollection<RoomBook>
+                      ICollection<RoomBook> RoomBook)
 { public BookDTO() : this(default, default!, default!, default, default!, default!) { } }

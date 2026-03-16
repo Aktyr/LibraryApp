@@ -1,4 +1,6 @@
-﻿namespace LibApp.Application.Entities.Rooms;
+﻿using LibApp.Application.Validation.Entities;
+
+namespace LibApp.Application.Entities.Rooms;
 
 public class CreateRoomCommand(IRepository<Room> roomRepo, RoomValidatorAsync roomValidator, IConverter<Room, RoomDTO> roomConverter)
     : ICreateOrUpdateCommand<CreateRoomRequest, BasicCreateDeleteResponse>

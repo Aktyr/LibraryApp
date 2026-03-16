@@ -1,4 +1,4 @@
-﻿using LibApp.Application.Validation;
+﻿using LibApp.Application.Validation.Entities;
 
 namespace LibApp.Infrastructure.DependencyInjection;
 

@@ -1,4 +1,6 @@
-﻿namespace LibApp.Application.Entities.Books;
+﻿using LibApp.Application.Validation.Entities;
+
+namespace LibApp.Application.Entities.Books;
 
 public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bookValidator, IConverter<Book, BookDTO> bookConverter)
     : ICreateOrUpdateCommand<UpdateBookRequest, BasicCreateDeleteResponse>

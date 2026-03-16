@@ -1,4 +1,6 @@
-﻿namespace LibApp.Application.Entities.Users;
+﻿using LibApp.Application.Validation.Entities;
+
+namespace LibApp.Application.Entities.Users;
 
 public class UpdateUserCommand(IRepository<User> userRepo, UserValidatorAsync userValidator, IConverter<User, UserDTO> userConverter)
     : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>

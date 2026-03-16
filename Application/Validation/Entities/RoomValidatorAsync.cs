@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Validation;
+﻿namespace LibApp.Application.Validation.Entities;
 
 public class RoomValidatorAsync
 {

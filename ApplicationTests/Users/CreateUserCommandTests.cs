@@ -1,4 +1,6 @@
-﻿namespace LibApp.ApplicationTests.Users;
+﻿using LibApp.Application.Validation.Entities;
+
+namespace LibApp.ApplicationTests.Users;
 
 [TestFixture]
 public class CreateUserCommandTests

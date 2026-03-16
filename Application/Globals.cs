@@ -14,3 +14,4 @@ global using LibApp.Core.Responses.Room;
 global using LibApp.Core.Responses.User;
 global using LibApp.Core.DTO;
 global using System.Collections;
+global using LibApp.Core.Requests.Borrowing;

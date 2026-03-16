@@ -1,4 +1,6 @@
-﻿namespace LibApp.ApplicationTests.Rooms;
+﻿using LibApp.Application.Validation.Entities;
+
+namespace LibApp.ApplicationTests.Rooms;
 
 [TestFixture]
 public class UpdateRoomCommandTests

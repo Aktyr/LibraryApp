@@ -1,4 +1,6 @@
-﻿namespace LibApp.ApplicationTests.Books;
+﻿using LibApp.Application.Validation.Entities;
+
+namespace LibApp.ApplicationTests.Books;
 
 [TestFixture]   
 public class CreateBookCommandTests
