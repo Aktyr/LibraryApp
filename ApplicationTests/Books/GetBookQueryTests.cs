@@ -1,4 +1,7 @@
-﻿namespace LibApp.ApplicationTests.Books;
+﻿using LibApp.Core.DTO.Entities;
+using LibApp.Core.Exceptions.Entities;
+
+namespace LibApp.ApplicationTests.Books;
 
 [TestFixture]
 public class GetBookQueryTests

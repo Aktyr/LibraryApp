@@ -8,9 +8,9 @@ public class UserRoomBook : IEntity
     }
 
     public Id Id { get; set; }
-    public DateTime IssueDate { get; set; } = DateTime.Now;
+    public DateTime BorrowDate { get; set; } = DateTime.Now;
     public DateTime? Deadline { get; set; }
-    public DateTime? ReturnDate { get; set; }    // Фактическая дата возврата
+    public DateTime? ReturnDate { get; set; }    // Фактическая дата возврата (для закрытия Книговыдачи)
     public bool IsReturned => ReturnDate.HasValue;
     public decimal? Penalty { get; set; }
 

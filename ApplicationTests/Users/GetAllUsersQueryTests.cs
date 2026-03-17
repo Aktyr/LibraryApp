@@ -1,4 +1,7 @@
-﻿namespace LibApp.ApplicationTests.Users;
+﻿using LibApp.Core.DTO.Entities;
+using LibApp.Core.Responses.Entities;
+
+namespace LibApp.ApplicationTests.Users;
 
 [TestFixture]
 public class GetAllUsersQueryTests
@@ -137,7 +140,7 @@ public class GetAllUsersQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    IssueDate = DateTime.Now.AddDays(-10),
+                    BorrowDate = DateTime.Now.AddDays(-10),
                     Deadline = DateTime.Now.AddDays(2), // Через 2 дня
                     User = null,
                     RoomBook = null
@@ -145,7 +148,7 @@ public class GetAllUsersQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    IssueDate = DateTime.Now.AddDays(-5),
+                    BorrowDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(5), // Через 5 дней
                     User = null,
                     RoomBook = null
@@ -153,7 +156,7 @@ public class GetAllUsersQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    IssueDate = DateTime.Now.AddDays(-3),
+                    BorrowDate = DateTime.Now.AddDays(-3),
                     Deadline = null, // Без дедлайна
                     User = null,
                     RoomBook = null

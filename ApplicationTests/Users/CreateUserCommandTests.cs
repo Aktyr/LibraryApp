@@ -1,4 +1,5 @@
 ﻿using LibApp.Application.Validation.Entities;
+using LibApp.Core.DTO.Entities;
 
 namespace LibApp.ApplicationTests.Users;
 

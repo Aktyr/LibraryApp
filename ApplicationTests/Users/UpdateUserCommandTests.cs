@@ -1,4 +1,6 @@
 ﻿using LibApp.Application.Validation.Entities;
+using LibApp.Core.DTO.Entities;
+using LibApp.Core.Exceptions.Entities;
 
 namespace LibApp.ApplicationTests.Users;
 
@@ -180,7 +182,7 @@ public class UpdateUserCommandTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    IssueDate = DateTime.Now.AddDays(-5),
+                    BorrowDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(5)
                 }
             }

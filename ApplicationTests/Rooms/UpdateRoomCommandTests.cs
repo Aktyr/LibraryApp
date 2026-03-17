@@ -1,4 +1,6 @@
 ﻿using LibApp.Application.Validation.Entities;
+using LibApp.Core.DTO.Entities;
+using LibApp.Core.Exceptions.Entities;
 
 namespace LibApp.ApplicationTests.Rooms;
 

@@ -1,4 +1,7 @@
-﻿namespace LibApp.ApplicationTests.Rooms;
+﻿using LibApp.Core.DTO.Entities;
+using LibApp.Core.Exceptions.Entities;
+
+namespace LibApp.ApplicationTests.Rooms;
 
 [TestFixture]
 public class GetRoomQueryTests

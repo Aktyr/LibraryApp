@@ -1,4 +1,8 @@
-﻿namespace LibApp.ApplicationTests.Users;
+﻿using LibApp.Core.DTO.Entities;
+using LibApp.Core.Exceptions.Entities;
+using LibApp.Core.Responses.Entities;
+
+namespace LibApp.ApplicationTests.Users;
 
 [TestFixture]
 public class GetUserQueryTests
@@ -101,7 +105,7 @@ public class GetUserQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    IssueDate = DateTime.Now.AddDays(-7),
+                    BorrowDate = DateTime.Now.AddDays(-7),
                     Deadline = DateTime.Now.AddDays(3), // Через 3 дня
                     User = null,
                     RoomBook = null
@@ -109,7 +113,7 @@ public class GetUserQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    IssueDate = DateTime.Now.AddDays(-2),
+                    BorrowDate = DateTime.Now.AddDays(-2),
                     Deadline = DateTime.Now.AddDays(1), // Через 1 день (ближайший)
                     User = null,
                     RoomBook = null
@@ -117,7 +121,7 @@ public class GetUserQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    IssueDate = DateTime.Now.AddDays(-1),
+                    BorrowDate = DateTime.Now.AddDays(-1),
                     Deadline = null, // Без дедлайна
                     User = null,
                     RoomBook = null
@@ -199,7 +203,7 @@ public class GetUserQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    IssueDate = DateTime.Now.AddDays(-5),
+                    BorrowDate = DateTime.Now.AddDays(-5),
                     Deadline = null, // Без дедлайна
                     User = null,
                     RoomBook = null
@@ -207,7 +211,7 @@ public class GetUserQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    IssueDate = DateTime.Now.AddDays(-10),
+                    BorrowDate = DateTime.Now.AddDays(-10),
                     Deadline = null, // Без дедлайна
                     User = null,
                     RoomBook = null

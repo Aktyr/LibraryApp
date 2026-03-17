@@ -1,4 +1,6 @@
-﻿namespace LibApp.ApplicationTests.Users;
+﻿using LibApp.Core.Exceptions.Entities;
+
+namespace LibApp.ApplicationTests.Users;
 
 [TestFixture]
 public class DeleteUserCommandTests
@@ -100,7 +102,7 @@ public class DeleteUserCommandTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    IssueDate = DateTime.Now.AddDays(-5),
+                    BorrowDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(5),
                     User = null, // Это не важно для теста
                     RoomBook = null // Это не важно для теста

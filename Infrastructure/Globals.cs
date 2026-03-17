@@ -5,3 +5,6 @@ global using LibApp.Infrastructure.Db.DbAsFiles;
 global using Microsoft.Extensions.DependencyInjection;
 global using LibApp.Application.Validation.Entities;
 global using LibApp.Application.Validation.Borrowing;
+global using LibApp.Application.Commands.Entities.Books;
+global using LibApp.Application.Commands.Entities.Rooms;
+global using LibApp.Application.Commands.Entities.Users;
