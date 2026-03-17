@@ -100,7 +100,7 @@ public class DeleteUserCommandTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    Issue = DateTime.Now.AddDays(-5),
+                    IssueDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(5),
                     User = null, // Это не важно для теста
                     RoomBook = null // Это не важно для теста

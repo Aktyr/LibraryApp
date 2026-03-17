@@ -28,7 +28,7 @@ public static class DependencyInjection
         services.AddScoped<RoomValidatorAsync>();
         services.AddScoped<RoomBookValidatorAsync>();
         services.AddScoped<UserValidatorAsync>();
-        services.AddScoped<UserRoomBookValidatorAsync>();
+        //services.AddScoped<UserRoomBookValidatorAsync>();
 
         return services;
     }

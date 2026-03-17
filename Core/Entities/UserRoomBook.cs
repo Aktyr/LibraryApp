@@ -9,7 +9,7 @@ public class UserRoomBook : IEntity
 
     public Id Id { get; set; }
     public DateTime IssueDate { get; set; } = DateTime.Now;
-    public DateTime? DueDate { get; set; }       // Срок возврата
+    public DateTime? Deadline { get; set; }
     public DateTime? ReturnDate { get; set; }    // Фактическая дата возврата
     public bool IsReturned => ReturnDate.HasValue;
     public decimal? Penalty { get; set; }

@@ -137,7 +137,7 @@ public class GetAllUsersQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    Issue = DateTime.Now.AddDays(-10),
+                    IssueDate = DateTime.Now.AddDays(-10),
                     Deadline = DateTime.Now.AddDays(2), // Через 2 дня
                     User = null,
                     RoomBook = null
@@ -145,7 +145,7 @@ public class GetAllUsersQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    Issue = DateTime.Now.AddDays(-5),
+                    IssueDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(5), // Через 5 дней
                     User = null,
                     RoomBook = null
@@ -153,7 +153,7 @@ public class GetAllUsersQueryTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    Issue = DateTime.Now.AddDays(-3),
+                    IssueDate = DateTime.Now.AddDays(-3),
                     Deadline = null, // Без дедлайна
                     User = null,
                     RoomBook = null

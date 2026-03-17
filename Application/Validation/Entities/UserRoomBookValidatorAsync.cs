@@ -23,7 +23,7 @@ public class UserRoomBookValidatorAsync
                 errors.Add($"Пользователь уже взял максимальное количество книг ({MAX_BOOKS_PER_USER})");
 
             // Проверка на просрочки
-            var overdueBooks = user.RoomBooks?.Where(urb => !urb.IsReturned && urb.DueDate < DateTime.Now) ?? Enumerable.Empty<UserRoomBook>();
+            var overdueBooks = user.RoomBooks?.Where(urb => !urb.IsReturned && urb.Deadline < DateTime.Now) ?? Enumerable.Empty<UserRoomBook>();
             if (overdueBooks.Any())
                 errors.Add("У пользователя есть просроченные книги");
         }

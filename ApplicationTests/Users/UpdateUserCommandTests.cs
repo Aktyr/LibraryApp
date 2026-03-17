@@ -180,7 +180,7 @@ public class UpdateUserCommandTests
                 new UserRoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
-                    Issue = DateTime.Now.AddDays(-5),
+                    IssueDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(5)
                 }
             }
