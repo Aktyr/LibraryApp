@@ -1,9 +1,11 @@
 ﻿global using LibApp.Application.Interfaces;
 global using LibApp.Application.Validation.Borrowing;
 global using LibApp.Application.Validation.Entities;
+global using LibApp.Core.DTO.Borrowing;
 global using LibApp.Core.DTO.Entities;
 global using LibApp.Core.Entities;
 global using LibApp.Core.Exceptions;
+global using LibApp.Core.Exceptions.Borrowing;
 global using LibApp.Core.Exceptions.Entities;
 global using LibApp.Core.Interfaces;
 global using LibApp.Core.Records;

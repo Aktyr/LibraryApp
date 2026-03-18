@@ -6,6 +6,9 @@ public abstract class BaseConverter<TEntity, TDto> : IConverter<TEntity, TDto>
 {
     public virtual TDto ToDto(TEntity entity)
     {
+        if (entity == null)
+            throw new ArgumentNullException(nameof(entity));
+
         var dto = new TDto();
         CopyMatchingProperties(entity, dto, ToDtoConverters);
         return dto;
@@ -13,6 +16,9 @@ public abstract class BaseConverter<TEntity, TDto> : IConverter<TEntity, TDto>
 
     public virtual TEntity ToEntity(TDto dto)
     {
+        if (dto == null)
+            throw new ArgumentNullException(nameof(dto));
+
         var entity = new TEntity();
         CopyMatchingProperties(dto, entity, ToEntityConverters);
         InitializeCollections(entity);

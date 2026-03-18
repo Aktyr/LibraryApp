@@ -1,7 +1,6 @@
 ﻿namespace LibApp.Application.Validation;
 
-// Возможно валидатор избыточен при наличии BorrowingValidatorAsync
-[Obsolete]
+[Obsolete] // Избыточен при наличии BorrowingValidatorAsync
 public class UserRoomBookValidatorAsync
 {
     // Параметры валидации

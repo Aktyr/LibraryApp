@@ -1,13 +1,11 @@
-﻿namespace LibApp.Application.Commands.Borrowing;
+﻿namespace LibApp.Application.Commands.Entities.UserRoomBooks;
 
 public class ExtendDeadlineCommand : ICreateOrUpdateCommand<ExtendDeadlineRequest, BasicCreateDeleteResponse>
 {
     private readonly IRepository<UserRoomBook> _userRoomBookRepo;
     private readonly BorrowingValidatorAsync _validator;
 
-    public ExtendDeadlineCommand(
-        IRepository<UserRoomBook> userRoomBookRepo,
-        BorrowingValidatorAsync validator)
+    public ExtendDeadlineCommand(IRepository<UserRoomBook> userRoomBookRepo, BorrowingValidatorAsync validator)
     {
         _userRoomBookRepo = userRoomBookRepo;
         _validator = validator;
@@ -15,19 +13,18 @@ public class ExtendDeadlineCommand : ICreateOrUpdateCommand<ExtendDeadlineReques
 
     public async Task<BasicCreateDeleteResponse> Execute(ExtendDeadlineRequest request, CancellationToken cancellationToken)
     {
-        // 1. Получаем запись о выдаче
+        // Валидация
         var userRoomBook = (await _userRoomBookRepo.Get(urb => urb.Id.Value == request.UserRoomBookId, cancellationToken)).FirstOrDefault()
-            ?? throw new Exception("Запись о выдаче не найдена");
+            ?? throw new UserRoomBookNotFoundException();
 
-        // 2. Валидация
         var validationResult = await _validator.ValidateExtendAsync(userRoomBook, request.ExtraDays, cancellationToken);
         if (!validationResult.IsValid)
             throw new ValidationException { ExceptionDetails = validationResult.Errors };
 
-        // 3. Продлеваем срок
-        userRoomBook.Deadline = userRoomBook.Deadline.Value.AddDays(request.ExtraDays);
+        // Продлеваем срок
+        userRoomBook.Deadline = userRoomBook.Deadline!.Value.AddDays(request.ExtraDays);
 
-        // 4. Сохраняем
+        // Сохраняем
         await _userRoomBookRepo.Update(userRoomBook, cancellationToken);
 
         return new BasicCreateDeleteResponse("Ok", $"Срок продлен до {userRoomBook.Deadline:d}");

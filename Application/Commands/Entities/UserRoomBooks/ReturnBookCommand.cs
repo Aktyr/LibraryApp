@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Commands.Borrowing;
+﻿namespace LibApp.Application.Commands.Entities.UserRoomBooks;
 public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, BasicCreateDeleteResponse>
 {
     private readonly IRepository<UserRoomBook> _userRoomBookRepo;
@@ -17,30 +17,29 @@ public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, Basic
 
     public async Task<BasicCreateDeleteResponse> Execute(ReturnBookRequest request, CancellationToken cancellationToken)
     {
-        // 1. Получаем запись о выдаче
+        // Валидация 
         var userRoomBook = (await _userRoomBookRepo.Get(urb => urb.Id.Value == request.UserRoomBookId, cancellationToken)).FirstOrDefault()
-            ?? throw new Exception("Запись о выдаче не найдена");
+            ?? throw new UserRoomBookNotFoundException();
 
-        // 2. Валидация
         var validationResult = await _validator.ValidateReturnAsync(userRoomBook, cancellationToken);
         if (!validationResult.IsValid)
             throw new ValidationException { ExceptionDetails = validationResult.Errors };
 
-        // 3. Получаем связанную книгу
+        // Получаем книгу
         var roomBook = userRoomBook.RoomBook;
 
-        /*// 4. Рассчитываем штраф (если просрочка)
-        if (userRoomBook.Deadline < DateTime.Now)
+        // Рассчёт штрафа при просрочке 
+        /*if (userRoomBook.Deadline < DateTime.Now)
         {
+            decimal rubPerDay = 10;
             var daysOverdue = (DateTime.Now - userRoomBook.Deadline.Value).Days;
-            userRoomBook.Penalty = daysOverdue * 10; // 10 руб/день
+            userRoomBook.Penalty = daysOverdue * rubPerDay;
         }*/
 
-        // 5. Обновляем данные
+        // Обновляем данные
         userRoomBook.ReturnDate = DateTime.Now;
         roomBook.BorrowedCount--;
 
-        // 6. Сохраняем
         await _userRoomBookRepo.Update(userRoomBook, cancellationToken);
         await _roomBookRepo.Update(roomBook, cancellationToken);
 

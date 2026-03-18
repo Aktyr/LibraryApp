@@ -4,9 +4,9 @@ public class BorrowingValidatorAsync
 {
     // Параметры валидации
     private const int MAX_BOOKS_PER_USER = 5;
-    private const int MIN_BORROW_DAYS = 1;
+    private const int MIN_BORROW_DAYS = 1; // Может поставить 0, если выдача будет для чтения в зале. Но могут возникнуть проблемы с возвратом 
     private const int MAX_BORROW_DAYS = 30;
-    private const int MAX_EXTEND_DAYS = 14;
+    private const int MAX_EXTEND_DEADLINE_DAYS = 14;
 
     /// <summary>
     /// Валидация выдачи книги
@@ -66,8 +66,8 @@ public class BorrowingValidatorAsync
             errors.Add("Запись о выдаче не найдена");
         else if (userRoomBook.IsReturned)
             errors.Add("Нельзя продлить уже возвращенную книгу");
-        else if (extraDays <= 0 || extraDays > MAX_EXTEND_DAYS)
-            errors.Add($"Срок продления должен быть от 1 до {MAX_EXTEND_DAYS} дней");
+        else if (extraDays <= 0 || extraDays > MAX_EXTEND_DEADLINE_DAYS)
+            errors.Add($"Срок продления должен быть от 1 до {MAX_EXTEND_DEADLINE_DAYS} дней");
 
         await Task.CompletedTask;
         return new ValidationResult(!errors.Any(), errors);

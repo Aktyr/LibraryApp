@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Commands.Borrowing;
+﻿namespace LibApp.Application.Commands.Entities.UserRoomBooks;
 public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>
 {
     private readonly IRepository<User> _userRepo;
@@ -20,19 +20,18 @@ public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, Basic
 
     public async Task<BasicCreateDeleteResponse> Execute(BorrowBookRequest request, CancellationToken cancellationToken)
     {
-        // 1. Получаем сущности
+        // Валидация
         var user = (await _userRepo.Get(u => u.Id.Value == request.UserId, cancellationToken)).FirstOrDefault()
             ?? throw new UserNotFoundException();
 
         var roomBook = (await _roomBookRepo.Get(rb => rb.Id.Value == request.RoomBookId, cancellationToken)).FirstOrDefault()
-            ?? throw new Exception("Книга не найдена"); // TODO: Создать RoomBookNotFoundException
+            ?? throw new RoomBookNotFoundException(); 
 
-        // 2. Валидация бизнес-правил
         var validationResult = await _validator.ValidateBorrowAsync(user, roomBook, request.BorrowDays, cancellationToken);
         if (!validationResult.IsValid)
             throw new ValidationException { ExceptionDetails = validationResult.Errors };
 
-        // 3. Создаем запись о выдаче
+        // Создаем запись о выдаче
         var userRoomBook = new UserRoomBook
         {
             User = user,
@@ -41,10 +40,10 @@ public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, Basic
             Deadline = DateTime.Now.AddDays(request.BorrowDays)
         };
 
-        // 4. Обновляем счетчик
+        // Обновляем счетчик
         roomBook.BorrowedCount++;
 
-        // 5. Сохраняем
+        // Сохраняем
         await _userRoomBookRepo.Add(userRoomBook, cancellationToken);
         await _roomBookRepo.Update(roomBook, cancellationToken);
 
