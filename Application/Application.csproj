@@ -8,8 +8,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Commands\Auth - Копировать\**" />
 	  <Compile Remove="New Entity\**" />
+	  <EmbeddedResource Remove="Commands\Auth - Копировать\**" />
 	  <EmbeddedResource Remove="New Entity\**" />
+	  <None Remove="Commands\Auth - Копировать\**" />
 	  <None Remove="New Entity\**" />
 	</ItemGroup>
 
