@@ -6,12 +6,19 @@ public class User : IEntity
     {
         Id = new Id(Guid.NewGuid());
     }
-
+    #region User Data
     public Id Id { get; set; } = null!;
     public string LastName { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string MiddleName { get; set; } = string.Empty; // Не обязательное поле
     public string ContactInfo { get; set; } = string.Empty;
+
+    // Аутентификация 
+    public string Email { get; set; } = string.Empty;
+    public string PasswordHash { get; set; } = string.Empty;
+    public UserRole Role { get; set; } = UserRole.Reader;
+    #endregion
+
     public TimeSpan? NearestReturnTimeSpan
     {
         get
@@ -27,9 +34,14 @@ public class User : IEntity
                 : null;
         }
     }
-
-
     public ICollection<UserRoomBook> RoomBooks { get; set; } = [];
     public override string ToString() => $"{LastName} {FirstName} {MiddleName}, {ContactInfo}";
     public string FullName => $"{LastName} {FirstName} {MiddleName}";
+}
+
+public enum UserRole // Перенести в отдельный файл
+{
+    Reader,     
+    Librarian,  
+    Admin       
 }
