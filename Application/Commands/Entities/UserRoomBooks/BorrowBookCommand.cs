@@ -25,7 +25,7 @@ public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, Basic
             ?? throw new UserNotFoundException();
 
         var roomBook = (await _roomBookRepo.Get(rb => rb.Id.Value == request.RoomBookId, cancellationToken)).FirstOrDefault()
-            ?? throw new RoomBookNotFoundException(); 
+            ?? throw new UserRoomBookNotFoundException(); 
 
         var validationResult = await _validator.ValidateBorrowAsync(user, roomBook, request.BorrowDays, cancellationToken);
         if (!validationResult.IsValid)
