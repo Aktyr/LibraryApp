@@ -1,6 +1,6 @@
 ﻿using LibApp.Core.DTO.Entities;
 
-namespace LibApp.ApplicationTests.Books;
+namespace LibApp.ApplicationTests.Entities.Books;
 
 [TestFixture]
 public class GetAllBooksQueryTests

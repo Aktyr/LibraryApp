@@ -1,7 +1,7 @@
 ﻿using LibApp.Application.Validation.Entities;
 using LibApp.Core.DTO.Entities;
 
-namespace LibApp.ApplicationTests.Users;
+namespace LibApp.ApplicationTests.Entities.Users;
 
 [TestFixture]
 public class CreateUserCommandTests

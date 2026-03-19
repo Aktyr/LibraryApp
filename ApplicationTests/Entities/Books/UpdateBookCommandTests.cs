@@ -2,7 +2,7 @@
 using LibApp.Core.DTO.Entities;
 using LibApp.Core.Exceptions.Entities;
 
-namespace LibApp.ApplicationTests.Books;
+namespace LibApp.ApplicationTests.Entities.Books;
 
 [TestFixture]
 public class UpdateBookCommandTests

@@ -1,6 +1,6 @@
 ﻿using LibApp.Core.Exceptions.Entities;
 
-namespace LibApp.ApplicationTests.Users;
+namespace LibApp.ApplicationTests.Entities.Users;
 
 [TestFixture]
 public class DeleteUserCommandTests

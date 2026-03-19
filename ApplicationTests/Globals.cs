@@ -17,6 +17,12 @@ global using LibApp.Core.Responses;
 global using LibApp.Core.Responses.Entities;
 global using Moq;
 global using LibApp.Core.Exceptions.Entities;
+global using LibApp.Core.Responses.Auth;
+global using LibApp.Core.Requests.Auth;
+global using LibApp.Application.Commands.Auth;
+global using LibApp.Application.Services;
+global using LibApp.Application.Validation.Auth;
+global using LibApp.Core.Exceptions.Auth;
 
 
 

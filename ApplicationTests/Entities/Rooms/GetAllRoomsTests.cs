@@ -1,6 +1,6 @@
 ﻿using LibApp.Core.DTO.Entities;
 
-namespace LibApp.ApplicationTests.Rooms;
+namespace LibApp.ApplicationTests.Entities.Rooms;
 
 [TestFixture]
 public class GetAllRoomsTests

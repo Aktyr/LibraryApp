@@ -2,7 +2,7 @@
 using LibApp.Core.Exceptions.Entities;
 using LibApp.Core.Responses.Entities;
 
-namespace LibApp.ApplicationTests.Users;
+namespace LibApp.ApplicationTests.Entities.Users;
 
 [TestFixture]
 public class GetUserQueryTests

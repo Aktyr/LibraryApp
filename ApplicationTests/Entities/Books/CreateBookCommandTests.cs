@@ -1,7 +1,7 @@
 ﻿using LibApp.Application.Validation.Entities;
 using LibApp.Core.DTO.Entities;
 
-namespace LibApp.ApplicationTests.Books;
+namespace LibApp.ApplicationTests.Entities.Books;
 
 [TestFixture]   
 public class CreateBookCommandTests
