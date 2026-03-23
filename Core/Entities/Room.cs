@@ -2,11 +2,6 @@
 
 public class Room : IEntity
 {
-    public Room()
-    {
-        Id = new Id(Guid.NewGuid());
-    }
-
     public Id Id { get; set; } = null!;
     public string Name { get; set; } = string.Empty;
     public int SumOfBooks => RoomBooks.Select(x => x.BookCount).Sum();

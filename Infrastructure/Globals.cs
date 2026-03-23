@@ -8,3 +8,7 @@ global using LibApp.Application.Validation.Borrowing;
 global using LibApp.Application.Commands.Entities.Books;
 global using LibApp.Application.Commands.Entities.Rooms;
 global using LibApp.Application.Commands.Entities.Users;
+global using Microsoft.EntityFrameworkCore;
+global using LibApp.Core.Records;
+global using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+global using System.Linq.Expressions;

@@ -2,10 +2,6 @@
 
 public class User : IEntity
 {
-    public User()
-    {
-        Id = new Id(Guid.NewGuid());
-    }
     #region User Data
     public Id Id { get; set; } = null!;
     public string LastName { get; set; } = string.Empty;
@@ -18,6 +14,10 @@ public class User : IEntity
     public string PasswordHash { get; set; } = string.Empty;
     public UserRole Role { get; set; } = UserRole.Reader;
     #endregion
+
+    // todo добавить подтверждение почты IsEmailConfirmed 
+    // todo добавить проверку сложности пароля 
+    // todo тайм-аут после N неудачных вводов пароля? 
 
     public TimeSpan? NearestReturnTimeSpan
     {
@@ -39,7 +39,7 @@ public class User : IEntity
     public string FullName => $"{LastName} {FirstName} {MiddleName}";
 }
 
-public enum UserRole // Перенести в отдельный файл
+public enum UserRole // todo Перенести в отдельный файл
 {
     Reader,     
     Librarian,  

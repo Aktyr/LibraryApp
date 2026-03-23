@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Commands.Entities.UserRoomBooks;
+﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class ExtendDeadlineCommand : ICreateOrUpdateCommand<ExtendDeadlineRequest, BasicCreateDeleteResponse>
 {

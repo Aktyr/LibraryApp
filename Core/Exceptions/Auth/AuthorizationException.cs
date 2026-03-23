@@ -2,6 +2,6 @@
 
 public class UnauthorizedException : Exception
 {
-    public UnauthorizedException() : base("Неавторизованный доступ") { }
+    public UnauthorizedException() : base("Unauthorized access") { }
     public UnauthorizedException(string message) : base(message) { }
 }

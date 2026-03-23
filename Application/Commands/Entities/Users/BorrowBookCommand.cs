@@ -1,20 +1,17 @@
-﻿namespace LibApp.Application.Commands.Entities.UserRoomBooks;
+﻿namespace LibApp.Application.Commands.Entities.Users;
 public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>
 {
     private readonly IRepository<User> _userRepo;
     private readonly IRepository<RoomBook> _roomBookRepo;
-    private readonly IRepository<UserRoomBook> _userRoomBookRepo;
     private readonly BorrowingValidatorAsync _validator;
 
     public BorrowBookCommand(
         IRepository<User> userRepo,
         IRepository<RoomBook> roomBookRepo,
-        IRepository<UserRoomBook> userRoomBookRepo,
         BorrowingValidatorAsync validator)
     {
         _userRepo = userRepo;
         _roomBookRepo = roomBookRepo;
-        _userRoomBookRepo = userRoomBookRepo;
         _validator = validator;
     }
 
@@ -42,10 +39,12 @@ public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, Basic
 
         // Обновляем счетчик
         roomBook.BorrowedCount++;
+        user.RoomBooks.Add(userRoomBook);
 
         // Сохраняем
-        await _userRoomBookRepo.Add(userRoomBook, cancellationToken);
         await _roomBookRepo.Update(roomBook, cancellationToken);
+        await _userRepo.Update(user, cancellationToken);
+
 
         return new BasicCreateDeleteResponse("Ok", $"Книга выдана. Срок возврата: {userRoomBook.Deadline:d}");
     }

@@ -1,4 +1,6 @@
-﻿namespace LibApp.Application.Interfaces;
+﻿using System.Linq.Expressions;
+
+namespace LibApp.Application.Interfaces;
 
 public interface IRepository<TEntity> where TEntity : class, IEntity
 {
@@ -15,7 +17,12 @@ public interface IRepository<TEntity> where TEntity : class, IEntity
 
     Task<IEnumerable<TEntity>> Get(CancellationToken cancellationToken);
     Task Get(Id id, CancellationToken cancellationToken) =>
-         Get(id, cancellationToken); // не будет ли рекурсии?
+         Get(id, cancellationToken); // todo не будет ли рекурсии?
+
+    //Task<IEnumerable<TEntity>> Get(Expression<Func<TEntity, bool>> predicate, 
+    //    CancellationToken cancellationToken); // Заменить функцию ниже на это?
+
+    [Obsolete]
     Task<IEnumerable<TEntity>> Get(Func<TEntity, bool> predicate, CancellationToken cancellationToken);
     Task<IEnumerable<TEntity>> GetWithoutTracking(CancellationToken cancellationToken);
     Task<IEnumerable<TEntity>> GetWithoutTracking(Func<TEntity, bool> predicate, CancellationToken cancellationToken);

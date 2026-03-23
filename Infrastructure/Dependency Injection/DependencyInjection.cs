@@ -1,6 +1,4 @@
-﻿using LibApp.Application.Validation.Entities;
-
-namespace LibApp.Infrastructure.DependencyInjection;
+﻿namespace LibApp.Infrastructure.DependencyInjection;
 
 // Пока не применяется 
 public static class DependencyInjection
