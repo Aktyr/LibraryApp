@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Infrastructure.Db.EFCore.Postgre;
 // User ID=root;Password=myPassword;Host=localhost;Port=5432;Database=myDataBase;Pooling=true;Min Pool Size=0;Max Pool Size=100;Connection Lifetime=0;
-internal class LibraryContext : DbContext
+public class LibraryContext : DbContext
 { 
     private static readonly List<Type> _entityTypes = new()
     {

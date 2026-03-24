@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Infrastructure.Db.EFCore.Postgre;
 
-internal class PostgreRepository<TEntity> : IRepository<TEntity> where TEntity : class, IEntity
+public class PostgreRepository<TEntity> : IRepository<TEntity> where TEntity : class, IEntity
 {
     private readonly LibraryContext _context;
     private readonly DbSet<TEntity> _dbSet;

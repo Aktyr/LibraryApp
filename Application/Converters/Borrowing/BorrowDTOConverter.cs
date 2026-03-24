@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Converters.Borrowing;
 
-internal class BorrowDTOConverter : IConverter<UserRoomBook, BorrowedBookDTO>
+public class BorrowDTOConverter : IConverter<UserRoomBook, BorrowedBookDTO>
 {
     public BorrowedBookDTO ToDto(UserRoomBook entity)
     {
