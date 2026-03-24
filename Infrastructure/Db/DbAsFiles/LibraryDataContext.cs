@@ -1,6 +1,4 @@
-﻿using LibApp.Core.Records;
-
-namespace LibApp.Infrastructure.Db.DbAsFiles;
+﻿namespace LibApp.Infrastructure.Db.DbAsFiles;
 
 public class LibraryDataContext<T> : IRepository<T> where T : class, IEntity, new()
 {

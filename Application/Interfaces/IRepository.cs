@@ -19,11 +19,9 @@ public interface IRepository<TEntity> where TEntity : class, IEntity
     Task Get(Id id, CancellationToken cancellationToken) =>
          Get(id, cancellationToken); // todo не будет ли рекурсии?
 
-    //Task<IEnumerable<TEntity>> Get(Expression<Func<TEntity, bool>> predicate, 
-    //    CancellationToken cancellationToken); // Заменить функцию ниже на это?
+    Task<IEnumerable<TEntity>> Get(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken);
 
-    [Obsolete]
-    Task<IEnumerable<TEntity>> Get(Func<TEntity, bool> predicate, CancellationToken cancellationToken);
     Task<IEnumerable<TEntity>> GetWithoutTracking(CancellationToken cancellationToken);
-    Task<IEnumerable<TEntity>> GetWithoutTracking(Func<TEntity, bool> predicate, CancellationToken cancellationToken);
+    Task<IEnumerable<TEntity>> GetWithoutTracking(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken);
+
 }

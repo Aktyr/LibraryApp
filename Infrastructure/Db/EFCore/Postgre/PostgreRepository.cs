@@ -38,16 +38,8 @@ internal class PostgreRepository<TEntity> : IRepository<TEntity> where TEntity :
     {
         return await _dbSet.FirstOrDefaultAsync(e => e.Id.Value == id.Value, cancellationToken);
     }
-
-    public async Task<IEnumerable<TEntity>> Get(Func<TEntity, bool> predicate, CancellationToken cancellationToken)
-    {
-        // Внимание: predicate выполняется в памяти, так как EF не умеет работать с Expression<Func<T, bool>>
-        // Для реального использования нужно принимать Expression<Func<TEntity, bool>>
-        var items = await _dbSet.ToListAsync(cancellationToken);
-        return items.Where(predicate);
-    }
-    //public async Task<IEnumerable<TEntity>> Get(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken)
-    //    => await _dbSet.Where(predicate).ToListAsync(cancellationToken);
+    public async Task<IEnumerable<TEntity>> Get(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken)
+        => await _dbSet.Where(predicate).ToListAsync(cancellationToken);
 
 
     public async Task<IEnumerable<TEntity>> GetWithoutTracking(CancellationToken cancellationToken)
@@ -55,11 +47,11 @@ internal class PostgreRepository<TEntity> : IRepository<TEntity> where TEntity :
         return await _dbSet.AsNoTracking().ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<TEntity>> GetWithoutTracking(Func<TEntity, bool> predicate, CancellationToken cancellationToken)
+    public async Task<IEnumerable<TEntity>> GetWithoutTracking(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken)
     {
-        var items = await _dbSet.AsNoTracking().ToListAsync(cancellationToken);
-        return items.Where(predicate);
+        return await _dbSet.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
     }
+
 
     #endregion
 }
