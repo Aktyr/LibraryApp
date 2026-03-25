@@ -99,4 +99,9 @@ public static class DependencyInjection
 
         return services;
     }
+    public static IServiceCollection AddBackgroundServices(this IServiceCollection services)
+    {
+        services.AddHostedService<DeadlineCheckService>();
+        return services;
+    }
 }

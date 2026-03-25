@@ -23,6 +23,7 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        builder.Services.AddBackgroundServices();
 
         var app = builder.Build();
 
