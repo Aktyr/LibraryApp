@@ -78,12 +78,4 @@ public class LibraryContext : DbContext
         modelBuilder.Entity<Book>().HasIndex(b => b.Title);
         modelBuilder.Entity<Book>().HasIndex(b => b.Author);
     }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseLazyLoadingProxies() // todo сделать что-то со строкой
-                      .UseNpgsql("User ID=root;Password=myPassword;Host=localhost;Port=5432;Database=myDataBase;Pooling=true;Min Pool Size=0;Max Pool Size=100;Connection Lifetime=0;");
-        base.OnConfiguring(optionsBuilder);
-    }
-
 }

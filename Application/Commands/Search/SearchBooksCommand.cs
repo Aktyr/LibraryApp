@@ -1,5 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Search;
 
+// todo перенести логику отчётов и поиска на Postrge
 public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>
 {
     private readonly IRepository<Book> _bookRepo;

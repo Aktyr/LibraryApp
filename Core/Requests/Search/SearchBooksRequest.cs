@@ -1,4 +1,4 @@
-﻿namespace LibApp.Core.Requests.Entities.Book;
+﻿namespace LibApp.Core.Requests.Search;
 
 public class SearchBooksRequest : IGetRequest
 {
