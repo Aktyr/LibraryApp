@@ -9,6 +9,7 @@ public class EmailNotificationService : INotificationService
 
     public async Task SendEmailAsync(string email, string subject, string body, CancellationToken cancellationToken = default)
     {
+        // todo: добавить валидатор email
         // todo: Реальная отправка email через SMTP или внешний сервис
         _logger.LogInformation($"Email sent to {email}: {subject}\n{body}");
         await Task.CompletedTask;

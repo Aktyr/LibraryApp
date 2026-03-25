@@ -38,7 +38,7 @@ public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, Basic
 
         // Расчёт штрафа (если есть)
         var penalty = _penaltyCalculator.CalculatePenaltyForReturn(userRoomBook);
-        if (penalty > 0)
+        if (penalty.HasValue && penalty.Value > 0)
         {
             userRoomBook.Penalty = penalty;
 
@@ -46,7 +46,7 @@ public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, Basic
             await _notificationService.SendOverdueNotificationAsync(
                 userRoomBook.User,
                 userRoomBook,
-                penalty,
+                penalty.Value,
                 cancellationToken);
         }
 

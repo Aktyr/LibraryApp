@@ -48,10 +48,9 @@ public class DeadlineCheckService : BackgroundService
                 && urb.Deadline.Value.Date == now.AddDays(RETURN_REMINDER_IN_DAYS).Date,
             cancellationToken);
 
-        foreach (var urb in soonDue)
-        {
+        foreach (var urb in soonDue)        
             await notificationService.SendReturnReminderAsync(urb.User, urb, cancellationToken);
-        }
+        
 
         // Просроченные книги
         var overdue = await userRoomBookRepo.Get(
@@ -64,8 +63,15 @@ public class DeadlineCheckService : BackgroundService
         {
             var daysOverdue = (now - urb.Deadline!.Value).Days;
             var penalty = CalculatePenalty(daysOverdue);
+
+            // Обновляем штраф в БД
+            urb.Penalty = penalty;
+            await userRoomBookRepo.Update(urb, cancellationToken);
+
+            // Отправляем уведомление
             await notificationService.SendOverdueNotificationAsync(urb.User, urb, penalty, cancellationToken);
         }
+
     }
     private decimal CalculatePenalty(int daysOverdue)
     {
