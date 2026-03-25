@@ -1,16 +1,27 @@
-﻿namespace LibApp.Application.Services;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace LibApp.Application.Services;
 
 public class EmailNotificationService : INotificationService
 {
     private readonly ILogger<EmailNotificationService> _logger;
-
-    public EmailNotificationService(ILogger<EmailNotificationService> logger) => _logger = logger;
+    private readonly EmailValidatorAsync _validator;
+    public EmailNotificationService(ILogger<EmailNotificationService> logger, EmailValidatorAsync validator) 
+    { 
+        _logger = logger;
+        _validator = validator;
+    }
 
 
     public async Task SendEmailAsync(string email, string subject, string body, CancellationToken cancellationToken = default)
     {
-        // todo: добавить валидатор email
         // todo: Реальная отправка email через SMTP или внешний сервис
+
+        // Валидация Email
+        var validationResult = await _validator.ValidateAsync(email, cancellationToken);
+        if (!validationResult.IsValid)
+            throw new Core.Exceptions.ValidationException { ExceptionDetails = validationResult.Errors };
+
         _logger.LogInformation($"Email sent to {email}: {subject}\n{body}");
         await Task.CompletedTask;
     }

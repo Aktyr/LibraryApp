@@ -2,14 +2,22 @@
 
 public class RegisterValidatorAsync
 {
+    private readonly EmailValidatorAsync _emailValidator;
+    public RegisterValidatorAsync()
+    {
+        _emailValidator = new EmailValidatorAsync();
+    }
+
+
     public async Task<ValidationResult> ValidateAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
-        if (string.IsNullOrWhiteSpace(request.Email))
-            errors.Add("Email обязателен");
-        else if (!IsValidEmail(request.Email))
-            errors.Add("Некорректный формат email");
+        // Валидация Email
+        var emailValidation = await _emailValidator.ValidateAsync(request.Email, cancellationToken);
+        if (!emailValidation.IsValid)
+            errors.AddRange(emailValidation.Errors);
+
 
         if (string.IsNullOrWhiteSpace(request.Password))
             errors.Add("Пароль обязателен");
@@ -27,18 +35,5 @@ public class RegisterValidatorAsync
 
         await Task.CompletedTask;
         return new ValidationResult(!errors.Any(), errors);
-    }
-
-    private bool IsValidEmail(string email)
-    {
-        try
-        {
-            var addr = new System.Net.Mail.MailAddress(email);
-            return addr.Address == email;
-        }
-        catch
-        {
-            return false;
-        }
     }
 }

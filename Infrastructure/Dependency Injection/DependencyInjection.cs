@@ -44,6 +44,8 @@ public static class DependencyInjection
         services.AddTransient<UserValidatorAsync>();
         services.AddTransient<RegisterValidatorAsync>();
         services.AddTransient<BorrowingValidatorAsync>();
+        services.AddTransient<EmailValidatorAsync>(); 
+
         return services;
     }
 

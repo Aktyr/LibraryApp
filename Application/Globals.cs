@@ -27,6 +27,7 @@ global using Microsoft.Extensions.Logging;
 global using Microsoft.IdentityModel.Tokens;
 global using System.Collections;
 global using System.IdentityModel.Tokens.Jwt;
+global using System.Net.Mail;
 global using System.Security.Claims;
 global using System.Text;
 
