@@ -4,16 +4,23 @@ public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, Basic
     private readonly IRepository<UserRoomBook> _userRoomBookRepo;
     private readonly IRepository<RoomBook> _roomBookRepo;
     private readonly BorrowingValidatorAsync _validator;
+    private readonly PenaltyCalculatorService _penaltyCalculator;
+    private readonly INotificationService _notificationService;
 
     public ReturnBookCommand(
         IRepository<UserRoomBook> userRoomBookRepo,
         IRepository<RoomBook> roomBookRepo,
-        BorrowingValidatorAsync validator)
+        BorrowingValidatorAsync validator,
+        PenaltyCalculatorService penaltyCalculator,
+        INotificationService notificationService)
     {
         _userRoomBookRepo = userRoomBookRepo;
         _roomBookRepo = roomBookRepo;
         _validator = validator;
+        _penaltyCalculator = penaltyCalculator;
+        _notificationService = notificationService;
     }
+
 
     public async Task<BasicCreateDeleteResponse> Execute(ReturnBookRequest request, CancellationToken cancellationToken)
     {
@@ -28,14 +35,20 @@ public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, Basic
         // Получаем книгу
         var roomBook = userRoomBook.RoomBook;
 
-        // todo Рассчёт штрафа при просрочке 
-        // Сделать систему умнее. Штраф не больше N суммы и тд.
-        /*if (userRoomBook.Deadline < DateTime.Now)
+
+        // Расчёт штрафа (если есть)
+        var penalty = _penaltyCalculator.CalculatePenaltyForReturn(userRoomBook);
+        if (penalty > 0)
         {
-            decimal rubPerDay = 10;
-            var daysOverdue = (DateTime.Now - userRoomBook.Deadline.Value).Days;
-            userRoomBook.Penalty = daysOverdue * rubPerDay;
-        }*/
+            userRoomBook.Penalty = penalty;
+
+            // Уведомление о штрафе
+            await _notificationService.SendOverdueNotificationAsync(
+                userRoomBook.User,
+                userRoomBook,
+                penalty,
+                cancellationToken);
+        }
 
         // Обновляем данные
         userRoomBook.ReturnDate = DateTime.Now;
