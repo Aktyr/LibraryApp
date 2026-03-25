@@ -38,10 +38,3 @@ public class User : IEntity
     public override string ToString() => $"{LastName} {FirstName} {MiddleName}, {ContactInfo}";
     public string FullName => $"{LastName} {FirstName} {MiddleName}";
 }
-
-public enum UserRole // todo Перенести в отдельный файл
-{
-    Reader,     
-    Librarian,  
-    Admin       
-}

@@ -2,9 +2,9 @@
 
 public class PenaltyConfiguration // todo перенести в отдельный файл
 {
-    public decimal DailyRate { get; set; } = 10;       // 10 руб/день
+    public decimal DailyRate { get; set; } = 10;        // 10 руб/день
     public decimal? MaxPenalty { get; set; } = 500;     // Максимальный штраф 500 руб (null - снять ограничение)
-    public int GracePeriodDays { get; set; } = 0;      // Не штрафуемый период (дней)
+    public int GracePeriodDays { get; set; } = 0;       // Не штрафуемый период (дней)
     public void Validate() // todo вынести в отдельный валидатор
     {
         if (DailyRate <= 0)
