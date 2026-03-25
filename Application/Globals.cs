@@ -21,8 +21,12 @@ global using LibApp.Core.Responses;
 global using LibApp.Core.Responses.Auth;
 global using LibApp.Core.Responses.Borrowing;
 global using LibApp.Core.Responses.Entities;
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Hosting;
+global using Microsoft.Extensions.Logging;
 global using Microsoft.IdentityModel.Tokens;
 global using System.Collections;
 global using System.IdentityModel.Tokens.Jwt;
 global using System.Security.Claims;
 global using System.Text;
+

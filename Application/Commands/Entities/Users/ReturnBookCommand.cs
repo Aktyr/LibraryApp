@@ -28,7 +28,8 @@ public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, Basic
         // Получаем книгу
         var roomBook = userRoomBook.RoomBook;
 
-        // Рассчёт штрафа при просрочке 
+        // todo Рассчёт штрафа при просрочке 
+        // Сделать систему умнее. Штраф не больше N суммы и тд.
         /*if (userRoomBook.Deadline < DateTime.Now)
         {
             decimal rubPerDay = 10;
