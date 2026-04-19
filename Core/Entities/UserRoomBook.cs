@@ -10,6 +10,6 @@ public class UserRoomBook : IEntity
     public decimal? Penalty { get; set; }
 
 
-    public User User { get; set; } = null!;
-    public RoomBook RoomBook { get; set; } = null!;
+    public virtual User User { get; set; } = null!;
+    public virtual RoomBook RoomBook { get; set; } = null!;
 }

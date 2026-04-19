@@ -1,15 +1,17 @@
 ﻿namespace LibApp.Infrastructure.Db.EFCore.Postgre;
 // User ID=root;Password=myPassword;Host=localhost;Port=5432;Database=myDataBase;Pooling=true;Min Pool Size=0;Max Pool Size=100;Connection Lifetime=0;
 public class LibraryContext : DbContext
-{ 
-    private static readonly List<Type> _entityTypes = new()
+{
+    private static readonly IReadOnlyList<Type> EntityTypes;
+    static LibraryContext()
     {
-        typeof(User),
-        typeof(Book),
-        typeof(Room),
-        typeof(RoomBook),
-        typeof(UserRoomBook)
-    };
+        var coreAssembly = Assembly.GetAssembly(typeof(IEntity));
+
+        EntityTypes = coreAssembly!.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && typeof(IEntity).IsAssignableFrom(t))
+            .ToList()
+            .AsReadOnly();
+    }
     public LibraryContext(DbContextOptions<LibraryContext> options) : base(options) { }
     public DbSet<T> GetDbSet<T>() where T : class, IEntity => Set<T>();
 
@@ -18,11 +20,10 @@ public class LibraryContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         // Регистрируем все сущности
-        foreach (var entityType in _entityTypes)
+        foreach (var entityType in EntityTypes)
             modelBuilder.Entity(entityType);
 
         ConfigureIdConversion(modelBuilder);
-        ConfigureRelationships(modelBuilder);
         ConfigureIndexes(modelBuilder);
     }
     private void ConfigureIdConversion(ModelBuilder modelBuilder)
@@ -33,7 +34,7 @@ public class LibraryContext : DbContext
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            var idProperty = entityType.FindProperty("Id");
+            var idProperty = entityType.FindProperty(nameof(IEntity.Id));
             if (idProperty != null && idProperty.ClrType == typeof(Id))
             {
                 idProperty.SetValueConverter(idConverter);
@@ -42,35 +43,6 @@ public class LibraryContext : DbContext
         }
 
     }
-    private void ConfigureRelationships(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<RoomBook>(entity =>
-        {
-            entity.HasOne(rb => rb.Room)
-                .WithMany(r => r.RoomBooks)
-                .HasForeignKey("RoomId")
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(rb => rb.Book)
-                .WithMany(b => b.RoomBook)
-                .HasForeignKey("BookId")
-                .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        modelBuilder.Entity<UserRoomBook>(entity =>
-        {
-            entity.HasOne(urb => urb.User)
-                .WithMany(u => u.RoomBooks)
-                .HasForeignKey("UserId")
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(urb => urb.RoomBook)
-                .WithMany()
-                .HasForeignKey("RoomBookId")
-                .OnDelete(DeleteBehavior.Restrict);
-        });
-    }
-
     private void ConfigureIndexes(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
