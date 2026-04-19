@@ -34,7 +34,7 @@ public class User : IEntity
                 : null;
         }
     }
-    public virtual ICollection<UserRoomBook> RoomBooks { get; set; } = [];
+    [InverseProperty(nameof(UserRoomBook.User))] public virtual ICollection<UserRoomBook> RoomBooks { get; set; } = [];
     public override string ToString() => $"{LastName} {FirstName} {MiddleName}, {ContactInfo}";
     public string FullName => $"{LastName} {FirstName} {MiddleName}";
 }
