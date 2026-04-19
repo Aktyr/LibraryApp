@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Auth;
 
-public class LoginCommand : IGetQuery<LoginRequest, LoginResponse>
+public class LoginCommand : IGetQuery<LoginRequest, LoginResponse>, ICommand
 {
     private readonly IRepository<User> _userRepo;
     private readonly JwtService _jwtService;

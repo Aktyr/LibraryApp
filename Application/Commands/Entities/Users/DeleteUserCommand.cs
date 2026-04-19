@@ -3,7 +3,7 @@
 namespace LibApp.Application.Commands.Entities.Users;
 
 public class DeleteUserCommand(IRepository<User> userRepo)
-    : IDeleteCommand<DeleteUserRequest, BasicCreateDeleteResponse>
+    : IDeleteCommand<DeleteUserRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(DeleteUserRequest request, CancellationToken cancellationToken)
     {

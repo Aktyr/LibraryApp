@@ -1,10 +1,7 @@
-﻿using LibApp.Core.DTO.Entities;
-using LibApp.Core.Requests.Entities.Room;
-
-namespace LibApp.Application.Commands.Entities.Rooms;
+﻿namespace LibApp.Application.Commands.Entities.Rooms;
 
 public class CreateRoomCommand(IRepository<Room> roomRepo, RoomValidatorAsync roomValidator, IConverter<Room, RoomDTO> roomConverter)
-    : ICreateOrUpdateCommand<CreateRoomRequest, BasicCreateDeleteResponse>
+    : ICreateOrUpdateCommand<CreateRoomRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(CreateRoomRequest request, CancellationToken cancellationToken)
     {

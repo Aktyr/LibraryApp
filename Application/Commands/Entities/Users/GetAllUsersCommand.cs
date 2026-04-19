@@ -1,10 +1,7 @@
-﻿using LibApp.Core.DTO.Entities;
-using LibApp.Core.Responses.Entities;
-
-namespace LibApp.Application.Commands.Entities.Users;
+﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class GetAllUsersQuery(IRepository<User> userRepo, IConverter<User, UserDTO> userConverter)
-    : IGetQuery<EmptyRequest, UserResponse>
+    : IGetQuery<EmptyRequest, UserResponse>, ICommand
 {
     public async Task<UserResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
     {

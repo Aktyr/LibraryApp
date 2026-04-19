@@ -19,7 +19,7 @@ public class PenaltyConfiguration // todo перенести в отдельны
 }
 
 // todo добавить штрафы при порче/потери книги
-public class PenaltyCalculatorService
+public class PenaltyCalculatorService: IService
 {
     private readonly PenaltyConfiguration _config;
     private readonly ILogger<PenaltyCalculatorService>? _logger;

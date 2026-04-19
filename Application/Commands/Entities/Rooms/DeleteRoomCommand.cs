@@ -1,9 +1,7 @@
-﻿using LibApp.Core.Requests.Entities.Room;
-
-namespace LibApp.Application.Commands.Entities.Rooms;
+﻿namespace LibApp.Application.Commands.Entities.Rooms;
 
 public class DeleteRoomCommand(IRepository<Room> roomRepo)
-    : IDeleteCommand<DeleteRoomRequest, BasicCreateDeleteResponse>
+    : IDeleteCommand<DeleteRoomRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(DeleteRoomRequest request, CancellationToken cancellationToken)
     {

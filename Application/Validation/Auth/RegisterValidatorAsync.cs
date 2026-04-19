@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Validation.Auth;
 
-public class RegisterValidatorAsync
+public class RegisterValidatorAsync : IValidator
 {
     private readonly EmailValidatorAsync _emailValidator;
     public RegisterValidatorAsync()

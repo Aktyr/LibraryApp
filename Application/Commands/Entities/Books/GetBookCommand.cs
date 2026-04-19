@@ -1,11 +1,7 @@
-﻿using LibApp.Core.DTO.Entities;
-using LibApp.Core.Requests.Entities.Book;
-using LibApp.Core.Responses.Entities;
-
-namespace LibApp.Application.Commands.Entities.Books;
+﻿namespace LibApp.Application.Commands.Entities.Books;
 
 public class GetBookCommand(IRepository<Book> bookRepo, IConverter<Book, BookDTO> bookConverter)
-    : IGetQuery<GetBookRequest, BookResponse>
+    : IGetQuery<GetBookRequest, BookResponse>, ICommand
 {
     public async Task<BookResponse?> Execute(GetBookRequest request, CancellationToken cancellationToken)
     {

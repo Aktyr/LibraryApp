@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Validation.Auth;
 
-public class EmailValidatorAsync
+public class EmailValidatorAsync : IValidator
 {
     public async Task<ValidationResult> ValidateAsync(string email, CancellationToken cancellationToken = default)
     {

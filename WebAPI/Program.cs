@@ -1,5 +1,5 @@
-using LibApp.Infrastructure.DependencyInjection;
 using LibApp.Infrastructure.Db.EFCore.Postgre;
+using LibApp.Infrastructure.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
 namespace WebAPI;
@@ -10,20 +10,13 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Регистрация сервисов через нашу DI
-        builder.Services
-            .AddDatabase(builder.Configuration)
-            .AddRepositories()
-            .AddConverters()
-            .AddValidators()
-            .AddCommands()
-            .AddJwtAuthentication(builder.Configuration);
+        // Регистрация сервисов через DI
+        builder.Services.AddAllServices(builder.Configuration);
 
         builder.Services.AddAuthorization();
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
-        builder.Services.AddBackgroundServices();
 
         var app = builder.Build();
 
@@ -45,6 +38,5 @@ public class Program
         app.UseAuthorization();
         app.MapControllers();
         app.Run();
-
     }
 }

@@ -1,9 +1,7 @@
-﻿using LibApp.Core.Requests.Entities.Book;
-
-namespace LibApp.Application.Commands.Entities.Books;
+﻿namespace LibApp.Application.Commands.Entities.Books;
 
 public class DeleteBookCommand(IRepository<Book> bookRepo)
-    : IDeleteCommand<DeleteBookRequest, BasicCreateDeleteResponse>
+    : IDeleteCommand<DeleteBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(DeleteBookRequest request, CancellationToken cancellationToken)
     {

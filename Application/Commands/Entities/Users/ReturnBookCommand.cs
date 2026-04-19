@@ -1,5 +1,5 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
-public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, BasicCreateDeleteResponse>
+public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     private readonly IRepository<UserRoomBook> _userRoomBookRepo;
     private readonly IRepository<RoomBook> _roomBookRepo;

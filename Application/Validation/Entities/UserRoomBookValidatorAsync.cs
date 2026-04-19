@@ -1,7 +1,7 @@
 ﻿namespace LibApp.Application.Validation;
 
 [Obsolete] // Избыточен при наличии BorrowingValidatorAsync
-public class UserRoomBookValidatorAsync
+public class UserRoomBookValidatorAsync : IValidator
 {
     // Параметры валидации
     private const int MAX_BOOKS_PER_USER = 5;

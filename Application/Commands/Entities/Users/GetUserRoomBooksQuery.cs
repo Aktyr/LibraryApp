@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class GetUserRoomBooksQuery : IGetQuery<GetUserBooksRequest, BorrowResponse>
+public class GetUserRoomBooksQuery : IGetQuery<GetUserBooksRequest, BorrowResponse>, ICommand
 {
     private readonly IRepository<UserRoomBook> _userRoomBookRepo;
     private readonly IConverter<UserRoomBook, BorrowedBookDTO> _converter;

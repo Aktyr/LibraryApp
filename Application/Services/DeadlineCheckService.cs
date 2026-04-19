@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Services;
 
-public class DeadlineCheckService : BackgroundService
+public class DeadlineCheckService : BackgroundService, IService
 {
     // Параметры
     private const int RETURN_REMINDER_IN_DAYS = 3;

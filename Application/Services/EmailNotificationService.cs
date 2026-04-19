@@ -1,8 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿namespace LibApp.Application.Services;
 
-namespace LibApp.Application.Services;
-
-public class EmailNotificationService : INotificationService
+public class EmailNotificationService : INotificationService, IService
 {
     private readonly ILogger<EmailNotificationService> _logger;
     private readonly EmailValidatorAsync _validator;

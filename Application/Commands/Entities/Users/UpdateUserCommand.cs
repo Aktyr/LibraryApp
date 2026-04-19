@@ -1,10 +1,7 @@
-﻿using LibApp.Core.DTO.Entities;
-using LibApp.Core.Requests.Entities.User;
-
-namespace LibApp.Application.Commands.Entities.Users;
+﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class UpdateUserCommand(IRepository<User> userRepo, UserValidatorAsync userValidator, IConverter<User, UserDTO> userConverter)
-    : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>
+    : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateUserRequest request, CancellationToken cancellationToken)
     {

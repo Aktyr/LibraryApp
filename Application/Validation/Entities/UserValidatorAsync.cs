@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Validation.Entities;
 
-public class UserValidatorAsync
+public class UserValidatorAsync : IValidator
 {
     public async Task<ValidationResult> ValidateAsync(User user, CancellationToken cancellationToken = default)
     {

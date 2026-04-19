@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class ExtendDeadlineCommand : ICreateOrUpdateCommand<ExtendDeadlineRequest, BasicCreateDeleteResponse>
+public class ExtendDeadlineCommand : ICreateOrUpdateCommand<ExtendDeadlineRequest, BasicCreateDeleteResponse>, ICommand
 {
     private readonly IRepository<UserRoomBook> _userRoomBookRepo;
     private readonly BorrowingValidatorAsync _validator;

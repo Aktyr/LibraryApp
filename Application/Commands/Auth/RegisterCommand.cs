@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Auth;
 
-public class RegisterCommand : ICreateOrUpdateCommand<RegisterRequest, RegisterResponse>
+public class RegisterCommand : ICreateOrUpdateCommand<RegisterRequest, RegisterResponse>, ICommand
 {
     private readonly IRepository<User> _userRepo;
     private readonly RegisterValidatorAsync _validator;

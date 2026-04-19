@@ -6,6 +6,22 @@
 
 public static class DependencyInjection
 {
+    private static readonly Assembly ApplicationAssembly = typeof(ICommand).Assembly;
+    public static IServiceCollection AddAllServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services
+            .AddDatabase(configuration)
+            .AddRepositories()
+            .AddConverters()
+            .AddValidators()
+            .AddCommands()
+            .AddServices()
+            .AddJwtAuthentication(configuration)
+            .AddBackgroundServices();
+
+        return services;
+    }
+
     public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
     {
         // DbContext должен быть Scoped (один на запрос)
@@ -26,52 +42,96 @@ public static class DependencyInjection
 
     public static IServiceCollection AddConverters(this IServiceCollection services)
     {
-        services.AddTransient<IConverter<Book, BookDTO>, BookDTOConverter>();
-        services.AddTransient<IConverter<Room, RoomDTO>, RoomDTOConverter>();
-        services.AddTransient<IConverter<RoomBook, RoomBookDTO>, RoomBookDTOConverter>();
-        services.AddTransient<IConverter<User, UserDTO>, UserDTOConverter>();
-        services.AddTransient<IConverter<UserRoomBook, UserRoomBookDTO>, UserRoomBookDTOConverter>();
-        services.AddTransient<IConverter<UserRoomBook, BorrowedBookDTO>, BorrowDTOConverter>();
+        var converterTypes = ApplicationAssembly.GetTypes()
+            .Where(t => !t.IsInterface && !t.IsAbstract)
+            .Where(t => t.GetInterfaces().Any(i =>
+                i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IConverter<,>)))
+            .ToList();
+
+        foreach (var converterType in converterTypes)
+        {
+            var interfaceType = converterType.GetInterfaces()
+                .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IConverter<,>));
+
+            services.AddTransient(interfaceType, converterType);
+        }
 
         return services;
     }
-
     public static IServiceCollection AddValidators(this IServiceCollection services)
     {
-        services.AddTransient<BookValidatorAsync>();
-        services.AddTransient<RoomValidatorAsync>();
-        services.AddTransient<RoomBookValidatorAsync>();
-        services.AddTransient<UserValidatorAsync>();
-        services.AddTransient<RegisterValidatorAsync>();
-        services.AddTransient<BorrowingValidatorAsync>();
-        services.AddTransient<EmailValidatorAsync>(); 
+        var validatorTypes = ApplicationAssembly.GetTypes()
+            .Where(t => !t.IsInterface && !t.IsAbstract && typeof(IValidator).IsAssignableFrom(t))
+            .ToList();
+
+        foreach (var validatorType in validatorTypes)        
+            services.AddTransient(validatorType);
+        
 
         return services;
     }
-
     public static IServiceCollection AddCommands(this IServiceCollection services)
     {
-        services.AddTransient<LoginCommand>();
-        services.AddTransient<RegisterCommand>();
-        services.AddTransient<CreateBookCommand>();
-        services.AddTransient<DeleteBookCommand>();
-        services.AddTransient<GetAllBooksCommand>();
-        services.AddTransient<GetBookCommand>();
-        services.AddTransient<UpdateBookCommand>();
-        services.AddTransient<CreateRoomCommand>();
-        services.AddTransient<DeleteRoomCommand>();
-        services.AddTransient<GetAllRoomsCommand>();
-        services.AddTransient<GetRoomCommand>();
-        services.AddTransient<UpdateRoomCommand>();
-        services.AddTransient<CreateUserCommand>();
-        services.AddTransient<DeleteUserCommand>();
-        services.AddTransient<GetAllUsersQuery>();
-        services.AddTransient<GetUserQuery>();
-        services.AddTransient<UpdateUserCommand>();
-        services.AddTransient<BorrowBookCommand>();
-        services.AddTransient<ReturnBookCommand>();
-        services.AddTransient<ExtendDeadlineCommand>();
-        services.AddTransient<GetUserRoomBooksQuery>();
+        var commandTypes = ApplicationAssembly.GetTypes()
+            .Where(t => !t.IsInterface && !t.IsAbstract && typeof(ICommand).IsAssignableFrom(t))
+            .ToList();
+
+        foreach (var commandType in commandTypes)        
+            services.AddTransient(commandType);
+        
+
+        return services;
+    }
+    public static IServiceCollection AddServices(this IServiceCollection services)
+    {
+        var serviceTypes = ApplicationAssembly.GetTypes()
+            .Where(t => !t.IsInterface && !t.IsAbstract && typeof(IService).IsAssignableFrom(t))
+            .Where(t => t.Name != "JwtService") // JwtService регистрируем отдельно
+            .ToList();
+
+        foreach (var serviceType in serviceTypes)
+        {
+            var interfaces = serviceType.GetInterfaces()
+                .Where(i => i != typeof(IService))
+                .ToList();
+
+            if (interfaces.Any())
+            {
+                foreach (var interfaceType in interfaces)                
+                    services.AddScoped(interfaceType, serviceType);                
+            }
+            else            
+                services.AddScoped(serviceType);            
+        }
+
+        // Регистрируем PenaltyConfiguration как Singleton
+        services.AddSingleton(new PenaltyConfiguration // todo вынести в файл концфигуации
+        {
+            DailyRate = 10,
+            MaxPenalty = 500,
+            GracePeriodDays = 0
+        });
+
+        return services;
+    }
+    public static IServiceCollection AddBackgroundServices(this IServiceCollection services)
+    {
+        var backgroundServiceTypes = ApplicationAssembly.GetTypes()
+            .Where(t => !t.IsInterface && !t.IsAbstract)
+            .Where(t => t.IsSubclassOf(typeof(BackgroundService)))
+            .ToList();
+
+        foreach (var serviceType in backgroundServiceTypes)
+        {
+            var method = typeof(ServiceCollectionHostedServiceExtensions)
+                .GetMethods()
+                .First(m => m.Name == nameof(ServiceCollectionHostedServiceExtensions.AddHostedService)
+                            && m.IsGenericMethod
+                            && m.GetParameters().Length == 1
+                            && m.GetParameters()[0].ParameterType == typeof(IServiceCollection));
+
+            method.MakeGenericMethod(serviceType).Invoke(null, new object[] { services });
+        }
         return services;
     }
 
@@ -99,11 +159,6 @@ public static class DependencyInjection
                 };
             });
 
-        return services;
-    }
-    public static IServiceCollection AddBackgroundServices(this IServiceCollection services)
-    {
-        services.AddHostedService<DeadlineCheckService>();
         return services;
     }
 }

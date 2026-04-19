@@ -1,10 +1,7 @@
-﻿using LibApp.Core.DTO.Entities;
-using LibApp.Core.Responses.Entities;
-
-namespace LibApp.Application.Commands.Entities.Rooms;
+﻿namespace LibApp.Application.Commands.Entities.Rooms;
 
 public class GetAllRoomsCommand(IRepository<Room> roomRepo, IConverter<Room, RoomDTO> RoomConverter)
-    : IGetQuery<EmptyRequest, RoomResponse>
+    : IGetQuery<EmptyRequest, RoomResponse>, ICommand
 {
     public async Task<RoomResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
     {

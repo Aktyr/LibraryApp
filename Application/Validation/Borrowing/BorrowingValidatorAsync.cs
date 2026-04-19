@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Validation.Borrowing;
 
-public class BorrowingValidatorAsync
+public class BorrowingValidatorAsync : IValidator
 {
     // Параметры валидации
     private const int MAX_BOOKS_PER_USER = 5;

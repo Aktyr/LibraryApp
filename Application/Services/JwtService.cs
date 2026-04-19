@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Services;
 
-public class JwtService
+public class JwtService : IService
 {
     private readonly string _secretKey;
     private readonly string _issuer;

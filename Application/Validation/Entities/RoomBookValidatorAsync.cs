@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Validation.Entities;
 
-public class RoomBookValidatorAsync
+public class RoomBookValidatorAsync : IValidator
 {
     public async Task<ValidationResult> ValidateAsync(RoomBook roomBook, CancellationToken cancellationToken = default)
     {
