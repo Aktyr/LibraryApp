@@ -8,12 +8,16 @@ public class ApplicationSettings
     public NotificationSettings Notification { get; set; } = new();
     public DeadlineCheckSettings DeadlineCheck { get; set; } = new();
 }
-
 public class JwtSettings
 {
+    [Required(ErrorMessage = "SecretKey is required")]
+    [MinLength(32, ErrorMessage = "SecretKey must be at least 32 characters")]
     public string SecretKey { get; set; } = string.Empty;
+
     public string Issuer { get; set; } = "LibraryApp";
     public string Audience { get; set; } = "LibraryApp";
+
+    [Range(1, 1440, ErrorMessage = "ExpiryMinutes must be between 1 and 1440")]
     public int ExpiryMinutes { get; set; } = 60;
 }
 
@@ -30,7 +34,7 @@ public class PenaltySettings
     public decimal DailyRate { get; set; } = 10;
     public decimal? MaxPenalty { get; set; } = 500;
     public int GracePeriodDays { get; set; } = 0;
-    public void Validate() // todo вынести в отдельный валидатор
+    public void Validate() // todo вынести в отдельный валидатор? использовать атрибуты как в JwtSettings?
     {
         if (DailyRate <= 0)
             throw new InvalidOperationException("DailyRate must be greater than 0");

@@ -31,7 +31,6 @@ public static class DependencyInjection
         services.AddOptions<JwtSettings>().Bind(configuration.GetSection("Jwt"))
                                           .ValidateDataAnnotations()  // Использует атрибуты [Required], [MinLength] из класса JwtSettings
                                           .ValidateOnStart();         // Приложение упадет сразу, а не при попытке входа
-
         return services;
     }
     public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)

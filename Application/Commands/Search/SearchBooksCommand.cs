@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Search;
 
-// todo перенести логику отчётов и поиска на Postrge
+// todo перенести логику отчётов и поиска на EFCore
 public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, ICommand
 {
     private readonly IRepository<Book> _bookRepo;

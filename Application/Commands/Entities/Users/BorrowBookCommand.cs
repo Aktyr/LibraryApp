@@ -1,4 +1,5 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
+
 public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     private readonly IRepository<User> _userRepo;
