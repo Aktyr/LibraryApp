@@ -9,6 +9,7 @@ public static class DependencyInjection
     private static readonly Assembly ApplicationAssembly = typeof(ICommand).Assembly;
     public static IServiceCollection AddAllServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddConfigurationSettings(configuration);
         services
             .AddDatabase(configuration)
             .AddRepositories()
@@ -21,7 +22,18 @@ public static class DependencyInjection
 
         return services;
     }
+    public static IServiceCollection AddConfigurationSettings(this IServiceCollection services, IConfiguration configuration)
+    {
+        // Регистрируем настройки для IOptions
+        services.Configure<DeadlineCheckSettings>(configuration.GetSection("DeadlineCheck"));
+        services.Configure<BorrowingSettings>(configuration.GetSection("Borrowing"));
+        services.Configure<PenaltySettings>(configuration.GetSection("Penalty"));
+        services.AddOptions<JwtSettings>().Bind(configuration.GetSection("Jwt"))
+                                          .ValidateDataAnnotations()  // Использует атрибуты [Required], [MinLength] из класса JwtSettings
+                                          .ValidateOnStart();         // Приложение упадет сразу, а не при попытке входа
 
+        return services;
+    }
     public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
     {
         // DbContext должен быть Scoped (один на запрос)
@@ -86,7 +98,6 @@ public static class DependencyInjection
     {
         var serviceTypes = ApplicationAssembly.GetTypes()
             .Where(t => !t.IsInterface && !t.IsAbstract && typeof(IService).IsAssignableFrom(t))
-            .Where(t => t.Name != "JwtService") // JwtService регистрируем отдельно
             .ToList();
 
         foreach (var serviceType in serviceTypes)
@@ -103,15 +114,6 @@ public static class DependencyInjection
             else            
                 services.AddScoped(serviceType);            
         }
-
-        // Регистрируем PenaltyConfiguration как Singleton
-        services.AddSingleton(new PenaltyConfiguration // todo вынести в файл концфигуации
-        {
-            DailyRate = 10,
-            MaxPenalty = 500,
-            GracePeriodDays = 0
-        });
-
         return services;
     }
     public static IServiceCollection AddBackgroundServices(this IServiceCollection services)
@@ -137,12 +139,8 @@ public static class DependencyInjection
 
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
-        var jwtSettings = configuration.GetSection("Jwt");
-        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
-        var issuer = jwtSettings["Issuer"] ?? "LibraryApp";
-        var audience = jwtSettings["Audience"] ?? "LibraryApp";
-
-        services.AddSingleton(new JwtService(secretKey, issuer, audience));
+        var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>()
+            ?? throw new InvalidOperationException("JWT Settings not configured");
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -153,9 +151,9 @@ public static class DependencyInjection
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = issuer,
-                    ValidAudience = audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience = jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
                 };
             });
 

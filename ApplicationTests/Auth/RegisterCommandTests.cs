@@ -1,15 +1,19 @@
-﻿namespace LibApp.ApplicationTests.Auth;
+﻿
+
+namespace LibApp.ApplicationTests.Auth;
 
 [TestFixture]
 public class RegisterCommandTests
 {
     private RegisterValidatorAsync CreateRegisterValidator => new();
     private IConverter<User, UserDTO> Converter => new UserDTOConverter();
-    private JwtService JwtService => new(
-        secretKey: "test-secret-key-for-testing-purposes-only-12345",
-        issuer: "test-issuer",
-        audience: "test-audience"
-    );
+    private JwtService JwtService => new(Options.Create(new JwtSettings
+    {
+        SecretKey = "test-secret-key-for-testing-purposes-only-12345",
+        Issuer = "test-issuer",
+        Audience = "test-audience",
+        ExpiryMinutes = 60
+    }));
 
     [TestCase("test@test.com", "Password123!", "Иванов", "Иван", "Иванович", "+7-999-123-45-67")]
     [TestCase("test@test.com", "123456", "Петров", "Петр", "", "test@test.com")]

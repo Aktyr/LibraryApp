@@ -1,33 +1,14 @@
 ﻿namespace LibApp.Application.Services;
 
-public class PenaltyConfiguration // todo перенести в отдельный файл
+public class PenaltyCalculatorService : IService
 {
-    public decimal DailyRate { get; set; } = 10;        // 10 руб/день
-    public decimal? MaxPenalty { get; set; } = 500;     // Максимальный штраф 500 руб (null - снять ограничение)
-    public int GracePeriodDays { get; set; } = 0;       // Не штрафуемый период (дней)
-    public void Validate() // todo вынести в отдельный валидатор
-    {
-        if (DailyRate <= 0)
-            throw new InvalidOperationException("DailyRate must be greater than 0");
-
-        if (MaxPenalty.HasValue && MaxPenalty.Value <= 0)
-            throw new InvalidOperationException("MaxPenalty must be greater than 0");
-
-        if (GracePeriodDays < 0)
-            throw new InvalidOperationException("GracePeriodDays cannot be negative");
-    }
-}
-
-// todo добавить штрафы при порче/потери книги
-public class PenaltyCalculatorService: IService
-{
-    private readonly PenaltyConfiguration _config;
+    // todo добавить штрафы при порче/потери книги
+    private readonly IOptionsSnapshot<PenaltySettings> _settings;
     private readonly ILogger<PenaltyCalculatorService>? _logger;
 
-    public PenaltyCalculatorService(PenaltyConfiguration config, ILogger<PenaltyCalculatorService>? logger = null)
+    public PenaltyCalculatorService(IOptionsSnapshot<PenaltySettings> settings, ILogger<PenaltyCalculatorService>? logger = null)
     {
-        _config = config ?? throw new ArgumentNullException(nameof(config));
-        _config.Validate();
+        _settings = settings;
         _logger = logger;
     }
 
@@ -39,6 +20,8 @@ public class PenaltyCalculatorService: IService
     /// <returns>Сумма штрафа</returns>
     public decimal? CalculatePenalty(DateTime? deadline, DateTime? currentDate = null)
     {
+        var config = _settings.Value;
+
         if (!deadline.HasValue)
         {
             _logger?.LogDebug("Deadline is null, penalty = 0");
@@ -48,17 +31,16 @@ public class PenaltyCalculatorService: IService
         var now = currentDate ?? DateTime.Now;
 
         // Добавляем льготный период
-        var gracePeriodEnd = deadline.Value.AddDays(_config.GracePeriodDays);
-
+        var gracePeriodEnd = deadline.Value.AddDays(config.GracePeriodDays);
         if (now <= gracePeriodEnd)
         {
-            _logger?.LogDebug($"Within grace period. Deadline: {deadline.Value}, Now: {now}, Penalty = 0");
+            _logger?.LogDebug($"Within grace period. Penalty = 0");
             return 0;
         }
 
         // Рассчитываем дни просрочки с округлением вверх (учитывая часы)
         var totalDaysOverdue = (now - deadline.Value).TotalDays;
-        var actualDaysOverdue = (int)Math.Ceiling(totalDaysOverdue) - _config.GracePeriodDays;
+        var actualDaysOverdue = (int)Math.Ceiling(totalDaysOverdue) - config.GracePeriodDays;
 
         // Защита от отрицательных значений
         if (actualDaysOverdue <= 0)
@@ -67,21 +49,18 @@ public class PenaltyCalculatorService: IService
             return 0;
         }
 
-        var penalty = actualDaysOverdue * _config.DailyRate;
-
+        var penalty = actualDaysOverdue * config.DailyRate;
         // Округляем до копеек
         penalty = Math.Round(penalty, 2, MidpointRounding.AwayFromZero);
 
         // Применяем ограничение максимального штрафа
-        if (_config.MaxPenalty.HasValue && penalty > _config.MaxPenalty.Value)  // Добавить HasValue и Value
+        if (config.MaxPenalty.HasValue && penalty > config.MaxPenalty.Value)
         {
-            _logger?.LogInformation($"Penalty {penalty} exceeds max penalty {_config.MaxPenalty.Value}. Applying cap.");  // Добавить Value
-            return _config.MaxPenalty.Value;  // Добавить Value
+            _logger?.LogInformation($"Penalty {penalty} exceeds max penalty {config.MaxPenalty.Value}. Applying cap.");
+            return config.MaxPenalty.Value;
         }
 
-
-        _logger?.LogDebug($"Penalty calculated: DaysOverdue={actualDaysOverdue}, DailyRate={_config.DailyRate}, Penalty={penalty}");
-
+        _logger?.LogDebug($"Penalty calculated: DaysOverdue={actualDaysOverdue}, Penalty={penalty}");
         return penalty;
     }
 
@@ -113,16 +92,9 @@ public class PenaltyCalculatorService: IService
         {
             var currentPenaltyValue = currentPenalty ?? 0;
             var maxPenalty = Math.Max(currentPenaltyValue, userRoomBook.Penalty.Value);
-
-            if (maxPenalty > userRoomBook.Penalty.Value)
-                _logger?.LogInformation($"Penalty increased from {userRoomBook.Penalty.Value} to {currentPenaltyValue}");
-
             return maxPenalty;
         }
-
         // Первое начисление штрафа
-        _logger?.LogDebug($"First penalty calculation: {currentPenalty}");
         return currentPenalty;
     }
 }
-

@@ -7,6 +7,7 @@ global using LibApp.Application.Interfaces;
 global using LibApp.Application.Services;
 global using LibApp.Application.Validation.Auth;
 global using LibApp.Application.Validation.Entities;
+global using LibApp.Core.Configuration;
 global using LibApp.Core.DTO.Entities;
 global using LibApp.Core.Entities;
 global using LibApp.Core.Enums;
@@ -21,8 +22,8 @@ global using LibApp.Core.Requests.Entities.Room;
 global using LibApp.Core.Requests.Entities.User;
 global using LibApp.Core.Responses;
 global using LibApp.Core.Responses.Entities;
+global using Microsoft.Extensions.Options;
 global using Moq;
-
 
 
 
