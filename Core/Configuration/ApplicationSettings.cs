@@ -8,7 +8,7 @@ public class ApplicationSettings
     public NotificationSettings Notification { get; set; } = new();
     public DeadlineCheckSettings DeadlineCheck { get; set; } = new();
 }
-public class JwtSettings
+public class JwtSettings : ISettings
 {
     [Required(ErrorMessage = "SecretKey is required")]
     [MinLength(32, ErrorMessage = "SecretKey must be at least 32 characters")]
@@ -21,7 +21,7 @@ public class JwtSettings
     public int ExpiryMinutes { get; set; } = 60;
 }
 
-public class BorrowingSettings
+public class BorrowingSettings : ISettings
 {
     public int MaxBooksPerUser { get; set; } = 5;
     public int MinBorrowDays { get; set; } = 1;
@@ -29,7 +29,7 @@ public class BorrowingSettings
     public int MaxExtendDeadlineDays { get; set; } = 14;
 }
 
-public class PenaltySettings
+public class PenaltySettings : ISettings
 {
     public decimal DailyRate { get; set; } = 10;
     public decimal? MaxPenalty { get; set; } = 500;
@@ -48,7 +48,7 @@ public class PenaltySettings
 
 }
 
-public class NotificationSettings
+public class NotificationSettings : ISettings
 {
     public string SmtpServer { get; set; } = string.Empty;
     public int SmtpPort { get; set; } = 587;
@@ -58,8 +58,13 @@ public class NotificationSettings
     public bool Enabled { get; set; } = true;
 }
 
-public class DeadlineCheckSettings
+public class DeadlineCheckSettings : ISettings
 {
     public int ReturnReminderInDays { get; set; } = 3;
     public int CheckIntervalInHours { get; set; } = 24;
+}
+public class DatabaseSettings : ISettings
+{
+    [Required]
+    public string ConnectionString { get; set; } = string.Empty;
 }
