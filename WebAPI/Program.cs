@@ -11,7 +11,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Регистрация сервисов через DI
-        builder.Services.AddAllServices(builder.Configuration);
+        builder.Services.AddAllServices();
 
         builder.Services.AddAuthorization();
         builder.Services.AddControllers();
