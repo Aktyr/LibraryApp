@@ -9,6 +9,6 @@ public class JwtSettings : ISettings
     public string Issuer { get; set; } = "LibraryApp";
     public string Audience { get; set; } = "LibraryApp";
 
-    [Range(1, 1440, ErrorMessage = "ExpiryMinutes must be between 1 and 1440")]
+    [PositiveNumber] [MaxRange(1440)]
     public int ExpiryMinutes { get; set; } = 60;
 }

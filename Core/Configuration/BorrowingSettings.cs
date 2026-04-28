@@ -3,18 +3,18 @@
 [MinMaxValidator(nameof(MinBorrowDays), nameof(MaxBorrowDays))]
 public class BorrowingSettings : ISettings
 {
-    [Range(1, 10, ErrorMessage = "MaxBooksPerUser must be between 1 and 10")]
+    [PositiveNumber] [MaxRange(10)]
     public int MaxBooksPerUser { get; set; } = 5;
 
 
-    [Range(1, 7, ErrorMessage = "MinBorrowDays must be between 1 and 7")]
+    [PositiveNumber] [MaxRange(14)]
+    public int MaxExtendDeadlineDays { get; set; } = 14;
+
+
+    [PositiveNumber]
     public int MinBorrowDays { get; set; } = 1;
 
 
-    [Range(7, 30, ErrorMessage = "MinBorrowDays must be between 7 and 30")]
+    [PositiveNumber]
     public int MaxBorrowDays { get; set; } = 30;
-
-
-    [Range(0, 14, ErrorMessage = "MinBorrowDays must be between 0 and 14")]
-    public int MaxExtendDeadlineDays { get; set; } = 14;
 }
