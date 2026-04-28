@@ -27,7 +27,7 @@ public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, Basic
 
         var validationResult = await _validator.ValidateBorrowAsync(user, roomBook, request.BorrowDays, cancellationToken);
         if (!validationResult.IsValid)
-            throw new ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Создаем запись о выдаче
         var userRoomBook = new UserRoomBook

@@ -19,7 +19,7 @@ public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bo
         var validationResult = await bookValidator.ValidateAsync(bookForValidation, cancellationToken);
 
         if (!validationResult.IsValid)
-            throw new ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Обновляем только если валидация прошла
         book.Title = request.Title;

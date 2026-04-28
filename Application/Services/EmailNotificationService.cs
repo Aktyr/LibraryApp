@@ -18,7 +18,7 @@ public class EmailNotificationService : INotificationService, IService
         // Валидация Email
         var validationResult = await _validator.ValidateAsync(email, cancellationToken);
         if (!validationResult.IsValid)
-            throw new Core.Exceptions.ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new Core.Exceptions.LibValidationException { ExceptionDetails = validationResult.Errors };
 
         _logger.LogInformation($"Email sent to {email}: {subject}\n{body}");
         await Task.CompletedTask;

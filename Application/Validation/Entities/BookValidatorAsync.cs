@@ -2,7 +2,7 @@
 
 public class BookValidatorAsync : IValidator
 {
-    public async Task<ValidationResult> ValidateAsync(Book book, CancellationToken cancellationToken = default)
+    public async Task<ValidationResponse> ValidateAsync(Book book, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -27,7 +27,7 @@ public class BookValidatorAsync : IValidator
 
         await Task.CompletedTask;
 
-        return new ValidationResult(!errors.Any(), errors);
+        return new ValidationResponse(!errors.Any(), errors);
     }
 
 }

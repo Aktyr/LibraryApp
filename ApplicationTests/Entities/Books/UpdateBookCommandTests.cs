@@ -178,7 +178,7 @@ public class UpdateBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<ValidationException>(async () =>
+        Assert.ThrowsAsync<LibValidationException>(async () =>
             await updateBookCommand.Execute(updateBookRequest, CancellationToken.None));
     }
 
@@ -209,7 +209,7 @@ public class UpdateBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<ValidationException>(async () =>
+        Assert.ThrowsAsync<LibValidationException>(async () =>
             await updateBookCommand.Execute(updateBookRequest, CancellationToken.None));
     }
     [Test]

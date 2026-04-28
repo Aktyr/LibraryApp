@@ -145,7 +145,7 @@ public class UpdateRoomCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<ValidationException>(async () =>
+        Assert.ThrowsAsync<LibValidationException>(async () =>
             await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None));
     }
 

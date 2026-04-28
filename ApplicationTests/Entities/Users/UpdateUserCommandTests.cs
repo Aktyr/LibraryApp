@@ -118,7 +118,7 @@ public class UpdateUserCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<ValidationException>(async () =>
+        Assert.ThrowsAsync<LibValidationException>(async () =>
             await updateUserCommand.Execute(updateUserRequest, CancellationToken.None));
     }
 
@@ -328,7 +328,7 @@ public class UpdateUserCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<ValidationException>(async () =>
+        Assert.ThrowsAsync<LibValidationException>(async () =>
             await updateUserCommand.Execute(updateUserRequest, CancellationToken.None));
 
         // Проверяем, что пользователь НЕ был обновлен

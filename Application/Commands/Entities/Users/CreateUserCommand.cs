@@ -19,7 +19,7 @@ public class CreateUserCommand(IRepository<User> userRepo, UserValidatorAsync us
         var validationResult = await userValidator.ValidateAsync(user, cancellationToken);
 
         if (!validationResult.IsValid)
-            throw new ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Добавление
         await userRepo.Add(user, cancellationToken);

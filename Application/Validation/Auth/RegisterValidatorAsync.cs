@@ -9,7 +9,7 @@ public class RegisterValidatorAsync : IValidator
     }
 
 
-    public async Task<ValidationResult> ValidateAsync(RegisterRequest request, CancellationToken cancellationToken = default)
+    public async Task<ValidationResponse> ValidateAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -34,6 +34,6 @@ public class RegisterValidatorAsync : IValidator
             errors.Add("Контактная информация обязательна");
 
         await Task.CompletedTask;
-        return new ValidationResult(!errors.Any(), errors);
+        return new ValidationResponse(!errors.Any(), errors);
     }
 }

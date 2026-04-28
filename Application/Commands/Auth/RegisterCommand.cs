@@ -24,12 +24,12 @@ public class RegisterCommand : ICreateOrUpdateCommand<RegisterRequest, RegisterR
         // Валидация
         var validationResult = await _validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
-            throw new ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Проверка, не занят ли email
         var existingUsers = await _userRepo.Get(u => u.Email == request.Email, cancellationToken);
         if (existingUsers.Any())
-            throw new ValidationException { ExceptionDetails = new List<string> { "Email уже зарегистрирован" } };
+            throw new LibValidationException { ExceptionDetails = new List<string> { "Email уже зарегистрирован" } };
 
         // Хешируем пароль
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);

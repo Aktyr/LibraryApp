@@ -82,7 +82,7 @@ public class CreateBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<ValidationException>(async () =>
+        Assert.ThrowsAsync<LibValidationException>(async () =>
             await createBookCommand.Execute(createBookRequest, CancellationToken.None));
     }
 }

@@ -15,7 +15,7 @@ public class CreateRoomCommand(IRepository<Room> roomRepo, RoomValidatorAsync ro
         var validationResult = await roomValidator.ValidateAsync(room, cancellationToken);
 
         if (!validationResult.IsValid)
-            throw new ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Проверка существования комнаты с таким именем
         if ((await roomRepo.Get(x => x.Name == request.Name, cancellationToken)).Any())

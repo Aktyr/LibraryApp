@@ -19,7 +19,7 @@ public class ExtendDeadlineCommand : ICreateOrUpdateCommand<ExtendDeadlineReques
 
         var validationResult = await _validator.ValidateExtendAsync(userRoomBook, request.ExtraDays, cancellationToken);
         if (!validationResult.IsValid)
-            throw new ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Продлеваем срок
         userRoomBook.Deadline = userRoomBook.Deadline!.Value.AddDays(request.ExtraDays);

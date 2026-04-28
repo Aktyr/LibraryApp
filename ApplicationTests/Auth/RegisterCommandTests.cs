@@ -91,7 +91,7 @@ public class RegisterCommandTests
         };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ValidationException>(async () =>
+        var ex = Assert.ThrowsAsync<LibValidationException>(async () =>
             await registerCommand.Execute(registerRequest, CancellationToken.None));
         Assert.That(ex.ExceptionDetails, Contains.Item("Email уже зарегистрирован"));
     }
@@ -131,7 +131,7 @@ public class RegisterCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<ValidationException>(async () =>
+        Assert.ThrowsAsync<LibValidationException>(async () =>
             await registerCommand.Execute(registerRequest, CancellationToken.None));
     }
 }

@@ -87,7 +87,7 @@ public class CreateUserCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<ValidationException>(async () =>
+        Assert.ThrowsAsync<LibValidationException>(async () =>
             await createUserCommand.Execute(createUserRequest, CancellationToken.None));
     }
 
@@ -108,7 +108,7 @@ public class CreateUserCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<ValidationException>(async () =>
+        Assert.ThrowsAsync<LibValidationException>(async () =>
             await createUserCommand.Execute(createUserRequest, CancellationToken.None));
     }
 

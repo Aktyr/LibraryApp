@@ -2,7 +2,7 @@
 
 public class RoomBookValidatorAsync : IValidator
 {
-    public async Task<ValidationResult> ValidateAsync(RoomBook roomBook, CancellationToken cancellationToken = default)
+    public async Task<ValidationResponse> ValidateAsync(RoomBook roomBook, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -20,6 +20,6 @@ public class RoomBookValidatorAsync : IValidator
 
         await Task.CompletedTask;
 
-        return new ValidationResult(!errors.Any(), errors);
+        return new ValidationResponse(!errors.Any(), errors);
     }
 }

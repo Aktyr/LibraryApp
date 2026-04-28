@@ -31,7 +31,7 @@ public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, Basic
 
         var validationResult = await _validator.ValidateReturnAsync(userRoomBook, cancellationToken);
         if (!validationResult.IsValid)
-            throw new ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Получаем книгу
         var roomBook = userRoomBook.RoomBook;

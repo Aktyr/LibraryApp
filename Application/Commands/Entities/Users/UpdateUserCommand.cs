@@ -21,7 +21,7 @@ public class UpdateUserCommand(IRepository<User> userRepo, UserValidatorAsync us
         var validationResult = await userValidator.ValidateAsync(userForValidation, cancellationToken);
 
         if (!validationResult.IsValid)
-            throw new ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Обновляем только если валидация прошла
         user.LastName = request.LastName;

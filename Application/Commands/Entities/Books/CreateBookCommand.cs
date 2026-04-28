@@ -17,7 +17,7 @@ public class CreateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bo
         var validationResult = await bookValidator.ValidateAsync(book, cancellationToken);
 
         if (!validationResult.IsValid)
-            throw new ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Добавление 
         await bookRepo.Add(book, cancellationToken);

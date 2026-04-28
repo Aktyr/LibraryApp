@@ -6,3 +6,4 @@ global using LibApp.Core.Interfaces;
 global using LibApp.Core.Records;
 global using System.ComponentModel.DataAnnotations;
 global using System.ComponentModel.DataAnnotations.Schema;
+global using LibApp.Core.Attributes.Configuration;

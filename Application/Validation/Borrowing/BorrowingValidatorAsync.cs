@@ -8,7 +8,7 @@ public class BorrowingValidatorAsync : IValidator
     /// <summary>
     /// Валидация выдачи книги
     /// </summary>
-    public async Task<ValidationResult> ValidateBorrowAsync(User user, RoomBook roomBook, int borrowDays, CancellationToken cancellationToken = default)
+    public async Task<ValidationResponse> ValidateBorrowAsync(User user, RoomBook roomBook, int borrowDays, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -34,9 +34,9 @@ public class BorrowingValidatorAsync : IValidator
             errors.Add($"Срок выдачи должен быть от {_settings.MinBorrowDays} до {_settings.MaxBorrowDays} дней");
 
         await Task.CompletedTask;
-        return new ValidationResult(!errors.Any(), errors);
+        return new ValidationResponse(!errors.Any(), errors);
     }
-    public async Task<ValidationResult> ValidateExtendAsync(UserRoomBook userRoomBook, int extraDays, CancellationToken cancellationToken = default)
+    public async Task<ValidationResponse> ValidateExtendAsync(UserRoomBook userRoomBook, int extraDays, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -48,9 +48,9 @@ public class BorrowingValidatorAsync : IValidator
             errors.Add($"Срок продления должен быть от 1 до {_settings.MaxExtendDeadlineDays} дней");
 
         await Task.CompletedTask;
-        return new ValidationResult(!errors.Any(), errors);
+        return new ValidationResponse(!errors.Any(), errors);
     }
-    public async Task<ValidationResult> ValidateReturnAsync(UserRoomBook userRoomBook, CancellationToken cancellationToken = default)
+    public async Task<ValidationResponse> ValidateReturnAsync(UserRoomBook userRoomBook, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -60,13 +60,13 @@ public class BorrowingValidatorAsync : IValidator
             errors.Add("Книга уже возвращена");
 
         await Task.CompletedTask;
-        return new ValidationResult(!errors.Any(), errors);
+        return new ValidationResponse(!errors.Any(), errors);
     }
 
     /// <summary>
     /// Валидация запроса на выдачу (проверка входных данных)
     /// </summary>
-    public async Task<ValidationResult> ValidateBorrowRequestAsync(BorrowBookRequest request, CancellationToken cancellationToken = default)
+    public async Task<ValidationResponse> ValidateBorrowRequestAsync(BorrowBookRequest request, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -80,6 +80,6 @@ public class BorrowingValidatorAsync : IValidator
             errors.Add($"Срок выдачи должен быть от {_settings.MinBorrowDays} до {_settings.MaxBorrowDays} дней");
 
         await Task.CompletedTask;
-        return new ValidationResult(!errors.Any(), errors);
+        return new ValidationResponse(!errors.Any(), errors);
     }
 }

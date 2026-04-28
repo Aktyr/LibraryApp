@@ -17,7 +17,7 @@ public class UpdateRoomCommand(IRepository<Room> roomRepo, RoomValidatorAsync ro
         var validationResult = await roomValidator.ValidateAsync(roomForValidation, cancellationToken);
 
         if (!validationResult.IsValid)
-            throw new ValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Проверка уникальности имени, если изменилось
         if (room.Name != request.Name &&

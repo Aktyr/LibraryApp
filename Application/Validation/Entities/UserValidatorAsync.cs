@@ -2,7 +2,7 @@
 
 public class UserValidatorAsync : IValidator
 {
-    public async Task<ValidationResult> ValidateAsync(User user, CancellationToken cancellationToken = default)
+    public async Task<ValidationResponse> ValidateAsync(User user, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
 
@@ -29,6 +29,6 @@ public class UserValidatorAsync : IValidator
 
         await Task.CompletedTask;
 
-        return new ValidationResult(!errors.Any(), errors);
+        return new ValidationResponse(!errors.Any(), errors);
     }
 }
