@@ -27,3 +27,7 @@ global using System.Text;
 global using Microsoft.Extensions.Hosting;
 global using LibApp.Core.Configuration;
 global using Microsoft.Extensions.Options;
+global using LibApp.Core.Enums;
+global using Microsoft.EntityFrameworkCore.Metadata.Builders;
+global using LibApp.Infrastructure.Db.EFCore.ValueConverters;
+global using LibApp.Infrastructure.Db.EFCore.Configuration;
