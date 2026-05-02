@@ -68,9 +68,18 @@ public abstract class BaseConverter<TEntity, TDto> : IConverter<TEntity, TDto>
     {
         var collections = typeof(TEntity)
             .GetProperties()
-            .Where(p => typeof(ICollection).IsAssignableFrom(p.PropertyType)
-                     && p.PropertyType != typeof(string)
-                     && p.GetValue(entity) == null);
+            .Where(p =>
+                // Проверяем generic ICollection<T>, IList<T>, ISet<T> и т.д.
+                (p.PropertyType.IsGenericType
+                 && p.PropertyType.GetInterfaces()
+                     .Any(i => i.IsGenericType
+                            && i.GetGenericTypeDefinition() == typeof(ICollection<>)))
+                // Проверяем не-generic ICollection для обратной совместимости
+                || (typeof(ICollection).IsAssignableFrom(p.PropertyType)
+                    && p.PropertyType != typeof(string))
+            )
+            .Where(p => p.CanWrite)
+            .Where(p => p.GetValue(entity) == null);
 
         foreach (var prop in collections)
         {
@@ -80,6 +89,7 @@ public abstract class BaseConverter<TEntity, TDto> : IConverter<TEntity, TDto>
                 var listType = typeof(List<>).MakeGenericType(itemType);
                 prop.SetValue(entity, Activator.CreateInstance(listType));
             }
+            // Не-generic ICollection не инициализируем
         }
     }
 }
