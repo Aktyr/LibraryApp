@@ -1,4 +1,4 @@
-﻿namespace LibApp.Core.Attributes.Configuration;
+﻿namespace LibApp.Application.Validation.Attributes.Configuration;
 
 /// <summary>
 /// Проверяет корректность email адреса

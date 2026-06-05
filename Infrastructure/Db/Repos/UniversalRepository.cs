@@ -1,10 +1,10 @@
-﻿namespace LibApp.Infrastructure.Db.EFCore.Postgre;
+﻿namespace LibApp.Infrastructure.Db.Repos;
 
-public class PostgreRepository<TEntity> : IRepository<TEntity> where TEntity : class, IEntity
+public class UniversalRepository<TEntity> : IRepository<TEntity> where TEntity : class, IEntity
 {
-    private readonly LibraryContext _context;
+    private readonly DbContext _context;
     private readonly DbSet<TEntity> _dbSet;
-    public PostgreRepository(LibraryContext context)
+    public UniversalRepository(DbContext context)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _dbSet = _context.Set<TEntity>();

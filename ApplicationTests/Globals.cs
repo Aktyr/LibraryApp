@@ -38,5 +38,5 @@ global using Moq;
 global using System.Linq.Expressions;
 global using System.Reflection;
 global using System.Collections;
-global using LibApp.Core.Attributes.Configuration;
 global using System.ComponentModel.DataAnnotations;
+global using LibApp.Application.Validation.Attributes.Configuration;

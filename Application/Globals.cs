@@ -36,3 +36,4 @@ global using System.Linq.Expressions;
 global using System.Net.Mail;
 global using System.Security.Claims;
 global using System.Text;
+global using LibApp.Application.Validation.Attributes.Configuration;

@@ -4,7 +4,7 @@ public static partial class DI
 {
     public static IServiceCollection AddRepositories(this IServiceCollection services)
     {
-        services.AddScoped(typeof(IRepository<>), typeof(PostgreRepository<>));
+        services.AddScoped(typeof(IRepository<>), typeof(UniversalRepository<>));
         return services;
     }
 
