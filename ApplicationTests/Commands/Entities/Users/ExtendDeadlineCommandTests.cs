@@ -1,4 +1,6 @@
-﻿namespace LibApp.ApplicationTests.Commands.Entities.Users;
+﻿using LibApp.Application.Configuration;
+
+namespace LibApp.ApplicationTests.Commands.Entities.Users;
 
 [TestFixture]
 public class ExtendDeadlineCommandTests

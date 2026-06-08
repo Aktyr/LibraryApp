@@ -1,4 +1,6 @@
-﻿namespace LibApp.ApplicationTests.Services;
+﻿using LibApp.Application.Configuration;
+
+namespace LibApp.ApplicationTests.Services;
 
 [TestFixture]
 public class PenaltyCalculatorServiceTests

@@ -1,4 +1,6 @@
-﻿namespace LibApp.Application.Validation.Borrowing;
+﻿using LibApp.Application.Configuration;
+
+namespace LibApp.Application.Validation.Borrowing;
 
 public class BorrowingValidatorAsync : IValidator
 {

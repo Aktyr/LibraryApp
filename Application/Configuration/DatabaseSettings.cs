@@ -1,4 +1,4 @@
-﻿namespace LibApp.Core.Configuration;
+﻿namespace LibApp.Application.Configuration;
 public class DatabaseSettings : ISettings
 {
     [Required]

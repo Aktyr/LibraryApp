@@ -1,4 +1,6 @@
-﻿namespace LibApp.Application.Services;
+﻿using LibApp.Application.Configuration;
+
+namespace LibApp.Application.Services;
 
 public class PenaltyCalculatorService : IService
 {

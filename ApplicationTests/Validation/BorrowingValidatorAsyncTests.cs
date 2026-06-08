@@ -1,4 +1,6 @@
-﻿namespace LibApp.ApplicationTests.Validation;
+﻿using LibApp.Application.Configuration;
+
+namespace LibApp.ApplicationTests.Validation;
 
 [TestFixture]
 public class BorrowingValidatorAsyncTests

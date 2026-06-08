@@ -1,7 +1,3 @@
-using LibApp.Infrastructure.Db.EFCore.Postgre;
-using LibApp.Infrastructure.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-
 namespace WebAPI;
 
 public class Program
@@ -26,17 +22,21 @@ public class Program
             var dbContext = scope.ServiceProvider.GetRequiredService<LibraryContext>();
             dbContext.Database.Migrate();
         }
-
+            
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
         }
 
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.MapControllers();
+        //app.MapControllers();
+        app.MapDiscoveredEndpoints();
+
         app.Run();
     }
 }

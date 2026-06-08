@@ -3,7 +3,7 @@ global using LibApp.Application.Services;
 global using LibApp.Application.Validation.Auth;
 global using LibApp.Application.Validation.Borrowing;
 global using LibApp.Application.Validation.Entities;
-global using LibApp.Core.Configuration;
+global using LibApp.Application.Configuration;
 global using LibApp.Core.DTO.Borrowing;
 global using LibApp.Core.DTO.Entities;
 global using LibApp.Core.Entities;

@@ -1,4 +1,4 @@
-﻿namespace LibApp.Core.Configuration;
+﻿namespace LibApp.Application.Configuration;
 
 [MinMaxValidator(nameof(MinBorrowDays), nameof(MaxBorrowDays))]
 public class BorrowingSettings : ISettings

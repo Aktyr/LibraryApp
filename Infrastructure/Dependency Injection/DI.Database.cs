@@ -6,9 +6,17 @@ public static partial class DI
     {
         services.AddDbContext<LibraryContext>((serviceProvider, options) =>
         {
-            var dbSettings = serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value;
+            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new InvalidOperationException(
+                    "Connection string 'DefaultConnection' not found in appsettings.json");
+            }
+
             options.UseLazyLoadingProxies();
-            options.UseNpgsql(dbSettings.ConnectionString);
+            options.UseNpgsql(connectionString);
         });
 
         return services;
