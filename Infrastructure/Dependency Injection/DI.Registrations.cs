@@ -28,7 +28,19 @@ public static partial class DI
 
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
-        services.RegisterMarkedTypes<IService>(ServiceLifetime.Scoped);
+        var serviceTypes = ApplicationAssembly.GetTypes()
+            .Where(t => !t.IsInterface && !t.IsAbstract && typeof(IService).IsAssignableFrom(t))
+            .Where(t => !t.IsSubclassOf(typeof(BackgroundService))); // исключаем фоновые службы
+
+        foreach (var type in serviceTypes)
+        {
+            var interfaces = type.GetInterfaces().Where(i => !typeof(IMarker).IsAssignableFrom(i)).ToList();
+            if (interfaces.Any())
+                foreach (var @interface in interfaces)
+                    services.Add(new ServiceDescriptor(@interface, type, ServiceLifetime.Scoped));
+            else
+                services.Add(new ServiceDescriptor(type, type, ServiceLifetime.Scoped));
+        }
         return services;
     }
 }

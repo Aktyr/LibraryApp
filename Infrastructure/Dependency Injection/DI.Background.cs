@@ -8,8 +8,13 @@ public static partial class DI
 
         foreach (var serviceType in backgroundServiceTypes)
         {
-            services.AddTransient(serviceType);
+            //services.AddTransient(serviceType);
             services.AddHostedService(serviceType);
+            //services.AddSingleton(serviceType);
+
+            //services.AddSingleton<DeadlineCheckService>();
+            //services.AddHostedService(provider => provider.GetRequiredService<DeadlineCheckService>());
+
         }
         return services;
     }

@@ -1,9 +1,7 @@
-﻿using WebAPI.Endpoints.Service;
-
-namespace WebAPI.Endpoints;
+﻿namespace WebAPI.Endpoints;
 
 [Route("api/search")]
-public class SearchEndpoints : BaseEndpoint
+public class SearchEndpoints : BaseApiController
 {
     public SearchEndpoints(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
@@ -32,9 +30,7 @@ public class SearchEndpoints : BaseEndpoint
             SortBy = sortBy,
             SortDescending = sortDescending
         };
-
-        var result = await ExecuteQuery<SearchBooksCommand, SearchBooksRequest, BookResponse>(
-            request, cancellationToken);
+        var result = await ExecuteQuery<SearchBooksCommand, SearchBooksRequest, BookResponse>(request, cancellationToken);
         return Ok(result);
     }
 }

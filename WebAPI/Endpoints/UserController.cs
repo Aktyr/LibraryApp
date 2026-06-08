@@ -1,11 +1,9 @@
-﻿using WebAPI.Endpoints.Service;
-
-namespace WebAPI.Endpoints;
+﻿namespace WebAPI.Endpoints;
 
 [Route("api/users")]
-public class UserEndpoints : BaseEndpoint
+public class UserController : BaseApiController
 {
-    public UserEndpoints(IServiceProvider serviceProvider) : base(serviceProvider) { }
+    public UserController(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
     [HttpGet]
     public async Task<ActionResult<UserResponse>> GetAll(CancellationToken cancellationToken)

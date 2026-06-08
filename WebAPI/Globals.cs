@@ -58,4 +58,4 @@ global using LibApp.Application.Commands.Search;
 global using LibApp.Core.Requests.Search;
 global using System.Collections.Concurrent;
 global using LibApp.Infrastructure.DependencyInjection;
-global using WebAPI.Endpoints.Service;
+global using WebAPI.Controllers;

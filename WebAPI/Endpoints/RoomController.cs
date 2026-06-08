@@ -1,11 +1,9 @@
-﻿using WebAPI.Endpoints.Service;
-
-namespace WebAPI.Endpoints;
+﻿namespace WebAPI.Endpoints;
 
 [Route("api/rooms")]
-public class RoomEndpoints : BaseEndpoint
+public class RoomController : BaseApiController
 {
-    public RoomEndpoints(IServiceProvider serviceProvider) : base(serviceProvider) { }
+    public RoomController(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
     [HttpGet]
     public async Task<ActionResult<RoomResponse>> GetAll(CancellationToken cancellationToken)

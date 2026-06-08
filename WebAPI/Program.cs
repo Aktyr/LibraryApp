@@ -10,7 +10,7 @@ public class Program
         builder.Services.AddAllServices();
 
         builder.Services.AddAuthorization();
-        //builder.Services.AddControllers();
+        builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
@@ -29,13 +29,10 @@ public class Program
             app.UseSwaggerUI();
         }
 
-        app.UseMiddleware<ExceptionHandlingMiddleware>();
-
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
-        //app.MapControllers();
-        app.MapDiscoveredEndpoints();
+        app.MapControllers();
 
         app.Run();
     }
