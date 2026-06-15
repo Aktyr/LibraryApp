@@ -51,21 +51,21 @@ public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, I
             var titleToLower = Expression.Call(titleProperty,
                 typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
             var titleContains = Expression.Call(titleToLower,
-                typeof(string).GetMethod("Contains", new[] { typeof(string) })!,
+                typeof(string).GetMethod("Contains", [typeof(string)])!,
                 Expression.Constant(queryLower));
 
             var authorProperty = Expression.Property(parameter, nameof(Book.Author));
             var authorToLower = Expression.Call(authorProperty,
                 typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
             var authorContains = Expression.Call(authorToLower,
-                typeof(string).GetMethod("Contains", new[] { typeof(string) })!,
+                typeof(string).GetMethod("Contains", [typeof(string)])!,
                 Expression.Constant(queryLower));
 
             var publisherProperty = Expression.Property(parameter, nameof(Book.Publisher));
             var publisherToLower = Expression.Call(publisherProperty,
                 typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
             var publisherContains = Expression.Call(publisherToLower,
-                typeof(string).GetMethod("Contains", new[] { typeof(string) })!,
+                typeof(string).GetMethod("Contains", [typeof(string)])!,
                 Expression.Constant(queryLower));
 
             var queryMatch = Expression.OrElse(titleContains,
@@ -81,7 +81,7 @@ public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, I
             var toLower = Expression.Call(property,
                 typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
             var contains = Expression.Call(toLower,
-                typeof(string).GetMethod("Contains", new[] { typeof(string) })!,
+                typeof(string).GetMethod("Contains", [typeof(string)])!,
                 Expression.Constant(titleLower));
             body = Expression.AndAlso(body, contains);
         }
@@ -94,7 +94,7 @@ public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, I
             var toLower = Expression.Call(property,
                 typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
             var contains = Expression.Call(toLower,
-                typeof(string).GetMethod("Contains", new[] { typeof(string) })!,
+                typeof(string).GetMethod("Contains", [typeof(string)])!,
                 Expression.Constant(authorLower));
             body = Expression.AndAlso(body, contains);
         }
@@ -107,10 +107,24 @@ public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, I
             var toLower = Expression.Call(property,
                 typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
             var contains = Expression.Call(toLower,
-                typeof(string).GetMethod("Contains", new[] { typeof(string) })!,
+                typeof(string).GetMethod("Contains", [typeof(string)])!,
                 Expression.Constant(publisherLower));
             body = Expression.AndAlso(body, contains);
         }
+
+        // Поиск по жанру
+        if (!string.IsNullOrWhiteSpace(request.Genre))
+        {
+            var genreLower = request.Genre.ToLower();
+            var property = Expression.Property(parameter, nameof(Book.Genre));
+            var toLower = Expression.Call(property,
+                typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
+            var contains = Expression.Call(toLower,
+                typeof(string).GetMethod("Contains", [typeof(string)])!,
+                Expression.Constant(genreLower));
+            body = Expression.AndAlso(body, contains);
+        }
+
 
         // Фильтр по году (от)
         if (request.YearFrom.HasValue)

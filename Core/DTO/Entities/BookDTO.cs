@@ -5,5 +5,6 @@ public record BookDTO(Guid Id,
                       string Author,
                       int Year,
                       string Publisher,
+                      string Genre,
                       ICollection<RoomBookDTO> RoomBook)
-{ public BookDTO() : this(default, default!, default!, default, default!, default!) { } }
+{ public BookDTO() : this(default, default!, default!, default!, default!, default!, default!) { } }

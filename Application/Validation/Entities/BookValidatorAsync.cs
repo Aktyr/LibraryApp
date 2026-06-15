@@ -24,6 +24,9 @@ public class BookValidatorAsync : IValidator
         if (book.Author.Length > 100)
             errors.Add("Имя Автора не может превышать 100 символов");
 
+        if (book.Genre.Length > 100)
+            errors.Add("Название жанра не может превышать 100 символов");
+
 
         await Task.CompletedTask;
 
