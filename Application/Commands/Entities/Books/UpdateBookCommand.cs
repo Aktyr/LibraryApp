@@ -13,7 +13,8 @@ public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bo
                                   request.Title,
                                   request.Author,
                                   request.Year,
-                                  request.Publisher, []);
+                                  request.Publisher,
+                                  request.Genre, []);
         var bookForValidation = bookConverter.ToEntity(bookDTO);   
 
         var validationResult = await bookValidator.ValidateAsync(bookForValidation, cancellationToken);

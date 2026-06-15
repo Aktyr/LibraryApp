@@ -59,3 +59,8 @@ global using LibApp.Core.Requests.Search;
 global using System.Collections.Concurrent;
 global using LibApp.Infrastructure.DependencyInjection;
 global using WebAPI.Controllers;
+global using LibApp.Application.Commands.Reports;
+global using LibApp.Core.DTO.Reports;
+global using LibApp.Core.Requests.Reports;
+global using LibApp.Core.Responses.Reports;
+

@@ -37,3 +37,7 @@ global using System.Net.Mail;
 global using System.Security.Claims;
 global using System.Text;
 global using LibApp.Application.Validation.Attributes.Configuration;
+global using System.Net;
+global using LibApp.Core.DTO.Reports;
+global using LibApp.Core.Requests.Reports;
+global using LibApp.Core.Responses.Reports;

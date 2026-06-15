@@ -10,7 +10,8 @@ public class CreateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bo
                                   request.Title,
                                   request.Author,
                                   request.Year,
-                                  request.Publisher, []);
+                                  request.Publisher,
+                                  request.Genre, []);
         var book = bookConverter.ToEntity(bookDTO);
 
         // Валидация

@@ -6,7 +6,17 @@ public class EmailNotificationServiceTests
     private EmailNotificationService CreateService()
     {
         var logger = new Logger<EmailNotificationService>(new LoggerFactory());
-        return new EmailNotificationService(logger, new EmailValidatorAsync());
+        var settings = Options.Create(new NotificationSettings
+        {
+            SmtpServer = "smtp.gmail.com",
+            SmtpPort = 587,
+            SmtpUsername = "test@gmail.com",
+            SmtpPassword = "test-password",
+            FromEmail = "test@library.com",
+            Enabled = false  // Отключаем реальную отправку в тестах
+        });
+
+        return new EmailNotificationService(logger, new EmailValidatorAsync(), settings);
     }
 
     [Test]

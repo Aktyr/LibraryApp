@@ -4,24 +4,66 @@ public class EmailNotificationService : INotificationService, IService
 {
     private readonly ILogger<EmailNotificationService> _logger;
     private readonly EmailValidatorAsync _validator;
-    public EmailNotificationService(ILogger<EmailNotificationService> logger, EmailValidatorAsync validator) 
+    private readonly NotificationSettings _settings;
+
+    public EmailNotificationService(
+        ILogger<EmailNotificationService> logger, 
+        EmailValidatorAsync validator,
+        IOptions<NotificationSettings> settings) 
     { 
         _logger = logger;
         _validator = validator;
+        _settings = settings.Value;
     }
 
 
     public async Task SendEmailAsync(string email, string subject, string body, CancellationToken cancellationToken = default)
     {
-        // todo: Реальная отправка email через SMTP или внешний сервис
-
         // Валидация Email
         var validationResult = await _validator.ValidateAsync(email, cancellationToken);
         if (!validationResult.IsValid)
-            throw new Core.Exceptions.LibValidationException { ExceptionDetails = validationResult.Errors };
+            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
-        _logger.LogInformation($"Email sent to {email}: {subject}\n{body}");
-        await Task.CompletedTask;
+        //_logger.LogInformation($"Email sent to {email}: {subject}\n{body}");
+        //await Task.CompletedTask;
+        if (!_settings.Enabled)
+        {
+            _logger.LogInformation($"[EMAIL DISABLED] To: {email}, Subject: {subject}\n{body}");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(_settings.SmtpServer) || string.IsNullOrEmpty(_settings.SmtpUsername))
+        {
+            _logger.LogWarning("SMTP settings are incomplete. Email not sent.");
+            return;
+        }
+
+        try
+        {
+            using var client = new SmtpClient(_settings.SmtpServer, _settings.SmtpPort)
+            {
+                EnableSsl = true,
+                Credentials = new NetworkCredential(_settings.SmtpUsername, _settings.SmtpPassword),
+                Timeout = 30000
+            };
+
+            var mailMessage = new MailMessage
+            {
+                From = new MailAddress(_settings.FromEmail),
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = false
+            };
+            mailMessage.To.Add(email);
+
+            await client.SendMailAsync(mailMessage, cancellationToken);
+            _logger.LogInformation($"Email sent successfully to {email}: {subject}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to send email to {email}");
+            throw;
+        }
     }
 
     public async Task SendBorrowConfirmationAsync(User user, UserRoomBook userRoomBook, CancellationToken cancellationToken)
