@@ -41,4 +41,40 @@ public class BookEndpoints : BaseApiController
         var result = await ExecuteCommand<DeleteBookCommand, DeleteBookRequest, BasicCreateDeleteResponse>(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPost("discard")]
+    public async Task<ActionResult<BasicCreateDeleteResponse>> DiscardBook(
+    [FromBody] DiscardBookRequest request,
+    CancellationToken cancellationToken)
+    {
+        var result = await ExecuteCommand<DiscardBookCommand, DiscardBookRequest, BasicCreateDeleteResponse>(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("discarded")]
+    public async Task<ActionResult<DiscardedBookResponse>> GetDiscardedBooks(
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        [FromQuery] DiscardReason reason,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetDiscardedBooksRequest
+        {
+            FromDate = fromDate,
+            ToDate = toDate,
+            DiscardReason = reason
+        };
+        var result = await ExecuteQuery<GetDiscardedBooksCommand, GetDiscardedBooksRequest, DiscardedBookResponse>(request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("undo-discard")]
+    public async Task<ActionResult<BasicCreateDeleteResponse>> UndoDiscard(
+    [FromBody] UndoDiscardRequest request,
+    CancellationToken cancellationToken)
+    {
+        var result = await ExecuteCommand<UndoDiscardCommand, UndoDiscardRequest, BasicCreateDeleteResponse>(request, cancellationToken);
+        return Ok(result);
+    }
+
 }

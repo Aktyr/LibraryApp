@@ -5,6 +5,8 @@ public class LibraryContext : DbContext
     public LibraryContext(DbContextOptions<LibraryContext> options) : base(options) { }
 
     public DbSet<T> GetDbSet<T>() where T : class, IEntity => Set<T>();
+    public DbSet<DiscardedBook> DiscardedBooks => Set<DiscardedBook>();
+
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
