@@ -61,6 +61,13 @@ public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, I
                 typeof(string).GetMethod("Contains", [typeof(string)])!,
                 Expression.Constant(queryLower));
 
+            var genreProperty = Expression.Property(parameter, nameof(Book.Genre));
+            var genreToLower = Expression.Call(genreProperty,
+                typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
+            var genreContains = Expression.Call(genreToLower,
+                typeof(string).GetMethod("Contains", [typeof(string)])!,
+                Expression.Constant(queryLower));
+
             var publisherProperty = Expression.Property(parameter, nameof(Book.Publisher));
             var publisherToLower = Expression.Call(publisherProperty,
                 typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
@@ -69,7 +76,8 @@ public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, I
                 Expression.Constant(queryLower));
 
             var queryMatch = Expression.OrElse(titleContains,
-                Expression.OrElse(authorContains, publisherContains));
+                Expression.OrElse(authorContains,
+                Expression.OrElse(publisherContains, genreContains)));
             body = Expression.AndAlso(body, queryMatch);
         }
 
