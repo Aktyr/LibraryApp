@@ -1,11 +1,13 @@
 ﻿namespace WebAPI.Endpoints;
 
 [Route("api/books")]
+[EnumAuthorize(UserRole.Admin, UserRole.Librarian)]
 public class BookEndpoints : BaseApiController
 {
     public BookEndpoints(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
     [HttpGet]
+    [EnumAuthorize(UserRole.Reader)]
     public async Task<ActionResult<BookResponse>> GetAll(CancellationToken cancellationToken)
     {
         var result = await ExecuteQuery<GetAllBooksCommand, EmptyRequest, BookResponse>(new EmptyRequest(), cancellationToken);
@@ -13,6 +15,7 @@ public class BookEndpoints : BaseApiController
     }
 
     [HttpGet("{id}")]
+    [EnumAuthorize(UserRole.Reader)]
     public async Task<ActionResult<BookResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var request = new GetBookRequest { Id = new Id(id) };
@@ -44,8 +47,8 @@ public class BookEndpoints : BaseApiController
 
     [HttpPost("discard")]
     public async Task<ActionResult<BasicCreateDeleteResponse>> DiscardBook(
-    [FromBody] DiscardBookRequest request,
-    CancellationToken cancellationToken)
+        [FromBody] DiscardBookRequest request,
+        CancellationToken cancellationToken)
     {
         var result = await ExecuteCommand<DiscardBookCommand, DiscardBookRequest, BasicCreateDeleteResponse>(request, cancellationToken);
         return Ok(result);
@@ -70,8 +73,8 @@ public class BookEndpoints : BaseApiController
 
     [HttpPost("undo-discard")]
     public async Task<ActionResult<BasicCreateDeleteResponse>> UndoDiscard(
-    [FromBody] UndoDiscardRequest request,
-    CancellationToken cancellationToken)
+        [FromBody] UndoDiscardRequest request,
+        CancellationToken cancellationToken)
     {
         var result = await ExecuteCommand<UndoDiscardCommand, UndoDiscardRequest, BasicCreateDeleteResponse>(request, cancellationToken);
         return Ok(result);

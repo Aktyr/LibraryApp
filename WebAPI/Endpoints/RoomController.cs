@@ -1,11 +1,13 @@
 ﻿namespace WebAPI.Endpoints;
 
 [Route("api/rooms")]
+[EnumAuthorize(UserRole.Librarian, UserRole.Admin)]
 public class RoomController : BaseApiController
 {
     public RoomController(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
     [HttpGet]
+    [EnumAuthorize(UserRole.Reader)]
     public async Task<ActionResult<RoomResponse>> GetAll(CancellationToken cancellationToken)
     {
         var result = await ExecuteQuery<GetAllRoomsCommand, EmptyRequest, RoomResponse>(
@@ -14,6 +16,7 @@ public class RoomController : BaseApiController
     }
 
     [HttpGet("{id}")]
+    [EnumAuthorize(UserRole.Reader)]
     public async Task<ActionResult<RoomResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var request = new GetRoomRequest { Id = new Id(id) };

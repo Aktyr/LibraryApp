@@ -16,8 +16,10 @@ public interface IRepository<TEntity> where TEntity : class, IEntity
          RemoveRange([entity], cancellationToken);
 
     Task<IEnumerable<TEntity>> Get(CancellationToken cancellationToken);
-    Task Get(Id id, CancellationToken cancellationToken) =>
-         Get(id, cancellationToken); // todo не будет ли рекурсии?
+
+    // Рекурсия
+    //Task Get(Id id, CancellationToken cancellationToken) =>
+    //     Get(id, cancellationToken); 
 
     Task<IEnumerable<TEntity>> Get(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken);
 

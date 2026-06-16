@@ -1,6 +1,7 @@
 ﻿namespace WebAPI.Endpoints;
 
 [Route("api/auth")]
+[AllowAnonymous]
 public class AuthEndpoints : BaseApiController
 {
     public AuthEndpoints(IServiceProvider serviceProvider) : base(serviceProvider) { }

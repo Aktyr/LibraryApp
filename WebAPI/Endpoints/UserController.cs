@@ -1,6 +1,7 @@
 ﻿namespace WebAPI.Endpoints;
 
 [Route("api/users")]
+[EnumAuthorize(UserRole.Librarian, UserRole.Admin)]
 public class UserController : BaseApiController
 {
     public UserController(IServiceProvider serviceProvider) : base(serviceProvider) { }

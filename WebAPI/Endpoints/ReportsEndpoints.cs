@@ -1,6 +1,7 @@
 ﻿namespace WebAPI.Endpoints;
 
 [Route("api/reports")]
+[EnumAuthorize(UserRole.Admin, UserRole.Librarian)]
 public class ReportsEndpoints : BaseApiController
 {
     public ReportsEndpoints(IServiceProvider serviceProvider) : base(serviceProvider) { }

@@ -63,4 +63,6 @@ global using LibApp.Application.Commands.Reports;
 global using LibApp.Core.DTO.Reports;
 global using LibApp.Core.Requests.Reports;
 global using LibApp.Core.Responses.Reports;
+global using Microsoft.AspNetCore.Authorization;
+global using LibApp.Application.Validation.Attributes.Authorization;
 

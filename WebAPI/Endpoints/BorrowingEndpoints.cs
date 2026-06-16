@@ -1,6 +1,7 @@
 ﻿namespace WebAPI.Endpoints;
 
 [Route("api/borrowing")]
+[EnumAuthorize(UserRole.Admin, UserRole.Librarian, UserRole.Reader)]
 public class BorrowingEndpoints : BaseApiController
 {
     public BorrowingEndpoints(IServiceProvider serviceProvider) : base(serviceProvider) { }

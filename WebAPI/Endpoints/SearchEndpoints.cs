@@ -1,6 +1,7 @@
 ﻿namespace WebAPI.Endpoints;
 
 [Route("api/search")]
+[AllowAnonymous]
 public class SearchEndpoints : BaseApiController
 {
     public SearchEndpoints(IServiceProvider serviceProvider) : base(serviceProvider) { }
