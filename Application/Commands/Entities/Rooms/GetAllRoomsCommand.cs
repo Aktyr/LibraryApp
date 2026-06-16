@@ -8,6 +8,6 @@ public class GetAllRoomsCommand(IRepository<Room> roomRepo, IConverter<Room, Roo
         var rooms = await roomRepo.GetWithoutTracking(cancellationToken);
         var roomDTOs = rooms.Select(room => RoomConverter.ToDto(room)).ToArray();
 
-        return new RoomResponse("Ok", "List of rooms issued successfully.", roomDTOs);
+        return ResponseFactory.List<Room, RoomDTO, RoomResponse>(roomDTOs);
     }
 }

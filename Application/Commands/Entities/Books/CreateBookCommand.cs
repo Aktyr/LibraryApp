@@ -22,6 +22,6 @@ public class CreateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bo
 
         // Добавление 
         await bookRepo.Add(book, cancellationToken);
-        return new BasicCreateDeleteResponse("Ok", "Book is created.");
+        return ResponseFactory.Created<Book>();
     }
 }

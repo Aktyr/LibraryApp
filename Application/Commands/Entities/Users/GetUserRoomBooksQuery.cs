@@ -25,6 +25,6 @@ public class GetUserRoomBooksQuery : IGetQuery<GetUserBooksRequest, BorrowRespon
             .OrderBy(b => b.Deadline)
             .ToArray();
 
-        return new BorrowResponse("Ok", "Список книг получен", bookDTOs);
+        return ResponseFactory.List<UserRoomBook, BorrowedBookDTO, BorrowResponse>(bookDTOs);
     }
 }

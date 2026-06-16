@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Commands.Entities.Books;
+﻿    namespace LibApp.Application.Commands.Entities.Books;
 
 public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bookValidator, IConverter<Book, BookDTO> bookConverter)
     : ICreateOrUpdateCommand<UpdateBookRequest, BasicCreateDeleteResponse>, ICommand
@@ -30,6 +30,6 @@ public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bo
         //book.RoomBook = request.RoomBook;
 
         await bookRepo.Update(book, cancellationToken);
-        return new BasicCreateDeleteResponse("Ok", "Book updated successfully.");
+        return ResponseFactory.Updated<Book>();
     }
 }

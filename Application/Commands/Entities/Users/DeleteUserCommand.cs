@@ -9,6 +9,6 @@ public class DeleteUserCommand(IRepository<User> userRepo)
         var user = users.FirstOrDefault() ?? throw new UserNotFoundException();
 
         await userRepo.Remove(user, cancellationToken);
-        return new BasicCreateDeleteResponse("Ok", "User deleted successfully.");
+        return ResponseFactory.Deleted<User>();
     }
 }

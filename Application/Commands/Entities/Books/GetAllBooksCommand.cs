@@ -6,9 +6,9 @@ public class GetAllBooksCommand(IRepository<Book> bookRepo, IConverter<Book, Boo
     public async Task<BookResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
     {
         var books = await bookRepo.GetWithoutTracking(cancellationToken);
-        var bookDTOs = books.Select(book => bookConverter.ToDto(book)).ToArray();   
+        var bookDTOs = books.Select(book => bookConverter.ToDto(book)).ToArray();
 
         // мб валидатор на отстутствие книг
-        return new BookResponse("Ok", "List of books issued successfully.", bookDTOs);
+        return ResponseFactory.List<Book, BookDTO, BookResponse>(bookDTOs);
     }
 }

@@ -33,7 +33,7 @@ public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, I
         // Конвертация в DTO
         var bookDTOs = sortedBooks.Select(b => _bookConverter.ToDto(b)).ToArray();
 
-        return new BookResponse("Ok", $"Найдено книг: {bookDTOs.Length}", bookDTOs);
+        return ResponseFactory.Found<Book, BookDTO, BookResponse>(bookDTOs);
     }
 
     private Expression<Func<Book, bool>> BuildSearchPredicate(SearchBooksRequest request)

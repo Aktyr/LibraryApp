@@ -23,6 +23,6 @@ public class CreateRoomCommand(IRepository<Room> roomRepo, RoomValidatorAsync ro
 
         // Добавление
         await roomRepo.Add(room, cancellationToken);
-        return new BasicCreateDeleteResponse("Ok", "Room is created.");
+        return ResponseFactory.Created<Room>();
     }
 }

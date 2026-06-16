@@ -8,6 +8,6 @@ public class GetAllUsersQuery(IRepository<User> userRepo, IConverter<User, UserD
         var users = await userRepo.GetWithoutTracking(cancellationToken);
         var userDTOs = users.Select(user => userConverter.ToDto(user)).ToArray();
 
-        return new UserResponse("Ok", "List of users issued successfully.", userDTOs);
+        return ResponseFactory.List<User, UserDTO, UserResponse>(userDTOs);
     }
 }

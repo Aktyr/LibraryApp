@@ -11,6 +11,6 @@ public class DeleteRoomCommand(IRepository<Room> roomRepo)
             throw new RoomDeletionException("Not possible to delete a room containing books");
 
         await roomRepo.Remove(room, cancellationToken);
-        return new BasicCreateDeleteResponse("Ok", "Room deleted successfully.");
+        return ResponseFactory.Deleted<Room>();
     }
 }

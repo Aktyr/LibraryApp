@@ -29,6 +29,6 @@ public class UpdateRoomCommand(IRepository<Room> roomRepo, RoomValidatorAsync ro
         room.RoomBooks = request.RoomBooks;
 
         await roomRepo.Update(room, cancellationToken);
-        return new BasicCreateDeleteResponse("Ok", "Room updated successfully.");
+        return ResponseFactory.Updated<Room>();
     }
 }

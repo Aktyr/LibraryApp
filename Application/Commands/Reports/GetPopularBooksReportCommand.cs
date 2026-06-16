@@ -26,6 +26,6 @@ public class GetPopularBooksReportCommand : IGetQuery<GetPopularBooksRequest, Bo
             .Take(request.TopCount ?? 10)
             .ToArray();
 
-        return new BookPopularityReportResponse("Ok", $"Найдено книг: {popularBooks.Length}", popularBooks);
+        return ResponseFactory.Found<Book, BookPopularityReportDTO, BookPopularityReportResponse>(popularBooks);
     }
 }

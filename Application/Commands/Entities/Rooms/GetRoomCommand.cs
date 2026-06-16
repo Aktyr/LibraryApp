@@ -9,6 +9,7 @@ public class GetRoomCommand(IRepository<Room> roomRepo, IConverter<Room, RoomDTO
         var room = rooms.FirstOrDefault() ?? throw new RoomNotFoundException();
 
         var roomDTO = RoomConverter.ToDto(room);
-        return new RoomResponse("Ok", "Room issued successfully", [roomDTO]);
+
+        return ResponseFactory.Single<Room, RoomDTO, RoomResponse>(roomDTO);
     }
 }

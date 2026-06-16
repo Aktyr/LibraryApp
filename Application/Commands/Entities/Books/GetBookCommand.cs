@@ -9,6 +9,6 @@ public class GetBookCommand(IRepository<Book> bookRepo, IConverter<Book, BookDTO
         var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
 
         var bookDto = bookConverter.ToDto(book);
-        return new BookResponse("Ok", "Book issued successfully.", [bookDto]);
+        return ResponseFactory.Single<Book, BookDTO, BookResponse>(bookDto);
     }
 }

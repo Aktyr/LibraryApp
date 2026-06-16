@@ -23,6 +23,6 @@ public class CreateUserCommand(IRepository<User> userRepo, UserValidatorAsync us
 
         // Добавление
         await userRepo.Add(user, cancellationToken);
-        return new BasicCreateDeleteResponse("Ok", "User is created.");
+        return ResponseFactory.Created<User>();
     }
 }

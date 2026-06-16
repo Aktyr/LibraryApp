@@ -30,6 +30,6 @@ public class UpdateUserCommand(IRepository<User> userRepo, UserValidatorAsync us
         user.ContactInfo = request.ContactInfo;
 
         await userRepo.Update(user, cancellationToken);
-        return new BasicCreateDeleteResponse("Ok", "User updated successfully.");
+        return ResponseFactory.Updated<User>();
     }
 }

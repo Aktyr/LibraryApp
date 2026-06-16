@@ -9,6 +9,6 @@ public class DeleteBookCommand(IRepository<Book> bookRepo)
         var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
 
         await bookRepo.Remove(book, cancellationToken);
-        return new BasicCreateDeleteResponse("Ok", "Book deleted successfully.");
+        return ResponseFactory.Deleted<Book>();
     }
 }

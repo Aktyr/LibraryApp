@@ -36,6 +36,6 @@ public class GetUserActivityReportCommand : IGetQuery<GetUserActivityRequest, Us
 
         result = result.OrderByDescending(u => u.TotalPenalty).ToArray();
 
-        return new UserActivityReportResponse("Ok", $"Найдено пользователей: {result.Length}", result);
+        return ResponseFactory.Found<User, UserActivityReportDTO, UserActivityReportResponse>(result);
     }
 }

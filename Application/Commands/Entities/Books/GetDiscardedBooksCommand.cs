@@ -34,7 +34,6 @@ public class GetDiscardedBooksCommand : IGetQuery<GetDiscardedBooksRequest, Disc
                 d.ApprovedBy,
                 d.CompensationAmount))
         .ToArray();
-
-        return new DiscardedBookResponse("Ok", $"Найдено списаний: {result.Length}", result);
+        return ResponseFactory.Found<DiscardedBook, DiscardedBookDTO, DiscardedBookResponse>(result);
     }
 }

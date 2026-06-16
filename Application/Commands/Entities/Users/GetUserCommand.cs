@@ -9,6 +9,7 @@ public class GetUserQuery(IRepository<User> userRepo, IConverter<User, UserDTO> 
         var user = users.FirstOrDefault() ?? throw new UserNotFoundException();
 
         var userDto = userConverter.ToDto(user);
-        return new UserResponse("Ok", "User issued successfully.", [userDto]);
+
+        return ResponseFactory.Single<User, UserDTO, UserResponse>(userDto);
     }
 }
