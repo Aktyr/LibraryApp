@@ -20,7 +20,8 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<LibraryContext>();
-            dbContext.Database.Migrate();
+            if (app.Environment.IsDevelopment()) 
+                dbContext.Database.Migrate();
         }
             
         if (app.Environment.IsDevelopment())

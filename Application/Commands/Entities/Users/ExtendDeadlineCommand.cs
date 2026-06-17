@@ -27,6 +27,6 @@ public class ExtendDeadlineCommand : ICreateOrUpdateCommand<ExtendDeadlineReques
         // Сохраняем
         await _userRoomBookRepo.Update(userRoomBook, cancellationToken);
 
-        return new BasicCreateDeleteResponse("Ok", $"Срок продлен до {userRoomBook.Deadline:d}");
+        return ResponseFactory.Success($"Срок продлен до {userRoomBook.Deadline:d}");
     }
 }

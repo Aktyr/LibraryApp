@@ -63,6 +63,6 @@ public class DiscardBookCommand : ICreateOrUpdateCommand<DiscardBookRequest, Bas
         roomBook.BookCount -= request.Quantity;
         await _roomBookRepo.Update(roomBook, ct);
 
-        return new BasicCreateDeleteResponse("Ok", $"Списано {request.Quantity} экз. книги '{book.Title}'. Причина: {request.DiscardReason}");
+        return ResponseFactory.Success($"Списано {request.Quantity} экз. книги '{book.Title}'. Причина: {request.DiscardReason}");
     }
 }

@@ -22,16 +22,6 @@ public class UndoDiscardCommand : ICreateOrUpdateCommand<UndoDiscardRequest, Bas
         var discarded = (await _discardedRepo.Get(d => d.Id.Value == request.DiscardId, ct)).FirstOrDefault()
             ?? throw new LibValidationException { ExceptionDetails = ["Запись о списании не найдена"] };
 
-        // Проверяем кто отменяет
-        //if (!string.IsNullOrEmpty(request.ApprovedBy))
-        //{
-        //    var approver = (await _userRepo.Get(u => u.FullName == request.ApprovedBy
-        //                                          && (u.Role == UserRole.Librarian || u.Role == UserRole.Admin), ct))
-        //                                          .FirstOrDefault();
-        //    if (approver == null)
-        //        throw new LibValidationException { ExceptionDetails = ["Отменяющий не найден или не имеет прав"] };
-        //}
-
         // Находим RoomBook
         var roomBooks = await _roomBookRepo.Get(rb => rb.Book.Id.Value == discarded.Book.Id.Value
                                                    && rb.Room.Id.Value == discarded.RoomId, ct);
@@ -42,10 +32,9 @@ public class UndoDiscardCommand : ICreateOrUpdateCommand<UndoDiscardRequest, Bas
         roomBook.BookCount += discarded.Amount;
         await _roomBookRepo.Update(roomBook, ct);
 
-        // Удаляем запись о списании (или помечаем как отменённую)
+        // Удаляем запись о списании
         await _discardedRepo.Remove(discarded, ct);
 
-        return new BasicCreateDeleteResponse("Ok",
-            $"Отменено списание {discarded.Amount} экз. книги '{discarded.Book.Title}'. Причина: {request.UndoReason}");
+        return ResponseFactory.Success($"Отменено списание {discarded.Amount} экз. книги '{discarded.Book.Title}'. Причина: {request.UndoReason}");
     }
 }

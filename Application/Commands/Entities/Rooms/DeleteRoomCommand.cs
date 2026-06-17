@@ -7,7 +7,7 @@ public class DeleteRoomCommand(IRepository<Room> roomRepo)
     {
         var rooms = await roomRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
         var room = rooms.FirstOrDefault() ?? throw new RoomNotFoundException();
-        if (room.RoomBooks != null)
+        if (room.RoomBooks?.Any() == true)
             throw new RoomDeletionException("Not possible to delete a room containing books");
 
         await roomRepo.Remove(room, cancellationToken);

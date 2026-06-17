@@ -1,13 +1,12 @@
 ﻿namespace LibApp.Application.Validation.Auth;
 
-public class RegisterValidatorAsync : IValidator
+public class RegisterValidatorAsync : IValidator // По сути расширяет UserValidatorAsync
 {
     private readonly EmailValidatorAsync _emailValidator;
     public RegisterValidatorAsync()
     {
         _emailValidator = new EmailValidatorAsync();
     }
-
 
     public async Task<ValidationResponse> ValidateAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
@@ -24,7 +23,8 @@ public class RegisterValidatorAsync : IValidator
         else if (request.Password.Length < 6)
             errors.Add("Пароль должен быть не менее 6 символов");
         else if (request.Password.Length > 100)
-            errors.Add("Пароль слишком длинный");
+            errors.Add("Пароль слишком длинный");   
+        //todo улучшить условия пароля
 
         if (string.IsNullOrWhiteSpace(request.LastName))
             errors.Add("Фамилия обязательна");

@@ -46,7 +46,6 @@ public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, Basic
         await _roomBookRepo.Update(roomBook, cancellationToken);
         await _userRepo.Update(user, cancellationToken);
 
-
-        return new BasicCreateDeleteResponse("Ok", $"Книга выдана. Срок возврата: {userRoomBook.Deadline:d}");
+        return ResponseFactory.Success($"Книга выдана. Срок возврата: {userRoomBook.Deadline:d}");
     }
 }

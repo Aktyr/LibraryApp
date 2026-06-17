@@ -62,6 +62,6 @@ public class ReturnBookCommand : ICreateOrUpdateCommand<ReturnBookRequest, Basic
             ? $"Книга возвращена. Штраф: {userRoomBook.Penalty} руб."
             : "Книга возвращена";
 
-        return new BasicCreateDeleteResponse("Ok", message);
+        return ResponseFactory.Success(message);
     }
 }

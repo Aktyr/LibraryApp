@@ -13,6 +13,12 @@ public class GetPopularBooksReportCommand : IGetQuery<GetPopularBooksRequest, Bo
     {
         var allBorrows = await _userRoomBookRepo.Get(ct);
 
+        var query = allBorrows.AsEnumerable();
+        if (request.FromDate.HasValue)
+            query = query.Where(urb => urb.BorrowDate >= request.FromDate.Value);
+        if (request.ToDate.HasValue)
+            query = query.Where(urb => urb.BorrowDate <= request.ToDate.Value);
+
         var popularBooks = allBorrows
             .GroupBy(urb => urb.RoomBook.Book.Id.Value)
             .Select(g => new BookPopularityReportDTO(

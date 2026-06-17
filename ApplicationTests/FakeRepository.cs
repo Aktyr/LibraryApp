@@ -13,9 +13,6 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
     public Task<IEnumerable<TEntity>> Get(CancellationToken cancellationToken = default) =>
         Task.FromResult(Entities.AsEnumerable());
 
-    //public Task<IEnumerable<TEntity>> Get(Func<TEntity, bool> predicate, CancellationToken cancellationToken = default) =>
-    //    Task.FromResult(Entities.Where(predicate).AsEnumerable());
-
     public Task<IEnumerable<TEntity>> Get(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
     {
         var func = predicate.Compile();
@@ -31,6 +28,22 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
     public Task RemoveRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default) =>
         Task.Run(() => Entities.RemoveAll(x => entities.Contains(x)));
 
-    public Task UpdateRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default) =>
-        Task.CompletedTask;
+    public Task UpdateRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+    {
+        return Task.Run(() =>
+        {
+            foreach (var entity in entities)
+            {
+                var existingIndex = Entities.FindIndex(e => e.Id.Value == entity.Id.Value);
+                if (existingIndex >= 0)
+                {
+                    Entities[existingIndex] = entity;
+                }
+                else
+                {
+                    Entities.Add(entity);
+                }
+            }
+        }, cancellationToken);
+    }
 }

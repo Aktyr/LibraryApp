@@ -17,8 +17,8 @@ public class GetDiscardedBooksCommand : IGetQuery<GetDiscardedBooksRequest, Disc
             predicate = d => d.DiscardedDate >= request.FromDate.Value;
         if (request.ToDate.HasValue)
             predicate = d => d.DiscardedDate <= request.ToDate.Value;
-        if (request.DiscardReason != DiscardReason.Other)
-            predicate = d => d.DiscardReason == request.DiscardReason;
+        if (request.DiscardReason.HasValue)
+            predicate = d => d.DiscardReason == request.DiscardReason;  
 
         var discarded = await _discardedRepo.Get(predicate, ct);
 
