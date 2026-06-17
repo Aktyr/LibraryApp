@@ -1,7 +1,9 @@
 ﻿namespace LibApp.Application.Commands.Entities.Rooms;
 
-public class UpdateRoomCommand(IRepository<Room> roomRepo, RoomValidatorAsync roomValidator, IConverter<Room, RoomDTO> roomConverter)
-    : ICreateOrUpdateCommand<UpdateRoomRequest, BasicCreateDeleteResponse>, ICommand
+public class UpdateRoomCommand(
+    IRepository<Room> roomRepo, 
+    RoomValidatorAsync roomValidator, 
+    IConverter<Room, RoomDTO> roomConverter) : ICreateOrUpdateCommand<UpdateRoomRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateRoomRequest request, CancellationToken cancellationToken)
     {

@@ -1,20 +1,11 @@
 ﻿namespace LibApp.Application.Commands.Auth;
 
-public class LoginCommand : IGetQuery<LoginRequest, LoginResponse>, ICommand
+public class LoginCommand(IRepository<User> userRepo, JwtService jwtService) : IGetQuery<LoginRequest, LoginResponse>, ICommand
 {
-    private readonly IRepository<User> _userRepo;
-    private readonly JwtService _jwtService;
-
-    public LoginCommand(IRepository<User> userRepo, JwtService jwtService)
-    {
-        _userRepo = userRepo;
-        _jwtService = jwtService;
-    }
-
     public async Task<LoginResponse> Execute(LoginRequest request, CancellationToken cancellationToken)
     {
         // Поиск пользователя по email
-        var users = await _userRepo.Get(u => u.Email == request.Email, cancellationToken);
+        var users = await userRepo.Get(u => u.Email == request.Email, cancellationToken);
         var user = users.FirstOrDefault();
 
         if (user == null)
@@ -25,7 +16,7 @@ public class LoginCommand : IGetQuery<LoginRequest, LoginResponse>, ICommand
             throw new UnauthorizedException("Неверный email или пароль");
 
         // Генерация токена
-        var token = _jwtService.GenerateToken(user);
+        var token = jwtService.GenerateToken(user);
 
         return new LoginResponse(
             Status: "Ok",

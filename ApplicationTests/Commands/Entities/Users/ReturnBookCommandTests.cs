@@ -1,9 +1,7 @@
-﻿using LibApp.Application.Configuration;
-
-namespace LibApp.ApplicationTests.Commands.Entities.Users;
+﻿namespace LibApp.ApplicationTests.Commands.Entities.Users;
 
 [TestFixture]
-public class ReturnBookCommandTets
+public class ReturnBookCommandTests
 {
     private PenaltyCalculatorService CreatePenaltyService(PenaltySettings? settings = null)
     {

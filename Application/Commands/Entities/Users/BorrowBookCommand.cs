@@ -1,31 +1,20 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>, ICommand
+public class BorrowBookCommand(
+    IRepository<User> userRepo,
+    IRepository<RoomBook> roomBookRepo,
+    BorrowingValidatorAsync validator) : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>, ICommand
 {
-    private readonly IRepository<User> _userRepo;
-    private readonly IRepository<RoomBook> _roomBookRepo;
-    private readonly BorrowingValidatorAsync _validator;
-
-    public BorrowBookCommand(
-        IRepository<User> userRepo,
-        IRepository<RoomBook> roomBookRepo,
-        BorrowingValidatorAsync validator)
-    {
-        _userRepo = userRepo;
-        _roomBookRepo = roomBookRepo;
-        _validator = validator;
-    }
-
     public async Task<BasicCreateDeleteResponse> Execute(BorrowBookRequest request, CancellationToken cancellationToken)
     {
         // Валидация
-        var user = (await _userRepo.Get(u => u.Id.Value == request.UserId, cancellationToken)).FirstOrDefault()
+        var user = (await userRepo.Get(u => u.Id.Value == request.UserId, cancellationToken)).FirstOrDefault()
             ?? throw new UserNotFoundException();
 
-        var roomBook = (await _roomBookRepo.Get(rb => rb.Id.Value == request.RoomBookId, cancellationToken)).FirstOrDefault()
-            ?? throw new UserRoomBookNotFoundException(); 
+        var roomBook = (await roomBookRepo.Get(rb => rb.Id.Value == request.RoomBookId, cancellationToken)).FirstOrDefault()
+            ?? throw new UserRoomBookNotFoundException();
 
-        var validationResult = await _validator.ValidateBorrowAsync(user, roomBook, request.BorrowDays, cancellationToken);
+        var validationResult = await validator.ValidateBorrowAsync(user, roomBook, request.BorrowDays, cancellationToken);
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
@@ -43,10 +32,9 @@ public class BorrowBookCommand : ICreateOrUpdateCommand<BorrowBookRequest, Basic
         user.RoomBooks.Add(userRoomBook);
 
         // Сохраняем
-        await _roomBookRepo.Update(roomBook, cancellationToken);
-        await _userRepo.Update(user, cancellationToken);
+        await roomBookRepo.Update(roomBook, cancellationToken);
+        await userRepo.Update(user, cancellationToken);
 
-
-        return new BasicCreateDeleteResponse("Ok", $"Книга выдана. Срок возврата: {userRoomBook.Deadline:d}");
+        return ResponseFactory.Success($"Книга выдана. Срок возврата: {userRoomBook.Deadline:d}");
     }
 }

@@ -1,7 +1,9 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class CreateUserCommand(IRepository<User> userRepo, UserValidatorAsync userValidator, IConverter<User, UserDTO> userConverter)
-    : ICreateOrUpdateCommand<CreateUserRequest, BasicCreateDeleteResponse>, ICommand
+public class CreateUserCommand(
+    IRepository<User> userRepo,
+    UserValidatorAsync userValidator,
+    IConverter<User, UserDTO> userConverter) : ICreateOrUpdateCommand<CreateUserRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(CreateUserRequest request, CancellationToken cancellationToken)
     {

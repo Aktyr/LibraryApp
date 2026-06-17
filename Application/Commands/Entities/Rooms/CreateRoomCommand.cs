@@ -1,7 +1,9 @@
 ﻿namespace LibApp.Application.Commands.Entities.Rooms;
 
-public class CreateRoomCommand(IRepository<Room> roomRepo, RoomValidatorAsync roomValidator, IConverter<Room, RoomDTO> roomConverter)
-    : ICreateOrUpdateCommand<CreateRoomRequest, BasicCreateDeleteResponse>, ICommand
+public class CreateRoomCommand(
+    IRepository<Room> roomRepo,
+    RoomValidatorAsync roomValidator,
+    IConverter<Room, RoomDTO> roomConverter) : ICreateOrUpdateCommand<CreateRoomRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(CreateRoomRequest request, CancellationToken cancellationToken)
     {
@@ -9,7 +11,6 @@ public class CreateRoomCommand(IRepository<Room> roomRepo, RoomValidatorAsync ro
         RoomDTO roomDto = new(Guid.NewGuid(),
                               request.Name, []);
         var room = roomConverter.ToEntity(roomDto);
-
 
         // Валидация
         var validationResult = await roomValidator.ValidateAsync(room, cancellationToken);
