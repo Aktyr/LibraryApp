@@ -1,17 +1,16 @@
 ﻿namespace LibApp.Application.Commands.Reports;
 
-public class GetPopularBooksReportCommand : IGetQuery<GetPopularBooksRequest, BookPopularityReportResponse>, ICommand
+public class GetPopularBooksReportCommand(IRepository<UserRoomBook> userRoomBookRepo) : IGetQuery<GetPopularBooksRequest, BookPopularityReportResponse>, ICommand
 {
-    private readonly IRepository<UserRoomBook> _userRoomBookRepo;
-
-    public GetPopularBooksReportCommand(IRepository<UserRoomBook> userRoomBookRepo) 
-    {
-        _userRoomBookRepo = userRoomBookRepo;
-    }
-
     public async Task<BookPopularityReportResponse> Execute(GetPopularBooksRequest request, CancellationToken ct)
     {
-        var allBorrows = await _userRoomBookRepo.Get(ct);
+        var allBorrows = await userRoomBookRepo.Get(ct);
+
+        var query = allBorrows.AsEnumerable();
+        if (request.FromDate.HasValue)
+            query = query.Where(urb => urb.BorrowDate >= request.FromDate.Value);
+        if (request.ToDate.HasValue)
+            query = query.Where(urb => urb.BorrowDate <= request.ToDate.Value);
 
         var query = allBorrows.AsEnumerable();
         if (request.FromDate.HasValue)

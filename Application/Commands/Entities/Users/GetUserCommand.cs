@@ -1,7 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class GetUserQuery(IRepository<User> userRepo, IConverter<User, UserDTO> userConverter)
-    : IGetQuery<GetUserRequest, UserResponse>, ICommand
+public class GetUserQuery(IRepository<User> userRepo, IConverter<User, UserDTO> userConverter) : IGetQuery<GetUserRequest, UserResponse>, ICommand
 {
     public async Task<UserResponse?> Execute(GetUserRequest request, CancellationToken cancellationToken)
     {

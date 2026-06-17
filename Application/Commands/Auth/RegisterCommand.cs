@@ -1,33 +1,20 @@
 ﻿namespace LibApp.Application.Commands.Auth;
 
-public class RegisterCommand : ICreateOrUpdateCommand<RegisterRequest, RegisterResponse>, ICommand
+public class RegisterCommand(
+    IRepository<User> userRepo,
+    RegisterValidatorAsync validator,
+    IConverter<User, UserDTO> userConverter,
+    JwtService jwtService) : ICreateOrUpdateCommand<RegisterRequest, RegisterResponse>, ICommand
 {
-    private readonly IRepository<User> _userRepo;
-    private readonly RegisterValidatorAsync _validator;
-    private readonly IConverter<User, UserDTO> _userConverter;
-    private readonly JwtService _jwtService;
-
-    public RegisterCommand(
-        IRepository<User> userRepo,
-        RegisterValidatorAsync validator,
-        IConverter<User, UserDTO> userConverter,
-        JwtService jwtService)
-    {
-        _userRepo = userRepo;
-        _validator = validator;
-        _userConverter = userConverter;
-        _jwtService = jwtService;
-    }
-
     public async Task<RegisterResponse> Execute(RegisterRequest request, CancellationToken cancellationToken)
     {
         // Валидация
-        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
+        var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Проверка, не занят ли email
-        var existingUsers = await _userRepo.Get(u => u.Email == request.Email, cancellationToken);
+        var existingUsers = await userRepo.Get(u => u.Email == request.Email, cancellationToken);
         if (existingUsers.Any())
             throw new LibValidationException { ExceptionDetails = new List<string> { "Email уже зарегистрирован" } };
 
@@ -49,10 +36,10 @@ public class RegisterCommand : ICreateOrUpdateCommand<RegisterRequest, RegisterR
         };
 
         // Сохраняем
-        await _userRepo.Add(user, cancellationToken);
+        await userRepo.Add(user, cancellationToken);
 
         // Генерируем токен
-        var token = _jwtService.GenerateToken(user);
+        var token = jwtService.GenerateToken(user);
 
         return new RegisterResponse(
             Status: "Ok",

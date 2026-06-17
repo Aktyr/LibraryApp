@@ -1,7 +1,9 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class UpdateUserCommand(IRepository<User> userRepo, UserValidatorAsync userValidator, IConverter<User, UserDTO> userConverter)
-    : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>, ICommand
+public class UpdateUserCommand
+    (IRepository<User> userRepo, 
+    UserValidatorAsync userValidator, 
+    IConverter<User, UserDTO> userConverter) : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateUserRequest request, CancellationToken cancellationToken)
     {
@@ -10,11 +12,11 @@ public class UpdateUserCommand(IRepository<User> userRepo, UserValidatorAsync us
 
         // Временное DTO для валидации
         var userDto = new UserDTO(request.Id.Value,
-                              request.LastName,
-                              request.FirstName,
-                              request.MiddleName,
-                              request.ContactInfo,
-                              user.NearestReturnTimeSpan, []);
+                                  request.LastName,
+                                  request.FirstName,
+                                  request.MiddleName,
+                                  request.ContactInfo,
+                                  user.NearestReturnTimeSpan, []);
 
         var userForValidation = userConverter.ToEntity(userDto);
 

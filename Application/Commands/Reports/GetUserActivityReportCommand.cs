@@ -1,22 +1,13 @@
 ﻿namespace LibApp.Application.Commands.Reports;
 
-public class GetUserActivityReportCommand : IGetQuery<GetUserActivityRequest, UserActivityReportResponse>, ICommand
+public class GetUserActivityReportCommand(
+    IRepository<User> userRepo,
+    IRepository<UserRoomBook> userRoomBookRepo) : IGetQuery<GetUserActivityRequest, UserActivityReportResponse>, ICommand
 {
-    private readonly IRepository<User> _userRepo;
-    private readonly IRepository<UserRoomBook> _userRoomBookRepo;
-
-    public GetUserActivityReportCommand(
-        IRepository<User> userRepo,
-        IRepository<UserRoomBook> userRoomBookRepo)
-    {
-        _userRepo = userRepo;
-        _userRoomBookRepo = userRoomBookRepo;
-    }
-
     public async Task<UserActivityReportResponse> Execute(GetUserActivityRequest request, CancellationToken ct)
     {
-        var users = await _userRepo.Get(ct);
-        var allBorrows = await _userRoomBookRepo.Get(ct);
+        var users = await userRepo.Get(ct);
+        var allBorrows = await userRoomBookRepo.Get(ct);
 
         var result = users.Select(user => new UserActivityReportDTO(
             UserId: user.Id.Value,

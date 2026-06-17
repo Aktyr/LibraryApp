@@ -1,7 +1,9 @@
 ﻿namespace LibApp.Application.Commands.Entities.Books;
 
-public class CreateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bookValidator, IConverter<Book, BookDTO> bookConverter)
-    : ICreateOrUpdateCommand<CreateBookRequest, BasicCreateDeleteResponse>, ICommand
+public class CreateBookCommand(
+    IRepository<Book> bookRepo,
+    BookValidatorAsync bookValidator,
+    IConverter<Book, BookDTO> bookConverter) : ICreateOrUpdateCommand<CreateBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(CreateBookRequest request, CancellationToken cancellationToken)
     {
