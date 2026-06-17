@@ -5,7 +5,7 @@ public class DiscardedBook : IEntity
     public Id Id { get; set; }
     public virtual Book Book { get; set; } = null!;
     public virtual Room Room { get; set; } = null!;
-    public Guid RoomId { get; set; }
+    public Id RoomId { get; set; }
 
     public int Amount { get; set; }                     // Количество списанных экземпляров
     public DateTime DiscardedDate { get; set; }

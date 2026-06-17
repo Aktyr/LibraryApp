@@ -13,7 +13,7 @@ public class DiscardedBookConfiguration : IEntityTypeConfiguration<DiscardedBook
 
         builder.HasOne(d => d.Room)
                .WithMany()
-               .HasForeignKey("RoomId")
+               .HasForeignKey(d => d.RoomId)
                .OnDelete(DeleteBehavior.Restrict);
 
 

@@ -38,7 +38,7 @@ public class DiscardBookCommand(
             Id = new Id(Guid.NewGuid()),
             Book = book,
             Room = roomBook.Room,
-            RoomId = roomBook.Room.Id.Value,
+            RoomId = roomBook.Room.Id,
             Amount = request.Quantity,
             DiscardedDate = DateTime.Now,
             DiscardReason = request.DiscardReason,

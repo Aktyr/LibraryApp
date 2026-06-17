@@ -13,7 +13,7 @@ public class UndoDiscardCommand(
 
         // Находим RoomBook
         var roomBooks = await roomBookRepo.Get(rb => rb.Book.Id.Value == discarded.Book.Id.Value
-                                                   && rb.Room.Id.Value == discarded.RoomId, ct);
+                                                   && rb.Room.Id == discarded.RoomId, ct);
         var roomBook = roomBooks.FirstOrDefault()
             ?? throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнате"] };
 
