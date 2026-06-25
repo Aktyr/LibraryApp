@@ -1,4 +1,4 @@
-﻿namespace WebAPI.Endpoints;
+﻿namespace WebAPI.Endpoints.Controllers;
 
 [Route("api/borrowing")]
 [EnumAuthorize(UserRole.Admin, UserRole.Librarian, UserRole.Reader)]

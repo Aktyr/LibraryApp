@@ -1,4 +1,4 @@
-﻿namespace LibApp.Application.Validation.Attributes.Authorization;
+﻿namespace WebAPI.Endpoints.Authorization;
 
 public class EnumAuthorize : AuthorizeAttribute
 {
