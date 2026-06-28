@@ -2,13 +2,13 @@
 
 public static class Endpoints
 {
-    private static string _authGroup = "Auth";
-    private static string _booksGroup = "Books";
-    private static string _borrowingGroup = "Borrowing";
-    private static string _reportsGroup = "Reports";
-    private static string _roomsGroup = "Rooms";
-    private static string _searchGroup = "Search";
-    private static string _usersGroup = "Users";
+    private const string _authGroup = "Auth";
+    private const string _booksGroup = "Books";
+    private const string _borrowingGroup = "Borrowing";
+    private const string _reportsGroup = "Reports";
+    private const string _roomsGroup = "Rooms";
+    private const string _searchGroup = "Search";
+    private const string _usersGroup = "Users";
     public static void MapEndpoints(this IEndpointRouteBuilder app)
     {
 
