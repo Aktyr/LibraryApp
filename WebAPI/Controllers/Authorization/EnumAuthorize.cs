@@ -1,4 +1,4 @@
-﻿namespace WebAPI.Endpoints.Authorization;
+﻿namespace WebAPI.Controllers.Authorization;
 
 public class EnumAuthorize : AuthorizeAttribute
 {

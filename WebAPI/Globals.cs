@@ -65,5 +65,4 @@ global using LibApp.Core.Requests.Reports;
 global using LibApp.Core.Responses.Reports;
 global using Microsoft.AspNetCore.Authorization;
 global using WebAPI.Endpoints.MinimalAPI;
-global using WebAPI.Endpoints.Authorization;
-
+global using WebAPI.Controllers.Authorization;

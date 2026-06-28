@@ -1,6 +1,6 @@
-﻿namespace WebAPI.Endpoints.MinimalAPI;
+﻿namespace WebAPI.Controllers;
 
-public static class CommandExecutor
+public static class MinimalApiController
 {
     private static readonly ConcurrentDictionary<Type, Func<object, object, CancellationToken, Task<object>>> _cache = new();
 
@@ -48,14 +48,5 @@ public static class CommandExecutor
                 body, commandParam, requestParam, ctParam);
             return lambda.Compile();
         }, typeof(TRequest));
-    }
-}
-
-public static class TaskExtensions
-{
-    public static async Task<object> CastToObject<T>(Task<T> task)
-    {
-        var result = await task;
-        return result!;
     }
 }
