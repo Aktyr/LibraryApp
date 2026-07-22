@@ -1,6 +1,6 @@
-﻿namespace WebAPI.Controllers;
+﻿namespace WebAPI.Misc.Helpers;
 
-public static class TaskExtensions
+public static class LibTaskExtensions
 {
     public static async Task<object> CastToObject<T>(Task<T> task)
     {

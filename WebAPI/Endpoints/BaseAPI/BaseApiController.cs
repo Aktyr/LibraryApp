@@ -1,6 +1,9 @@
-﻿namespace WebAPI.Controllers;
+﻿using WebAPI.Misc.Helpers;
+
+namespace WebAPI.Endpoints.BaseAPI;
 
 [ApiController]
+[Obsolete("This class is deprecated. Use the new endpoint classes instead.")]
 public abstract class BaseApiController : ControllerBase
 {
     protected readonly IServiceProvider _serviceProvider;
@@ -58,8 +61,8 @@ public abstract class BaseApiController : ControllerBase
             var taskType = executeMethod.ReturnType;
             var taskResultType = taskType.GetGenericArguments()[0];
 
-            var castMethod = typeof(TaskExtensions)
-                .GetMethod(nameof(TaskExtensions.CastToObject), BindingFlags.Public | BindingFlags.Static)!
+            var castMethod = typeof(LibTaskExtensions)
+                .GetMethod(nameof(LibTaskExtensions.CastToObject), BindingFlags.Public | BindingFlags.Static)!
                 .MakeGenericMethod(taskResultType);
 
             var body = Expression.Call(castMethod, call);

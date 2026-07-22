@@ -29,6 +29,8 @@ public static partial class DI
                     throw new NotSupportedException($"Provider '{provider}' is not supported.");
             }
         });
+
+        services.AddScoped<DbContext>(sp => sp.GetRequiredService<LibraryContext>());
         return services;
     }
 

@@ -20,10 +20,10 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<LibraryContext>();
-            if (app.Environment.IsDevelopment()) 
+            if (app.Environment.IsDevelopment())
                 dbContext.Database.Migrate();
         }
-            
+
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -35,7 +35,8 @@ public class Program
         app.UseAuthorization();
 
         //app.MapControllers();
-        app.MapEndpoints();
+        //app.MapEndpoints();
+        app.MapHybridEndpoints();
 
         app.Run();
     }

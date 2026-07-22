@@ -1,4 +1,4 @@
-﻿namespace WebAPI.Endpoints.Controllers;
+﻿namespace WebAPI.Endpoints.BaseAPI.Groups;
 
 [Route("api/rooms")]
 [EnumAuthorize(UserRole.Librarian, UserRole.Admin)]

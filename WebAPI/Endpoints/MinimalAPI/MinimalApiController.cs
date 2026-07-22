@@ -1,4 +1,6 @@
-﻿namespace WebAPI.Controllers;
+﻿using WebAPI.Misc.Helpers;
+
+namespace WebAPI.Endpoints.MinimalAPI;
 
 public static class MinimalApiController
 {
@@ -38,8 +40,8 @@ public static class MinimalApiController
             var taskType = executeMethod.ReturnType;
             var taskResultType = taskType.GetGenericArguments()[0];
 
-            var castMethod = typeof(TaskExtensions)
-                .GetMethod(nameof(TaskExtensions.CastToObject), BindingFlags.Public | BindingFlags.Static)!
+            var castMethod = typeof(LibTaskExtensions)
+                .GetMethod(nameof(LibTaskExtensions.CastToObject), BindingFlags.Public | BindingFlags.Static)!
                 .MakeGenericMethod(taskResultType);
 
             var body = Expression.Call(castMethod, call);

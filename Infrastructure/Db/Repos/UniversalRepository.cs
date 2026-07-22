@@ -2,9 +2,9 @@
 
 public class UniversalRepository<TEntity> : IRepository<TEntity> where TEntity : class, IEntity
 {
-    private readonly LibraryContext _context;
+    private readonly DbContext _context;
     private readonly DbSet<TEntity> _dbSet;
-    public UniversalRepository(LibraryContext context)
+    public UniversalRepository(DbContext context)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _dbSet = _context.Set<TEntity>();
