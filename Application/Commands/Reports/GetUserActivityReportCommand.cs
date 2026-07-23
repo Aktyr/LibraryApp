@@ -2,31 +2,35 @@
 
 public class GetUserActivityReportCommand(
     IRepository<User> userRepo,
-    IRepository<UserRoomBook> userRoomBookRepo) : IGetQuery<GetUserActivityRequest, UserActivityReportResponse>, ICommand
+    IRepository<UserRoomBook> userRoomBookRepo)
+    : IGetQuery<GetUserActivityRequest, UserActivityReportResponse>, ICommand
 {
     public async Task<UserActivityReportResponse> Execute(GetUserActivityRequest request, CancellationToken ct)
     {
-        var users = await userRepo.Get(ct);
-        var allBorrows = await userRoomBookRepo.Get(ct);
+        var usersQuery = userRepo.GetQueryable();
+        var borrowsQuery = userRoomBookRepo.GetQueryable();
 
-        var result = users.Select(user => new UserActivityReportDTO(
-            UserId: user.Id.Value,
-            FullName: user.FullName,
-            Email: user.Email,
-            TotalBorrowedCount: allBorrows.Count(urb => urb.User.Id.Value == user.Id.Value),
-            CurrentBorrowedCount: allBorrows.Count(urb => urb.User.Id.Value == user.Id.Value && !urb.IsReturned),
-            TotalPenalty: allBorrows.Where(urb => urb.User.Id.Value == user.Id.Value).Sum(urb => urb.Penalty ?? 0),
-            HasOverdue: allBorrows.Any(urb => urb.User.Id.Value == user.Id.Value && !urb.IsReturned && urb.Deadline < DateTime.Now)
-        )).ToArray();
+        var query = from user in usersQuery
+                    join borrow in borrowsQuery on user.Id equals borrow.User.Id into borrowsGroup
+                    select new UserActivityReportDTO(
+                        user.Id.Value,
+                        user.FullName,
+                        user.Email,
+                        borrowsGroup.Count(),
+                        borrowsGroup.Count(urb => !urb.IsReturned),
+                        borrowsGroup.Sum(urb => urb.Penalty ?? 0),
+                        borrowsGroup.Any(urb => !urb.IsReturned && urb.Deadline < DateTime.UtcNow)
+                    );
 
         if (request.OnlyWithOverdue)
-            result = result.Where(u => u.HasOverdue).ToArray();
-
+            query = query.Where(u => u.HasOverdue);
         if (request.OnlyActive)
-            result = result.Where(u => u.CurrentBorrowedCount > 0).ToArray();
+            query = query.Where(u => u.CurrentBorrowedCount > 0);
 
-        result = result.OrderByDescending(u => u.TotalPenalty).ToArray();
+        var result = await query
+            .OrderByDescending(u => u.TotalPenalty)
+            .ToListAsync(ct);
 
-        return ResponseFactory.Found<User, UserActivityReportDTO, UserActivityReportResponse>(result);
+        return ResponseFactory.Found<User, UserActivityReportDTO, UserActivityReportResponse>(result.ToArray());
     }
 }

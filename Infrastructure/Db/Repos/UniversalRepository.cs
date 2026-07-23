@@ -52,6 +52,8 @@ public class UniversalRepository<TEntity> : IRepository<TEntity> where TEntity :
         return await _dbSet.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
     }
 
+    public IQueryable<TEntity> GetQueryable() => _dbSet;
+    public IQueryable<TEntity> GetQueryable(Expression<Func<TEntity, bool>> predicate) => _dbSet.Where(predicate);
 
     #endregion
 }

@@ -1,6 +1,4 @@
-﻿using System.Linq.Expressions;
-
-namespace LibApp.Application.Interfaces;
+﻿namespace LibApp.Application.Interfaces;
 
 public interface IRepository<TEntity> where TEntity : class, IEntity
 {
@@ -26,4 +24,7 @@ public interface IRepository<TEntity> where TEntity : class, IEntity
     Task<IEnumerable<TEntity>> GetWithoutTracking(CancellationToken cancellationToken);
     Task<IEnumerable<TEntity>> GetWithoutTracking(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken);
 
+    // Для поиска в SQL
+    IQueryable<TEntity> GetQueryable();
+    IQueryable<TEntity> GetQueryable(Expression<Func<TEntity, bool>> predicate);
 }

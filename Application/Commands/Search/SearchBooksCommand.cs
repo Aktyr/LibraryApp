@@ -4,184 +4,87 @@
 public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, ICommand
 {
     private readonly IRepository<Book> _bookRepo;
-    private readonly IRepository<RoomBook> _roomBookRepo;
     private readonly IConverter<Book, BookDTO> _bookConverter;
 
-    public SearchBooksCommand(IRepository<Book> bookRepo, IRepository<RoomBook> roomBookRepo, IConverter<Book, BookDTO> bookConverter)
+    public SearchBooksCommand(IRepository<Book> bookRepo, IConverter<Book, BookDTO> bookConverter)
     {
         _bookRepo = bookRepo;
-        _roomBookRepo = roomBookRepo;
         _bookConverter = bookConverter;
     }
 
-    public async Task<BookResponse> Execute(SearchBooksRequest request, CancellationToken cancellationToken)
+    public async Task<BookResponse> Execute(SearchBooksRequest request, CancellationToken ct)
     {
-        var predicate = BuildSearchPredicate(request);
-        var books = await _bookRepo.Get(predicate, cancellationToken);
-        var booksList = books.ToList();
+        var query = _bookRepo.GetQueryable();
 
-        // Фильтрация по доступности
-        if (request.AvailableOnly)
-        {
-            var availableBookIds = await GetAvailableBookIds(cancellationToken);
-            booksList = booksList.Where(b => availableBookIds.Contains(b.Id.Value)).ToList();
-        }
-
-        // Сортировка
-        var sortedBooks = ApplySorting(booksList, request);
-
-        // Конвертация в DTO
-        var bookDTOs = sortedBooks.Select(b => _bookConverter.ToDto(b)).ToArray();
-
-        return ResponseFactory.Found<Book, BookDTO, BookResponse>(bookDTOs);
-    }
-
-    private Expression<Func<Book, bool>> BuildSearchPredicate(SearchBooksRequest request)
-    {
-        Expression<Func<Book, bool>> predicate = b => true;
-        var parameter = predicate.Parameters[0];
-        var body = predicate.Body;
-
-        // Универсальный поиск по всем текстовым полям (регистронезависимый)
+        // Текстовые фильтры (регистронезависимый поиск)
         if (!string.IsNullOrWhiteSpace(request.Query))
         {
-            var queryLower = request.Query.ToLower();
-
-            var titleProperty = Expression.Property(parameter, nameof(Book.Title));
-            var titleToLower = Expression.Call(titleProperty,
-                typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            var titleContains = Expression.Call(titleToLower,
-                typeof(string).GetMethod("Contains", [typeof(string)])!,
-                Expression.Constant(queryLower));
-
-            var authorProperty = Expression.Property(parameter, nameof(Book.Author));
-            var authorToLower = Expression.Call(authorProperty,
-                typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            var authorContains = Expression.Call(authorToLower,
-                typeof(string).GetMethod("Contains", [typeof(string)])!,
-                Expression.Constant(queryLower));
-
-            var genreProperty = Expression.Property(parameter, nameof(Book.Genre));
-            var genreToLower = Expression.Call(genreProperty,
-                typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            var genreContains = Expression.Call(genreToLower,
-                typeof(string).GetMethod("Contains", [typeof(string)])!,
-                Expression.Constant(queryLower));
-
-            var publisherProperty = Expression.Property(parameter, nameof(Book.Publisher));
-            var publisherToLower = Expression.Call(publisherProperty,
-                typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            var publisherContains = Expression.Call(publisherToLower,
-                typeof(string).GetMethod("Contains", [typeof(string)])!,
-                Expression.Constant(queryLower));
-
-            var queryMatch = Expression.OrElse(titleContains,
-                Expression.OrElse(authorContains,
-                Expression.OrElse(publisherContains, genreContains)));
-            body = Expression.AndAlso(body, queryMatch);
+            var q = request.Query.ToLower();
+            query = query.Where(b =>
+                b.Title.ToLower().Contains(q) ||
+                b.Author.ToLower().Contains(q) ||
+                b.Publisher.ToLower().Contains(q) ||
+                b.Genre.ToLower().Contains(q));
         }
-
-        // Поиск по названию
         if (!string.IsNullOrWhiteSpace(request.Title))
         {
-            var titleLower = request.Title.ToLower();
-            var property = Expression.Property(parameter, nameof(Book.Title));
-            var toLower = Expression.Call(property,
-                typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            var contains = Expression.Call(toLower,
-                typeof(string).GetMethod("Contains", [typeof(string)])!,
-                Expression.Constant(titleLower));
-            body = Expression.AndAlso(body, contains);
+            var t = request.Title.ToLower();
+            query = query.Where(b => b.Title.ToLower().Contains(t));
         }
-
-        // Поиск по автору
         if (!string.IsNullOrWhiteSpace(request.Author))
         {
-            var authorLower = request.Author.ToLower();
-            var property = Expression.Property(parameter, nameof(Book.Author));
-            var toLower = Expression.Call(property,
-                typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            var contains = Expression.Call(toLower,
-                typeof(string).GetMethod("Contains", [typeof(string)])!,
-                Expression.Constant(authorLower));
-            body = Expression.AndAlso(body, contains);
+            var a = request.Author.ToLower();
+            query = query.Where(b => b.Author.ToLower().Contains(a));
         }
-
-        // Поиск по издательству
         if (!string.IsNullOrWhiteSpace(request.Publisher))
         {
-            var publisherLower = request.Publisher.ToLower();
-            var property = Expression.Property(parameter, nameof(Book.Publisher));
-            var toLower = Expression.Call(property,
-                typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            var contains = Expression.Call(toLower,
-                typeof(string).GetMethod("Contains", [typeof(string)])!,
-                Expression.Constant(publisherLower));
-            body = Expression.AndAlso(body, contains);
+            var p = request.Publisher.ToLower();
+            query = query.Where(b => b.Publisher.ToLower().Contains(p));
         }
-
-        // Поиск по жанру
         if (!string.IsNullOrWhiteSpace(request.Genre))
         {
-            var genreLower = request.Genre.ToLower();
-            var property = Expression.Property(parameter, nameof(Book.Genre));
-            var toLower = Expression.Call(property,
-                typeof(string).GetMethod("ToLower", Type.EmptyTypes)!);
-            var contains = Expression.Call(toLower,
-                typeof(string).GetMethod("Contains", [typeof(string)])!,
-                Expression.Constant(genreLower));
-            body = Expression.AndAlso(body, contains);
+            var g = request.Genre.ToLower();
+            query = query.Where(b => b.Genre.ToLower().Contains(g));
         }
 
-
-        // Фильтр по году (от)
+        // Фильтры по году
         if (request.YearFrom.HasValue)
-        {
-            var property = Expression.Property(parameter, nameof(Book.Year));
-            var condition = Expression.GreaterThanOrEqual(property, Expression.Constant(request.YearFrom.Value));
-            body = Expression.AndAlso(body, condition);
-        }
-
-        // Фильтр по году (до)
+            query = query.Where(b => b.Year >= request.YearFrom.Value);
         if (request.YearTo.HasValue)
+            query = query.Where(b => b.Year <= request.YearTo.Value);
+
+        // Доступность: есть хотя бы один экземпляр с AvailableCount > 0
+        if (request.AvailableOnly)
+            query = query.Where(b => b.RoomBook.Any(rb => rb.BookCount - rb.BorrowedCount > 0));
+
+        // Сортировка
+        IQueryable<Book> sortedQuery;
+        switch (request.SortBy?.ToLower())
         {
-            var property = Expression.Property(parameter, nameof(Book.Year));
-            var condition = Expression.LessThanOrEqual(property, Expression.Constant(request.YearTo.Value));
-            body = Expression.AndAlso(body, condition);
+            case "title":
+                sortedQuery = request.SortDescending ? query.OrderByDescending(b => b.Title) : query.OrderBy(b => b.Title);
+                break;
+            case "author":
+                sortedQuery = request.SortDescending ? query.OrderByDescending(b => b.Author) : query.OrderBy(b => b.Author);
+                break;
+            case "year":
+                sortedQuery = request.SortDescending ? query.OrderByDescending(b => b.Year) : query.OrderBy(b => b.Year);
+                break;
+            case "publisher":
+                sortedQuery = request.SortDescending ? query.OrderByDescending(b => b.Publisher) : query.OrderBy(b => b.Publisher);
+                break;
+            case "popularity":
+                sortedQuery = request.SortDescending
+                    ? query.OrderByDescending(b => b.RoomBook.Sum(rb => rb.BorrowedCount))
+                    : query.OrderBy(b => b.RoomBook.Sum(rb => rb.BorrowedCount));
+                break;
+            default:
+                sortedQuery = query.OrderBy(b => b.Title);
+                break;
         }
 
-        return Expression.Lambda<Func<Book, bool>>(body, parameter);
-    }
-
-    private async Task<HashSet<Guid>> GetAvailableBookIds(CancellationToken cancellationToken)
-    {
-        var roomBooks = await _roomBookRepo.Get(cancellationToken);
-        return roomBooks
-            .Where(rb => rb.AvailableCount > 0)
-            .Select(rb => rb.Book.Id.Value)
-            .ToHashSet();
-    }
-
-    private IEnumerable<Book> ApplySorting(IEnumerable<Book> books, SearchBooksRequest request)
-    {
-        return request.SortBy?.ToLower() switch
-        {
-            "title" => request.SortDescending
-                ? books.OrderByDescending(b => b.Title)
-                : books.OrderBy(b => b.Title),
-            "author" => request.SortDescending
-                ? books.OrderByDescending(b => b.Author)
-                : books.OrderBy(b => b.Author),
-            "year" => request.SortDescending
-                ? books.OrderByDescending(b => b.Year)
-                : books.OrderBy(b => b.Year),
-            "publisher" => request.SortDescending
-                ? books.OrderByDescending(b => b.Publisher)
-                : books.OrderBy(b => b.Publisher),
-            "popularity" => request.SortDescending
-                ? books.OrderByDescending(b => b.RoomBook.Sum(rb => rb.BorrowedCount))
-                : books.OrderBy(b => b.RoomBook.Sum(rb => rb.BorrowedCount)),
-            _ => books.OrderBy(b => b.Title)
-        };
+        var books = await sortedQuery.ToListAsync(ct);
+        var bookDTOs = books.Select(b => _bookConverter.ToDto(b)).ToArray();
+        return ResponseFactory.Found<Book, BookDTO, BookResponse>(bookDTOs);
     }
 }

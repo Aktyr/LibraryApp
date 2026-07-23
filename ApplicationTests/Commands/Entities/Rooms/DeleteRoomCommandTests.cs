@@ -11,7 +11,7 @@ public class DeleteRoomCommandTests
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
-            .RuleFor(x => x.RoomBooks, f => null) // Должно быть null, чтобы команда не бросала исключение
+            .RuleFor(x => x.RoomBooks, f => null!) // Должно быть null, чтобы команда не бросала исключение
             .Generate(10)
             .ToList();
         await roomRepo.AddRange(rooms.AsEnumerable());
@@ -41,7 +41,7 @@ public class DeleteRoomCommandTests
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
-            .RuleFor(x => x.RoomBooks, f => null)
+            .RuleFor(x => x.RoomBooks, f => null!) // Должно быть null
             .Generate(10)
             .ToList();
         await roomRepo.AddRange(rooms.AsEnumerable());
@@ -76,7 +76,7 @@ public class DeleteRoomCommandTests
         var room = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => "Last Room")
-            .RuleFor(x => x.RoomBooks, f => null) // Должно быть null
+            .RuleFor(x => x.RoomBooks, f => null!) // Должно быть null
             .Generate();
         await roomRepo.AddRange([room]);
 
@@ -133,7 +133,7 @@ public class DeleteRoomCommandTests
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.IndexFaker == 7 ? "Target Room" : f.Name.FirstName())
-            .RuleFor(x => x.RoomBooks, f => null) // Должно быть null
+            .RuleFor(x => x.RoomBooks, f => null!) // Должно быть null
             .Generate(10)
             .ToList();
         await roomRepo.AddRange(rooms.AsEnumerable());

@@ -46,4 +46,7 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
             }
         }, cancellationToken);
     }
+    public IQueryable<TEntity> GetQueryable() => Entities.AsQueryable();
+    public IQueryable<TEntity> GetQueryable(Expression<Func<TEntity, bool>> predicate) => Entities.Where(predicate.Compile()).AsQueryable();
+
 }
