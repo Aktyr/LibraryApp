@@ -1,15 +1,17 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class ReturnBookCommand(
-        IRepository<UserRoomBook> userRoomBookRepo,
-        IRepository<RoomBook> roomBookRepo,
-        BorrowingValidatorAsync validator,
-        PenaltyCalculatorService penaltyCalculator,
-        INotificationService notificationService) : ICreateOrUpdateCommand<ReturnBookRequest, BasicCreateDeleteResponse>, ICommand
+    IUnitOfWork unitOfWork,
+    BorrowingValidatorAsync validator,
+    PenaltyCalculatorService penaltyCalculator,
+    INotificationService notificationService) : ICreateOrUpdateCommand<ReturnBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(ReturnBookRequest request, CancellationToken cancellationToken)
     {
-        // Валидация 
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+
+        // Валидация
         var userRoomBook = (await userRoomBookRepo.Get(urb => urb.Id.Value == request.UserRoomBookId, cancellationToken)).FirstOrDefault()
             ?? throw new UserRoomBookNotFoundException();
 
@@ -20,7 +22,6 @@ public class ReturnBookCommand(
         // Получаем книгу
         var roomBook = userRoomBook.RoomBook;
 
-
         // Расчёт штрафа (если есть)
         var penalty = penaltyCalculator.CalculatePenaltyForReturn(userRoomBook);
         if (penalty.HasValue && penalty.Value > 0)
@@ -29,18 +30,27 @@ public class ReturnBookCommand(
 
             // Уведомление о штрафе
             await notificationService.SendOverdueNotificationAsync(
-                userRoomBook.User,
-                userRoomBook,
-                penalty.Value,
+                userRoomBook.User, 
+                userRoomBook, 
+                penalty.Value, 
                 cancellationToken);
         }
 
         // Обновляем данные
-        userRoomBook.ReturnDate = DateTime.Now;
         roomBook.BorrowedCount--;
+        userRoomBook.ReturnDate = DateTime.UtcNow;
 
-        await userRoomBookRepo.Update(userRoomBook, cancellationToken);
-        await roomBookRepo.Update(roomBook, cancellationToken);
+        await unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            await unitOfWork.CommitTransactionAsync(cancellationToken);
+        }
+        catch
+        {
+            await unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
 
         var message = userRoomBook.Penalty.HasValue
             ? $"Книга возвращена. Штраф: {userRoomBook.Penalty} руб."

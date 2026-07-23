@@ -1,12 +1,13 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class GetUserRoomBooksQuery(
-    IRepository<UserRoomBook> userRoomBookRepo,
+    IUnitOfWork unitOfWork,
     IConverter<UserRoomBook, BorrowedBookDTO> converter,
     BorrowingValidatorAsync validator) : IGetQuery<GetUserBooksRequest, BorrowResponse>, ICommand
 {
     public async Task<BorrowResponse> Execute(GetUserBooksRequest request, CancellationToken cancellationToken)
     {
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         // Получение списка книг
         var userBooks = await userRoomBookRepo.Get(
             urb => urb.User.Id.Value == request.UserId,

@@ -1,12 +1,14 @@
 ﻿namespace LibApp.Application.Commands.Entities.Rooms;
 
 public class CreateRoomCommand(
-    IRepository<Room> roomRepo,
+    IUnitOfWork unitOfWork,
     RoomValidatorAsync roomValidator,
     IConverter<Room, RoomDTO> roomConverter) : ICreateOrUpdateCommand<CreateRoomRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(CreateRoomRequest request, CancellationToken cancellationToken)
     {
+        var roomRepo = unitOfWork.GetRepository<Room>();
+
         // Создание
         RoomDTO roomDto = new(Guid.NewGuid(),
                               request.Name, []);
@@ -24,6 +26,9 @@ public class CreateRoomCommand(
 
         // Добавление
         await roomRepo.Add(room, cancellationToken);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
         return ResponseFactory.Created<Room>();
     }
 }

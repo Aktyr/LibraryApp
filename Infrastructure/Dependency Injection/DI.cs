@@ -19,7 +19,8 @@ public static partial class DI
                 .AddCommands()
                 .AddServices()
                 .AddJwtAuthentication()
-                .AddBackgroundServices();
+                .AddBackgroundServices()
+                .AddUnitOfWork();
         return services;
     }
 

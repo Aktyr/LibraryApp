@@ -1,11 +1,12 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class ExtendDeadlineCommand(
-    IRepository<UserRoomBook> userRoomBookRepo,
+    IUnitOfWork unitOfWork,
     BorrowingValidatorAsync validator) : ICreateOrUpdateCommand<ExtendDeadlineRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(ExtendDeadlineRequest request, CancellationToken cancellationToken)
     {
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         // Валидация
         var userRoomBook = (await userRoomBookRepo.Get(urb => urb.Id.Value == request.UserRoomBookId, cancellationToken)).FirstOrDefault()
             ?? throw new UserRoomBookNotFoundException();
@@ -19,7 +20,7 @@ public class ExtendDeadlineCommand(
 
         // Сохраняем
         await userRoomBookRepo.Update(userRoomBook, cancellationToken);
-
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return ResponseFactory.Success($"Срок продлен до {userRoomBook.Deadline:d}");
     }
 }

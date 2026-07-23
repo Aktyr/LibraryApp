@@ -1,9 +1,11 @@
 ﻿namespace LibApp.Application.Commands.Auth;
 
-public class LoginCommand(IRepository<User> userRepo, JwtService jwtService) : IGetQuery<LoginRequest, LoginResponse>, ICommand
+public class LoginCommand(IUnitOfWork unitOfWork, JwtService jwtService) : IGetQuery<LoginRequest, LoginResponse>, ICommand
 {
     public async Task<LoginResponse> Execute(LoginRequest request, CancellationToken cancellationToken)
     {
+        var userRepo = unitOfWork.GetRepository<User>();
+
         // Поиск пользователя по email
         var users = await userRepo.Get(u => u.Email == request.Email, cancellationToken);
         var user = users.FirstOrDefault();

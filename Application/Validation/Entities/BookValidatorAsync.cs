@@ -12,8 +12,8 @@ public class BookValidatorAsync : IValidator
         if (string.IsNullOrWhiteSpace(book.Author))
             errors.Add("Автор книги обязателен");
 
-        if (book.Year < 0 || book.Year > DateTime.Now.Year + 5) // todo возможно придётся поменять DateTime.Now на что-то другое
-            errors.Add($"Год должен быть между 0 и {DateTime.Now.Year + 5}");
+        if (book.Year < 0 || book.Year > DateTime.UtcNow.Year + 5) // todo возможно придётся поменять DateTime.Now на что-то другое
+            errors.Add($"Год должен быть между 0 и {DateTime.UtcNow.Year + 5}");
 
         if (string.IsNullOrWhiteSpace(book.Publisher))
             errors.Add("Издательство обязательно");

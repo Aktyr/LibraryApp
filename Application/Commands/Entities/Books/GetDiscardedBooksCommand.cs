@@ -1,9 +1,10 @@
 ﻿namespace LibApp.Application.Commands.Entities.Books;
 
-public class GetDiscardedBooksCommand(IRepository<DiscardedBook> discardedRepo) : IGetQuery<GetDiscardedBooksRequest, DiscardedBookResponse>, ICommand
+public class GetDiscardedBooksCommand(IUnitOfWork unitOfWork) : IGetQuery<GetDiscardedBooksRequest, DiscardedBookResponse>, ICommand
 {
     public async Task<DiscardedBookResponse> Execute(GetDiscardedBooksRequest request, CancellationToken ct)
     {
+        var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
         Expression<Func<DiscardedBook, bool>> predicate = d => true;
 
         if (request.FromDate.HasValue)

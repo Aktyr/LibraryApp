@@ -1,12 +1,13 @@
 ﻿namespace LibApp.Application.Commands.Entities.Books;
 
-public class DiscardBookCommand(
-    IRepository<Book> bookRepo,
-    IRepository<DiscardedBook> discardedRepo,
-    IRepository<RoomBook> roomBookRepo) : ICreateOrUpdateCommand<DiscardBookRequest, BasicCreateDeleteResponse>, ICommand
+public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand<DiscardBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(DiscardBookRequest request, CancellationToken ct)
     {
+        var bookRepo = unitOfWork.GetRepository<Book>();
+        var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+
         // Валидация
         // Находим книгу
         var books = await bookRepo.Get(b => b.Id.Value == request.BookId, ct);
@@ -20,12 +21,12 @@ public class DiscardBookCommand(
             throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнатах"] };
 
         // Проверяем, что списываем не больше, чем есть
-        if (request.Quantity > roomBook.BookCount)
-            throw new LibValidationException { ExceptionDetails = [$"Нельзя списать {request.Quantity} экз. Доступно: {roomBook.BookCount}"] };
+        if (request.Amount > roomBook.BookCount)
+            throw new LibValidationException { ExceptionDetails = [$"Нельзя списать {request.Amount} экз. Доступно: {roomBook.BookCount}"] };
 
         // Проверяем, что списываемые экземпляры не выданы
-        if (request.Quantity > roomBook.AvailableCount)
-            throw new LibValidationException { ExceptionDetails = [$"Нельзя списать {request.Quantity} экз. Выдано: {roomBook.BorrowedCount}, доступно: {roomBook.AvailableCount}"] };
+        if (request.Amount > roomBook.AvailableCount)
+            throw new LibValidationException { ExceptionDetails = [$"Нельзя списать {request.Amount} экз. Выдано: {roomBook.BorrowedCount}, доступно: {roomBook.AvailableCount}"] };
 
         //todo возможно заменить проверку на конкретных пользователей
         if (!string.IsNullOrEmpty(request.ApprovedBy) && request.ApprovedBy.Length > 100)
@@ -39,19 +40,29 @@ public class DiscardBookCommand(
             Book = book,
             Room = roomBook.Room,
             RoomId = roomBook.Room.Id,
-            Amount = request.Quantity,
-            DiscardedDate = DateTime.Now,
+            Amount = request.Amount,
+            DiscardedDate = DateTime.UtcNow,
             DiscardReason = request.DiscardReason,
             ApprovedBy = request.ApprovedBy,
             CompensationAmount = request.CompensationAmount
         };
 
-        await discardedRepo.Add(discarded, ct);
-
         // Уменьшаем количество экземпляров
-        roomBook.BookCount -= request.Quantity;
-        await roomBookRepo.Update(roomBook, ct);
+        await unitOfWork.BeginTransactionAsync(ct);
+        try
+        {
+            await discardedRepo.Add(discarded, ct);
+            roomBook.BookCount -= request.Amount;
+            await roomBookRepo.Update(roomBook, ct);
+            await unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.CommitTransactionAsync(ct);
+        }
+        catch
+        {
+            await unitOfWork.RollbackTransactionAsync(ct);
+            throw;
+        }
 
-        return ResponseFactory.Success($"Списано {request.Quantity} экз. книги '{book.Title}'. Причина: {request.DiscardReason}");
+        return ResponseFactory.Success($"Списано {request.Amount} экз. книги '{book.Title}'. Причина: {request.DiscardReason}");
     }
 }

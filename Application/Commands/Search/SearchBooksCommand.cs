@@ -1,20 +1,13 @@
 ﻿namespace LibApp.Application.Commands.Search;
 
-// todo перенести логику отчётов и поиска на EFCore
-public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, ICommand
+public class SearchBooksCommand(
+    IUnitOfWork unitOfWork,
+    IConverter<Book, BookDTO> bookConverter) : IGetQuery<SearchBooksRequest, BookResponse>, ICommand
 {
-    private readonly IRepository<Book> _bookRepo;
-    private readonly IConverter<Book, BookDTO> _bookConverter;
-
-    public SearchBooksCommand(IRepository<Book> bookRepo, IConverter<Book, BookDTO> bookConverter)
-    {
-        _bookRepo = bookRepo;
-        _bookConverter = bookConverter;
-    }
-
     public async Task<BookResponse> Execute(SearchBooksRequest request, CancellationToken ct)
     {
-        var query = _bookRepo.GetQueryable();
+        var bookRepo = unitOfWork.GetRepository<Book>();
+        var query = bookRepo.GetQueryable();
 
         // Текстовые фильтры (регистронезависимый поиск)
         if (!string.IsNullOrWhiteSpace(request.Query))
@@ -84,7 +77,7 @@ public class SearchBooksCommand : IGetQuery<SearchBooksRequest, BookResponse>, I
         }
 
         var books = await sortedQuery.ToListAsync(ct);
-        var bookDTOs = books.Select(b => _bookConverter.ToDto(b)).ToArray();
+        var bookDTOs = books.Select(b => bookConverter.ToDto(b)).ToArray();
         return ResponseFactory.Found<Book, BookDTO, BookResponse>(bookDTOs);
     }
 }

@@ -1,6 +1,4 @@
-﻿using LibApp.Application.Configuration;
-
-namespace LibApp.Application.Validation.Borrowing;
+﻿namespace LibApp.Application.Validation.Borrowing;
 
 public class BorrowingValidatorAsync : IValidator
 {
@@ -22,7 +20,7 @@ public class BorrowingValidatorAsync : IValidator
             if (activeBooksCount >= _settings.MaxBooksPerUser)
                 errors.Add($"Пользователь уже взял максимальное количество книг ({_settings.MaxBooksPerUser})");
 
-            var overdueBooks = user.RoomBooks?.Where(urb => !urb.IsReturned && urb.Deadline < DateTime.Now) ?? Enumerable.Empty<UserRoomBook>();
+            var overdueBooks = user.RoomBooks?.Where(urb => !urb.IsReturned && urb.Deadline < DateTime.UtcNow) ?? Enumerable.Empty<UserRoomBook>();
             if (overdueBooks.Any())
                 errors.Add("У пользователя есть просроченные книги");
         }

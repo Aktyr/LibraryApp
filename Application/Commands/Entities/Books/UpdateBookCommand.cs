@@ -1,10 +1,12 @@
 ﻿    namespace LibApp.Application.Commands.Entities.Books;
 
-public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bookValidator, IConverter<Book, BookDTO> bookConverter)
+public class UpdateBookCommand(IUnitOfWork unitOfWork, BookValidatorAsync bookValidator, IConverter<Book, BookDTO> bookConverter)
     : ICreateOrUpdateCommand<UpdateBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateBookRequest request, CancellationToken cancellationToken)
     {
+        var bookRepo = unitOfWork.GetRepository<Book>();
+
         var books = await bookRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
         var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
 
@@ -30,6 +32,7 @@ public class UpdateBookCommand(IRepository<Book> bookRepo, BookValidatorAsync bo
         //book.RoomBook = request.RoomBook;
 
         await bookRepo.Update(book, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return ResponseFactory.Updated<Book>();
     }
 }

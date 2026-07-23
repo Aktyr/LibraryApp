@@ -1,12 +1,13 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class CreateUserCommand(
-    IRepository<User> userRepo,
+    IUnitOfWork unitOfWork,
     UserValidatorAsync userValidator,
     IConverter<User, UserDTO> userConverter) : ICreateOrUpdateCommand<CreateUserRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(CreateUserRequest request, CancellationToken cancellationToken)
     {
+        var userRepo = unitOfWork.GetRepository<User>();
         // Создание
         var userDto = new UserDTO(Guid.NewGuid(),
                               request.LastName,
@@ -25,6 +26,7 @@ public class CreateUserCommand(
 
         // Добавление
         await userRepo.Add(user, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return ResponseFactory.Created<User>();
     }
 }

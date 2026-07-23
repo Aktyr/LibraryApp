@@ -1,12 +1,14 @@
 ﻿namespace LibApp.Application.Commands.Reports;
 
 public class GetUserActivityReportCommand(
-    IRepository<User> userRepo,
-    IRepository<UserRoomBook> userRoomBookRepo)
+    IUnitOfWork unitOfWork)
     : IGetQuery<GetUserActivityRequest, UserActivityReportResponse>, ICommand
 {
     public async Task<UserActivityReportResponse> Execute(GetUserActivityRequest request, CancellationToken ct)
     {
+        var userRepo = unitOfWork.GetRepository<User>();
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+
         var usersQuery = userRepo.GetQueryable();
         var borrowsQuery = userRoomBookRepo.GetQueryable();
 

@@ -1,12 +1,14 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class BorrowBookCommand(
-    IRepository<User> userRepo,
-    IRepository<RoomBook> roomBookRepo,
+    IUnitOfWork unitOfWork,
     BorrowingValidatorAsync validator) : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(BorrowBookRequest request, CancellationToken cancellationToken)
     {
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+
         // Валидация
         var user = (await userRepo.Get(u => u.Id.Value == request.UserId, cancellationToken)).FirstOrDefault()
             ?? throw new UserNotFoundException();
@@ -18,22 +20,31 @@ public class BorrowBookCommand(
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
-        // Создаем запись о выдаче
+        // Создание записи
         var userRoomBook = new UserRoomBook
         {
             User = user,
             RoomBook = roomBook,
-            BorrowDate = DateTime.Now,
-            Deadline = DateTime.Now.AddDays(request.BorrowDays)
+            BorrowDate = DateTime.UtcNow,
+            Deadline = DateTime.UtcNow.AddDays(request.BorrowDays)
         };
 
-        // Обновляем счетчик
         roomBook.BorrowedCount++;
         user.RoomBooks.Add(userRoomBook);
 
-        // Сохраняем
-        await roomBookRepo.Update(roomBook, cancellationToken);
-        await userRepo.Update(user, cancellationToken);
+        // Сохранение
+        await unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            await unitOfWork.CommitTransactionAsync(cancellationToken);
+        }
+        catch
+        {
+            await unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
+
 
         return ResponseFactory.Success($"Книга выдана. Срок возврата: {userRoomBook.Deadline:d}");
     }

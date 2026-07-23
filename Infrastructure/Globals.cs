@@ -42,3 +42,4 @@ global using System.Text.Json;
 global using System.Text.RegularExpressions;
 global using System.ComponentModel.DataAnnotations;
 global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.EntityFrameworkCore.Storage;

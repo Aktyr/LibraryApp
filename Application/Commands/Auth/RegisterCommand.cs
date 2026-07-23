@@ -1,13 +1,15 @@
 ﻿namespace LibApp.Application.Commands.Auth;
 
 public class RegisterCommand(
-    IRepository<User> userRepo,
+    IUnitOfWork unitOfWork,
     RegisterValidatorAsync validator,
     IConverter<User, UserDTO> userConverter,
     JwtService jwtService) : ICreateOrUpdateCommand<RegisterRequest, RegisterResponse>, ICommand
 {
     public async Task<RegisterResponse> Execute(RegisterRequest request, CancellationToken cancellationToken)
     {
+        var userRepo = unitOfWork.GetRepository<User>();
+
         // Валидация
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
@@ -40,6 +42,8 @@ public class RegisterCommand(
 
         // Генерируем токен
         var token = jwtService.GenerateToken(user);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new RegisterResponse(
             Status: "Ok",

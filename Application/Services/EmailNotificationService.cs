@@ -84,7 +84,7 @@ public class EmailNotificationService : INotificationService, IService
 
     public async Task SendReturnReminderAsync(User user, UserRoomBook userRoomBook, CancellationToken cancellationToken)
     {
-        var daysLeft = (userRoomBook.Deadline!.Value - DateTime.Now).Days;
+        var daysLeft = (userRoomBook.Deadline!.Value - DateTime.UtcNow).Days;
         var subject = $"Напоминание о возврате книги (осталось {daysLeft} дн.)";
         var body = $"""
             Здравствуйте, {user.FullName}!
@@ -102,7 +102,7 @@ public class EmailNotificationService : INotificationService, IService
 
     public async Task SendOverdueNotificationAsync(User user, UserRoomBook userRoomBook, decimal penalty, CancellationToken cancellationToken)
     {
-        var daysOverdue = (DateTime.Now - userRoomBook.Deadline!.Value).Days;
+        var daysOverdue = (DateTime.UtcNow - userRoomBook.Deadline!.Value).Days;
         var subject = "Просрочка возврата книги";
         var body = $"""
             Здравствуйте, {user.FullName}!

@@ -30,7 +30,7 @@ public class PenaltyCalculatorService : IService
             return 0;
         }
 
-        var now = currentDate ?? DateTime.Now;
+        var now = currentDate ?? DateTime.UtcNow;
 
         // Добавляем льготный период
         var gracePeriodEnd = deadline.Value.AddDays(config.GracePeriodDays);

@@ -1,10 +1,11 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class GetAllUsersQuery(IRepository<User> userRepo, IConverter<User, UserDTO> userConverter)
+public class GetAllUsersQuery(IUnitOfWork unitOfWork, IConverter<User, UserDTO> userConverter)
     : IGetQuery<EmptyRequest, UserResponse>, ICommand
 {
     public async Task<UserResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
     {
+        var userRepo = unitOfWork.GetRepository<User>();
         var users = await userRepo.GetWithoutTracking(cancellationToken);
         var userDTOs = users.Select(user => userConverter.ToDto(user)).ToArray();
 

@@ -1,4 +1,6 @@
-﻿namespace LibApp.Infrastructure.DependencyInjection;
+﻿using LibApp.Infrastructure.Db;
+
+namespace LibApp.Infrastructure.DependencyInjection;
 
 public static partial class DI
 {
@@ -23,6 +25,11 @@ public static partial class DI
     public static IServiceCollection AddCommands(this IServiceCollection services)
     {
         services.RegisterMarkedTypes<ICommand>(ServiceLifetime.Transient);
+        return services;
+    }
+    public static IServiceCollection AddUnitOfWork(this IServiceCollection services)
+    {
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
     }
 

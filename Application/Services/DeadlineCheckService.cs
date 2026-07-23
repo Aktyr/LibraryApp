@@ -1,6 +1,4 @@
-﻿using LibApp.Application.Configuration;
-
-namespace LibApp.Application.Services;
+﻿namespace LibApp.Application.Services;
 
 public class DeadlineCheckService : BackgroundService, IService
 {
@@ -48,13 +46,15 @@ public class DeadlineCheckService : BackgroundService, IService
 
     private async Task CheckDeadlines(CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope();
-        var userRoomBookRepo = scope.ServiceProvider.GetRequiredService<IRepository<UserRoomBook>>();
+        using var scope = _serviceProvider.CreateScope(); //todo ??
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>(); 
         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
 
         var settings = _settingsMonitor.CurrentValue;
         var penaltySettings = _penaltySettingsMonitor.CurrentValue;
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         // Книги, которые нужно вернуть через N дня
         var soonDue = await userRoomBookRepo.Get(
@@ -85,6 +85,7 @@ public class DeadlineCheckService : BackgroundService, IService
             // Отправляем уведомление
             await notificationService.SendOverdueNotificationAsync(urb.User, urb, penalty, cancellationToken);
         }
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     private decimal CalculatePenalty(int daysOverdue, PenaltySettings settings)

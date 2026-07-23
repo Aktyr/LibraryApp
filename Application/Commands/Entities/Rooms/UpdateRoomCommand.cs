@@ -1,12 +1,13 @@
 ﻿namespace LibApp.Application.Commands.Entities.Rooms;
 
 public class UpdateRoomCommand(
-    IRepository<Room> roomRepo, 
+    IUnitOfWork unitOfWork, 
     RoomValidatorAsync roomValidator, 
     IConverter<Room, RoomDTO> roomConverter) : ICreateOrUpdateCommand<UpdateRoomRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateRoomRequest request, CancellationToken cancellationToken)
     {
+        var roomRepo = unitOfWork.GetRepository<Room>();
         var rooms = await roomRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
         var room = rooms.FirstOrDefault() ?? throw new RoomNotFoundException();
 
@@ -31,6 +32,7 @@ public class UpdateRoomCommand(
         room.RoomBooks = request.RoomBooks;
 
         await roomRepo.Update(room, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return ResponseFactory.Updated<Room>();
     }
 }

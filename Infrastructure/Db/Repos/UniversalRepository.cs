@@ -14,19 +14,19 @@ public class UniversalRepository<TEntity> : IRepository<TEntity> where TEntity :
     public async Task AddRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken)
     {
         await _dbSet.AddRangeAsync(entities, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        //await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken)
     {
         _dbSet.UpdateRange(entities);
-        await _context.SaveChangesAsync(cancellationToken);
+        //await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task RemoveRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken)
     {
         _dbSet.RemoveRange(entities);
-        await _context.SaveChangesAsync(cancellationToken);
+        //await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<TEntity>> Get(CancellationToken cancellationToken)

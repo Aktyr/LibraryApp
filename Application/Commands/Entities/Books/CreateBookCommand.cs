@@ -1,12 +1,14 @@
 ﻿namespace LibApp.Application.Commands.Entities.Books;
 
 public class CreateBookCommand(
-    IRepository<Book> bookRepo,
+    IUnitOfWork unitOfWork,
     BookValidatorAsync bookValidator,
     IConverter<Book, BookDTO> bookConverter) : ICreateOrUpdateCommand<CreateBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(CreateBookRequest request, CancellationToken cancellationToken)
     {
+        var bookRepo = unitOfWork.GetRepository<Book>();
+
         // Создание
         var bookDTO = new BookDTO(Guid.NewGuid(),
                                   request.Title,
@@ -24,6 +26,9 @@ public class CreateBookCommand(
 
         // Добавление 
         await bookRepo.Add(book, cancellationToken);
+        
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
         return ResponseFactory.Created<Book>();
     }
 }

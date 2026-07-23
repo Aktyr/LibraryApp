@@ -1,12 +1,13 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class UpdateUserCommand
-    (IRepository<User> userRepo, 
+public class UpdateUserCommand(
+    IUnitOfWork unitOfWork, 
     UserValidatorAsync userValidator, 
     IConverter<User, UserDTO> userConverter) : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateUserRequest request, CancellationToken cancellationToken)
     {
+        var userRepo = unitOfWork.GetRepository<User>();
         var users = await userRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
         var user = users.FirstOrDefault() ?? throw new UserNotFoundException();
 
@@ -32,6 +33,7 @@ public class UpdateUserCommand
         user.ContactInfo = request.ContactInfo;
 
         await userRepo.Update(user, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return ResponseFactory.Updated<User>();
     }
 }

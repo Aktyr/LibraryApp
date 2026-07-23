@@ -1,10 +1,11 @@
 ﻿namespace LibApp.Application.Commands.Reports;
 
-public class GetPopularBooksReportCommand(IRepository<UserRoomBook> userRoomBookRepo)
+public class GetPopularBooksReportCommand(IUnitOfWork unitOfWork)
     : IGetQuery<GetPopularBooksRequest, BookPopularityReportResponse>, ICommand
 {
     public async Task<BookPopularityReportResponse> Execute(GetPopularBooksRequest request, CancellationToken ct)
     {
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         var query = userRoomBookRepo.GetQueryable();
 
         if (request.FromDate.HasValue)
