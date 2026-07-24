@@ -21,13 +21,13 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenUserRoomBookNotFound_ThrowsException()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var command = new ReturnBookCommand(
-            userRoomBookRepo,
-            roomBookRepo,
+            unitOfWork,
             CreateValidator(),
             CreatePenaltyService(),
             notificationMock.Object);
@@ -42,8 +42,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenBookAlreadyReturned_ThrowsException()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var userRoomBook = new UserRoomBook
@@ -52,12 +53,10 @@ public class ReturnBookCommandTests
             ReturnDate = DateTime.Now.AddDays(-1),  // Уже возвращена
             RoomBook = new RoomBook { Id = new Id(Guid.NewGuid()) }
         };
-        await userRoomBookRepo.AddRange([userRoomBook]);
+        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
-            userRoomBookRepo, roomBookRepo,
-            CreateValidator(), CreatePenaltyService(),
-            notificationMock.Object);
+            unitOfWork, CreateValidator(), CreatePenaltyService(), notificationMock.Object);
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -70,8 +69,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenReturnedWithoutOverdue_NoPenaltyApplied()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var roomBook = new RoomBook
@@ -94,13 +94,10 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange([userRoomBook]);
-        await roomBookRepo.AddRange([roomBook]);
+        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
 
-        var command = new ReturnBookCommand(
-            userRoomBookRepo, roomBookRepo,
-            CreateValidator(), CreatePenaltyService(),
-            notificationMock.Object);
+        var command = new ReturnBookCommand(unitOfWork, CreateValidator(), CreatePenaltyService(), notificationMock.Object);
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -131,8 +128,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenReturnedWithOverdue_PenaltyAppliedAndNotificationSent()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var penaltySettings = new PenaltySettings { DailyRate = 10m, GracePeriodDays = 0 };
@@ -162,11 +160,11 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange([userRoomBook]);
-        await roomBookRepo.AddRange([roomBook]);
+        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
-            userRoomBookRepo, roomBookRepo,
+            unitOfWork,
             CreateValidator(),
             CreatePenaltyService(penaltySettings),
             notificationMock.Object);
@@ -201,8 +199,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenPenaltyIsZero_NoNotificationSent()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var roomBook = new RoomBook
@@ -227,12 +226,11 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange([userRoomBook]);
-        await roomBookRepo.AddRange([roomBook]);
+        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
-            userRoomBookRepo,
-            roomBookRepo,
+            unitOfWork,
             CreateValidator(),
             CreatePenaltyService(),
             notificationMock.Object);
@@ -262,8 +260,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenOverdueWithMaxPenalty_PenaltyCapped()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         // Настраиваем лимит штрафа
@@ -294,12 +293,11 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange([userRoomBook]);
-        await roomBookRepo.AddRange([roomBook]);
+        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
-            userRoomBookRepo,
-            roomBookRepo,
+            unitOfWork,
             CreateValidator(),
             CreatePenaltyService(penaltySettings),
             notificationMock.Object);
@@ -324,8 +322,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenBookHasExistingPenaltyFromDeadlineCheck_TakesMax()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var penaltySettings = new PenaltySettings { DailyRate = 10m, GracePeriodDays = 0 };
@@ -355,12 +354,11 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange([userRoomBook]);
-        await roomBookRepo.AddRange([roomBook]);
+        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
-            userRoomBookRepo,
-            roomBookRepo,
+            unitOfWork,
             CreateValidator(),
             CreatePenaltyService(penaltySettings),
             notificationMock.Object);
@@ -384,8 +382,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenBookHasExistingPenalty_LowerThanCalculated_TakesCalculated()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var penaltySettings = new PenaltySettings
@@ -420,12 +419,11 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange([userRoomBook]);
-        await roomBookRepo.AddRange([roomBook]);
+        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
-            userRoomBookRepo,
-            roomBookRepo,
+            unitOfWork,
             CreateValidator(),
             CreatePenaltyService(penaltySettings),
             notificationMock.Object);
@@ -452,8 +450,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenBookHasExistingPenalty_HigherThanCalculated_TakesExisting()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork2 = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork2.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork2.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var penaltySettings = new PenaltySettings
@@ -492,8 +491,7 @@ public class ReturnBookCommandTests
         await roomBookRepo.AddRange([roomBook]);
 
         var command = new ReturnBookCommand(
-            userRoomBookRepo,
-            roomBookRepo,
+            unitOfWork2,
             CreateValidator(),
             CreatePenaltyService(penaltySettings),
             notificationMock.Object);
@@ -520,7 +518,8 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenExtraDaysIsZero_ThrowsValidationException()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
+        var unitOfWork3 = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork3.GetRepository<UserRoomBook>();
         var settings = new BorrowingSettings { MaxExtendDeadlineDays = 14 };
 
         var userRoomBook = new UserRoomBook
@@ -532,7 +531,7 @@ public class ReturnBookCommandTests
         };
         await userRoomBookRepo.AddRange([userRoomBook]);
 
-        var command = new ExtendDeadlineCommand(userRoomBookRepo, CreateValidator(settings));
+        var command = new ExtendDeadlineCommand(unitOfWork3, CreateValidator(settings));
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 0 };
 
         // Act & Assert
@@ -545,8 +544,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenReturnedOnTime_MessageDoesNotContainPenalty()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork4 = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork4.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork4.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var roomBook = new RoomBook
@@ -575,8 +575,7 @@ public class ReturnBookCommandTests
         await roomBookRepo.AddRange([roomBook]);
 
         var command = new ReturnBookCommand(
-            userRoomBookRepo,
-            roomBookRepo,
+            unitOfWork4,
             CreateValidator(),
             CreatePenaltyService(),
             notificationMock.Object);

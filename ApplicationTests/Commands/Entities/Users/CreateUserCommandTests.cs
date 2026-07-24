@@ -16,7 +16,8 @@ public class CreateUserCommandTests
     public async Task Execute_CreateUserWithValidData_CreatesUser(string lastName, string firstName, string middleName, string contactInfo)
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         await userRepo.AddRange(new Bogus.Faker<User>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -26,7 +27,7 @@ public class CreateUserCommandTests
                                    .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
+        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var createUserRequest = new CreateUserRequest
         {
             LastName = lastName,
@@ -50,7 +51,7 @@ public class CreateUserCommandTests
 
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("User is created."));
-            Assert.That(userRepo.Entities, Has.Count.EqualTo(11));
+            Assert.That(((FakeRepository<User>)userRepo).Entities, Has.Count.EqualTo(11));
         });
     }
 
@@ -64,7 +65,8 @@ public class CreateUserCommandTests
         string lastName, string firstName, string middleName, string contactInfo)
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         await userRepo.AddRange(new Bogus.Faker<User>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -74,7 +76,7 @@ public class CreateUserCommandTests
                                    .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
+        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var createUserRequest = new CreateUserRequest
         {
             LastName = lastName,
@@ -92,8 +94,9 @@ public class CreateUserCommandTests
     public async Task Execute_CreateUserWithLongNames_ThrowsValidationException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
+        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
 
         // Генерируем слишком длинные строки (предполагая, что валидатор имеет ограничения по длине)
         var createUserRequest = new CreateUserRequest
@@ -113,7 +116,8 @@ public class CreateUserCommandTests
     public async Task Execute_CreateUserWithDuplicateData_StillCreatesUser()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var existingUser = new User
         {
             Id = new Id(Guid.NewGuid()),
@@ -123,9 +127,9 @@ public class CreateUserCommandTests
             ContactInfo = "ivanov@example.com",
             RoomBooks = []
         };
-        await userRepo.AddRange([existingUser]);
+        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
 
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
+        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
 
         // Пытаемся создать пользователя с такими же данными (допустимо, если нет ограничения на уникальность)
         var createUserRequest = new CreateUserRequest
@@ -152,8 +156,9 @@ public class CreateUserCommandTests
     public async Task Execute_CreateUser_InitializeCollectionsCorrectly()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
+        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var createUserRequest = new CreateUserRequest
         {
             LastName = "Новиков",
@@ -178,7 +183,8 @@ public class CreateUserCommandTests
     [Test]
     public async Task Execute_CreateUserWithTooLongMiddleName_ThrowsValidationException()
     {
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         await userRepo.AddRange(new Bogus.Faker<User>()
                       .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                       .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -187,7 +193,7 @@ public class CreateUserCommandTests
                       .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
                       .Generate(10));
 
-        var createUserCommand = new CreateUserCommand(userRepo, CreateUserValidator, Converter);
+        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var createUserRequest = new CreateUserRequest
         {
             LastName = "Иванов",

@@ -9,7 +9,8 @@ public class GetAllBooksQueryTests
     public async Task Execute_GetAllBooksFromRepositoryWithBooks_ReturnsAllBooks()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var books = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -19,9 +20,9 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(7)
             .ToList();
-        await bookRepo.AddRange(books.AsEnumerable());
+        await bookRepo.AddRange(books.AsEnumerable(), CancellationToken.None);
 
-        var getAllBooksQuery = new GetAllBooksCommand(bookRepo, Converter);
+        var getAllBooksQuery = new GetAllBooksCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -48,8 +49,9 @@ public class GetAllBooksQueryTests
     public async Task Execute_GetAllBooksFromEmptyRepository_ReturnsEmptyArray()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
-        var getAllBooksQuery = new GetAllBooksCommand(bookRepo, Converter);
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
+        var getAllBooksQuery = new GetAllBooksCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -68,7 +70,8 @@ public class GetAllBooksQueryTests
     public async Task Execute_GetAllBooksWithSingleBook_ReturnsSingleBook()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var book = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => "Single Book")
@@ -77,9 +80,9 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.Publisher, f => "Test Publisher")
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
-        await bookRepo.AddRange([book]);
+        await bookRepo.AddRange(new[] { book }, CancellationToken.None);
 
-        var getAllBooksQuery = new GetAllBooksCommand(bookRepo, Converter);
+        var getAllBooksQuery = new GetAllBooksCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -99,7 +102,8 @@ public class GetAllBooksQueryTests
     public async Task Execute_GetAllBooksUsesGetWithoutTracking_DoesNotTrackEntities()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var books = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -109,9 +113,9 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(5)
             .ToList();
-        await bookRepo.AddRange(books.AsEnumerable());
+        await bookRepo.AddRange(books.AsEnumerable(), CancellationToken.None);
 
-        var getAllBooksQuery = new GetAllBooksCommand(bookRepo, Converter);
+        var getAllBooksQuery = new GetAllBooksCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -126,11 +130,12 @@ public class GetAllBooksQueryTests
     public async Task GetWithoutTracking_WithPredicate_DelegatesToGet()
     {
         // Arrange
-        var repo = new FakeRepository<Book>();
-        var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book A", Author = "Author", RoomBook = [] };
-        var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book B", Author = "Author", RoomBook = [] };
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
+        var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book A", Author = "Author", RoomBook = new List<RoomBook>() };
+        var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book B", Author = "Author", RoomBook = new List<RoomBook>() };
 
-        await repo.AddRange([book1, book2]);
+        await repo.AddRange(new[] { book1, book2 }, CancellationToken.None);
 
         // Act
         var result = await repo.GetWithoutTracking(b => b.Title == "Book A", CancellationToken.None);

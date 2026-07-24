@@ -16,9 +16,10 @@ public class GetUserRoomBooksQueryTests
     public async Task Execute_WhenUserHasNoBooks_ReturnsEmptyList()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var converter = new BorrowDTOConverter(); // Используем реальный конвертер для поднятия его coverage
-        var query = new GetUserRoomBooksQuery(repo, converter, CreateValidator());
+        var query = new GetUserRoomBooksQuery(unitOfWork, converter, CreateValidator());
 
         var request = new GetUserBooksRequest { UserId = Guid.NewGuid() };
 
@@ -38,7 +39,8 @@ public class GetUserRoomBooksQueryTests
     public async Task Execute_WhenUserHasBooks_ReturnsSortedDTOs()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var converter = new BorrowDTOConverter();
 
         var userId = Guid.NewGuid();
@@ -62,9 +64,9 @@ public class GetUserRoomBooksQueryTests
             RoomBook = new RoomBook { Book = new Book { Title = "Book 2", Author = "Author 2" }, Room = new Room { Name = "Room B" } }
         };
 
-        await repo.AddRange([urb1, urb2]);
+        await repo.AddRange(new[] { urb1, urb2 }, CancellationToken.None);
 
-        var query = new GetUserRoomBooksQuery(repo, converter, CreateValidator());
+        var query = new GetUserRoomBooksQuery(unitOfWork, converter, CreateValidator());
         var request = new GetUserBooksRequest { UserId = userId };
 
         // Act

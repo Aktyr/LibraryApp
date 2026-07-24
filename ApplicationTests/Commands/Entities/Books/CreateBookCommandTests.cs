@@ -15,7 +15,8 @@ public class CreateBookCommandTests
     public async Task Execute_CreateBookWithValidData_CreatesBook(string title, string author, int year, string publisher)
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         await bookRepo.AddRange(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -25,7 +26,7 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createBookCommand = new CreateBookCommand(bookRepo, CreateBookValidator, Converter);
+        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var createBookRequest = new CreateBookRequest
         {
             Title = title,
@@ -59,7 +60,8 @@ public class CreateBookCommandTests
     public async Task Execute_CreateBookWithInvalidData_ReturnsError(string title, string author, int year, string publisher)
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         await bookRepo.AddRange(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -69,7 +71,7 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
                                    .Generate(10)
                                    .AsEnumerable());
-        var createBookCommand = new CreateBookCommand(bookRepo, CreateBookValidator, Converter);
+        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var createBookRequest = new CreateBookRequest
         {
             Title = title,
@@ -87,7 +89,8 @@ public class CreateBookCommandTests
     public async Task Execute_CreateBookWithTooLongTitle_ThrowsValidationException()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         await bookRepo.AddRange(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -98,7 +101,7 @@ public class CreateBookCommandTests
                                    .Generate(10)
                                    .AsEnumerable());
 
-        var createBookCommand = new CreateBookCommand(bookRepo, CreateBookValidator, Converter);
+        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var createBookRequest = new CreateBookRequest
         {
             Title = new string('A', 101),
@@ -116,7 +119,8 @@ public class CreateBookCommandTests
     public async Task Execute_CreateBookWithTooLongAuthor_ThrowsValidationException()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         await bookRepo.AddRange(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -127,7 +131,7 @@ public class CreateBookCommandTests
                                    .Generate(10)
                                    .AsEnumerable());
 
-        var createBookCommand = new CreateBookCommand(bookRepo, CreateBookValidator, Converter);
+        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var createBookRequest = new CreateBookRequest
         {
             Title = "Valid Title",

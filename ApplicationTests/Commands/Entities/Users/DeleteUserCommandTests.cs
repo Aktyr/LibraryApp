@@ -7,7 +7,8 @@ public class DeleteUserCommandTests
     public async Task Execute_DeleteExistingUser_DeletesSuccessfully()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var users = new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -18,10 +19,10 @@ public class DeleteUserCommandTests
             .Generate(10)
             .ToList();
 
-        await userRepo.AddRange(users.AsEnumerable());
+        await userRepo.AddRange(users.AsEnumerable(), CancellationToken.None);
 
         var userToDelete = users[3]; // Выбираем пользователя для удаления
-        var deleteUserCommand = new DeleteUserCommand(userRepo);
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = userToDelete.Id };
 
         var initialCount = userRepo.Entities.Count;
@@ -47,7 +48,8 @@ public class DeleteUserCommandTests
     public async Task Execute_DeleteNonExistingUser_ThrowsUserNotFoundException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         await userRepo.AddRange(new Bogus.Faker<User>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -59,7 +61,7 @@ public class DeleteUserCommandTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var deleteUserCommand = new DeleteUserCommand(userRepo);
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -71,8 +73,9 @@ public class DeleteUserCommandTests
     public async Task Execute_DeleteUserFromEmptyRepository_ThrowsUserNotFoundException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>(); // Пустой репозиторий
-        var deleteUserCommand = new DeleteUserCommand(userRepo);
+        var unitOfWork = new FakeUnitOfWork(); // Пустой репозиторий
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -84,7 +87,8 @@ public class DeleteUserCommandTests
     public async Task Execute_DeleteUserWithBorrowedBooks_DeletesSuccessfully()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
 
         // Создаем пользователя с "взятыми книгами" (UserRoomBook)
         var userId = new Id(Guid.NewGuid());
@@ -108,9 +112,9 @@ public class DeleteUserCommandTests
             }
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRange(new[] { user }, CancellationToken.None);
 
-        var deleteUserCommand = new DeleteUserCommand(userRepo);
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = userId };
 
         // Act
@@ -129,7 +133,8 @@ public class DeleteUserCommandTests
     public async Task Execute_DeleteMultipleUsers_EachDeletesSuccessfully()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var users = new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -140,9 +145,9 @@ public class DeleteUserCommandTests
             .Generate(5)
             .ToList();
 
-        await userRepo.AddRange(users.AsEnumerable());
+        await userRepo.AddRange(users.AsEnumerable(), CancellationToken.None);
 
-        var deleteUserCommand = new DeleteUserCommand(userRepo);
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var initialCount = userRepo.Entities.Count;
 
         // Act & Assert - удаляем всех пользователей по одному
@@ -162,7 +167,8 @@ public class DeleteUserCommandTests
     public async Task Execute_DeleteUser_ReturnsCorrectResponseMessage()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var user = new User
         {
             Id = new Id(Guid.NewGuid()),
@@ -173,9 +179,9 @@ public class DeleteUserCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRange(new[] { user }, CancellationToken.None);
 
-        var deleteUserCommand = new DeleteUserCommand(userRepo);
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = user.Id };
 
         // Act
@@ -194,7 +200,8 @@ public class DeleteUserCommandTests
     public async Task Execute_DeleteUser_VerifiesCancellationTokenIsPassed()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var user = new User
         {
             Id = new Id(Guid.NewGuid()),
@@ -205,9 +212,9 @@ public class DeleteUserCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRange(new[] { user }, CancellationToken.None);
 
-        var deleteUserCommand = new DeleteUserCommand(userRepo);
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = user.Id };
         var cancellationToken = new CancellationToken();
 

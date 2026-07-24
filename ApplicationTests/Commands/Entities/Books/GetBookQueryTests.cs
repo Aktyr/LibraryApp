@@ -9,7 +9,8 @@ public class GetBookQueryTests
     public async Task Execute_GetExistingBook_ReturnsBookResponse()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var books = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -19,10 +20,10 @@ public class GetBookQueryTests
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(10)
             .ToList();
-        await bookRepo.AddRange(books.AsEnumerable());
+        await bookRepo.AddRange(books.AsEnumerable(), CancellationToken.None);
 
         var targetBook = books[3];
-        var getBookQuery = new GetBookCommand(bookRepo, Converter);
+        var getBookQuery = new GetBookCommand(unitOfWork, Converter);
         var getBookRequest = new GetBookRequest { Id = targetBook.Id };
 
         // Act
@@ -44,7 +45,8 @@ public class GetBookQueryTests
     public async Task Execute_GetNonExistingBook_ReturnsNull()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         await bookRepo.AddRange(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -56,7 +58,7 @@ public class GetBookQueryTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var getBookQuery = new GetBookCommand(bookRepo, Converter);
+        var getBookQuery = new GetBookCommand(unitOfWork, Converter);
         var getBookRequest = new GetBookRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -68,8 +70,9 @@ public class GetBookQueryTests
     public async Task Execute_GetBookFromEmptyRepository_ReturnsNull()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
-        var getBookQuery = new GetBookCommand(bookRepo, Converter);
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
+        var getBookQuery = new GetBookCommand(unitOfWork, Converter);
         var getBookRequest = new GetBookRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert

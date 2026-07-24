@@ -19,16 +19,17 @@ public class RegisterCommandTests
         string email, string password, string lastName, string firstName, string middleName, string contactInfo)
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         await userRepo.AddRange(new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Email, f => f.Internet.Email())
             .RuleFor(x => x.LastName, f => f.Name.LastName())
             .RuleFor(x => x.FirstName, f => f.Name.FirstName())
             .Generate(5)
-            .AsEnumerable());
+            .AsEnumerable(), CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(userRepo, CreateRegisterValidator, Converter, JwtService);
+        var registerCommand = new RegisterCommand(unitOfWork, CreateRegisterValidator, Converter, JwtService);
         var registerRequest = new RegisterRequest
         {
             Email = email,
@@ -66,7 +67,8 @@ public class RegisterCommandTests
         string email, string password, string lastName, string firstName)
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
         var existingUser = new User
         {
             Id = new Id(Guid.NewGuid()),
@@ -76,9 +78,9 @@ public class RegisterCommandTests
             FirstName = "User",
             ContactInfo = email
         };
-        await userRepo.AddRange([existingUser], CancellationToken.None);
+        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(userRepo, CreateRegisterValidator, Converter, JwtService);
+        var registerCommand = new RegisterCommand(unitOfWork, CreateRegisterValidator, Converter, JwtService);
         var registerRequest = new RegisterRequest
         {
             Email = email,
@@ -111,14 +113,15 @@ public class RegisterCommandTests
         string email, string password, string lastName, string firstName)
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
         await userRepo.AddRange(new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Email, f => f.Internet.Email())
             .Generate(3)
-            .AsEnumerable());
+            .AsEnumerable(), CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(userRepo, CreateRegisterValidator, Converter, JwtService);
+        var registerCommand = new RegisterCommand(unitOfWork, CreateRegisterValidator, Converter, JwtService);
         var registerRequest = new RegisterRequest
         {
             Email = email,
@@ -136,14 +139,15 @@ public class RegisterCommandTests
     public async Task Execute_WithTooLongPassword_ThrowsValidationException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         await userRepo.AddRange(new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Email, f => f.Internet.Email())
             .Generate(3)
-            .AsEnumerable());
+            .AsEnumerable(), CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(userRepo, CreateRegisterValidator, Converter, JwtService);
+        var registerCommand = new RegisterCommand(unitOfWork, CreateRegisterValidator, Converter, JwtService);
         var registerRequest = new RegisterRequest
         {
             Email = "test@test.com",

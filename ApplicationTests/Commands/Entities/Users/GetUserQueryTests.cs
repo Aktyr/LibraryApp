@@ -9,7 +9,8 @@ public class GetUserQueryTests
     public async Task Execute_GetExistingUser_ReturnsUserResponse()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var users = new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -20,10 +21,10 @@ public class GetUserQueryTests
             .Generate(10)
             .ToList();
 
-        await userRepo.AddRange(users.AsEnumerable());
+        await userRepo.AddRange(users.AsEnumerable(), CancellationToken.None);
 
         var targetUser = users[4];
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = targetUser.Id };
 
         // Act
@@ -49,7 +50,8 @@ public class GetUserQueryTests
     public async Task Execute_GetNonExistingUser_ThrowsUserNotFoundException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         await userRepo.AddRange(new Bogus.Faker<User>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -61,7 +63,7 @@ public class GetUserQueryTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -73,8 +75,9 @@ public class GetUserQueryTests
     public async Task Execute_GetUserFromEmptyRepository_ThrowsUserNotFoundException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>(); // Пустой репозиторий
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var unitOfWork = new FakeUnitOfWork(); // Пустой репозиторий
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -86,7 +89,8 @@ public class GetUserQueryTests
     public async Task Execute_GetUserWithBorrowedBooks_CalculatesNearestReturnTimeSpan()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var user = new User
@@ -125,9 +129,9 @@ public class GetUserQueryTests
             }
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRange(new[] { user }, CancellationToken.None);
 
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
 
         // Act
@@ -150,7 +154,8 @@ public class GetUserQueryTests
     public async Task Execute_GetUserWithoutBorrowedBooks_ReturnsNullNearestReturnTimeSpan()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var user = new User
@@ -163,9 +168,9 @@ public class GetUserQueryTests
             RoomBooks = new List<UserRoomBook>() // Пустой список
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRange(new[] { user }, CancellationToken.None);
 
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
 
         // Act
@@ -184,7 +189,8 @@ public class GetUserQueryTests
     public async Task Execute_GetUserWithOnlyBooksWithoutDeadline_ReturnsNullNearestReturnTimeSpan()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var user = new User
@@ -215,9 +221,9 @@ public class GetUserQueryTests
             }
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRange(new[] { user }, CancellationToken.None);
 
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
 
         // Act
@@ -236,7 +242,8 @@ public class GetUserQueryTests
     public async Task Execute_GetUser_MapsAllPropertiesCorrectly()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
         var specificGuid = Guid.Parse("12345678-1234-1234-1234-123456789012");
 
@@ -252,7 +259,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = new Id(specificGuid) };
 
         // Act
@@ -276,7 +283,8 @@ public class GetUserQueryTests
     public async Task Execute_GetUser_ReturnsUserInArray()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var user = new User
@@ -291,7 +299,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
 
         // Act
@@ -311,7 +319,8 @@ public class GetUserQueryTests
     public async Task Execute_GetUser_ReturnsCorrectResponseType()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var user = new User
         {
             Id = new Id(Guid.NewGuid()),
@@ -322,7 +331,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = user.Id };
 
         // Act
@@ -336,7 +345,8 @@ public class GetUserQueryTests
     public async Task Execute_GetUser_PassesCancellationToken()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var user = new User
@@ -349,7 +359,7 @@ public class GetUserQueryTests
 
         await userRepo.AddRange([user]);
 
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
         var cancellationToken = new CancellationToken();
 
@@ -365,7 +375,8 @@ public class GetUserQueryTests
     public async Task Execute_GetUser_WithMultipleUsersHavingSameData_ReturnsCorrectUser()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
 
         var user1 = new User
         {
@@ -385,9 +396,9 @@ public class GetUserQueryTests
             ContactInfo = "ivanov2@example.com" // Разный контакт
         };
 
-        await userRepo.AddRange([user1, user2]);
+        await userRepo.AddRange(new[] { user1, user2 }, CancellationToken.None);
 
-        var getUserQuery = new GetUserQuery(userRepo, Converter);
+        var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = user2.Id };
 
         // Act

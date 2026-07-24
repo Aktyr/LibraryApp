@@ -9,8 +9,9 @@ public class GetAllUsersQueryTests
     public async Task Execute_GetAllUsersFromEmptyRepository_ReturnsEmptyArray()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>(); // Пустой репозиторий
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>(); // Пустой репозиторий
+        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -31,7 +32,8 @@ public class GetAllUsersQueryTests
     public async Task Execute_GetAllUsers_ReturnsAllUsers()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var users = new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -42,9 +44,9 @@ public class GetAllUsersQueryTests
             .Generate(15)
             .ToList();
 
-        await userRepo.AddRange(users.AsEnumerable());
+        await userRepo.AddRange(users.AsEnumerable(), CancellationToken.None);
 
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
+        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -64,7 +66,8 @@ public class GetAllUsersQueryTests
     public async Task Execute_GetAllUsers_ReturnsCorrectUserData()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
 
         var user1 = new User
         {
@@ -86,9 +89,9 @@ public class GetAllUsersQueryTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange([user1, user2]);
+        await userRepo.AddRange(new[] { user1, user2 }, CancellationToken.None);
 
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
+        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -122,7 +125,8 @@ public class GetAllUsersQueryTests
     public async Task Execute_GetAllUsersWithBorrowedBooks_CalculatesNearestReturnTimeSpan()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
 
         var userId = new Id(Guid.NewGuid());
         var user = new User
@@ -161,9 +165,9 @@ public class GetAllUsersQueryTests
             }
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRange(new[] { user }, CancellationToken.None);
 
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
+        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -185,7 +189,8 @@ public class GetAllUsersQueryTests
     public async Task Execute_GetAllUsers_UsersAreSortedAsInRepository()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
 
         var users = new List<User>
         {
@@ -194,9 +199,9 @@ public class GetAllUsersQueryTests
             new User { Id = new Id(Guid.NewGuid()), LastName = "Васильев", FirstName = "Василий", ContactInfo = "c@test.ru" },
         };
 
-        await userRepo.AddRange(users);
+        await userRepo.AddRange(users.AsEnumerable(), CancellationToken.None);
 
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
+        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -220,7 +225,10 @@ public class GetAllUsersQueryTests
         mockUserRepo.Setup(repo => repo.GetWithoutTracking(It.IsAny<CancellationToken>()))
                    .ReturnsAsync(users);
 
-        var getAllUsersQuery = new GetAllUsersQuery(mockUserRepo.Object, Converter);
+        var mockUnitOfWork = new Mock<IUnitOfWork>();
+        mockUnitOfWork.Setup(u => u.GetRepository<User>()).Returns(mockUserRepo.Object);
+
+        var getAllUsersQuery = new GetAllUsersQuery(mockUnitOfWork.Object, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -235,14 +243,15 @@ public class GetAllUsersQueryTests
     public async Task Execute_GetAllUsers_HandlesCancellationToken()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         await userRepo.AddRange(new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.LastName, f => f.Name.LastName())
             .Generate(3)
-            .AsEnumerable());
+            .AsEnumerable(), CancellationToken.None);
 
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
+        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
         var cancellationToken = new CancellationToken();
 
@@ -258,8 +267,9 @@ public class GetAllUsersQueryTests
     public async Task Execute_GetAllUsers_ReturnsCorrectResponseType()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
-        var getAllUsersQuery = new GetAllUsersQuery(userRepo, Converter);
+        var unitOfWork2 = new FakeUnitOfWork();
+        var userRepo2 = (FakeRepository<User>)unitOfWork2.GetRepository<User>();
+        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork2, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act

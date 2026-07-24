@@ -16,7 +16,8 @@ public class CreateRoomCommandTests
     public async Task Execute_CreateRoomWithNewName_CreatesRoom(string roomName)
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         await roomRepo.AddRange(new Bogus.Faker<Room>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Name, f => f.Name.FirstName())
@@ -24,8 +25,8 @@ public class CreateRoomCommandTests
                                    .AsEnumerable());
 
 
-        var createRoomCommand = new CreateRoomCommand(roomRepo, CreateRoomValidator, Converter);
-        var createRoomRequest = new CreateRoomRequest(roomName, []);
+        var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var createRoomRequest = new CreateRoomRequest(roomName, new List<Guid>());
 
         // Act
         var response = await createRoomCommand.Execute(createRoomRequest, CancellationToken.None);
@@ -48,7 +49,8 @@ public class CreateRoomCommandTests
     public async Task Execute_CreateRoomWithExistingName_ThrowsRoomExistsException(string roomName)
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         await roomRepo.AddRange(new Bogus.Faker<Room>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Name, f => f.Name.FirstName())
@@ -56,8 +58,8 @@ public class CreateRoomCommandTests
                                    .AsEnumerable());
         (await roomRepo.Get()).Last().Name = roomName;
 
-        var createRoomCommand = new CreateRoomCommand(roomRepo, CreateRoomValidator, Converter);
-        var createRoomRequest = new CreateRoomRequest(roomName, []);
+        var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var createRoomRequest = new CreateRoomRequest(roomName, new List<Guid>());
 
         // Act & Assert
         Assert.ThrowsAsync<RoomExistsException>(() =>
@@ -66,15 +68,16 @@ public class CreateRoomCommandTests
     [Test]
     public async Task Execute_CreateRoomWithTooLongName_ThrowsValidationException()
     {
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         await roomRepo.AddRange(new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
             .Generate(10)
             .AsEnumerable());
 
-        var createRoomCommand = new CreateRoomCommand(roomRepo, CreateRoomValidator, Converter);
-        var createRoomRequest = new CreateRoomRequest(new string('A', 101), []);
+        var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var createRoomRequest = new CreateRoomRequest(new string('A', 101), new List<Guid>());
 
         Assert.ThrowsAsync<LibValidationException>(() =>
             createRoomCommand.Execute(createRoomRequest, CancellationToken.None));

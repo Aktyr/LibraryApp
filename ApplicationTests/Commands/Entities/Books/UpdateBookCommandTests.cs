@@ -11,7 +11,8 @@ public class UpdateBookCommandTests
     public async Task Execute_UpdateExistingBookWithValidData_UpdatesBook()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var books = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -21,10 +22,10 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(10)
             .ToList();
-        await bookRepo.AddRange(books.AsEnumerable());
+        await bookRepo.AddRange(books.AsEnumerable(), CancellationToken.None);
 
         var bookToUpdate = books[4];
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = bookToUpdate.Id,
@@ -59,7 +60,8 @@ public class UpdateBookCommandTests
     public async Task Execute_UpdateNonExistingBook_ThrowsBookNotFoundException()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
 
         // Создаем 10 тестовых книг
         await bookRepo.AddRange(new Bogus.Faker<Book>()
@@ -70,8 +72,8 @@ public class UpdateBookCommandTests
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
                                    .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
                                    .Generate(10)
-                                   .AsEnumerable());
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
+                                   .AsEnumerable(), CancellationToken.None);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = new Id(Guid.NewGuid()), // ID, которого нет в репозитории
@@ -90,10 +92,11 @@ public class UpdateBookCommandTests
     public async Task Execute_UpdateBookInEmptyRepository_ThrowsBookNotFoundException()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         // Не добавляем книги - репозиторий пустой
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = new Id(Guid.NewGuid()),
@@ -112,7 +115,8 @@ public class UpdateBookCommandTests
     public async Task Execute_UpdateBookWithSameData_StillUpdates()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var book = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => "Original Title")
@@ -121,9 +125,9 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Publisher, f => "Original Publisher")
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
-        await bookRepo.AddRange([book]);
+        await bookRepo.AddRange(new[] { book }, CancellationToken.None);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -152,7 +156,8 @@ public class UpdateBookCommandTests
     public async Task Execute_UpdateBookWithEmptyFields_ThrowsValidationException()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var book = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => "Original Title")
@@ -161,9 +166,9 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Publisher, f => "Original Publisher")
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
-        await bookRepo.AddRange([book]);
+        await bookRepo.AddRange(new[] { book }, CancellationToken.None);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -183,7 +188,8 @@ public class UpdateBookCommandTests
     public async Task Execute_UpdateBookWithInvalidYear_ThrowsValidationException()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var book = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => "Original Title")
@@ -194,7 +200,7 @@ public class UpdateBookCommandTests
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -212,7 +218,8 @@ public class UpdateBookCommandTests
     public async Task Execute_UpdateBookWithMinimalValidData_UpdatesSuccessfully()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var book = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => "Original Title")
@@ -223,7 +230,7 @@ public class UpdateBookCommandTests
             .Generate();
         await bookRepo.AddRange([book]);
 
-        var updateBookCommand = new UpdateBookCommand(bookRepo, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,

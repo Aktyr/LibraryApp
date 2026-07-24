@@ -380,8 +380,9 @@ public class BorrowingValidatorAsyncTests
     public async Task ValidateBorrowAsync_WhenUserHasOverdueBooks_ReturnsError()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var validator = CreateValidator();
 
         var user = new User

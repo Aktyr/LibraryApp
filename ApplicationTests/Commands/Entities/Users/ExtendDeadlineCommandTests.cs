@@ -16,8 +16,9 @@ public class ExtendDeadlineCommandTests
     public async Task Execute_WhenUserRoomBookNotFound_ThrowsUserRoomBookNotFoundException()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
-        var command = new ExtendDeadlineCommand(userRoomBookRepo, CreateValidator());
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator());
         var request = new ExtendDeadlineRequest { UserRoomBookId = Guid.NewGuid(), ExtraDays = 7 };
 
         // Act & Assert
@@ -29,7 +30,8 @@ public class ExtendDeadlineCommandTests
     public async Task Execute_WhenValidationFails_ThrowsLibValidationException()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var settings = new BorrowingSettings { MaxExtendDeadlineDays = 14 };
 
         var userRoomBook = new UserRoomBook
@@ -41,7 +43,7 @@ public class ExtendDeadlineCommandTests
         };
         await userRoomBookRepo.AddRange([userRoomBook]);
 
-        var command = new ExtendDeadlineCommand(userRoomBookRepo, CreateValidator(settings));
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(settings));
 
         // Пытаемся продлить на 20 дней (больше максимума в 14 дней)
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 20 };
@@ -57,7 +59,8 @@ public class ExtendDeadlineCommandTests
     public async Task Execute_WithValidData_ExtendsDeadlineSuccessfully()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var initialDeadline = DateTime.Now.AddDays(5);
 
         var userRoomBook = new UserRoomBook
@@ -69,7 +72,7 @@ public class ExtendDeadlineCommandTests
         };
         await userRoomBookRepo.AddRange([userRoomBook]);
 
-        var command = new ExtendDeadlineCommand(userRoomBookRepo, CreateValidator());
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator());
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 7 };
 
         // Act
@@ -89,7 +92,8 @@ public class ExtendDeadlineCommandTests
     public async Task Execute_WhenExtraDaysIsZero_ThrowsValidationException()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var settings = new BorrowingSettings { MaxExtendDeadlineDays = 14 };
 
         var userRoomBook = new UserRoomBook
@@ -101,7 +105,7 @@ public class ExtendDeadlineCommandTests
         };
         await userRoomBookRepo.AddRange([userRoomBook]);
 
-        var command = new ExtendDeadlineCommand(userRoomBookRepo, CreateValidator(settings));
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(settings));
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 0 };
 
         // Act & Assert
@@ -115,7 +119,8 @@ public class ExtendDeadlineCommandTests
     public async Task Execute_WithValidData_DeadlineExtendedCorrectly()
     {
         // Arrange
-        var userRoomBookRepo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var initialDeadline = new DateTime(2024, 1, 15, 10, 0, 0);
 
         var userRoomBook = new UserRoomBook
@@ -127,7 +132,7 @@ public class ExtendDeadlineCommandTests
         };
         await userRoomBookRepo.AddRange([userRoomBook]);
 
-        var command = new ExtendDeadlineCommand(userRoomBookRepo, CreateValidator());
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator());
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 7 };
 
         // Act

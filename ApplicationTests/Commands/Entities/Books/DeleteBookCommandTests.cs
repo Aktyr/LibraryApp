@@ -7,7 +7,8 @@ public class DeleteBookCommandTests
     public async Task Execute_DeleteExistingBook_DeletesBook()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var books = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -17,10 +18,10 @@ public class DeleteBookCommandTests
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(10)
             .ToList();
-        await bookRepo.AddRange(books.AsEnumerable());
+        await bookRepo.AddRange(books.AsEnumerable(), CancellationToken.None);
 
         var bookToDelete = books[5];
-        var deleteBookCommand = new DeleteBookCommand(bookRepo);
+        var deleteBookCommand = new DeleteBookCommand(unitOfWork);
         var deleteBookRequest = new DeleteBookRequest { Id = bookToDelete.Id };
 
         // Act
@@ -40,7 +41,8 @@ public class DeleteBookCommandTests
     public async Task Execute_DeleteNonExistingBook_ThrowsBookNotFoundException()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         await bookRepo.AddRange(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
@@ -49,10 +51,10 @@ public class DeleteBookCommandTests
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
                                    .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
                                    .Generate(10)
-                                   .AsEnumerable());
+                                   .AsEnumerable(), CancellationToken.None);
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var deleteBookCommand = new DeleteBookCommand(bookRepo);
+        var deleteBookCommand = new DeleteBookCommand(unitOfWork);
         var deleteBookRequest = new DeleteBookRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -65,8 +67,9 @@ public class DeleteBookCommandTests
     public async Task Execute_DeleteBookFromEmptyRepository_ThrowsBookNotFoundException()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
-        var deleteBookCommand = new DeleteBookCommand(bookRepo);
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
+        var deleteBookCommand = new DeleteBookCommand(unitOfWork);
         var deleteBookRequest = new DeleteBookRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -78,7 +81,8 @@ public class DeleteBookCommandTests
     public async Task Execute_DeleteLastBook_RepositoryBecomesEmpty()
     {
         // Arrange
-        var bookRepo = new FakeRepository<Book>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var book = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => "Last Book")
@@ -87,9 +91,9 @@ public class DeleteBookCommandTests
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
-        await bookRepo.AddRange([book]);
+        await bookRepo.AddRange(new[] { book }, CancellationToken.None);
 
-        var deleteBookCommand = new DeleteBookCommand(bookRepo);
+        var deleteBookCommand = new DeleteBookCommand(unitOfWork);
         var deleteBookRequest = new DeleteBookRequest { Id = book.Id };
 
         // Act

@@ -11,22 +11,23 @@ public class UpdateRoomCommandTests
     public async Task Execute_UpdateExistingRoomWithNewName_UpdatesRoom()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate(10)
             .ToList();
-        await roomRepo.AddRange(rooms.AsEnumerable());
+        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
 
         var roomToUpdate = rooms[4];
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomToUpdate.Id,
             Name = "Updated Room Name",
-            RoomBooks = new List<RoomBook>()
+            RoomBooks = []
         };
 
         // Act
@@ -52,13 +53,14 @@ public class UpdateRoomCommandTests
     public async Task Execute_UpdateNonExistingRoom_ThrowsException()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Room Name",
-            RoomBooks = new List<RoomBook>()
+            RoomBooks = []
         };
 
         // Act & Assert
@@ -71,13 +73,14 @@ public class UpdateRoomCommandTests
     public async Task Execute_UpdateRoomInEmptyRepository_ThrowsException()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Room Name",
-            RoomBooks = new List<RoomBook>()
+            RoomBooks = []
         };
 
         // Act & Assert
@@ -89,20 +92,21 @@ public class UpdateRoomCommandTests
     public async Task Execute_UpdateRoomWithSameName_StillUpdates()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var room = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => "Original Name")
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate();
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
             Name = "Original Name", // То же имя
-            RoomBooks = new List<RoomBook>()
+            RoomBooks = []
         };
 
         // Act
@@ -124,20 +128,21 @@ public class UpdateRoomCommandTests
     public async Task Execute_UpdateRoomWithEmptyName_ThrowsValidationException()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var room = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => "Original Name")
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate();
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
             Name = "", // Пустое имя - невалидно
-            RoomBooks = new List<RoomBook>()
+            RoomBooks = []
         };
 
         // Act & Assert
@@ -149,7 +154,8 @@ public class UpdateRoomCommandTests
     public async Task Execute_UpdateRoomWithRoomBooks_UpdatesBooksCollection()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var roomId = new Id(Guid.NewGuid());
         var bookId1 = new Id(Guid.NewGuid());
         var bookId2 = new Id(Guid.NewGuid());
@@ -158,32 +164,32 @@ public class UpdateRoomCommandTests
         {
             Id = roomId,
             Name = "Original Room",
-            RoomBooks = new List<RoomBook>()
+            RoomBooks = []
         };
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomId,
             Name = "Updated Room",
-            RoomBooks = new List<RoomBook>
-            {
-                new RoomBook
+            RoomBooks =
+            [
+                new() 
                 {
                     Id = new Id(Guid.NewGuid()),
                     BookCount = 5,
                     Book = new Book { Id = bookId1, Title = "Book 1" },
                     Room = new Room { Id = roomId }
                 },
-                new RoomBook
+                new() 
                 {
                     Id = new Id(Guid.NewGuid()),
                     BookCount = 3,
                     Book = new Book { Id = bookId2, Title = "Book 2" },
                     Room = new Room { Id = roomId }
                 }
-            }
+            ]
         };
 
         // Act
@@ -197,7 +203,7 @@ public class UpdateRoomCommandTests
             var updatedRoom = (await roomRepo.Get(x => x.Id.Value == roomId.Value)).FirstOrDefault();
             Assert.That(updatedRoom, Is.Not.Null);
             Assert.That(updatedRoom!.Name, Is.EqualTo("Updated Room"));
-            Assert.That(updatedRoom.RoomBooks.Count, Is.EqualTo(2));
+            Assert.That(updatedRoom.RoomBooks, Has.Count.EqualTo(2));
             Assert.That(updatedRoom.RoomBooks.First().BookCount, Is.EqualTo(5));
             Assert.That(updatedRoom.RoomBooks.Last().BookCount, Is.EqualTo(3));
         });
@@ -207,25 +213,29 @@ public class UpdateRoomCommandTests
     public async Task Execute_UpdateRoomWithNullRoomBooks_UpdatesWithNullCollection()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var room = new Room
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Original Room",
-            RoomBooks = new List<RoomBook>
-            {
-                new RoomBook
+            RoomBooks =
+            [
+                new()
                 {
                     Id = new Id(Guid.NewGuid()),
                     BookCount = 1,
                     Book = new Book { Id = new Id(Guid.NewGuid()) },
                     Room = new Room { Id = new Id(Guid.NewGuid()) }
                 }
-            }
+            ]
         };
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
+        var unitOfWork2 = new FakeUnitOfWork();
+        var roomRepo2 = (FakeRepository<Room>)unitOfWork2.GetRepository<Room>();
+        await roomRepo2.AddRange([room], CancellationToken.None);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork2, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
@@ -253,42 +263,46 @@ public class UpdateRoomCommandTests
     public async Task Execute_UpdateRoomReplacesExistingBooks_NewBooksSet()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var roomId = new Id(Guid.NewGuid());
 
         var room = new Room
         {
             Id = roomId,
             Name = "Original Room",
-            RoomBooks = new List<RoomBook>
-            {
-                new RoomBook
+            RoomBooks =
+            [
+                new()
                 {
                     Id = new Id(Guid.NewGuid()),
                     BookCount = 10,
                     Book = new Book { Id = new Id(Guid.NewGuid()) },
                     Room = new Room { Id = roomId }
                 }
-            }
+            ]
         };
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange([room], CancellationToken.None);
 
         var newBookId = new Id(Guid.NewGuid());
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
+        var unitOfWork3 = new FakeUnitOfWork();
+        var roomRepo3 = (FakeRepository<Room>)unitOfWork3.GetRepository<Room>();
+        await roomRepo3.AddRange([room], CancellationToken.None);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork3, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomId,
             Name = "Updated Room",
-            RoomBooks = new List<RoomBook>
-            {
-                new RoomBook
+            RoomBooks =
+            [
+                new()
                 {
                     Id = new Id(Guid.NewGuid()),
                     BookCount = 7,
                     Book = new Book { Id = newBookId, Title = "New Book" },
                     Room = new Room { Id = roomId }
                 }
-            }
+            ]
         };
 
         // Act
@@ -301,7 +315,7 @@ public class UpdateRoomCommandTests
 
             var updatedRoom = (await roomRepo.Get(x => x.Id.Value == roomId.Value)).FirstOrDefault();
             Assert.That(updatedRoom, Is.Not.Null);
-            Assert.That(updatedRoom!.RoomBooks.Count, Is.EqualTo(1));
+            Assert.That(updatedRoom!.RoomBooks, Has.Count.EqualTo(1));
             Assert.That(updatedRoom.RoomBooks.First().BookCount, Is.EqualTo(7));
         });
     }
@@ -309,20 +323,24 @@ public class UpdateRoomCommandTests
     public async Task Execute_UpdateRoomWithMinimalValidName_UpdatesSuccessfully()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var room = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => "Original Name")
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate();
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(roomRepo, CreateRoomValidator, Converter);
+        var unitOfWork4 = new FakeUnitOfWork();
+        var roomRepo4 = (FakeRepository<Room>)unitOfWork4.GetRepository<Room>();
+        await roomRepo4.AddRange([room], CancellationToken.None);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork4, CreateRoomValidator, Converter);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
             Name = "R", // Минимально допустимое имя
-            RoomBooks = new List<RoomBook>()
+            RoomBooks = []
         };
 
         // Act

@@ -9,17 +9,18 @@ public class GetRoomQueryTests
     public async Task Execute_GetExistingRoom_ReturnsRoomResponse()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
             .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
             .Generate(10)
             .ToList();
-        await roomRepo.AddRange(rooms.AsEnumerable());
+        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
 
         var targetRoom = rooms[3];
-        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
+        var getRoomQuery = new GetRoomCommand(unitOfWork, Converter); // no-op placeholder
         var getRoomRequest = new GetRoomRequest { Id = targetRoom.Id };
 
         // Act
@@ -39,7 +40,8 @@ public class GetRoomQueryTests
     public async Task Execute_GetNonExistingRoom_ThrowsException()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         await roomRepo.AddRange(new Bogus.Faker<Room>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Name, f => f.Name.FirstName())
@@ -48,7 +50,7 @@ public class GetRoomQueryTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
+        var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -60,8 +62,9 @@ public class GetRoomQueryTests
     public async Task Execute_GetRoomFromEmptyRepository_ThrowsException()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
-        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
+        var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -73,7 +76,8 @@ public class GetRoomQueryTests
     public async Task Execute_GetRoomWithBooks_ReturnsRoomWithBookDTOs()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var roomId = new Id(Guid.NewGuid());
         var bookId1 = new Id(Guid.NewGuid());
         var bookId2 = new Id(Guid.NewGuid());
@@ -100,9 +104,9 @@ public class GetRoomQueryTests
             }
         }
         };
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
 
-        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
+        var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = roomId };
 
         // Act
@@ -130,7 +134,8 @@ public class GetRoomQueryTests
     public async Task Execute_GetRoomWithBookWithoutRoomNavigation_ReturnsRoomWithBookDTOs()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var roomId = new Id(Guid.NewGuid());
         var bookId = new Id(Guid.NewGuid());
 
@@ -149,9 +154,9 @@ public class GetRoomQueryTests
             }
         }
         };
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
 
-        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
+        var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = roomId };
 
         // Act
@@ -173,16 +178,17 @@ public class GetRoomQueryTests
     public async Task Execute_GetRoomWithoutBooks_ReturnsEmptyRoomBooksCollection()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var room = new Room
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Empty Room",
             RoomBooks = new List<RoomBook>()
         };
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
 
-        var getRoomQuery = new GetRoomCommand(roomRepo, Converter);
+        var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = room.Id };
 
         // Act

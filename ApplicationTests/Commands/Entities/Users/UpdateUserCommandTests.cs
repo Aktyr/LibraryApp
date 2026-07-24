@@ -10,7 +10,8 @@ public class UpdateUserCommandTests
     public async Task Execute_UpdateExistingUserWithValidData_UpdatesSuccessfully()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var existingUser = new User
@@ -23,9 +24,9 @@ public class UpdateUserCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange([existingUser]);
+        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -58,7 +59,8 @@ public class UpdateUserCommandTests
     public async Task Execute_UpdateNonExistingUser_ThrowsUserNotFoundException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         await userRepo.AddRange(new Bogus.Faker<User>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -68,7 +70,7 @@ public class UpdateUserCommandTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = nonExistingId,
@@ -87,7 +89,8 @@ public class UpdateUserCommandTests
     public async Task Execute_UpdateUserWithInvalidData_ThrowsValidationException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var existingUser = new User
@@ -99,9 +102,9 @@ public class UpdateUserCommandTests
             ContactInfo = "valid@example.com"
         };
 
-        await userRepo.AddRange([existingUser]);
+        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
 
         // Пытаемся обновить с пустой фамилией (невалидные данные)
         var updateUserRequest = new UpdateUserRequest
@@ -122,7 +125,8 @@ public class UpdateUserCommandTests
     public async Task Execute_UpdateUserWithEmptyMiddleName_UpdatesSuccessfully()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var existingUser = new User
@@ -134,9 +138,9 @@ public class UpdateUserCommandTests
             ContactInfo = "petrov@example.com"
         };
 
-        await userRepo.AddRange([existingUser]);
+        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -163,7 +167,8 @@ public class UpdateUserCommandTests
     public async Task Execute_UpdateUserPreservesRoomBooksCollection()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var existingUser = new User
@@ -184,9 +189,9 @@ public class UpdateUserCommandTests
             }
         };
 
-        await userRepo.AddRange([existingUser]);
+        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -215,7 +220,8 @@ public class UpdateUserCommandTests
     public async Task Execute_UpdateUserAllFields_AllFieldsUpdated()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var existingUser = new User
@@ -229,7 +235,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -259,7 +265,8 @@ public class UpdateUserCommandTests
     public async Task Execute_UpdateUserWithSameData_StillSuccess()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var existingUser = new User
@@ -271,9 +278,9 @@ public class UpdateUserCommandTests
             ContactInfo = "ivanov@example.com"
         };
 
-        await userRepo.AddRange([existingUser]);
+        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
 
         // Обновляем теми же данными
         var updateUserRequest = new UpdateUserRequest
@@ -297,7 +304,8 @@ public class UpdateUserCommandTests
     public async Task Execute_UpdateUserValidatesBeforeUpdating()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var existingUser = new User
@@ -311,7 +319,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
 
         // Слишком длинная фамилия (предполагая, что валидатор проверяет длину)
         var updateUserRequest = new UpdateUserRequest
@@ -341,7 +349,8 @@ public class UpdateUserCommandTests
         string lastName, string firstName, string middleName, string contactInfo)
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var existingUser = new User
@@ -353,9 +362,9 @@ public class UpdateUserCommandTests
             ContactInfo = "old@old.com"
         };
 
-        await userRepo.AddRange([existingUser]);
+        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -385,7 +394,8 @@ public class UpdateUserCommandTests
     public async Task Execute_UpdateUser_PreservesId()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
         var userId = new Id(Guid.NewGuid());
 
         var existingUser = new User
@@ -398,7 +408,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRange([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(userRepo, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,

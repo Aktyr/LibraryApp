@@ -7,17 +7,18 @@ public class DeleteRoomCommandTests
     public async Task Execute_DeleteExistingRoom_DeletesRoom()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
             .RuleFor(x => x.RoomBooks, f => null!) // Должно быть null, чтобы команда не бросала исключение
             .Generate(10)
             .ToList();
-        await roomRepo.AddRange(rooms.AsEnumerable());
+        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
 
         var roomToDelete = rooms[5];
-        var deleteRoomCommand = new DeleteRoomCommand(roomRepo);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
         var deleteRoomRequest = new DeleteRoomRequest { Id = roomToDelete.Id };
 
         // Act
@@ -37,17 +38,18 @@ public class DeleteRoomCommandTests
     public async Task Execute_DeleteNonExistingRoom_ThrowsException()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
             .RuleFor(x => x.RoomBooks, f => null!) // Должно быть null
             .Generate(10)
             .ToList();
-        await roomRepo.AddRange(rooms.AsEnumerable());
+        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var deleteRoomCommand = new DeleteRoomCommand(roomRepo);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
         var deleteRoomRequest = new DeleteRoomRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -59,8 +61,9 @@ public class DeleteRoomCommandTests
     public async Task Execute_DeleteRoomFromEmptyRepository_ThrowsException()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
-        var deleteRoomCommand = new DeleteRoomCommand(roomRepo);
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
         var deleteRoomRequest = new DeleteRoomRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -72,15 +75,16 @@ public class DeleteRoomCommandTests
     public async Task Execute_DeleteLastRoom_RepositoryBecomesEmpty()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var room = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => "Last Room")
             .RuleFor(x => x.RoomBooks, f => null!) // Должно быть null
             .Generate();
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
 
-        var deleteRoomCommand = new DeleteRoomCommand(roomRepo);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };
 
         // Act
@@ -99,7 +103,8 @@ public class DeleteRoomCommandTests
     public async Task Execute_DeleteRoomWithRoomBooks_ThrowsException()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var room = new Room
         {
             Id = new Id(Guid.NewGuid()),
@@ -115,9 +120,9 @@ public class DeleteRoomCommandTests
                 }
             }
         };
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
 
-        var deleteRoomCommand = new DeleteRoomCommand(roomRepo);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };
 
         // Act & Assert
@@ -129,17 +134,18 @@ public class DeleteRoomCommandTests
     public async Task Execute_DeleteSpecificRoomByName_DeletesCorrectRoom()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.IndexFaker == 7 ? "Target Room" : f.Name.FirstName())
             .RuleFor(x => x.RoomBooks, f => null!) // Должно быть null
             .Generate(10)
             .ToList();
-        await roomRepo.AddRange(rooms.AsEnumerable());
+        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
 
         var targetRoom = rooms[7];
-        var deleteRoomCommand = new DeleteRoomCommand(roomRepo);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
         var deleteRoomRequest = new DeleteRoomRequest { Id = targetRoom.Id };
 
         // Act
@@ -158,16 +164,17 @@ public class DeleteRoomCommandTests
     public async Task Execute_DeleteRoomWithEmptyRoomBooksList_DeletesRoom()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var room = new Room
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Room with Empty Books",
             RoomBooks = new List<RoomBook>() // Пустой список, но не null
         };
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
 
-        var deleteRoomCommand = new DeleteRoomCommand(roomRepo);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };
 
         // Act & Assert

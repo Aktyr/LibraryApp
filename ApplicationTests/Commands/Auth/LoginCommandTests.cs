@@ -17,7 +17,8 @@ public class LoginCommandTests
     public async Task Execute_WithValidData_ReturnsSuccessResponse()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
 
         var userId = Guid.NewGuid();
         var email = "test@example.com";
@@ -33,12 +34,12 @@ public class LoginCommandTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = email,
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
 
         await userRepo.AddRange([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(userRepo, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
         {
             Email = email,
@@ -68,7 +69,8 @@ public class LoginCommandTests
     public async Task Execute_WithInvalidPassword_ThrowsUnauthorizedException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
 
         var email = "test@example.com";
         var password = "Password";
@@ -83,12 +85,12 @@ public class LoginCommandTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = email,
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
 
         await userRepo.AddRange([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(userRepo, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
         {
             Email = email,
@@ -104,7 +106,8 @@ public class LoginCommandTests
     public async Task Execute_WithNonExistentEmail_ThrowsUnauthorizedException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
 
         var user = new User
         {
@@ -113,11 +116,11 @@ public class LoginCommandTests
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
             LastName = "Test",
             FirstName = "User",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
         await userRepo.AddRange([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(userRepo, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
         {
             Email = "nonexistent@example.com",
@@ -134,7 +137,8 @@ public class LoginCommandTests
     public async Task Execute_WithEmptyEmail_ThrowsUnauthorizedException(string email)
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
 
         var user = new User
         {
@@ -143,11 +147,11 @@ public class LoginCommandTests
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
             LastName = "Test",
             FirstName = "User",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
         await userRepo.AddRange([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(userRepo, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
         {
             Email = email,
@@ -163,7 +167,8 @@ public class LoginCommandTests
     public async Task Execute_WithNullEmail_ThrowsUnauthorizedException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
 
         var user = new User
         {
@@ -172,11 +177,11 @@ public class LoginCommandTests
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
             LastName = "Test",
             FirstName = "User",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
         await userRepo.AddRange([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(userRepo, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
         {
             Email = null!,
@@ -193,7 +198,8 @@ public class LoginCommandTests
     public async Task Execute_WithEmptyPassword_ThrowsUnauthorizedException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
 
         var email = "test@example.com";
         var password = "correctPassword";
@@ -206,11 +212,11 @@ public class LoginCommandTests
             PasswordHash = passwordHash,
             LastName = "Test",
             FirstName = "User",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
         await userRepo.AddRange([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(userRepo, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
         {
             Email = email,
@@ -226,7 +232,8 @@ public class LoginCommandTests
     public async Task Execute_WithNullPassword_ThrowsArgumentNullException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
 
         var email = "test@example.com";
         var password = "correctPassword";
@@ -239,11 +246,11 @@ public class LoginCommandTests
             PasswordHash = passwordHash,
             LastName = "Test",
             FirstName = "User",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
         await userRepo.AddRange([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(userRepo, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
         {
             Email = email,

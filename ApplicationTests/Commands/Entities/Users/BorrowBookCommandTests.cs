@@ -16,8 +16,9 @@ public class BorrowBookCommandTests
     public async Task Execute_WhenUserNotFound_ThrowsUserNotFoundException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
         var roomBook = new RoomBook
         {
@@ -27,9 +28,9 @@ public class BorrowBookCommandTests
             Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Test Book" },
             Room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" }
         };
-        await roomBookRepo.AddRange([roomBook], CancellationToken.None);
+        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
 
-        var command = new BorrowBookCommand(userRepo, roomBookRepo, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
         {
             UserId = Guid.NewGuid(),
@@ -46,8 +47,9 @@ public class BorrowBookCommandTests
     public async Task Execute_WhenRoomBookNotFound_ThrowsUserRoomBookNotFoundException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
         var user = new User
         {
@@ -55,11 +57,11 @@ public class BorrowBookCommandTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = []
+            RoomBooks = new List<UserRoomBook>()
         };
-        await userRepo.AddRange([user], CancellationToken.None);
+        await userRepo.AddRange(new[] { user }, CancellationToken.None);
 
-        var command = new BorrowBookCommand(userRepo, roomBookRepo, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -77,8 +79,9 @@ public class BorrowBookCommandTests
     {
         // Arrange
         var settings = new BorrowingSettings { MinBorrowDays = 7, MaxBorrowDays = 30 };
-        var userRepo = new FakeRepository<User>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
         var user = new User
         {
@@ -97,10 +100,10 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await userRepo.AddRange([user], CancellationToken.None);
-        await roomBookRepo.AddRange([roomBook], CancellationToken.None);
+        await userRepo.AddRange(new[] { user }, CancellationToken.None);
+        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
 
-        var command = new BorrowBookCommand(userRepo, roomBookRepo, CreateValidator(settings));
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -118,8 +121,9 @@ public class BorrowBookCommandTests
     {
         // Arrange
         var settings = new BorrowingSettings { MinBorrowDays = 1, MaxBorrowDays = 14 };
-        var userRepo = new FakeRepository<User>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
         var user = new User
         {
@@ -138,10 +142,10 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await userRepo.AddRange([user], CancellationToken.None);
-        await roomBookRepo.AddRange([roomBook], CancellationToken.None);
+        await userRepo.AddRange(new[] { user }, CancellationToken.None);
+        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
 
-        var command = new BorrowBookCommand(userRepo, roomBookRepo, CreateValidator(settings));
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -159,8 +163,9 @@ public class BorrowBookCommandTests
     {
         // Arrange
         var settings = new BorrowingSettings { MaxBooksPerUser = 2, MaxBorrowDays = 30 };
-        var userRepo = new FakeRepository<User>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
         var user = new User
         {
@@ -201,7 +206,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRange([user], CancellationToken.None);
         await roomBookRepo.AddRange([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(userRepo, roomBookRepo, CreateValidator(settings));
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -218,8 +223,9 @@ public class BorrowBookCommandTests
     public async Task Execute_WhenUserHasOverdueBooks_ThrowsValidationException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
         var user = new User
         {
@@ -252,7 +258,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRange([user], CancellationToken.None);
         await roomBookRepo.AddRange([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(userRepo, roomBookRepo, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -269,8 +275,9 @@ public class BorrowBookCommandTests
     public async Task Execute_WhenNoAvailableCopies_ThrowsValidationException()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
         var user = new User
         {
@@ -293,7 +300,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRange([user], CancellationToken.None);
         await roomBookRepo.AddRange([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(userRepo, roomBookRepo, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -310,8 +317,9 @@ public class BorrowBookCommandTests
     public async Task Execute_WithValidData_BorrowsBookSuccessfully()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
         var userId = new Id(Guid.NewGuid());
         var roomBookId = new Id(Guid.NewGuid());
@@ -337,7 +345,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRange([user], CancellationToken.None);
         await roomBookRepo.AddRange([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(userRepo, roomBookRepo, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
         {
             UserId = userId.Value,
@@ -355,7 +363,7 @@ public class BorrowBookCommandTests
             Assert.That(response.Message, Does.Contain("Книга выдана"));
 
             // Проверяем, что UserRoomBook была создана
-            var updatedUser = userRepo.Entities.First(u => u.Id.Value == userId.Value);
+            var updatedUser = ((FakeRepository<User>)userRepo).Entities.First(u => u.Id.Value == userId.Value);
             Assert.That(updatedUser.RoomBooks, Has.Count.EqualTo(1));
 
             var userRoomBook = updatedUser.RoomBooks.First();
@@ -374,8 +382,9 @@ public class BorrowBookCommandTests
     public async Task Execute_WithValidData_DoesNotAffectOtherUsers()
     {
         // Arrange
-        var userRepo = new FakeRepository<User>();
-        var roomBookRepo = new FakeRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
         var user1 = new User
         {
@@ -384,14 +393,14 @@ public class BorrowBookCommandTests
             FirstName = "Иван",
             ContactInfo = "ivanov@example.com",
             RoomBooks = new List<UserRoomBook>
+        {
+            new UserRoomBook
             {
-                new UserRoomBook
-                {
-                    Id = new Id(Guid.NewGuid()),
-                    BorrowDate = DateTime.Now.AddDays(-5),
-                    Deadline = DateTime.Now.AddDays(10)
-                }
+                Id = new Id(Guid.NewGuid()),
+                BorrowDate = DateTime.Now.AddDays(-5),
+                Deadline = DateTime.Now.AddDays(10)
             }
+        }
         };
 
         var user2 = new User
@@ -415,7 +424,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRange([user1, user2], CancellationToken.None);
         await roomBookRepo.AddRange([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(userRepo, roomBookRepo, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
         {
             UserId = user2.Id.Value,
@@ -427,16 +436,16 @@ public class BorrowBookCommandTests
         var response = await command.Execute(request, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(() =>
+        Assert.Multiple(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
             // user1 не изменился
-            var dbUser1 = userRepo.Entities.First(u => u.Id.Value == user1.Id.Value);
+            var dbUser1 = (await userRepo.Get(u => u.Id.Value == user1.Id.Value, CancellationToken.None)).First();
             Assert.That(dbUser1.RoomBooks, Has.Count.EqualTo(1));
 
             // user2 получил книгу
-            var dbUser2 = userRepo.Entities.First(u => u.Id.Value == user2.Id.Value);
+            var dbUser2 = (await userRepo.Get(u => u.Id.Value == user2.Id.Value, CancellationToken.None)).First();
             Assert.That(dbUser2.RoomBooks, Has.Count.EqualTo(1));
         });
     }

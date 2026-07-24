@@ -9,16 +9,17 @@ public class GetAllRoomsTests
     public async Task Execute_GetAllRoomsFromRepositoryWithRooms_ReturnsAllRooms()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
             .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
             .Generate(7)
             .ToList();
-        await roomRepo.AddRange(rooms.AsEnumerable());
+        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
 
-        var getAllRooms = new GetAllRoomsCommand(roomRepo, Converter);
+        var getAllRooms = new GetAllRoomsCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -42,8 +43,9 @@ public class GetAllRoomsTests
     public async Task Execute_GetAllRoomsFromEmptyRepository_ReturnsEmptyArray()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
-        var getAllRooms = new GetAllRoomsCommand(roomRepo, Converter);
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
+        var getAllRooms = new GetAllRoomsCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -62,7 +64,8 @@ public class GetAllRoomsTests
     public async Task Execute_GetAllRoomsWithRoomBooks_ReturnsRoomsWithBookData()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var roomId = new Id(Guid.NewGuid());
         var bookId1 = new Id(Guid.NewGuid());
         var bookId2 = new Id(Guid.NewGuid());
@@ -89,9 +92,9 @@ public class GetAllRoomsTests
             }
         }
         };
-        await roomRepo.AddRange([room]);
+        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
 
-        var getAllRooms = new GetAllRoomsCommand(roomRepo, Converter);
+        var getAllRooms = new GetAllRoomsCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -117,7 +120,8 @@ public class GetAllRoomsTests
     public async Task Execute_GetAllRoomsWithEmptyRoomBooks_ReturnsRoomsWithEmptyCollections()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var rooms = new List<Room>
         {
             new Room
@@ -133,9 +137,9 @@ public class GetAllRoomsTests
                 RoomBooks = new List<RoomBook>()
             }
         };
-        await roomRepo.AddRange(rooms.AsEnumerable());
+        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
 
-        var getAllRooms = new GetAllRoomsCommand(roomRepo, Converter);
+        var getAllRooms = new GetAllRoomsCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -154,7 +158,8 @@ public class GetAllRoomsTests
     public async Task Execute_GetAllRoomsUsesGetWithoutTracking_ReturnsDataWithoutTracking()
     {
         // Arrange
-        var roomRepo = new FakeRepository<Room>();
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
@@ -163,7 +168,7 @@ public class GetAllRoomsTests
             .ToList();
         await roomRepo.AddRange(rooms.AsEnumerable());
 
-        var getAllRooms = new GetAllRoomsCommand(roomRepo, Converter);
+        var getAllRooms = new GetAllRoomsCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act

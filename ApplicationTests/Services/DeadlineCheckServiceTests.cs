@@ -78,7 +78,8 @@ public class DeadlineCheckServiceTests
     public async Task CheckDeadlines_WithSoonDueBooks_SendsReturnReminders()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
         var realNow = DateTime.Now;
 
@@ -119,7 +120,7 @@ public class DeadlineCheckServiceTests
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
         // Act
-        await (Task)method.Invoke(service, [CancellationToken.None])!;
+        await (Task)method.Invoke(service, new object?[] { CancellationToken.None })!;
 
         // Assert
         notificationMock.Verify(
@@ -134,7 +135,8 @@ public class DeadlineCheckServiceTests
     public async Task CheckDeadlines_WithOverdueBooks_CalculatesPenaltyAndSendsNotification()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
         var realNow = DateTime.Now;
 
@@ -200,7 +202,8 @@ public class DeadlineCheckServiceTests
     public async Task CheckDeadlines_WithOverdueBooksAndMaxPenalty_AppliesPenaltyCap()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
         var now = new DateTime(2024, 1, 15, 12, 0, 0);
 
@@ -227,7 +230,7 @@ public class DeadlineCheckServiceTests
             }
         };
 
-        await repo.AddRange([userRoomBook]);
+        await repo.AddRange(new[] { userRoomBook }, CancellationToken.None);
 
         var penaltySettings = new PenaltySettings
         {
@@ -242,7 +245,7 @@ public class DeadlineCheckServiceTests
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
         // Act
-        await (Task)method.Invoke(service, [CancellationToken.None])!;
+        await (Task)method.Invoke(service, new object?[] { CancellationToken.None })!;
 
         // Assert
         var updatedUrb = repo.Entities.First();
@@ -253,7 +256,8 @@ public class DeadlineCheckServiceTests
     public async Task CheckDeadlines_WithNoBooks_DoesNotSendNotifications()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var service = CreateService(repo, notificationMock: notificationMock);
@@ -284,7 +288,8 @@ public class DeadlineCheckServiceTests
     public async Task ExecuteAsync_WhenCancelled_StopsExecution()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var service = CreateService(repo);
         var cts = new CancellationTokenSource();
 
@@ -305,7 +310,8 @@ public class DeadlineCheckServiceTests
     public void CalculatePenalty_WithMaxPenalty_CapsCorrectly()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var service = CreateService(repo);
         var settings = new PenaltySettings
         {
@@ -328,7 +334,8 @@ public class DeadlineCheckServiceTests
     public void CalculatePenalty_WithoutMaxPenalty_ReturnsFullAmount()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var service = CreateService(repo);
         var settings = new PenaltySettings
         {
@@ -351,7 +358,8 @@ public class DeadlineCheckServiceTests
     public void Constructor_WhenSettingsChanged_UpdatesCheckInterval()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var deadlineMonitorMock = new Mock<IOptionsMonitor<DeadlineCheckSettings>>();
 
         deadlineMonitorMock
@@ -375,7 +383,8 @@ public class DeadlineCheckServiceTests
     public async Task ExecuteAsync_WhenExceptionOccurs_LogsErrorAndDelays()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
 
         // Создаём сервис с неработающим ServiceProvider чтобы вызвать исключение
         var deadlineMonitorMock = new Mock<IOptionsMonitor<DeadlineCheckSettings>>();
@@ -424,7 +433,8 @@ public class DeadlineCheckServiceTests
     public async Task CheckDeadlines_WithBothSoonDueAndOverdue_SendsBothNotifications()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
         var realNow = DateTime.Now;
 
@@ -504,7 +514,8 @@ public class DeadlineCheckServiceTests
     public async Task CheckDeadlines_WithBookWithoutDeadline_DoesNotSendNotifications()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var user = new User
@@ -561,7 +572,8 @@ public class DeadlineCheckServiceTests
     public async Task CheckDeadlines_WithReturnedBook_SkipsNotifications()
     {
         // Arrange
-        var repo = new FakeRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
         var realNow = DateTime.Now;
 
