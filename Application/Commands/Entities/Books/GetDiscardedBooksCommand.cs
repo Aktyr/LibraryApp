@@ -5,20 +5,18 @@ public class GetDiscardedBooksCommand(IUnitOfWork unitOfWork) : IGetQuery<GetDis
     public async Task<DiscardedBookResponse> Execute(GetDiscardedBooksRequest request, CancellationToken ct)
     {
         var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
-        Expression<Func<DiscardedBook, bool>> predicate = d => true;
+        var query = discardedRepo.GetQueryable();
 
         if (request.FromDate.HasValue)
-            predicate = d => d.DiscardedDate >= request.FromDate.Value;
+            query = query.Where(d => d.DiscardedDate >= request.FromDate.Value);
         if (request.ToDate.HasValue)
-            predicate = d => d.DiscardedDate <= request.ToDate.Value;
+            query = query.Where(d => d.DiscardedDate <= request.ToDate.Value);
         if (request.DiscardReason.HasValue)
-            predicate = d => d.DiscardReason == request.DiscardReason;  
+            query = query.Where(d => d.DiscardReason == request.DiscardReason);
 
-        var discarded = await discardedRepo.Get(predicate, ct);
-
-        var result = discarded
-        .OrderByDescending(d => d.DiscardedDate)
-        .Select(d => new DiscardedBookDTO(
+        var discarded = await query
+            .OrderByDescending(d => d.DiscardedDate)
+            .Select(d => new DiscardedBookDTO(
                 d.Id.Value,
                 d.Book.Id.Value,
                 d.Book.Title,
@@ -27,7 +25,8 @@ public class GetDiscardedBooksCommand(IUnitOfWork unitOfWork) : IGetQuery<GetDis
                 d.DiscardReason,
                 d.ApprovedBy,
                 d.CompensationAmount))
-        .ToArray();
-        return ResponseFactory.Found<DiscardedBook, DiscardedBookDTO, DiscardedBookResponse>(result);
+            .ToArrayAsync(ct);
+
+        return ResponseFactory.Found<DiscardedBook, DiscardedBookDTO, DiscardedBookResponse>(discarded);
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
+// todo разделить создание и регистрацию пользователя. Теряется пароль и логин?
 public class CreateUserCommand(
     IUnitOfWork unitOfWork,
     UserValidatorAsync userValidator,

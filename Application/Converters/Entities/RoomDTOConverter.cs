@@ -21,7 +21,7 @@ public class RoomDTOConverter : BaseConverter<Room, RoomDTO>
         else
         {
             // Инициализируем пустую коллекцию
-            dto = dto with { RoomBook = new List<RoomBookDTO>() };
+            dto = dto with { RoomBook = [] };
         }
 
         return dto;

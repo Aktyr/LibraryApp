@@ -29,6 +29,7 @@ public class UpdateBookCommand(IUnitOfWork unitOfWork, BookValidatorAsync bookVa
         book.Author = request.Author;
         book.Year = request.Year;
         book.Publisher = request.Publisher;
+        book.Genre = request.Genre;
         //book.RoomBook = request.RoomBook;
 
         await bookRepo.Update(book, cancellationToken);

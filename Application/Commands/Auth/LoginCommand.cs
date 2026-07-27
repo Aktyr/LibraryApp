@@ -1,5 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Auth;
 
+// todo разделить создание и регистрацию пользователя. Теряется пароль и логин?
 public class LoginCommand(IUnitOfWork unitOfWork, JwtService jwtService) : IGetQuery<LoginRequest, LoginResponse>, ICommand
 {
     public async Task<LoginResponse> Execute(LoginRequest request, CancellationToken cancellationToken)
