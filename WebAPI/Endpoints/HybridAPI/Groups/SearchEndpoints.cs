@@ -6,7 +6,7 @@ namespace WebAPI.Endpoints.HybridAPI.Groups;
 public class SearchEndpoints : EndpointBase
 {
     [HttpGet("/books")]
-    public IResult SearchBooks([FromQuery] string? query, [FromQuery] string? title,
+    public async Task<IResult> SearchBooks([FromQuery] string? query, [FromQuery] string? title,
                                [FromQuery] string? author, [FromQuery] int? yearFrom,
                                [FromQuery] int? yearTo, [FromQuery] string? publisher,
                                [FromQuery] bool availableOnly, [FromQuery] string? sortBy,

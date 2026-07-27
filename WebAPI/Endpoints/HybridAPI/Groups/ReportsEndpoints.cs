@@ -6,10 +6,10 @@ namespace WebAPI.Endpoints.HybridAPI.Groups;
 public class ReportsEndpoints : EndpointBase
 {
     [HttpGet("/popular-books")]
-    public IResult PopularBooks([FromQuery] int? topCount, GetPopularBooksReportCommand command, CancellationToken ct)
+    public async Task<IResult> PopularBooks([FromQuery] int? topCount, GetPopularBooksReportCommand command, CancellationToken ct)
         => Results.Ok(command.Execute(new GetPopularBooksRequest { TopCount = topCount ?? 10 }, ct));
 
     [HttpGet("/user-activity")]
-    public IResult UserActivity([FromQuery] bool onlyWithOverdue, [FromQuery] bool onlyActive, GetUserActivityReportCommand command, CancellationToken ct)
+    public async Task<IResult> UserActivity([FromQuery] bool onlyWithOverdue, [FromQuery] bool onlyActive, GetUserActivityReportCommand command, CancellationToken ct)
         => Results.Ok(command.Execute(new GetUserActivityRequest { OnlyWithOverdue = onlyWithOverdue, OnlyActive = onlyActive }, ct));
 }
