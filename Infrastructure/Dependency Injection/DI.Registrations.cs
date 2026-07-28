@@ -48,6 +48,9 @@ public static partial class DI
             else
                 services.Add(new ServiceDescriptor(type, type, ServiceLifetime.Scoped));
         }
+
+        services.AddScoped<IUserService, UserService>();
+
         return services;
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace LibApp.Application.Validation.Auth;
 
+[Obsolete("Используйте UserRegistrationValidator для валидации")]
 public class RegisterValidatorAsync : IValidator // По сути расширяет UserValidatorAsync
 {
     private readonly EmailValidatorAsync _emailValidator;

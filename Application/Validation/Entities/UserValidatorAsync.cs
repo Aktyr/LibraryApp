@@ -1,5 +1,6 @@
 ﻿namespace LibApp.Application.Validation.Entities;
 
+[Obsolete("Используйте UserRegistrationValidator для валидации")]
 public class UserValidatorAsync : IValidator
 {
     public async Task<ValidationResponse> ValidateAsync(User user, CancellationToken cancellationToken = default)

@@ -1,33 +1,23 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-// todo разделить создание и регистрацию пользователя. Теряется пароль и логин?
 public class CreateUserCommand(
-    IUnitOfWork unitOfWork,
-    UserValidatorAsync userValidator,
-    IConverter<User, UserDTO> userConverter) : ICreateOrUpdateCommand<CreateUserRequest, BasicCreateDeleteResponse>, ICommand
+    IUserService userService) : ICreateOrUpdateCommand<CreateUserRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(CreateUserRequest request, CancellationToken cancellationToken)
     {
-        var userRepo = unitOfWork.GetRepository<User>();
-        // Создание
-        var userDto = new UserDTO(Guid.NewGuid(),
-                              request.LastName,
-                              request.FirstName,
-                              request.MiddleName,
-                              request.ContactInfo,
-                              null, []);
+        // Роль приходит из запроса, но администратор может её выбрать
+        var role = request.Role ?? UserRole.Reader; // если не указана, по умолчанию Reader
 
-        var user = userConverter.ToEntity(userDto);
+        await userService.CreateUserAsync(
+            request.Email,
+            request.Password,
+            request.LastName,
+            request.FirstName,
+            request.MiddleName ?? "",
+            request.ContactInfo,
+            role,
+            cancellationToken);
 
-        // Валидация
-        var validationResult = await userValidator.ValidateAsync(user, cancellationToken);
-
-        if (!validationResult.IsValid)
-            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
-
-        // Добавление
-        await userRepo.Add(user, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
         return ResponseFactory.Created<User>();
     }
 }

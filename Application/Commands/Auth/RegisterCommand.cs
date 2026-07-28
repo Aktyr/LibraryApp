@@ -1,49 +1,24 @@
 ﻿namespace LibApp.Application.Commands.Auth;
 
 public class RegisterCommand(
-    IUnitOfWork unitOfWork,
-    RegisterValidatorAsync validator,
-    IConverter<User, UserDTO> userConverter,
+    IUserService userService,
     JwtService jwtService) : ICreateOrUpdateCommand<RegisterRequest, RegisterResponse>, ICommand
 {
     public async Task<RegisterResponse> Execute(RegisterRequest request, CancellationToken cancellationToken)
     {
-        var userRepo = unitOfWork.GetRepository<User>();
-
-        // Валидация
-        var validationResult = await validator.ValidateAsync(request, cancellationToken);
-        if (!validationResult.IsValid)
-            throw new LibValidationException { ExceptionDetails = validationResult.Errors };
-
-        // Проверка, не занят ли email
-        var existingUsers = await userRepo.Get(u => u.Email == request.Email, cancellationToken);
-        if (existingUsers.Any())
-            throw new LibValidationException { ExceptionDetails = new List<string> { "Email уже зарегистрирован" } };
-
-        // Хешируем пароль
-        string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-        // Создаем пользователя
-        var user = new User
-        {
-            Id = new Id(Guid.NewGuid()),
-            Email = request.Email,
-            PasswordHash = passwordHash,
-            LastName = request.LastName,
-            FirstName = request.FirstName,
-            MiddleName = request.MiddleName ?? "",
-            ContactInfo = request.ContactInfo,
-            Role = UserRole.Reader, // По умолчанию читатель
-            RoomBooks = new List<UserRoomBook>()
-        };
-
-        // Сохраняем
-        await userRepo.Add(user, cancellationToken);
+        // Создаём пользователя через сервис
+        var user = await userService.CreateUserAsync(
+            request.Email,
+            request.Password,
+            request.LastName,
+            request.FirstName,
+            request.MiddleName ?? "",
+            request.ContactInfo,
+            UserRole.Reader, // всегда Reader для самостоятельной регистрации
+            cancellationToken);
 
         // Генерируем токен
         var token = jwtService.GenerateToken(user);
-
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new RegisterResponse(
             Status: "Ok",

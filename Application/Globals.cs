@@ -44,4 +44,4 @@ global using LibApp.Core.Responses.Reports;
 global using Microsoft.AspNetCore.Authorization;
 global using LibApp.Application.Helpers;
 global using Microsoft.EntityFrameworkCore;
-
+global using System.Text.RegularExpressions;

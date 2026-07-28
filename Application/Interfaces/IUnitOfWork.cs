@@ -1,6 +1,5 @@
 ﻿namespace LibApp.Application.Interfaces;
 
-// todo реализовать транзакции для команд
 public interface IUnitOfWork : IDisposable
 {
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

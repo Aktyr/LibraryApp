@@ -7,11 +7,11 @@ namespace WebAPI.Endpoints.HybridAPI.Groups;
 [AllowAnonymous]
 public class AuthEndpoint : EndpointBase
 {
-    // todo : добавить атрибут пути (если надо), доступа (если дополнительные)
+    // добавить атрибут пути (если надо), доступа (если дополнительные)
     [HttpPost("/login")]
     public async Task<IResult> Login(LoginRequest request, LoginCommand command, CancellationToken ct) => Results.Ok(command.Execute(request, ct));
 
-    // todo : добавить атрибут пути (если надо), доступа (если дополнительные)
+    // добавить атрибут пути (если надо), доступа (если дополнительные)
     [HttpPost("/register")]
     public async Task<IResult> Register(RegisterRequest request, RegisterCommand command, CancellationToken ct) => Results.Ok(command.Execute(request, ct));
 }

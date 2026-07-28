@@ -5,7 +5,7 @@ public class GetAllBooksCommand(IUnitOfWork unitOfWork, IConverter<Book, BookDTO
 {
     public async Task<BookResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
     {
-        // todo использовать инклюды везде, возможно стоит поправить репозиторий для этого
+        // fixme использовать инклюды везде, возможно стоит поправить репозиторий для этого
         var bookRepo = unitOfWork.GetRepository<Book>();
         var books = await bookRepo
             .GetQueryable()
