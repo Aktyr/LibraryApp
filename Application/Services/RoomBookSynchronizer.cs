@@ -28,15 +28,14 @@ public class RoomBookSynchronizer : IRoomBookSynchronizer, IService
 
         var roomBookRepo = _unitOfWork.GetRepository<RoomBook>();
 
-        // Если коллекция не загружена, загружаем её явно
+        // Если коллекция не загружена, загружаем её явно через репозиторий
         if (room.RoomBooks == null)
         {
-            var loaded = await roomBookRepo
-                .GetQueryable()
-                .Where(rb => rb.Room.Id.Value == room.Id.Value)
-                .Include(rb => rb.Book)
-                .ToListAsync(cancellationToken);
-            room.RoomBooks = loaded;
+            var loaded = await roomBookRepo.GetWithIncludesAsync(
+                predicate: rb => rb.Room.Id.Value == room.Id.Value,
+                includePaths: IncludePaths.RoomBook.Book
+            );
+            room.RoomBooks = loaded.ToList();
         }
 
         var existingRoomBooks = room.RoomBooks.ToList();
@@ -91,13 +90,11 @@ public class RoomBookSynchronizer : IRoomBookSynchronizer, IService
                     };
 
                 existing.BookCount = dto.BookCount;
-                existing.Book = book; // явно обновляем связь (хотя BookId не меняется по валидатору)
+                existing.Book = book;
                 _logger.LogDebug($"Обновлена RoomBook {existing.Id.Value} с количеством {dto.BookCount}");
             }
             else
             {
-                // Создание новой записи (только если dto.Id == Guid.Empty)
-                // Валидатор уже проверил, что такой книги нет в комнате
                 var newRoomBook = new RoomBook
                 {
                     Id = new Id(Guid.NewGuid()),

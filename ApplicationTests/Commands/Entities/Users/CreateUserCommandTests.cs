@@ -24,10 +24,10 @@ public class CreateUserCommandTests
                                    .RuleFor(x => x.FirstName, f => f.Name.FirstName())
                                    .RuleFor(x => x.MiddleName, f => f.Name.FirstName())
                                    .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
-                                   .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
+                                   .RuleFor(x => x.RoomBooks, f => [])
                                    .Generate(10)
                                    .AsEnumerable());
-        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var createUserCommand = new CreateUserCommand(new FakeUserService(unitOfWork));
         var createUserRequest = new CreateUserRequest
         {
             LastName = lastName,
@@ -73,10 +73,10 @@ public class CreateUserCommandTests
                                    .RuleFor(x => x.FirstName, f => f.Name.FirstName())
                                    .RuleFor(x => x.MiddleName, f => f.Name.FirstName())
                                    .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
-                                   .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
+                                   .RuleFor(x => x.RoomBooks, f => [])
                                    .Generate(10)
                                    .AsEnumerable());
-        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var createUserCommand = new CreateUserCommand(new FakeUserService(unitOfWork));
         var createUserRequest = new CreateUserRequest
         {
             LastName = lastName,
@@ -96,7 +96,7 @@ public class CreateUserCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var createUserCommand = new CreateUserCommand(new FakeUserService(unitOfWork));
 
         // Генерируем слишком длинные строки (предполагая, что валидатор имеет ограничения по длине)
         var createUserRequest = new CreateUserRequest
@@ -127,9 +127,9 @@ public class CreateUserCommandTests
             ContactInfo = "ivanov@example.com",
             RoomBooks = []
         };
-        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRange([existingUser], CancellationToken.None);
 
-        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var createUserCommand = new CreateUserCommand(new FakeUserService(unitOfWork));
 
         // Пытаемся создать пользователя с такими же данными (допустимо, если нет ограничения на уникальность)
         var createUserRequest = new CreateUserRequest
@@ -158,7 +158,7 @@ public class CreateUserCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var createUserCommand = new CreateUserCommand(new FakeUserService(unitOfWork));
         var createUserRequest = new CreateUserRequest
         {
             LastName = "Новиков",
@@ -193,7 +193,8 @@ public class CreateUserCommandTests
                       .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
                       .Generate(10));
 
-        var createUserCommand = new CreateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var createUserCommand = new CreateUserCommand(new FakeUserService(unitOfWork));
+
         var createUserRequest = new CreateUserRequest
         {
             LastName = "Иванов",
@@ -228,5 +229,31 @@ public class CreateUserCommandTests
             Assert.That(result.IsValid, Is.False);
             Assert.That(result.Errors, Contains.Item("Отчество не может превышать 100 символов"));
         });
+    }
+    // Тестовая реализация IUserService для использования в тестах
+    private class FakeUserService : IUserService
+    {
+        private readonly FakeUnitOfWork _uow;
+        public FakeUserService(FakeUnitOfWork uow) => _uow = uow;
+
+        public async Task<User> CreateUserAsync(string email, string password, string lastName, string firstName, string middleName, string contactInfo, UserRole role, CancellationToken cancellationToken = default)
+        {
+            var repo = (FakeRepository<User>)_uow.GetRepository<User>();
+            var user = new User
+            {
+                Id = new Id(Guid.NewGuid()),
+                Email = email ?? string.Empty,
+                LastName = lastName,
+                FirstName = firstName,
+                MiddleName = middleName,
+                ContactInfo = contactInfo,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password ?? "password"),
+                Role = role,
+                RoomBooks = []
+            };
+
+            await repo.AddRange([user], cancellationToken);
+            return user;
+        }
     }
 }

@@ -9,11 +9,12 @@ public class GetUserActivityReportCommand(
         var userRepo = unitOfWork.GetRepository<User>();
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
-        var usersQuery = userRepo.GetQueryable().AsNoTracking();
-        var borrowsQuery = userRoomBookRepo.GetQueryable().AsNoTracking();
+        // Получаем всех пользователей и все бронирования (без отслеживания внутри репозитория)
+        var users = await userRepo.GetAsync();
+        var borrows = await userRoomBookRepo.GetAsync();
 
-        var query = from user in usersQuery
-                    join borrow in borrowsQuery on user.Id equals borrow.User.Id into borrowsGroup
+        var query = from user in users
+                    join borrow in borrows on user.Id equals borrow.User.Id into borrowsGroup
                     select new UserActivityReportDTO(
                         user.Id.Value,
                         user.FullName,
@@ -29,10 +30,10 @@ public class GetUserActivityReportCommand(
         if (request.OnlyActive)
             query = query.Where(u => u.CurrentBorrowedCount > 0);
 
-        var result = await query
+        var result = query
             .OrderByDescending(u => u.TotalPenalty)
-            .ToListAsync(ct);
+            .ToArray();
 
-        return ResponseFactory.Found<User, UserActivityReportDTO, UserActivityReportResponse>(result.ToArray());
+        return ResponseFactory.Found<User, UserActivityReportDTO, UserActivityReportResponse>(result);
     }
 }

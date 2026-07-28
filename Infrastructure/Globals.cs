@@ -45,3 +45,4 @@ global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.EntityFrameworkCore.Storage;
 global using LibApp.Application.Validation.Services;
 global using LibApp.Infrastructure.Db;
+global using LibApp.Application.Helpers;

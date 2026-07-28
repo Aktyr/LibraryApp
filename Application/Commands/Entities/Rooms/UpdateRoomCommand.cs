@@ -10,11 +10,10 @@ public class UpdateRoomCommand(
     public async Task<BasicCreateDeleteResponse> Execute(UpdateRoomRequest request, CancellationToken cancellationToken)
     {
         var roomRepo = unitOfWork.GetRepository<Room>();
-        var room = await roomRepo
-            .GetQueryable()
-            .Include(r => r.RoomBooks)
-                .ThenInclude(rb => rb.Book)
-            .FirstOrDefaultAsync(r => r.Id.Value == request.Id.Value, cancellationToken)
+
+        var room = (await roomRepo.GetWithIncludesAsync(
+            r => r.Id.Value == request.Id.Value,    
+            IncludePaths.Room.RoomBooksBook)).FirstOrDefault() 
             ?? throw new RoomNotFoundException();
 
         // Валидация имени и проверка уникальности
@@ -51,7 +50,7 @@ public class UpdateRoomCommand(
     private async Task<bool> IsNameTakenAsync(string name, CancellationToken ct)
     {
         var repo = unitOfWork.GetRepository<Room>();
-        var query = repo.GetQueryable().AsNoTracking().Where(r => r.Name == name);
-        return await query.AnyAsync(ct);
+        var existing = await repo.GetWithoutTracking(r => r.Name == name, ct);
+        return existing.Any();
     }
 }

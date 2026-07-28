@@ -5,28 +5,48 @@ public class GetDiscardedBooksCommand(IUnitOfWork unitOfWork) : IGetQuery<GetDis
     public async Task<DiscardedBookResponse> Execute(GetDiscardedBooksRequest request, CancellationToken ct)
     {
         var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
-        var query = discardedRepo.GetQueryable();
+
+        Expression<Func<DiscardedBook, bool>>? filter = null;
+        bool hasFilter = false;
 
         if (request.FromDate.HasValue)
-            query = query.Where(d => d.DiscardedDate >= request.FromDate.Value);
+        {
+            filter = d => d.DiscardedDate >= request.FromDate.Value;
+            hasFilter = true;
+        }
         if (request.ToDate.HasValue)
-            query = query.Where(d => d.DiscardedDate <= request.ToDate.Value);
+        {
+            Expression<Func<DiscardedBook, bool>> dateFilter = d => d.DiscardedDate <= request.ToDate.Value;
+            if (hasFilter)
+                filter = filter == null ? dateFilter : ExpressionHelper.CombineAnd(filter!, dateFilter);
+            else
+                filter = dateFilter;
+            hasFilter = true;
+        }
         if (request.DiscardReason.HasValue)
-            query = query.Where(d => d.DiscardReason == request.DiscardReason);
+        {
+            Expression<Func<DiscardedBook, bool>> reasonFilter = d => d.DiscardReason == request.DiscardReason.Value;
+            if (hasFilter)
+                filter = filter == null ? reasonFilter : ExpressionHelper.CombineAnd(filter!, reasonFilter);
+            else
+                filter = reasonFilter;
+            hasFilter = true;
+        }
 
-        var discarded = await query
-            .OrderByDescending(d => d.DiscardedDate)
-            .Select(d => new DiscardedBookDTO(
-                d.Id.Value,
-                d.Book.Id.Value,
-                d.Book.Title,
-                d.Amount,
-                d.DiscardedDate,
-                d.DiscardReason,
-                d.ApprovedBy,
-                d.CompensationAmount))
-            .ToArrayAsync(ct);
+        Func<IQueryable<DiscardedBook>, IOrderedQueryable<DiscardedBook>> orderBy = q => q.OrderByDescending(d => d.DiscardedDate);
 
-        return ResponseFactory.Found<DiscardedBook, DiscardedBookDTO, DiscardedBookResponse>(discarded);
-    }
+        var discarded = await discardedRepo.GetAsync(filter, orderBy);
+
+        var dtos = discarded.Select(d => new DiscardedBookDTO(
+            d.Id.Value,
+            d.Book.Id.Value,
+            d.Book.Title,
+            d.Amount,
+            d.DiscardedDate,
+            d.DiscardReason,
+            d.ApprovedBy,
+            d.CompensationAmount)).ToArray();
+
+        return ResponseFactory.Found<DiscardedBook, DiscardedBookDTO, DiscardedBookResponse>(dtos);
+    }    
 }

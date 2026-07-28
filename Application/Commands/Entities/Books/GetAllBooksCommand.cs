@@ -5,16 +5,11 @@ public class GetAllBooksCommand(IUnitOfWork unitOfWork, IConverter<Book, BookDTO
 {
     public async Task<BookResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
     {
-        // fixme использовать инклюды везде, возможно стоит поправить репозиторий для этого
         var bookRepo = unitOfWork.GetRepository<Book>();
-        var books = await bookRepo
-            .GetQueryable()
-            .Include(b => b.RoomBook)
-            .ThenInclude(rb => rb.Room)
-            .ToListAsync(cancellationToken);
+        var books = await bookRepo.GetWithIncludesAsync(
+            includePaths: [IncludePaths.Book.RoomBookRoom]
+        );
         var bookDTOs = books.Select(book => bookConverter.ToDto(book)).ToArray();
-
-        // мб валидатор на отстутствие книг
         return ResponseFactory.List<Book, BookDTO, BookResponse>(bookDTOs);
     }
 }

@@ -22,12 +22,12 @@ public class UpdateRoomCommandTests
         await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
 
         var roomToUpdate = rooms[4];
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomToUpdate.Id,
             Name = "Updated Room Name",
-            RoomBooks = []
+            RoomBookDTO = []
         };
 
         // Act
@@ -49,18 +49,42 @@ public class UpdateRoomCommandTests
         });
     }
 
+    // Простейшая фейковая реализация IRoomBookSynchronizer для тестов
+    private class FakeRoomBookSynchronizer : IRoomBookSynchronizer
+    {
+        public Task SynchronizeAsync(Room room, ICollection<RoomBookDTO> dtoList, CancellationToken cancellationToken = default)
+        {
+            if (dtoList == null)
+            {
+                room.RoomBooks = [];
+                return Task.CompletedTask;
+            }
+
+            var list = dtoList.Select(dto => new RoomBook
+            {
+                Id = new Id(dto.Id),
+                BookCount = dto.BookCount,
+                Book = new Book { Id = new Id(dto.BookId) },
+                Room = new Room { Id = new Id(dto.RoomId) }
+            }).ToList();
+
+            room.RoomBooks = list;
+            return Task.CompletedTask;
+        }
+    }
+
     [Test]
     public async Task Execute_UpdateNonExistingRoom_ThrowsException()
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Room Name",
-            RoomBooks = []
+            RoomBookDTO = []
         };
 
         // Act & Assert
@@ -75,12 +99,12 @@ public class UpdateRoomCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Room Name",
-            RoomBooks = []
+            RoomBookDTO = []
         };
 
         // Act & Assert
@@ -101,12 +125,12 @@ public class UpdateRoomCommandTests
             .Generate();
         await roomRepo.AddRange([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
             Name = "Original Name", // То же имя
-            RoomBooks = []
+            RoomBookDTO = []
         };
 
         // Act
@@ -137,12 +161,12 @@ public class UpdateRoomCommandTests
             .Generate();
         await roomRepo.AddRange([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
             Name = "", // Пустое имя - невалидно
-            RoomBooks = []
+            RoomBookDTO = []
         };
 
         // Act & Assert
@@ -168,28 +192,16 @@ public class UpdateRoomCommandTests
         };
         await roomRepo.AddRange([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomId,
             Name = "Updated Room",
-            RoomBooks =
-            [
-                new() 
+            RoomBookDTO = new List<RoomBookDTO>
                 {
-                    Id = new Id(Guid.NewGuid()),
-                    BookCount = 5,
-                    Book = new Book { Id = bookId1, Title = "Book 1" },
-                    Room = new Room { Id = roomId }
-                },
-                new() 
-                {
-                    Id = new Id(Guid.NewGuid()),
-                    BookCount = 3,
-                    Book = new Book { Id = bookId2, Title = "Book 2" },
-                    Room = new Room { Id = roomId }
+                new RoomBookDTO(Guid.NewGuid(), roomId.Value, bookId1.Value, 5),
+                new RoomBookDTO(Guid.NewGuid(), roomId.Value, bookId2.Value, 3)
                 }
-            ]
         };
 
         // Act
@@ -221,7 +233,7 @@ public class UpdateRoomCommandTests
             Name = "Original Room",
             RoomBooks =
             [
-                new()
+                new RoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
                     BookCount = 1,
@@ -235,12 +247,12 @@ public class UpdateRoomCommandTests
         var unitOfWork2 = new FakeUnitOfWork();
         var roomRepo2 = (FakeRepository<Room>)unitOfWork2.GetRepository<Room>();
         await roomRepo2.AddRange([room], CancellationToken.None);
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork2, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork2, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
             Name = "Updated Room",
-            RoomBooks = null // null коллекция
+            RoomBookDTO = null // null коллекция
         };
 
         // Act
@@ -273,7 +285,7 @@ public class UpdateRoomCommandTests
             Name = "Original Room",
             RoomBooks =
             [
-                new()
+                new RoomBook
                 {
                     Id = new Id(Guid.NewGuid()),
                     BookCount = 10,
@@ -288,20 +300,14 @@ public class UpdateRoomCommandTests
         var unitOfWork3 = new FakeUnitOfWork();
         var roomRepo3 = (FakeRepository<Room>)unitOfWork3.GetRepository<Room>();
         await roomRepo3.AddRange([room], CancellationToken.None);
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork3, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork3, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomId,
             Name = "Updated Room",
-            RoomBooks =
+            RoomBookDTO =
             [
-                new()
-                {
-                    Id = new Id(Guid.NewGuid()),
-                    BookCount = 7,
-                    Book = new Book { Id = newBookId, Title = "New Book" },
-                    Room = new Room { Id = roomId }
-                }
+                new RoomBookDTO(Guid.NewGuid(), roomId.Value, newBookId.Value, 7)
             ]
         };
 
@@ -335,12 +341,12 @@ public class UpdateRoomCommandTests
         var unitOfWork4 = new FakeUnitOfWork();
         var roomRepo4 = (FakeRepository<Room>)unitOfWork4.GetRepository<Room>();
         await roomRepo4.AddRange([room], CancellationToken.None);
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork4, CreateRoomValidator, Converter);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork4, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
             Name = "R", // Минимально допустимое имя
-            RoomBooks = []
+            RoomBookDTO = []
         };
 
         // Act

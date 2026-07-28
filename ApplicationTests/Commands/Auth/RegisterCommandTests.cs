@@ -29,7 +29,7 @@ public class RegisterCommandTests
             .Generate(5)
             .AsEnumerable(), CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(unitOfWork, CreateRegisterValidator, Converter, JwtService);
+        var registerCommand = new RegisterCommand(new FakeUserService(unitOfWork), JwtService);
         var registerRequest = new RegisterRequest
         {
             Email = email,
@@ -62,6 +62,33 @@ public class RegisterCommandTests
         });
     }
 
+    // В тестовом проекте создаём фейковую реализацию IUserService
+    private class FakeUserService : IUserService
+    {
+        private readonly FakeUnitOfWork _uow;
+        public FakeUserService(FakeUnitOfWork uow) => _uow = uow;
+
+        public async Task<User> CreateUserAsync(string email, string password, string lastName, string firstName, string middleName, string contactInfo, UserRole role, CancellationToken cancellationToken = default)
+        {
+            var repo = (FakeRepository<User>)_uow.GetRepository<User>();
+            var user = new User
+            {
+                Id = new Id(Guid.NewGuid()),
+                Email = email ?? string.Empty,
+                LastName = lastName,
+                FirstName = firstName,
+                MiddleName = middleName,
+                ContactInfo = contactInfo,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password ?? "password"),
+                Role = role,
+                RoomBooks = []
+            };
+
+            await repo.AddRange([user], cancellationToken);
+            return user;
+        }
+    }
+
     [TestCase("existing@example.com", "Password123!", "Иванов", "Иван")]
     public async Task Execute_WithDuplicateEmail_ThrowsValidationException(
         string email, string password, string lastName, string firstName)
@@ -78,9 +105,9 @@ public class RegisterCommandTests
             FirstName = "User",
             ContactInfo = email
         };
-        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRange([existingUser], CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(unitOfWork, CreateRegisterValidator, Converter, JwtService);
+        var registerCommand = new RegisterCommand(new FakeUserService(unitOfWork), JwtService);
         var registerRequest = new RegisterRequest
         {
             Email = email,
@@ -121,7 +148,7 @@ public class RegisterCommandTests
             .Generate(3)
             .AsEnumerable(), CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(unitOfWork, CreateRegisterValidator, Converter, JwtService);
+        var registerCommand = new RegisterCommand(new FakeUserService(unitOfWork), JwtService);
         var registerRequest = new RegisterRequest
         {
             Email = email,
@@ -147,7 +174,7 @@ public class RegisterCommandTests
             .Generate(3)
             .AsEnumerable(), CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(unitOfWork, CreateRegisterValidator, Converter, JwtService);
+        var registerCommand = new RegisterCommand(new FakeUserService(unitOfWork), JwtService);
         var registerRequest = new RegisterRequest
         {
             Email = "test@test.com",

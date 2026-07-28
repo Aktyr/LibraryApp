@@ -4,6 +4,9 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
 {
     public List<TEntity> Entities { get; init; } = [];
 
+    #region IRepository
+
+    #region CRUD
     public Task AddRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default) =>
         Task.Run(() =>
         {
@@ -46,7 +49,38 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
             }
         }, cancellationToken);
     }
+    #endregion
+
     public IQueryable<TEntity> GetQueryable() => Entities.AsQueryable();
     public IQueryable<TEntity> GetQueryable(Expression<Func<TEntity, bool>> predicate) => Entities.Where(predicate.Compile()).AsQueryable();
 
+    public Task<IEnumerable<TEntity>> GetAsync(
+    Expression<Func<TEntity, bool>>? filter = null,
+    Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+    int? skip = null,
+    int? take = null,
+    params string[] includePaths)
+    {
+        var query = Entities.AsQueryable();
+        if (filter != null)
+            query = query.Where(filter);
+        if (orderBy != null)
+            query = orderBy(query);
+        if (skip.HasValue)
+            query = query.Skip(skip.Value);
+        if (take.HasValue)
+            query = query.Take(take.Value);
+        return Task.FromResult(query.AsEnumerable());
+    }
+
+    public Task<IEnumerable<TEntity>> GetWithIncludesAsync(Expression<Func<TEntity, bool>>? predicate = null, params string[] includePaths)
+    {
+        var query = Entities.AsQueryable();
+        // В фейке мы игнорируем includes, так как данные уже загружены.
+        if (predicate != null)
+            query = query.Where(predicate);
+        return Task.FromResult(query.AsEnumerable());
+    }
+
+    #endregion
 }
