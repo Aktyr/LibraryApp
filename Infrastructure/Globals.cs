@@ -43,3 +43,5 @@ global using System.Text.RegularExpressions;
 global using System.ComponentModel.DataAnnotations;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.EntityFrameworkCore.Storage;
+global using LibApp.Application.Validation.Services;
+global using LibApp.Infrastructure.Db;

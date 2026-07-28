@@ -24,6 +24,6 @@ public class SearchEndpoints : EndpointBase
             SortBy = sortBy ?? "Title",
             SortDescending = sortDescending
         };
-        return Results.Ok(command.Execute(request, ct));
+        return Results.Ok(await command.Execute(request, ct));
     }
 }

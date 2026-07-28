@@ -45,3 +45,4 @@ global using Microsoft.AspNetCore.Authorization;
 global using LibApp.Application.Helpers;
 global using Microsoft.EntityFrameworkCore;
 global using System.Text.RegularExpressions;
+global using LibApp.Application.Validation;

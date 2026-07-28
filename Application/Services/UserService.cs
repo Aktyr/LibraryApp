@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Services;
 
-public class UserService : IUserService
+public class UserService : IUserService, IService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserRegistrationValidator _validator;

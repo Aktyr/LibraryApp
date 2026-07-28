@@ -6,7 +6,7 @@ public class GetPopularBooksReportCommand(IUnitOfWork unitOfWork)
     public async Task<BookPopularityReportResponse> Execute(GetPopularBooksRequest request, CancellationToken ct)
     {
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
-        var query = userRoomBookRepo.GetQueryable();
+        var query = userRoomBookRepo.GetQueryable().AsNoTracking();
 
         if (request.FromDate.HasValue)
             query = query.Where(urb => urb.BorrowDate >= request.FromDate.Value);

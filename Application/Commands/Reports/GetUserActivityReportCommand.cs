@@ -9,8 +9,8 @@ public class GetUserActivityReportCommand(
         var userRepo = unitOfWork.GetRepository<User>();
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
-        var usersQuery = userRepo.GetQueryable();
-        var borrowsQuery = userRoomBookRepo.GetQueryable();
+        var usersQuery = userRepo.GetQueryable().AsNoTracking();
+        var borrowsQuery = userRoomBookRepo.GetQueryable().AsNoTracking();
 
         var query = from user in usersQuery
                     join borrow in borrowsQuery on user.Id equals borrow.User.Id into borrowsGroup

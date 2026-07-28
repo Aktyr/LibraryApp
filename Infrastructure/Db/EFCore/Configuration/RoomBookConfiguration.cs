@@ -17,5 +17,8 @@ public class RoomBookConfiguration : IEntityTypeConfiguration<RoomBook>
                .OnDelete(DeleteBehavior.Cascade);
 
         builder.Ignore(rb => rb.AvailableCount);
+
+        builder.HasIndex(rb => rb.Book.Id);
+        builder.HasIndex(rb => rb.Room.Id);
     }
 }

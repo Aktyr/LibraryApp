@@ -6,11 +6,11 @@ namespace WebAPI.Endpoints.HybridAPI.Groups;
 public class BorrowingEndpoints : EndpointBase
 {
     [HttpPost("/borrow")]
-    public async Task<IResult> Borrow(BorrowBookCommand command, BorrowBookRequest request, CancellationToken ct) => Results.Ok(command.Execute(request, ct));
+    public async Task<IResult> Borrow(BorrowBookCommand command, BorrowBookRequest request, CancellationToken ct) => Results.Ok(await command.Execute(request, ct));
 
     [HttpPost("/return")]
-    public async Task<IResult> Return(ReturnBookCommand command, ReturnBookRequest request, CancellationToken ct) => Results.Ok(command.Execute(request, ct));
+    public async Task<IResult> Return(ReturnBookCommand command, ReturnBookRequest request, CancellationToken ct) => Results.Ok(await command.Execute(request, ct));
 
     [HttpPost("/extend")]
-    public async Task<IResult> Extend(ExtendDeadlineCommand command, ExtendDeadlineRequest request, CancellationToken ct) => Results.Ok(command.Execute(request, ct));
+    public async Task<IResult> Extend(ExtendDeadlineCommand command, ExtendDeadlineRequest request, CancellationToken ct) => Results.Ok(await command.Execute(request, ct));
 }

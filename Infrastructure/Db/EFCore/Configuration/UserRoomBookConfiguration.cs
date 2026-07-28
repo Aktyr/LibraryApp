@@ -26,5 +26,10 @@ public class UserRoomBookConfiguration : IEntityTypeConfiguration<UserRoomBook>
                .HasConversion<DateTimeToUtcConverter>();
 
         builder.Ignore(urb => urb.IsReturned);
+
+        builder.HasIndex(urb => urb.BorrowDate);
+        builder.HasIndex(urb => urb.Deadline);
+        builder.HasIndex(urb => urb.User.Id);
+        builder.HasIndex(urb => urb.RoomBook.Id);
     }
 }

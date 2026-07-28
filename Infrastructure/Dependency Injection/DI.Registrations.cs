@@ -1,6 +1,4 @@
-﻿using LibApp.Infrastructure.Db;
-
-namespace LibApp.Infrastructure.DependencyInjection;
+﻿namespace LibApp.Infrastructure.DependencyInjection;
 
 public static partial class DI
 {
@@ -48,8 +46,6 @@ public static partial class DI
             else
                 services.Add(new ServiceDescriptor(type, type, ServiceLifetime.Scoped));
         }
-
-        services.AddScoped<IUserService, UserService>();
 
         return services;
     }
