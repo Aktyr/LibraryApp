@@ -7,7 +7,7 @@ public class LoginCommand(IUnitOfWork unitOfWork, JwtService jwtService) : IGetQ
         var userRepo = unitOfWork.GetRepository<User>();
 
         // Поиск пользователя по email
-        var users = await userRepo.Get(u => u.Email == request.Email, cancellationToken);
+        var users = await userRepo.GetAsync(u => u.Email == request.Email, cancellationToken);
         var user = users.FirstOrDefault();
 
         if (user == null)

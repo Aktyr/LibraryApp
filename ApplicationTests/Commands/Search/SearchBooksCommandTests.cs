@@ -41,7 +41,7 @@ public class SearchBooksCommandTests
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(5)
             .ToList();
-        await bookRepo.AddRange(books, CancellationToken.None);
+        await bookRepo.AddRangeAsync(books, CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest();
@@ -70,7 +70,7 @@ public class SearchBooksCommandTests
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Something Else", Author = "Author C", Publisher = "Matching Publisher", RoomBook = new List<RoomBook>() };
         var book4 = new Book { Id = new Id(Guid.NewGuid()), Title = "No Match", Author = "No Match", Publisher = "Nothing", RoomBook = new List<RoomBook>() };
 
-        await bookRepo.AddRange(new[] { book1, book2, book3, book4 }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book1, book2, book3, book4 }, CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { Query = "matching" };
@@ -96,7 +96,7 @@ public class SearchBooksCommandTests
         var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Clean Code", Author = "Martin", Publisher = "Prentice", RoomBook = new List<RoomBook>() };
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Design Patterns", Author = "Gamma", Publisher = "Addison", RoomBook = new List<RoomBook>() };
 
-        await bookRepo.AddRange(new[] { book1, book2 }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book1, book2 }, CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { Title = "Clean" };
@@ -122,7 +122,7 @@ public class SearchBooksCommandTests
         var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 1", Author = "Robert C. Martin", Publisher = "Pub A", RoomBook = new List<RoomBook>() };
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 2", Author = "Erich Gamma", Publisher = "Pub B", RoomBook = new List<RoomBook>() };
 
-        await bookRepo.AddRange(new[] { book1, book2 }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book1, book2 }, CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { Author = "martin" };
@@ -148,7 +148,7 @@ public class SearchBooksCommandTests
         var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Old Book", Author = "Author", Year = 1990, Publisher = "Pub", RoomBook = new List<RoomBook>() };
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "New Book", Author = "Author", Year = 2010, Publisher = "Pub", RoomBook = new List<RoomBook>() };
 
-        await bookRepo.AddRange(new[] { book1, book2 }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book1, book2 }, CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { YearFrom = 2000 };
@@ -174,7 +174,7 @@ public class SearchBooksCommandTests
         var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Old Book", Author = "Author", Year = 1990, Publisher = "Pub", RoomBook = [] };
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "New Book", Author = "Author", Year = 2010, Publisher = "Pub", RoomBook = [] };
 
-        await bookRepo.AddRange([book1, book2], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { YearTo = 2000 };
@@ -201,7 +201,7 @@ public class SearchBooksCommandTests
         var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 1", Author = "Author", Publisher = "Prentice Hall", RoomBook = [] };
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 2", Author = "Author", Publisher = "Addison Wesley", RoomBook = [] };
 
-        await bookRepo.AddRange([book1, book2], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { Publisher = "prentice" };
@@ -231,7 +231,7 @@ public class SearchBooksCommandTests
         var availableBook = new Book { Id = availableBookId, Title = "Available", Author = "Author", RoomBook = [] };
         var unavailableBook = new Book { Id = unavailableBookId, Title = "Unavailable", Author = "Author", RoomBook = [] };
 
-        await bookRepo.AddRange([availableBook, unavailableBook], CancellationToken.None);
+        await bookRepo.AddRangeAsync([availableBook, unavailableBook], CancellationToken.None);
 
         // Книга с доступными экземплярами: BookCount > BorrowedCount
         var availableRoomBook = new RoomBook
@@ -253,7 +253,7 @@ public class SearchBooksCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await roomBookRepo.AddRange([availableRoomBook, unavailableRoomBook], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([availableRoomBook, unavailableRoomBook], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { AvailableOnly = true };
@@ -281,7 +281,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "A Book", Author = "Author", RoomBook = [] };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "B Book", Author = "Author", RoomBook = [] };
 
-        await bookRepo.AddRange([book1, book2, book3], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "title", SortDescending = true };
@@ -305,7 +305,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 2", Author = "Alice", RoomBook = new List<RoomBook>() };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 3", Author = "Bob", RoomBook = new List<RoomBook>() };
 
-        await bookRepo.AddRange(new[] { book1, book2, book3 }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book1, book2, book3 }, CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "author", SortDescending = false };
@@ -328,7 +328,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 2", Author = "Alice", RoomBook = new List<RoomBook>() };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 3", Author = "Bob", RoomBook = new List<RoomBook>() };
 
-        await bookRepo.AddRange(new[] { book1, book2, book3 }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book1, book2, book3 }, CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "author", SortDescending = false };
@@ -352,7 +352,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 2", Author = "Alice", RoomBook = [] };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 3", Author = "Bob", RoomBook = [] };
 
-        await bookRepo.AddRange([book1, book2, book3], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "author", SortDescending = true };
@@ -376,7 +376,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "New Book", Author = "Author", Year = 2020, RoomBook = new List<RoomBook>() };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Mid Book", Author = "Author", Year = 2005, RoomBook = new List<RoomBook>() };
 
-        await bookRepo.AddRange(new[] { book1, book2, book3 }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book1, book2, book3 }, CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "year", SortDescending = false };
@@ -400,7 +400,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "New Book", Author = "Author", Year = 2020, RoomBook = new List<RoomBook>() };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Mid Book", Author = "Author", Year = 2005, RoomBook = new List<RoomBook>() };
 
-        await bookRepo.AddRange(new[] { book1, book2, book3 }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book1, book2, book3 }, CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "year", SortDescending = true };
@@ -424,7 +424,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 2", Author = "Author", Publisher = "Alpha Press", RoomBook = new List<RoomBook>() };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 3", Author = "Author", Publisher = "Middle Pub", RoomBook = new List<RoomBook>() };
 
-        await bookRepo.AddRange(new[] { book1, book2, book3 }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book1, book2, book3 }, CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "publisher", SortDescending = false };
@@ -448,7 +448,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 2", Author = "Author", Publisher = "Alpha Press", RoomBook = [] };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 3", Author = "Author", Publisher = "Middle Pub", RoomBook = [] };
 
-        await bookRepo.AddRange([book1, book2, book3], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "publisher", SortDescending = true };
@@ -500,7 +500,7 @@ public class SearchBooksCommandTests
         }
         };
 
-        await bookRepo.AddRange([book1, book2, book3], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "popularity", SortDescending = false };
@@ -553,7 +553,7 @@ public class SearchBooksCommandTests
         }
         };
 
-        await bookRepo.AddRange([book1, book2, book3], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "popularity", SortDescending = true };
@@ -577,7 +577,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "A Book", Author = "Author", RoomBook = [] };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "B Book", Author = "Author", RoomBook = [] };
 
-        await bookRepo.AddRange([book1, book2, book3], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = "invalid_field", SortDescending = false };
@@ -600,7 +600,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Wrong Title", Author = "Correct Author", Year = 2005, Publisher = "Test Pub", RoomBook = [] };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Matching Title", Author = "Wrong Author", Year = 1990, Publisher = "Test Pub", RoomBook = [] };
 
-        await bookRepo.AddRange([book1, book2, book3], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest
@@ -632,7 +632,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Mid Book", Author = "Author", Year = 2000, Publisher = "Pub", RoomBook = [] };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "New Book", Author = "Author", Year = 2010, Publisher = "Pub", RoomBook = [] };
 
-        await bookRepo.AddRange([book1, book2, book3], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { YearFrom = 1995, YearTo = 2005 };
@@ -660,7 +660,7 @@ public class SearchBooksCommandTests
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "A Book", Author = "Author", RoomBook = [] };
         var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "B Book", Author = "Author", RoomBook = [] };
 
-        await bookRepo.AddRange([book1, book2, book3], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { SortBy = null }; // Default to title
@@ -682,7 +682,7 @@ public class SearchBooksCommandTests
 
         var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Some Book", Author = "Author", Year = 2020, Publisher = "Pub", RoomBook = [] };
 
-        await bookRepo.AddRange([book1], CancellationToken.None);
+        await bookRepo.AddRangeAsync([book1], CancellationToken.None);
 
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { Title = "NonExistent" };

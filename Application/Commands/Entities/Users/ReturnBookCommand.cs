@@ -12,7 +12,7 @@ public class ReturnBookCommand(
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
         // Валидация
-        var userRoomBook = (await userRoomBookRepo.Get(urb => urb.Id.Value == request.UserRoomBookId, cancellationToken)).FirstOrDefault()
+        var userRoomBook = (await userRoomBookRepo.GetAsync(urb => urb.Id.Value == request.UserRoomBookId, cancellationToken)).FirstOrDefault()
             ?? throw new UserRoomBookNotFoundException();
 
         var validationResult = await validator.ValidateReturnAsync(userRoomBook, cancellationToken);

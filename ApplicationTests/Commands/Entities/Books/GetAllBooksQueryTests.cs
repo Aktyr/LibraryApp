@@ -20,7 +20,7 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(7)
             .ToList();
-        await bookRepo.AddRange(books.AsEnumerable(), CancellationToken.None);
+        await bookRepo.AddRangeAsync(books.AsEnumerable(), CancellationToken.None);
 
         var getAllBooksQuery = new GetAllBooksCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -80,7 +80,7 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.Publisher, f => "Test Publisher")
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
-        await bookRepo.AddRange(new[] { book }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
 
         var getAllBooksQuery = new GetAllBooksCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -113,7 +113,7 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(5)
             .ToList();
-        await bookRepo.AddRange(books.AsEnumerable(), CancellationToken.None);
+        await bookRepo.AddRangeAsync(books.AsEnumerable(), CancellationToken.None);
 
         var getAllBooksQuery = new GetAllBooksCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -135,10 +135,10 @@ public class GetAllBooksQueryTests
         var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book A", Author = "Author", RoomBook = new List<RoomBook>() };
         var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book B", Author = "Author", RoomBook = new List<RoomBook>() };
 
-        await repo.AddRange(new[] { book1, book2 }, CancellationToken.None);
+        await repo.AddRangeAsync(new[] { book1, book2 }, CancellationToken.None);
 
         // Act
-        var result = await repo.GetWithoutTracking(b => b.Title == "Book A", CancellationToken.None);
+        var result = await repo.GetWithoutTrackingAsync(b => b.Title == "Book A", CancellationToken.None);
 
         // Assert
         Assert.Multiple(() =>

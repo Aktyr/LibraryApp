@@ -17,7 +17,7 @@ public class GetRoomQueryTests
             .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
             .Generate(10)
             .ToList();
-        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
+        await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
 
         var targetRoom = rooms[3];
         var getRoomQuery = new GetRoomCommand(unitOfWork, Converter); // no-op placeholder
@@ -42,7 +42,7 @@ public class GetRoomQueryTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
-        await roomRepo.AddRange(new Bogus.Faker<Room>()
+        await roomRepo.AddRangeAsync(new Bogus.Faker<Room>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Name, f => f.Name.FirstName())
                                    .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
@@ -104,7 +104,7 @@ public class GetRoomQueryTests
             }
         }
         };
-        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
 
         var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = roomId };
@@ -154,7 +154,7 @@ public class GetRoomQueryTests
             }
         }
         };
-        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
 
         var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = roomId };
@@ -186,7 +186,7 @@ public class GetRoomQueryTests
             Name = "Empty Room",
             RoomBooks = new List<RoomBook>()
         };
-        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
 
         var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = room.Id };

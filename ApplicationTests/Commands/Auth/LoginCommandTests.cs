@@ -37,7 +37,7 @@ public class LoginCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange([user], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
@@ -61,7 +61,7 @@ public class LoginCommandTests
             Assert.That(result.UserId, Is.EqualTo(userId));
         });
 
-        var users = await userRepo.Get(x => x.Email == email, CancellationToken.None);
+        var users = await userRepo.GetAsync(x => x.Email == email, CancellationToken.None);
         Assert.That(users.Count(), Is.EqualTo(1));
     }
 
@@ -88,7 +88,7 @@ public class LoginCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange([user], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
@@ -118,7 +118,7 @@ public class LoginCommandTests
             FirstName = "User",
             RoomBooks = []
         };
-        await userRepo.AddRange([user], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
@@ -149,7 +149,7 @@ public class LoginCommandTests
             FirstName = "User",
             RoomBooks = []
         };
-        await userRepo.AddRange([user], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
@@ -179,7 +179,7 @@ public class LoginCommandTests
             FirstName = "User",
             RoomBooks = []
         };
-        await userRepo.AddRange([user], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
@@ -214,7 +214,7 @@ public class LoginCommandTests
             FirstName = "User",
             RoomBooks = []
         };
-        await userRepo.AddRange([user], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest
@@ -248,7 +248,7 @@ public class LoginCommandTests
             FirstName = "User",
             RoomBooks = []
         };
-        await userRepo.AddRange([user], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var loginCommand = new LoginCommand(unitOfWork, JwtService);
         var request = new LoginRequest

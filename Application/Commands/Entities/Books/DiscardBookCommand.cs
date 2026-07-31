@@ -13,11 +13,11 @@ public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
 
         // Валидация
         // Находим книгу
-        var books = await bookRepo.Get(b => b.Id.Value == request.BookId, ct);
+        var books = await bookRepo.GetAsync(b => b.Id.Value == request.BookId, ct);
         var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
 
         // Находим RoomBook
-        var roomBooks = await roomBookRepo.Get(rb => rb.Book.Id.Value == request.BookId, ct);
+        var roomBooks = await roomBookRepo.GetAsync(rb => rb.Book.Id.Value == request.BookId, ct);
         var roomBook = roomBooks.FirstOrDefault();
 
         if (roomBook == null)
@@ -54,9 +54,9 @@ public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
         await unitOfWork.BeginTransactionAsync(ct);
         try
         {
-            await discardedRepo.Add(discarded, ct);
+            await discardedRepo.AddAsync(discarded, ct);
             roomBook.BookCount -= request.Amount;
-            await roomBookRepo.Update(roomBook, ct);
+            await roomBookRepo.UpdateAsync(roomBook, ct);
             await unitOfWork.SaveChangesAsync(ct);
             await unitOfWork.CommitTransactionAsync(ct);
         }

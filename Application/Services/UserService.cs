@@ -29,7 +29,7 @@ public class UserService : IUserService, IService
 
         // Проверка уникальности email
         var userRepo = _unitOfWork.GetRepository<User>();
-        var existing = await userRepo.Get(u => u.Email == email, cancellationToken);
+        var existing = await userRepo.GetAsync(u => u.Email == email, cancellationToken);
         if (existing.Any())
             throw new LibValidationException { ExceptionDetails = ["Email уже зарегистрирован"] };
 
@@ -53,7 +53,7 @@ public class UserService : IUserService, IService
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
-            await userRepo.Add(user, cancellationToken);
+            await userRepo.AddAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
         }

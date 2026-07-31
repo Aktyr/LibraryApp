@@ -53,7 +53,7 @@ public class ReturnBookCommandTests
             ReturnDate = DateTime.Now.AddDays(-1),  // Уже возвращена
             RoomBook = new RoomBook { Id = new Id(Guid.NewGuid()) }
         };
-        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
+        await userRoomBookRepo.AddRangeAsync(new[] { userRoomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
             unitOfWork, CreateValidator(), CreatePenaltyService(), notificationMock.Object);
@@ -94,8 +94,8 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
-        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
+        await userRoomBookRepo.AddRangeAsync(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(unitOfWork, CreateValidator(), CreatePenaltyService(), notificationMock.Object);
 
@@ -160,8 +160,8 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
-        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
+        await userRoomBookRepo.AddRangeAsync(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
             unitOfWork,
@@ -226,8 +226,8 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
-        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
+        await userRoomBookRepo.AddRangeAsync(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
             unitOfWork,
@@ -293,8 +293,8 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
-        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
+        await userRoomBookRepo.AddRangeAsync(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
             unitOfWork,
@@ -354,8 +354,8 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
-        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
+        await userRoomBookRepo.AddRangeAsync(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
             unitOfWork,
@@ -419,8 +419,8 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange(new[] { userRoomBook }, CancellationToken.None);
-        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
+        await userRoomBookRepo.AddRangeAsync(new[] { userRoomBook }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
 
         var command = new ReturnBookCommand(
             unitOfWork,
@@ -487,8 +487,8 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange([userRoomBook]);
-        await roomBookRepo.AddRange([roomBook]);
+        await userRoomBookRepo.AddRangeAsync([userRoomBook]);
+        await roomBookRepo.AddRangeAsync([roomBook]);
 
         var command = new ReturnBookCommand(
             unitOfWork2,
@@ -529,7 +529,7 @@ public class ReturnBookCommandTests
             Deadline = new DateTime(2024, 1, 15, 10, 0, 0),
             ReturnDate = null
         };
-        await userRoomBookRepo.AddRange([userRoomBook]);
+        await userRoomBookRepo.AddRangeAsync([userRoomBook]);
 
         var command = new ExtendDeadlineCommand(unitOfWork3, CreateValidator(settings));
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 0 };
@@ -571,8 +571,8 @@ public class ReturnBookCommandTests
             RoomBook = roomBook
         };
 
-        await userRoomBookRepo.AddRange([userRoomBook]);
-        await roomBookRepo.AddRange([roomBook]);
+        await userRoomBookRepo.AddRangeAsync([userRoomBook]);
+        await roomBookRepo.AddRangeAsync([roomBook]);
 
         var command = new ReturnBookCommand(
             unitOfWork4,

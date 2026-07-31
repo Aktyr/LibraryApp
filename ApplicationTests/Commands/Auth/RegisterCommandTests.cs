@@ -21,7 +21,7 @@ public class RegisterCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        await userRepo.AddRange(new Bogus.Faker<User>()
+        await userRepo.AddRangeAsync(new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Email, f => f.Internet.Email())
             .RuleFor(x => x.LastName, f => f.Name.LastName())
@@ -52,7 +52,7 @@ public class RegisterCommandTests
             Assert.That(response.Email, Is.EqualTo(email));
             Assert.That(response.Role, Is.EqualTo(UserRole.Reader));
 
-            var users = await userRepo.Get(x => x.Email == email); // Получаем список почт
+            var users = await userRepo.GetAsync(x => x.Email == email); // Получаем список почт
             Assert.That(users.Any(), Is.True);
             var user = users.First(); // Получаем нового пользователя
             Assert.That(user.LastName, Is.EqualTo(lastName));
@@ -84,7 +84,7 @@ public class RegisterCommandTests
                 RoomBooks = []
             };
 
-            await repo.AddRange([user], cancellationToken);
+            await repo.AddRangeAsync([user], cancellationToken);
             return user;
         }
     }
@@ -105,7 +105,7 @@ public class RegisterCommandTests
             FirstName = "User",
             ContactInfo = email
         };
-        await userRepo.AddRange([existingUser], CancellationToken.None);
+        await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
         var registerCommand = new RegisterCommand(new FakeUserService(unitOfWork), JwtService);
         var registerRequest = new RegisterRequest
@@ -142,7 +142,7 @@ public class RegisterCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = unitOfWork.GetRepository<User>();
-        await userRepo.AddRange(new Bogus.Faker<User>()
+        await userRepo.AddRangeAsync(new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Email, f => f.Internet.Email())
             .Generate(3)
@@ -168,7 +168,7 @@ public class RegisterCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        await userRepo.AddRange(new Bogus.Faker<User>()
+        await userRepo.AddRangeAsync(new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Email, f => f.Internet.Email())
             .Generate(3)

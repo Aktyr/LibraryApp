@@ -18,7 +18,7 @@ public class CreateRoomCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
-        await roomRepo.AddRange(new Bogus.Faker<Room>()
+        await roomRepo.AddRangeAsync(new Bogus.Faker<Room>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Name, f => f.Name.FirstName())
                                    .Generate(10)
@@ -34,7 +34,7 @@ public class CreateRoomCommandTests
         // Assert
         Assert.Multiple(async () =>
         {
-            Assert.That((await roomRepo.Get(x => x.Name == roomName)).Any(), Is.True);
+            Assert.That((await roomRepo.GetAsync(x => x.Name == roomName)).Any(), Is.True);
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(roomRepo.Entities, Has.Count.EqualTo(11));
         });
@@ -51,12 +51,12 @@ public class CreateRoomCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
-        await roomRepo.AddRange(new Bogus.Faker<Room>()
+        await roomRepo.AddRangeAsync(new Bogus.Faker<Room>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Name, f => f.Name.FirstName())
                                    .Generate(10)
                                    .AsEnumerable());
-        (await roomRepo.Get()).Last().Name = roomName;
+        (await roomRepo.GetAsync()).Last().Name = roomName;
 
         var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
         var createRoomRequest = new CreateRoomRequest(roomName, new List<Guid>());
@@ -70,7 +70,7 @@ public class CreateRoomCommandTests
     {
         var unitOfWork = new FakeUnitOfWork();
         var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
-        await roomRepo.AddRange(new Bogus.Faker<Room>()
+        await roomRepo.AddRangeAsync(new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
             .Generate(10)

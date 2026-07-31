@@ -22,7 +22,7 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate(10)
             .ToList();
-        await bookRepo.AddRange(books.AsEnumerable(), CancellationToken.None);
+        await bookRepo.AddRangeAsync(books.AsEnumerable(), CancellationToken.None);
 
         var bookToUpdate = books[4];
         var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
@@ -44,7 +44,7 @@ public class UpdateBookCommandTests
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Book updated successfully."));
 
-            var updatedBook = (await bookRepo.Get(x => x.Id.Value == bookToUpdate.Id.Value)).FirstOrDefault();
+            var updatedBook = (await bookRepo.GetAsync(x => x.Id.Value == bookToUpdate.Id.Value)).FirstOrDefault();
             Assert.That(updatedBook, Is.Not.Null);
             Assert.That(updatedBook!.Title, Is.EqualTo("Updated Title"));
             Assert.That(updatedBook.Author, Is.EqualTo("Updated Author"));
@@ -64,7 +64,7 @@ public class UpdateBookCommandTests
         var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
 
         // Создаем 10 тестовых книг
-        await bookRepo.AddRange(new Bogus.Faker<Book>()
+        await bookRepo.AddRangeAsync(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
@@ -125,7 +125,7 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Publisher, f => "Original Publisher")
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
-        await bookRepo.AddRange(new[] { book }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
 
         var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
@@ -146,7 +146,7 @@ public class UpdateBookCommandTests
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Book updated successfully."));
 
-            var updatedBook = (await bookRepo.Get(x => x.Id.Value == book.Id.Value)).FirstOrDefault();
+            var updatedBook = (await bookRepo.GetAsync(x => x.Id.Value == book.Id.Value)).FirstOrDefault();
             Assert.That(updatedBook, Is.Not.Null);
             Assert.That(updatedBook!.Title, Is.EqualTo("Original Title"));
         });
@@ -166,7 +166,7 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Publisher, f => "Original Publisher")
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
-        await bookRepo.AddRange(new[] { book }, CancellationToken.None);
+        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
 
         var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
@@ -198,7 +198,7 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Publisher, f => "Original Publisher")
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
-        await bookRepo.AddRange([book]);
+        await bookRepo.AddRangeAsync([book]);
 
         var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
@@ -228,7 +228,7 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Publisher, f => "Original Publisher")
             .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
             .Generate();
-        await bookRepo.AddRange([book]);
+        await bookRepo.AddRangeAsync([book]);
 
         var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
@@ -248,7 +248,7 @@ public class UpdateBookCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var updatedBook = (await bookRepo.Get(x => x.Id.Value == book.Id.Value)).FirstOrDefault();
+            var updatedBook = (await bookRepo.GetAsync(x => x.Id.Value == book.Id.Value)).FirstOrDefault();
             Assert.That(updatedBook, Is.Not.Null);
             Assert.That(updatedBook!.Title, Is.EqualTo("T"));
             Assert.That(updatedBook.Author, Is.EqualTo("A"));

@@ -106,7 +106,7 @@ public class DeadlineCheckServiceTests
             }
         };
 
-        await repo.AddRange([userRoomBook]);
+        await repo.AddRangeAsync([userRoomBook]);
 
         var deadlineSettings = new DeadlineCheckSettings
         {
@@ -164,7 +164,7 @@ public class DeadlineCheckServiceTests
             }
         };
 
-        await repo.AddRange([userRoomBook]);
+        await repo.AddRangeAsync([userRoomBook]);
 
         var penaltySettings = new PenaltySettings
         {
@@ -230,7 +230,7 @@ public class DeadlineCheckServiceTests
             }
         };
 
-        await repo.AddRange(new[] { userRoomBook }, CancellationToken.None);
+        await repo.AddRangeAsync(new[] { userRoomBook }, CancellationToken.None);
 
         var penaltySettings = new PenaltySettings
         {
@@ -477,7 +477,7 @@ public class DeadlineCheckServiceTests
             }
         };
 
-        await repo.AddRange([soonDueBook, overdueBook]);
+        await repo.AddRangeAsync([soonDueBook, overdueBook]);
 
         var deadlineSettings = new DeadlineCheckSettings
         {
@@ -541,7 +541,7 @@ public class DeadlineCheckServiceTests
             }
         };
 
-        await repo.AddRange([bookWithoutDeadline]);
+        await repo.AddRangeAsync([bookWithoutDeadline]);
 
         var service = CreateService(repo, notificationMock: notificationMock);
 
@@ -600,7 +600,7 @@ public class DeadlineCheckServiceTests
             }
         };
 
-        await repo.AddRange([returnedBook]);
+        await repo.AddRangeAsync([returnedBook]);
 
         var service = CreateService(repo, notificationMock: notificationMock);
 

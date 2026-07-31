@@ -31,10 +31,9 @@ public class RoomBookSynchronizer : IRoomBookSynchronizer, IService
         // Если коллекция не загружена, загружаем её явно через репозиторий
         if (room.RoomBooks == null)
         {
-            var loaded = await roomBookRepo.GetWithIncludesAsync(
-                predicate: rb => rb.Room.Id.Value == room.Id.Value,
-                includePaths: IncludePaths.RoomBook.Book
-            );
+            var loaded = await roomBookRepo.GetAsync(
+                filter: rb => rb.Room.Id.Value == room.Id.Value,
+                includePaths: IncludePaths.RoomBook.Book);
             room.RoomBooks = loaded.ToList();
         }
 
@@ -57,13 +56,13 @@ public class RoomBookSynchronizer : IRoomBookSynchronizer, IService
         foreach (var rb in toRemove)
         {
             room.RoomBooks.Remove(rb);
-            await roomBookRepo.Remove(rb, cancellationToken);
+            await roomBookRepo.RemoveAsync(rb, cancellationToken);
             _logger.LogDebug($"Удалена запись RoomBook с Id {rb.Id.Value} из комнаты {room.Id.Value}");
         }
 
         // Загрузка книг, упомянутых в DTO
         var allBookIds = dtoList.Select(d => new Id(d.BookId)).Distinct().ToList();
-        var books = await bookRepo.Get(b => allBookIds.Contains(b.Id), cancellationToken);
+        var books = await bookRepo.GetAsync(b => allBookIds.Contains(b.Id), cancellationToken);
         var bookDict = books.ToDictionary(b => b.Id.Value);
 
         // Проверка, что все книги найдены

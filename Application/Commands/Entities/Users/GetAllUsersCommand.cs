@@ -6,7 +6,7 @@ public class GetAllUsersQuery(IUnitOfWork unitOfWork, IConverter<User, UserDTO> 
     public async Task<UserResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
     {
         var userRepo = unitOfWork.GetRepository<User>();
-        var users = await userRepo.GetWithoutTracking(cancellationToken);
+        var users = await userRepo.GetWithoutTrackingAsync(cancellationToken);
         var userDTOs = users.Select(user => userConverter.ToDto(user)).ToArray();
 
         return ResponseFactory.List<User, UserDTO, UserResponse>(userDTOs);

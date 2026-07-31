@@ -17,7 +17,7 @@ public class CreateBookCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
-        await bookRepo.AddRange(new Bogus.Faker<Book>()
+        await bookRepo.AddRangeAsync(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
@@ -41,7 +41,7 @@ public class CreateBookCommandTests
         // Assert
         Assert.Multiple(async () =>
         {
-            Assert.That((await bookRepo.Get(x => x.Title == title)).Any(), Is.True);
+            Assert.That((await bookRepo.GetAsync(x => x.Title == title)).Any(), Is.True);
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(bookRepo.Entities, Has.Count.EqualTo(11));
         });
@@ -62,7 +62,7 @@ public class CreateBookCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
-        await bookRepo.AddRange(new Bogus.Faker<Book>()
+        await bookRepo.AddRangeAsync(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
@@ -91,7 +91,7 @@ public class CreateBookCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
-        await bookRepo.AddRange(new Bogus.Faker<Book>()
+        await bookRepo.AddRangeAsync(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
@@ -121,7 +121,7 @@ public class CreateBookCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
-        await bookRepo.AddRange(new Bogus.Faker<Book>()
+        await bookRepo.AddRangeAsync(new Bogus.Faker<Book>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Title, f => f.Lorem.Sentence(3))
                                    .RuleFor(x => x.Author, f => f.Name.FullName())

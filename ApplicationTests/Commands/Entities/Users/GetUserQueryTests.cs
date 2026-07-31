@@ -21,7 +21,7 @@ public class GetUserQueryTests
             .Generate(10)
             .ToList();
 
-        await userRepo.AddRange(users.AsEnumerable(), CancellationToken.None);
+        await userRepo.AddRangeAsync(users.AsEnumerable(), CancellationToken.None);
 
         var targetUser = users[4];
         var getUserQuery = new GetUserQuery(unitOfWork, Converter);
@@ -52,7 +52,7 @@ public class GetUserQueryTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        await userRepo.AddRange(new Bogus.Faker<User>()
+        await userRepo.AddRangeAsync(new Bogus.Faker<User>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.LastName, f => f.Name.LastName())
                                    .RuleFor(x => x.FirstName, f => f.Name.FirstName())
@@ -129,7 +129,7 @@ public class GetUserQueryTests
             }
         };
 
-        await userRepo.AddRange(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
 
         var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
@@ -168,7 +168,7 @@ public class GetUserQueryTests
             RoomBooks = new List<UserRoomBook>() // Пустой список
         };
 
-        await userRepo.AddRange(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
 
         var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
@@ -221,7 +221,7 @@ public class GetUserQueryTests
             }
         };
 
-        await userRepo.AddRange(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
 
         var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
@@ -257,7 +257,7 @@ public class GetUserQueryTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRangeAsync([user]);
 
         var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = new Id(specificGuid) };
@@ -297,7 +297,7 @@ public class GetUserQueryTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRangeAsync([user]);
 
         var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
@@ -329,7 +329,7 @@ public class GetUserQueryTests
             ContactInfo = "test@test.com"
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRangeAsync([user]);
 
         var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = user.Id };
@@ -357,7 +357,7 @@ public class GetUserQueryTests
             ContactInfo = "cancel@token.ru"
         };
 
-        await userRepo.AddRange([user]);
+        await userRepo.AddRangeAsync([user]);
 
         var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
@@ -396,7 +396,7 @@ public class GetUserQueryTests
             ContactInfo = "ivanov2@example.com" // Разный контакт
         };
 
-        await userRepo.AddRange(new[] { user1, user2 }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user1, user2 }, CancellationToken.None);
 
         var getUserQuery = new GetUserQuery(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = user2.Id };

@@ -25,7 +25,7 @@ public class CreateBookCommand(
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Добавление 
-        await bookRepo.Add(book, cancellationToken);
+        await bookRepo.AddAsync(book, cancellationToken);
         
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

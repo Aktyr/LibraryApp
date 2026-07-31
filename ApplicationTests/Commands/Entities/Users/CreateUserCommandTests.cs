@@ -18,7 +18,7 @@ public class CreateUserCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        await userRepo.AddRange(new Bogus.Faker<User>()
+        await userRepo.AddRangeAsync(new Bogus.Faker<User>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.LastName, f => f.Name.LastName())
                                    .RuleFor(x => x.FirstName, f => f.Name.FirstName())
@@ -43,7 +43,7 @@ public class CreateUserCommandTests
         Assert.Multiple(async () =>
         {
             // Проверяем, что пользователь был создан
-            var users = await userRepo.Get(x =>
+            var users = await userRepo.GetAsync(x =>
                 x.LastName == lastName &&
                 x.FirstName == firstName &&
                 x.MiddleName == middleName);
@@ -67,7 +67,7 @@ public class CreateUserCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        await userRepo.AddRange(new Bogus.Faker<User>()
+        await userRepo.AddRangeAsync(new Bogus.Faker<User>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.LastName, f => f.Name.LastName())
                                    .RuleFor(x => x.FirstName, f => f.Name.FirstName())
@@ -127,7 +127,7 @@ public class CreateUserCommandTests
             ContactInfo = "ivanov@example.com",
             RoomBooks = []
         };
-        await userRepo.AddRange([existingUser], CancellationToken.None);
+        await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
         var createUserCommand = new CreateUserCommand(new FakeUserService(unitOfWork));
 
@@ -147,7 +147,7 @@ public class CreateUserCommandTests
         Assert.Multiple(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
-            var users = await userRepo.Get(x => x.LastName == "Иванов");
+            var users = await userRepo.GetAsync(x => x.LastName == "Иванов");
             Assert.That(users.Count(), Is.EqualTo(2)); // Должно быть 2 пользователя с фамилией Иванов
         });
     }
@@ -175,7 +175,7 @@ public class CreateUserCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var createdUser = (await userRepo.Get(x => x.LastName == "Новиков")).First();
+            var createdUser = (await userRepo.GetAsync(x => x.LastName == "Новиков")).First();
             Assert.That(createdUser.RoomBooks, Is.Not.Null);
             Assert.That(createdUser.RoomBooks, Is.Empty); // Коллекция должна быть инициализирована пустой
         });
@@ -185,7 +185,7 @@ public class CreateUserCommandTests
     {
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        await userRepo.AddRange(new Bogus.Faker<User>()
+        await userRepo.AddRangeAsync(new Bogus.Faker<User>()
                       .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                       .RuleFor(x => x.LastName, f => f.Name.LastName())
                       .RuleFor(x => x.FirstName, f => f.Name.FirstName())
@@ -252,7 +252,7 @@ public class CreateUserCommandTests
                 RoomBooks = []
             };
 
-            await repo.AddRange([user], cancellationToken);
+            await repo.AddRangeAsync([user], cancellationToken);
             return user;
         }
     }

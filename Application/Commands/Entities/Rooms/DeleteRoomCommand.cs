@@ -6,12 +6,14 @@ public class DeleteRoomCommand(IUnitOfWork unitOfWork)
     public async Task<BasicCreateDeleteResponse> Execute(DeleteRoomRequest request, CancellationToken cancellationToken)
     {
         var roomRepo = unitOfWork.GetRepository<Room>();
-        var rooms = await roomRepo.GetWithIncludesAsync(r => r.Id.Value == request.Id.Value, IncludePaths.Room.RoomBooks);
+        var rooms = await roomRepo.GetAsync(
+            r => r.Id.Value == request.Id.Value,
+            includePaths: IncludePaths.Room.RoomBooks); 
         var room = rooms.FirstOrDefault() ?? throw new RoomNotFoundException();
         if (room.RoomBooks?.Any() == true)
             throw new RoomDeletionException("Not possible to delete a room containing books");
 
-        await roomRepo.Remove(room, cancellationToken);
+        await roomRepo.RemoveAsync(room, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return ResponseFactory.Deleted<Room>();
     }

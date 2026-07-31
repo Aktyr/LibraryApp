@@ -19,7 +19,7 @@ public class DeleteUserCommandTests
             .Generate(10)
             .ToList();
 
-        await userRepo.AddRange(users.AsEnumerable(), CancellationToken.None);
+        await userRepo.AddRangeAsync(users.AsEnumerable(), CancellationToken.None);
 
         var userToDelete = users[3]; // Выбираем пользователя для удаления
         var deleteUserCommand = new DeleteUserCommand(unitOfWork);
@@ -50,7 +50,7 @@ public class DeleteUserCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        await userRepo.AddRange(new Bogus.Faker<User>()
+        await userRepo.AddRangeAsync(new Bogus.Faker<User>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.LastName, f => f.Name.LastName())
                                    .RuleFor(x => x.FirstName, f => f.Name.FirstName())
@@ -112,7 +112,7 @@ public class DeleteUserCommandTests
             }
         };
 
-        await userRepo.AddRange(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
 
         var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = userId };
@@ -145,7 +145,7 @@ public class DeleteUserCommandTests
             .Generate(5)
             .ToList();
 
-        await userRepo.AddRange(users.AsEnumerable(), CancellationToken.None);
+        await userRepo.AddRangeAsync(users.AsEnumerable(), CancellationToken.None);
 
         var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var initialCount = userRepo.Entities.Count;
@@ -179,7 +179,7 @@ public class DeleteUserCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
 
         var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = user.Id };
@@ -212,7 +212,7 @@ public class DeleteUserCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
 
         var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = user.Id };

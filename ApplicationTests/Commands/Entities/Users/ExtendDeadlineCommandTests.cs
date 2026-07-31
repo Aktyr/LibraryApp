@@ -41,7 +41,7 @@ public class ExtendDeadlineCommandTests
             Deadline = DateTime.Now.AddDays(5),
             ReturnDate = null // Книга на руках
         };
-        await userRoomBookRepo.AddRange([userRoomBook]);
+        await userRoomBookRepo.AddRangeAsync([userRoomBook]);
 
         var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(settings));
 
@@ -70,7 +70,7 @@ public class ExtendDeadlineCommandTests
             Deadline = initialDeadline,
             ReturnDate = null
         };
-        await userRoomBookRepo.AddRange([userRoomBook]);
+        await userRoomBookRepo.AddRangeAsync([userRoomBook]);
 
         var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator());
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 7 };
@@ -103,7 +103,7 @@ public class ExtendDeadlineCommandTests
             Deadline = new DateTime(2024, 1, 15, 10, 0, 0),
             ReturnDate = null
         };
-        await userRoomBookRepo.AddRange([userRoomBook]);
+        await userRoomBookRepo.AddRangeAsync([userRoomBook]);
 
         var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(settings));
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 0 };
@@ -130,7 +130,7 @@ public class ExtendDeadlineCommandTests
             Deadline = initialDeadline,
             ReturnDate = null
         };
-        await userRoomBookRepo.AddRange([userRoomBook]);
+        await userRoomBookRepo.AddRangeAsync([userRoomBook]);
 
         var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator());
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 7 };

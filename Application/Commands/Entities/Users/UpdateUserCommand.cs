@@ -8,7 +8,7 @@ public class UpdateUserCommand(
     public async Task<BasicCreateDeleteResponse> Execute(UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var userRepo = unitOfWork.GetRepository<User>();
-        var users = await userRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
+        var users = await userRepo.GetAsync(x => x.Id.Value == request.Id.Value, cancellationToken);
         var user = users.FirstOrDefault() ?? throw new UserNotFoundException();
 
         // Временное DTO для валидации
@@ -32,7 +32,7 @@ public class UpdateUserCommand(
         user.MiddleName = request.MiddleName;
         user.ContactInfo = request.ContactInfo;
 
-        await userRepo.Update(user, cancellationToken);
+        await userRepo.UpdateAsync(user, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return ResponseFactory.Updated<User>();
     }

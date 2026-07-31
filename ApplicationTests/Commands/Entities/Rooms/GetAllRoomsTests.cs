@@ -17,7 +17,7 @@ public class GetAllRoomsTests
             .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
             .Generate(7)
             .ToList();
-        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
+        await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
 
         var getAllRooms = new GetAllRoomsCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -92,7 +92,7 @@ public class GetAllRoomsTests
             }
         }
         };
-        await roomRepo.AddRange(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
 
         var getAllRooms = new GetAllRoomsCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -137,7 +137,7 @@ public class GetAllRoomsTests
                 RoomBooks = new List<RoomBook>()
             }
         };
-        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
+        await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
 
         var getAllRooms = new GetAllRoomsCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -166,7 +166,7 @@ public class GetAllRoomsTests
             .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
             .Generate(3)
             .ToList();
-        await roomRepo.AddRange(rooms.AsEnumerable());
+        await roomRepo.AddRangeAsync(rooms.AsEnumerable());
 
         var getAllRooms = new GetAllRoomsCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();

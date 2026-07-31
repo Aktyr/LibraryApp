@@ -64,7 +64,7 @@ public class GetUserRoomBooksQueryTests
             RoomBook = new RoomBook { Book = new Book { Title = "Book 2", Author = "Author 2" }, Room = new Room { Name = "Room B" } }
         };
 
-        await repo.AddRange(new[] { urb1, urb2 }, CancellationToken.None);
+        await repo.AddRangeAsync(new[] { urb1, urb2 }, CancellationToken.None);
 
         var query = new GetUserRoomBooksQuery(unitOfWork, converter, CreateValidator());
         var request = new GetUserBooksRequest { UserId = userId };

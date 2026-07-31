@@ -11,9 +11,9 @@ public class UpdateRoomCommand(
     {
         var roomRepo = unitOfWork.GetRepository<Room>();
 
-        var room = (await roomRepo.GetWithIncludesAsync(
-            r => r.Id.Value == request.Id.Value,    
-            IncludePaths.Room.RoomBooksBook)).FirstOrDefault() 
+        var room = (await roomRepo.GetAsync(
+            r => r.Id.Value == request.Id.Value,
+            includePaths: IncludePaths.Room.RoomBooksBook)).FirstOrDefault()
             ?? throw new RoomNotFoundException();
 
         // Валидация имени и проверка уникальности
@@ -50,7 +50,7 @@ public class UpdateRoomCommand(
     private async Task<bool> IsNameTakenAsync(string name, CancellationToken ct)
     {
         var repo = unitOfWork.GetRepository<Room>();
-        var existing = await repo.GetWithoutTracking(r => r.Name == name, ct);
+        var existing = await repo.GetWithoutTrackingAsync(r => r.Name == name, ct);
         return existing.Any();
     }
 }

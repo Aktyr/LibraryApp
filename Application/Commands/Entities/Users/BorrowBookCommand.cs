@@ -11,13 +11,13 @@ public class BorrowBookCommand(
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
         // Валидация
-        var user = (await userRepo.Get(u => u.Id.Value == request.UserId, cancellationToken)).FirstOrDefault()
+        var user = (await userRepo.GetAsync(u => u.Id.Value == request.UserId, cancellationToken)).FirstOrDefault()
             ?? throw new UserNotFoundException();
 
-        var roomBook = (await roomBookRepo.Get(rb => rb.Id.Value == request.RoomBookId, cancellationToken)).FirstOrDefault()
+        var roomBook = (await roomBookRepo.GetAsync(rb => rb.Id.Value == request.RoomBookId, cancellationToken)).FirstOrDefault()
             ?? throw new UserRoomBookNotFoundException();
 
-        var existingActive = await userRoomBookRepo.Get(
+        var existingActive = await userRoomBookRepo.GetAsync(
             urb => urb.User.Id.Value == request.UserId
             && urb.RoomBook.Id.Value == request.RoomBookId
             && !urb.IsReturned, cancellationToken);

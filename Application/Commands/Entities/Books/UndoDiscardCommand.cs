@@ -7,10 +7,10 @@ public class UndoDiscardCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
         var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
-        var discarded = (await discardedRepo.Get(d => d.Id.Value == request.DiscardId, ct)).FirstOrDefault()
+        var discarded = (await discardedRepo.GetAsync(d => d.Id.Value == request.DiscardId, ct)).FirstOrDefault()
             ?? throw new LibValidationException { ExceptionDetails = ["Запись о списании не найдена"] };
 
-        var roomBooks = await roomBookRepo.Get(rb => rb.Book.Id.Value == discarded.Book.Id.Value
+        var roomBooks = await roomBookRepo.GetAsync(rb => rb.Book.Id.Value == discarded.Book.Id.Value
                                                    && rb.Room.Id == discarded.RoomId, ct);
         var roomBook = roomBooks.FirstOrDefault()
             ?? throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнате"] };
@@ -20,8 +20,8 @@ public class UndoDiscardCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
         try
         {
             roomBook.BookCount += discarded.Amount;
-            await roomBookRepo.Update(roomBook, ct);
-            await discardedRepo.Remove(discarded, ct);
+            await roomBookRepo.UpdateAsync(roomBook, ct);
+            await discardedRepo.RemoveAsync(discarded, ct);
 
             await unitOfWork.SaveChangesAsync(ct);
             await unitOfWork.CommitTransactionAsync(ct);

@@ -8,7 +8,7 @@ public class ExtendDeadlineCommand(
     {
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         // Валидация
-        var userRoomBook = (await userRoomBookRepo.Get(urb => urb.Id.Value == request.UserRoomBookId, cancellationToken)).FirstOrDefault()
+        var userRoomBook = (await userRoomBookRepo.GetAsync(urb => urb.Id.Value == request.UserRoomBookId, cancellationToken)).FirstOrDefault()
             ?? throw new UserRoomBookNotFoundException();
 
         var validationResult = await validator.ValidateExtendAsync(userRoomBook, request.ExtraDays, cancellationToken);
@@ -19,7 +19,7 @@ public class ExtendDeadlineCommand(
         userRoomBook.Deadline = userRoomBook.Deadline!.Value.AddDays(request.ExtraDays);
 
         // Сохраняем
-        await userRoomBookRepo.Update(userRoomBook, cancellationToken);
+        await userRoomBookRepo.UpdateAsync(userRoomBook, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return ResponseFactory.Success($"Срок продлен до {userRoomBook.Deadline:d}");
     }

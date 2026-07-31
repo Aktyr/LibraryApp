@@ -6,7 +6,7 @@ public class GetBookCommand(IUnitOfWork unitOfWork, IConverter<Book, BookDTO> bo
     public async Task<BookResponse?> Execute(GetBookRequest request, CancellationToken cancellationToken)
     {
         var bookRepo = unitOfWork.GetRepository<Book>();
-        var books = await bookRepo.Get(x => x.Id.Value == request.Id.Value, cancellationToken);
+        var books = await bookRepo.GetAsync(x => x.Id.Value == request.Id.Value, cancellationToken);
         var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
 
         var bookDto = bookConverter.ToDto(book);

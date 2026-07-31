@@ -24,7 +24,7 @@ public class UpdateUserCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
@@ -45,7 +45,7 @@ public class UpdateUserCommandTests
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("User updated successfully."));
 
-            var updatedUser = (await userRepo.Get(x => x.Id.Value == userId.Value)).FirstOrDefault();
+            var updatedUser = (await userRepo.GetAsync(x => x.Id.Value == userId.Value)).FirstOrDefault();
             Assert.That(updatedUser, Is.Not.Null);
             Assert.That(updatedUser!.LastName, Is.EqualTo("Иванов"));
             Assert.That(updatedUser.FirstName, Is.EqualTo("Иван"));
@@ -61,7 +61,7 @@ public class UpdateUserCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        await userRepo.AddRange(new Bogus.Faker<User>()
+        await userRepo.AddRangeAsync(new Bogus.Faker<User>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.LastName, f => f.Name.LastName())
                                    .RuleFor(x => x.FirstName, f => f.Name.FirstName())
@@ -102,7 +102,7 @@ public class UpdateUserCommandTests
             ContactInfo = "valid@example.com"
         };
 
-        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
 
@@ -138,7 +138,7 @@ public class UpdateUserCommandTests
             ContactInfo = "petrov@example.com"
         };
 
-        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
@@ -158,7 +158,7 @@ public class UpdateUserCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var updatedUser = (await userRepo.Get(x => x.Id.Value == userId.Value)).FirstOrDefault();
+            var updatedUser = (await userRepo.GetAsync(x => x.Id.Value == userId.Value)).FirstOrDefault();
             Assert.That(updatedUser!.MiddleName, Is.EqualTo(""));
         });
     }
@@ -189,7 +189,7 @@ public class UpdateUserCommandTests
             }
         };
 
-        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
@@ -209,7 +209,7 @@ public class UpdateUserCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var updatedUser = (await userRepo.Get(x => x.Id.Value == userId.Value)).FirstOrDefault();
+            var updatedUser = (await userRepo.GetAsync(x => x.Id.Value == userId.Value)).FirstOrDefault();
             Assert.That(updatedUser!.RoomBooks, Is.Not.Null);
             Assert.That(updatedUser.RoomBooks, Has.Count.EqualTo(1)); // Коллекция сохранилась
             Assert.That(updatedUser.RoomBooks.First().Deadline, Is.Not.Null);
@@ -233,7 +233,7 @@ public class UpdateUserCommandTests
             ContactInfo = "old@old.com"
         };
 
-        await userRepo.AddRange([existingUser]);
+        await userRepo.AddRangeAsync([existingUser]);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
@@ -253,7 +253,7 @@ public class UpdateUserCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var updatedUser = (await userRepo.Get(x => x.Id.Value == userId.Value)).FirstOrDefault();
+            var updatedUser = (await userRepo.GetAsync(x => x.Id.Value == userId.Value)).FirstOrDefault();
             Assert.That(updatedUser!.LastName, Is.EqualTo("Новый"));
             Assert.That(updatedUser.FirstName, Is.EqualTo("ДругоеИмя"));
             Assert.That(updatedUser.MiddleName, Is.EqualTo("ДругоеОтчество"));
@@ -278,7 +278,7 @@ public class UpdateUserCommandTests
             ContactInfo = "ivanov@example.com"
         };
 
-        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
 
@@ -317,7 +317,7 @@ public class UpdateUserCommandTests
             ContactInfo = "valid@example.com"
         };
 
-        await userRepo.AddRange([existingUser]);
+        await userRepo.AddRangeAsync([existingUser]);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
 
@@ -336,7 +336,7 @@ public class UpdateUserCommandTests
             await updateUserCommand.Execute(updateUserRequest, CancellationToken.None));
 
         // Проверяем, что пользователь НЕ был обновлен
-        var userAfterFailedUpdate = (await userRepo.Get(x => x.Id.Value == userId.Value)).First();
+        var userAfterFailedUpdate = (await userRepo.GetAsync(x => x.Id.Value == userId.Value)).First();
         Assert.That(userAfterFailedUpdate.LastName, Is.EqualTo("Валидный")); // Осталось прежним
     }
 
@@ -362,7 +362,7 @@ public class UpdateUserCommandTests
             ContactInfo = "old@old.com"
         };
 
-        await userRepo.AddRange(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
@@ -382,7 +382,7 @@ public class UpdateUserCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var updatedUser = (await userRepo.Get(x => x.Id.Value == userId.Value)).FirstOrDefault();
+            var updatedUser = (await userRepo.GetAsync(x => x.Id.Value == userId.Value)).FirstOrDefault();
             Assert.That(updatedUser!.LastName, Is.EqualTo(lastName));
             Assert.That(updatedUser.FirstName, Is.EqualTo(firstName));
             Assert.That(updatedUser.MiddleName, Is.EqualTo(middleName));
@@ -406,7 +406,7 @@ public class UpdateUserCommandTests
             ContactInfo = "old@example.com"
         };
 
-        await userRepo.AddRange([existingUser]);
+        await userRepo.AddRangeAsync([existingUser]);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
         var updateUserRequest = new UpdateUserRequest
@@ -426,7 +426,7 @@ public class UpdateUserCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var updatedUser = (await userRepo.Get(x => x.Id.Value == userId.Value)).FirstOrDefault();
+            var updatedUser = (await userRepo.GetAsync(x => x.Id.Value == userId.Value)).FirstOrDefault();
             Assert.That(updatedUser!.Id.Value, Is.EqualTo(userId.Value)); // ID не изменился
         });
     }

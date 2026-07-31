@@ -6,7 +6,7 @@ public class GetAllRoomsCommand(IUnitOfWork unitOfWork, IConverter<Room, RoomDTO
     public async Task<RoomResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)
     {
         var roomRepo = unitOfWork.GetRepository<Room>();
-        var rooms = await roomRepo.GetWithoutTracking(cancellationToken);
+        var rooms = await roomRepo.GetWithoutTrackingAsync(cancellationToken);
         var roomDTOs = rooms.Select(room => RoomConverter.ToDto(room)).ToArray();
 
         return ResponseFactory.List<Room, RoomDTO, RoomResponse>(roomDTOs);

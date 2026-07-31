@@ -7,31 +7,13 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
     #region IRepository
 
     #region CRUD
-    public Task AddRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default) =>
-        Task.Run(() =>
-        {
-            Entities.AddRange(entities);
-        }, cancellationToken);
+    public Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+        => Task.Run(() => { Entities.AddRange(entities); }, cancellationToken);
 
-    public Task<IEnumerable<TEntity>> Get(CancellationToken cancellationToken = default) =>
-        Task.FromResult(Entities.AsEnumerable());
+    public Task RemoveRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+        => Task.Run(() => Entities.RemoveAll(x => entities.Contains(x)));
 
-    public Task<IEnumerable<TEntity>> Get(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
-    {
-        var func = predicate.Compile();
-        return Task.FromResult(Entities.Where(func).AsEnumerable());
-    }
-
-
-    public Task<IEnumerable<TEntity>> GetWithoutTracking(CancellationToken cancellationToken = default) =>
-        Get(cancellationToken);
-    public Task<IEnumerable<TEntity>> GetWithoutTracking(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default) =>
-        Get(predicate, cancellationToken);
-
-    public Task RemoveRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default) =>
-        Task.Run(() => Entities.RemoveAll(x => entities.Contains(x)));
-
-    public Task UpdateRange(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+    public Task UpdateRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
     {
         return Task.Run(() =>
         {
@@ -49,17 +31,25 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
             }
         }, cancellationToken);
     }
-    #endregion
+    public Task<IEnumerable<TEntity>> GetAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(Entities.AsEnumerable());
 
-    public IQueryable<TEntity> GetQueryable() => Entities.AsQueryable();
-    public IQueryable<TEntity> GetQueryable(Expression<Func<TEntity, bool>> predicate) => Entities.Where(predicate.Compile()).AsQueryable();
+    public Task<IEnumerable<TEntity>> GetAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+    {
+        var func = predicate.Compile();
+        return Task.FromResult(Entities.Where(func).AsEnumerable());
+    }
 
+    public Task<IEnumerable<TEntity>> GetWithoutTrackingAsync(CancellationToken cancellationToken = default)
+        => GetAsync(cancellationToken);
+    public Task<IEnumerable<TEntity>> GetWithoutTrackingAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+        => GetAsync(predicate, cancellationToken);
     public Task<IEnumerable<TEntity>> GetAsync(
-    Expression<Func<TEntity, bool>>? filter = null,
-    Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
-    int? skip = null,
-    int? take = null,
-    params string[] includePaths)
+        Expression<Func<TEntity, bool>>? filter = null,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+        int? skip = null,
+        int? take = null,
+        params string[] includePaths)
     {
         var query = Entities.AsQueryable();
         if (filter != null)
@@ -81,6 +71,29 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
             query = query.Where(predicate);
         return Task.FromResult(query.AsEnumerable());
     }
+    #endregion
+
+    #region Оптимизация запросов
+
+    public Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+        => Task.FromResult(Entities.AsQueryable().FirstOrDefault(predicate.Compile()));
+    public Task<TEntity?> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+        => Task.FromResult(Entities.AsQueryable().SingleOrDefault(predicate.Compile()));
+    public Task<bool> AnyAsync(Expression<Func<TEntity, bool>>? predicate = null,CancellationToken cancellationToken = default)
+    {
+        if (predicate == null)
+            return Task.FromResult(Entities.Any());
+        return Task.FromResult(Entities.Any(predicate.Compile()));
+    }
+
+    public Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null,CancellationToken cancellationToken = default)
+    {
+        if (predicate == null)
+            return Task.FromResult(Entities.Count());
+        return Task.FromResult(Entities.Count(predicate.Compile()));
+    }
+
+    #endregion
 
     public Task<IEnumerable<TResult>> ExecuteQueryAsync<TResult>(Func<IQueryable<TEntity>, IQueryable<TResult>> queryBuilder, CancellationToken cancellationToken = default)
     {

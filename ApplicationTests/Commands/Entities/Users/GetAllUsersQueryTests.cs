@@ -44,7 +44,7 @@ public class GetAllUsersQueryTests
             .Generate(15)
             .ToList();
 
-        await userRepo.AddRange(users.AsEnumerable(), CancellationToken.None);
+        await userRepo.AddRangeAsync(users.AsEnumerable(), CancellationToken.None);
 
         var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -89,7 +89,7 @@ public class GetAllUsersQueryTests
             RoomBooks = []
         };
 
-        await userRepo.AddRange(new[] { user1, user2 }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user1, user2 }, CancellationToken.None);
 
         var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -165,7 +165,7 @@ public class GetAllUsersQueryTests
             }
         };
 
-        await userRepo.AddRange(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
 
         var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -199,7 +199,7 @@ public class GetAllUsersQueryTests
             new User { Id = new Id(Guid.NewGuid()), LastName = "Васильев", FirstName = "Василий", ContactInfo = "c@test.ru" },
         };
 
-        await userRepo.AddRange(users.AsEnumerable(), CancellationToken.None);
+        await userRepo.AddRangeAsync(users.AsEnumerable(), CancellationToken.None);
 
         var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -222,7 +222,7 @@ public class GetAllUsersQueryTests
             new User { Id = new Id(Guid.NewGuid()), LastName = "Test", FirstName = "User", ContactInfo = "test@test.ru" }
         };
 
-        mockUserRepo.Setup(repo => repo.GetWithoutTracking(It.IsAny<CancellationToken>()))
+        mockUserRepo.Setup(repo => repo.GetWithoutTrackingAsync(It.IsAny<CancellationToken>()))
                    .ReturnsAsync(users);
 
         var mockUnitOfWork = new Mock<IUnitOfWork>();
@@ -235,7 +235,7 @@ public class GetAllUsersQueryTests
         var result = await getAllUsersQuery.Execute(emptyRequest, CancellationToken.None);
 
         // Assert
-        mockUserRepo.Verify(repo => repo.GetWithoutTracking(It.IsAny<CancellationToken>()), Times.Once);
+        mockUserRepo.Verify(repo => repo.GetWithoutTrackingAsync(It.IsAny<CancellationToken>()), Times.Once);
         Assert.That(result.Users, Has.Length.EqualTo(1));
     }
 
@@ -245,7 +245,7 @@ public class GetAllUsersQueryTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        await userRepo.AddRange(new Bogus.Faker<User>()
+        await userRepo.AddRangeAsync(new Bogus.Faker<User>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.LastName, f => f.Name.LastName())
             .Generate(3)

@@ -19,7 +19,7 @@ public class UpdateRoomCommandTests
             .RuleFor(x => x.RoomBooks, f => [])
             .Generate(10)
             .ToList();
-        await roomRepo.AddRange(rooms.AsEnumerable(), CancellationToken.None);
+        await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
 
         var roomToUpdate = rooms[4];
         var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
@@ -39,7 +39,7 @@ public class UpdateRoomCommandTests
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Room updated successfully."));
 
-            var updatedRoom = (await roomRepo.Get(x => x.Id.Value == roomToUpdate.Id.Value)).FirstOrDefault();
+            var updatedRoom = (await roomRepo.GetAsync(x => x.Id.Value == roomToUpdate.Id.Value)).FirstOrDefault();
             Assert.That(updatedRoom, Is.Not.Null);
             Assert.That(updatedRoom!.Name, Is.EqualTo("Updated Room Name"));
             Assert.That(updatedRoom.RoomBooks, Is.Not.Null);
@@ -123,7 +123,7 @@ public class UpdateRoomCommandTests
             .RuleFor(x => x.Name, f => "Original Name")
             .RuleFor(x => x.RoomBooks, f => [])
             .Generate();
-        await roomRepo.AddRange([room], CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
@@ -142,7 +142,7 @@ public class UpdateRoomCommandTests
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Room updated successfully."));
 
-            var updatedRoom = (await roomRepo.Get(x => x.Id.Value == room.Id.Value)).FirstOrDefault();
+            var updatedRoom = (await roomRepo.GetAsync(x => x.Id.Value == room.Id.Value)).FirstOrDefault();
             Assert.That(updatedRoom, Is.Not.Null);
             Assert.That(updatedRoom!.Name, Is.EqualTo("Original Name"));
         });
@@ -159,7 +159,7 @@ public class UpdateRoomCommandTests
             .RuleFor(x => x.Name, f => "Original Name")
             .RuleFor(x => x.RoomBooks, f => [])
             .Generate();
-        await roomRepo.AddRange([room], CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
@@ -190,7 +190,7 @@ public class UpdateRoomCommandTests
             Name = "Original Room",
             RoomBooks = []
         };
-        await roomRepo.AddRange([room], CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
@@ -212,7 +212,7 @@ public class UpdateRoomCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var updatedRoom = (await roomRepo.Get(x => x.Id.Value == roomId.Value)).FirstOrDefault();
+            var updatedRoom = (await roomRepo.GetAsync(x => x.Id.Value == roomId.Value)).FirstOrDefault();
             Assert.That(updatedRoom, Is.Not.Null);
             Assert.That(updatedRoom!.Name, Is.EqualTo("Updated Room"));
             Assert.That(updatedRoom.RoomBooks, Has.Count.EqualTo(2));
@@ -242,11 +242,11 @@ public class UpdateRoomCommandTests
                 }
             ]
         };
-        await roomRepo.AddRange([room], CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var unitOfWork2 = new FakeUnitOfWork();
         var roomRepo2 = (FakeRepository<Room>)unitOfWork2.GetRepository<Room>();
-        await roomRepo2.AddRange([room], CancellationToken.None);
+        await roomRepo2.AddRangeAsync([room], CancellationToken.None);
         var updateRoomCommand = new UpdateRoomCommand(unitOfWork2, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
@@ -263,7 +263,7 @@ public class UpdateRoomCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var updatedRoom = (await roomRepo.Get(x => x.Id.Value == room.Id.Value)).FirstOrDefault();
+            var updatedRoom = (await roomRepo.GetAsync(x => x.Id.Value == room.Id.Value)).FirstOrDefault();
             Assert.That(updatedRoom, Is.Not.Null);
             Assert.That(updatedRoom!.Name, Is.EqualTo("Updated Room"));
             // RoomBooks будет null согласно запросу
@@ -294,12 +294,12 @@ public class UpdateRoomCommandTests
                 }
             ]
         };
-        await roomRepo.AddRange([room], CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var newBookId = new Id(Guid.NewGuid());
         var unitOfWork3 = new FakeUnitOfWork();
         var roomRepo3 = (FakeRepository<Room>)unitOfWork3.GetRepository<Room>();
-        await roomRepo3.AddRange([room], CancellationToken.None);
+        await roomRepo3.AddRangeAsync([room], CancellationToken.None);
         var updateRoomCommand = new UpdateRoomCommand(unitOfWork3, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
@@ -319,7 +319,7 @@ public class UpdateRoomCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var updatedRoom = (await roomRepo.Get(x => x.Id.Value == roomId.Value)).FirstOrDefault();
+            var updatedRoom = (await roomRepo.GetAsync(x => x.Id.Value == roomId.Value)).FirstOrDefault();
             Assert.That(updatedRoom, Is.Not.Null);
             Assert.That(updatedRoom!.RoomBooks, Has.Count.EqualTo(1));
             Assert.That(updatedRoom.RoomBooks.First().BookCount, Is.EqualTo(7));
@@ -336,11 +336,11 @@ public class UpdateRoomCommandTests
             .RuleFor(x => x.Name, f => "Original Name")
             .RuleFor(x => x.RoomBooks, f => [])
             .Generate();
-        await roomRepo.AddRange([room], CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var unitOfWork4 = new FakeUnitOfWork();
         var roomRepo4 = (FakeRepository<Room>)unitOfWork4.GetRepository<Room>();
-        await roomRepo4.AddRange([room], CancellationToken.None);
+        await roomRepo4.AddRangeAsync([room], CancellationToken.None);
         var updateRoomCommand = new UpdateRoomCommand(unitOfWork4, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
@@ -357,7 +357,7 @@ public class UpdateRoomCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            var updatedRoom = (await roomRepo.Get(x => x.Id.Value == room.Id.Value)).FirstOrDefault();
+            var updatedRoom = (await roomRepo.GetAsync(x => x.Id.Value == room.Id.Value)).FirstOrDefault();
             Assert.That(updatedRoom, Is.Not.Null);
             Assert.That(updatedRoom!.Name, Is.EqualTo("R"));
         });

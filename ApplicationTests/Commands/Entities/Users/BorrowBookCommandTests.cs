@@ -28,7 +28,7 @@ public class BorrowBookCommandTests
             Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Test Book" },
             Room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" }
         };
-        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
@@ -59,7 +59,7 @@ public class BorrowBookCommandTests
             ContactInfo = "test@test.com",
             RoomBooks = new List<UserRoomBook>()
         };
-        await userRepo.AddRange(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
@@ -100,8 +100,8 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await userRepo.AddRange(new[] { user }, CancellationToken.None);
-        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
         var request = new BorrowBookRequest
@@ -142,8 +142,8 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await userRepo.AddRange(new[] { user }, CancellationToken.None);
-        await roomBookRepo.AddRange(new[] { roomBook }, CancellationToken.None);
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
         var request = new BorrowBookRequest
@@ -203,8 +203,8 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await userRepo.AddRange([user], CancellationToken.None);
-        await roomBookRepo.AddRange([roomBook], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
         var request = new BorrowBookRequest
@@ -255,8 +255,8 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await userRepo.AddRange([user], CancellationToken.None);
-        await roomBookRepo.AddRange([roomBook], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
@@ -297,8 +297,8 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await userRepo.AddRange([user], CancellationToken.None);
-        await roomBookRepo.AddRange([roomBook], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
@@ -342,8 +342,8 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" }
         };
 
-        await userRepo.AddRange([user], CancellationToken.None);
-        await roomBookRepo.AddRange([roomBook], CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
@@ -421,8 +421,8 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await userRepo.AddRange([user1, user2], CancellationToken.None);
-        await roomBookRepo.AddRange([roomBook], CancellationToken.None);
+        await userRepo.AddRangeAsync([user1, user2], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
@@ -441,11 +441,11 @@ public class BorrowBookCommandTests
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
             // user1 не изменился
-            var dbUser1 = (await userRepo.Get(u => u.Id.Value == user1.Id.Value, CancellationToken.None)).First();
+            var dbUser1 = (await userRepo.GetAsync(u => u.Id.Value == user1.Id.Value, CancellationToken.None)).First();
             Assert.That(dbUser1.RoomBooks, Has.Count.EqualTo(1));
 
             // user2 получил книгу
-            var dbUser2 = (await userRepo.Get(u => u.Id.Value == user2.Id.Value, CancellationToken.None)).First();
+            var dbUser2 = (await userRepo.GetAsync(u => u.Id.Value == user2.Id.Value, CancellationToken.None)).First();
             Assert.That(dbUser2.RoomBooks, Has.Count.EqualTo(1));
         });
     }
