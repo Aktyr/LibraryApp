@@ -98,6 +98,13 @@ public class UniversalRepository<TEntity> : IRepository<TEntity> where TEntity :
 
         return await query.ToListAsync();
     }
+    public async Task<IEnumerable<TResult>> ExecuteQueryAsync<TResult>(
+        Func<IQueryable<TEntity>, IQueryable<TResult>> queryBuilder,
+        CancellationToken cancellationToken = default)
+    {
+        var query = queryBuilder(_dbSet);
+        return await query.ToListAsync(cancellationToken);
+    }
 
     #endregion
 }

@@ -11,7 +11,7 @@ public class SearchBooksCommand(
         // Формируем фильтр
         Expression<Func<Book, bool>>? filter = BuildFilter(request);
 
-        // Формируем сортировку
+        // Формируем сортировку (кроме популярности)
         Func<IQueryable<Book>, IOrderedQueryable<Book>>? orderBy = BuildOrderBy(request);
 
         // Include для доступности
@@ -24,6 +24,14 @@ public class SearchBooksCommand(
         if (request.AvailableOnly)
         {
             books = books.Where(b => b.RoomBook.Any(rb => rb.BookCount - rb.BorrowedCount > 0));
+        }
+
+        // Сортировка по популярности
+        if (string.Equals(request.SortBy, "popularity", StringComparison.OrdinalIgnoreCase))
+        {
+            books = request.SortDescending
+                ? books.OrderByDescending(b => b.RoomBook.Sum(rb => rb.BorrowedCount))
+                : books.OrderBy(b => b.RoomBook.Sum(rb => rb.BorrowedCount));
         }
 
         var bookDTOs = books.Select(b => bookConverter.ToDto(b)).ToArray();

@@ -82,5 +82,11 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
         return Task.FromResult(query.AsEnumerable());
     }
 
+    public Task<IEnumerable<TResult>> ExecuteQueryAsync<TResult>(Func<IQueryable<TEntity>, IQueryable<TResult>> queryBuilder, CancellationToken cancellationToken = default)
+    {
+        var query = queryBuilder(Entities.AsQueryable());
+        return Task.FromResult(query.ToList().AsEnumerable());
+    }
+
     #endregion
 }

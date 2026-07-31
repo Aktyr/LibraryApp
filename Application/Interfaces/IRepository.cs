@@ -37,5 +37,8 @@ public interface IRepository<TEntity> where TEntity : class, IEntity
         int? skip = null,
         int? take = null,
         params string[] includePaths);
+    Task<IEnumerable<TResult>> ExecuteQueryAsync<TResult>(
+        Func<IQueryable<TEntity>, IQueryable<TResult>> queryBuilder,
+        CancellationToken cancellationToken = default);
 
 }

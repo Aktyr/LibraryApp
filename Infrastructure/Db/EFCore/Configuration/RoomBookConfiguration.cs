@@ -18,7 +18,7 @@ public class RoomBookConfiguration : IEntityTypeConfiguration<RoomBook>
 
         builder.Ignore(rb => rb.AvailableCount);
 
-        builder.HasIndex(rb => rb.Book.Id);
-        builder.HasIndex(rb => rb.Room.Id);
+        builder.HasIndex("BookId");
+        builder.HasIndex("RoomId");
     }
 }

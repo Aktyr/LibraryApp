@@ -1,5 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Reports;
 
+// fixme требуется объединение User и UserRoomBook. С текущим репозиторием это невозможно сделать эффективно
 public class GetUserActivityReportCommand(
     IUnitOfWork unitOfWork)
     : IGetQuery<GetUserActivityRequest, UserActivityReportResponse>, ICommand

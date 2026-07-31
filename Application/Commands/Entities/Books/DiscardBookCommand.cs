@@ -8,6 +8,9 @@ public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
         var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
+        if (request.Amount <= 0)
+            throw new LibValidationException { ExceptionDetails = ["Количество списываемых экземпляров должно быть больше нуля"] };
+
         // Валидация
         // Находим книгу
         var books = await bookRepo.Get(b => b.Id.Value == request.BookId, ct);

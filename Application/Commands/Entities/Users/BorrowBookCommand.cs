@@ -1,13 +1,14 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class BorrowBookCommand(
-    IUnitOfWork unitOfWork,
+    IUnitOfWork unitOfWork, 
     BorrowingValidatorAsync validator) : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(BorrowBookRequest request, CancellationToken cancellationToken)
     {
         var userRepo = unitOfWork.GetRepository<User>();
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
         // Валидация
         var user = (await userRepo.Get(u => u.Id.Value == request.UserId, cancellationToken)).FirstOrDefault()
@@ -15,6 +16,13 @@ public class BorrowBookCommand(
 
         var roomBook = (await roomBookRepo.Get(rb => rb.Id.Value == request.RoomBookId, cancellationToken)).FirstOrDefault()
             ?? throw new UserRoomBookNotFoundException();
+
+        var existingActive = await userRoomBookRepo.Get(
+            urb => urb.User.Id.Value == request.UserId
+            && urb.RoomBook.Id.Value == request.RoomBookId
+            && !urb.IsReturned, cancellationToken);
+        if (existingActive.Any())
+            throw new LibValidationException { ExceptionDetails = ["Пользователь уже взял эту книгу и ещё не вернул её"] };
 
         var validationResult = await validator.ValidateBorrowAsync(user, roomBook, request.BorrowDays, cancellationToken);
         if (!validationResult.IsValid)

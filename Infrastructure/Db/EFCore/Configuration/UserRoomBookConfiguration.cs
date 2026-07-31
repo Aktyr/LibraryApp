@@ -29,7 +29,7 @@ public class UserRoomBookConfiguration : IEntityTypeConfiguration<UserRoomBook>
 
         builder.HasIndex(urb => urb.BorrowDate);
         builder.HasIndex(urb => urb.Deadline);
-        builder.HasIndex(urb => urb.User.Id);
-        builder.HasIndex(urb => urb.RoomBook.Id);
+        builder.HasIndex("UserId");
+        builder.HasIndex("RoomBookId");
     }
 }
