@@ -6,8 +6,8 @@ public class GetRoomCommand(IUnitOfWork unitOfWork, IConverter<Room, RoomDTO> Ro
     public async Task<RoomResponse?> Execute(GetRoomRequest request, CancellationToken cancellationToken)
     {
         var roomRepo = unitOfWork.GetRepository<Room>();
-        var rooms = await roomRepo.GetAsync(x => x.Id.Value == request.Id.Value, cancellationToken);
-        var room = rooms.FirstOrDefault() ?? throw new RoomNotFoundException();
+        var room = await roomRepo.FirstOrDefaultAsync(r => r.Id.Value == request.Id.Value, cancellationToken);
+        if (room == null) throw new RoomNotFoundException();
 
         var roomDTO = RoomConverter.ToDto(room);
 

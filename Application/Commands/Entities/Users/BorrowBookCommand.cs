@@ -11,24 +11,21 @@ public class BorrowBookCommand(
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
         // Валидация
-        var user = (await userRepo.GetAsync(u => u.Id.Value == request.UserId, cancellationToken)).FirstOrDefault()
-            ?? throw new UserNotFoundException();
+        var user = await userRepo.FirstOrDefaultAsync(u => u.Id.Value == request.UserId, cancellationToken);
+        if (user == null) throw new UserNotFoundException();
 
-        var roomBook = (await roomBookRepo.GetAsync(rb => rb.Id.Value == request.RoomBookId, cancellationToken)).FirstOrDefault()
-            ?? throw new UserRoomBookNotFoundException();
+        var roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Id.Value == request.RoomBookId, cancellationToken);
+        if (roomBook == null) throw new UserRoomBookNotFoundException();
 
-        var existingActive = await userRoomBookRepo.GetAsync(
-            urb => urb.User.Id.Value == request.UserId
-            && urb.RoomBook.Id.Value == request.RoomBookId
-            && !urb.IsReturned, cancellationToken);
-        if (existingActive.Any())
+        if (await userRoomBookRepo.AnyAsync(urb => urb.User.Id.Value == request.UserId 
+                                                && urb.RoomBook.Id.Value == request.RoomBookId 
+                                                && !urb.IsReturned, cancellationToken))
             throw new LibValidationException { ExceptionDetails = ["Пользователь уже взял эту книгу и ещё не вернул её"] };
 
         var validationResult = await validator.ValidateBorrowAsync(user, roomBook, request.BorrowDays, cancellationToken);
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
-        // Создание записи
         var userRoomBook = new UserRoomBook
         {
             User = user,
@@ -40,7 +37,6 @@ public class BorrowBookCommand(
         roomBook.BorrowedCount++;
         user.RoomBooks.Add(userRoomBook);
 
-        // Сохранение
         await unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
@@ -52,7 +48,6 @@ public class BorrowBookCommand(
             await unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw;
         }
-
 
         return ResponseFactory.Success($"Книга выдана. Срок возврата: {userRoomBook.Deadline:d}");
     }

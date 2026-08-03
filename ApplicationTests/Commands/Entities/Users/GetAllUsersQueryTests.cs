@@ -11,7 +11,7 @@ public class GetAllUsersQueryTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>(); // Пустой репозиторий
-        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
+        var getAllUsersQuery = new GetAllUsersCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -46,7 +46,7 @@ public class GetAllUsersQueryTests
 
         await userRepo.AddRangeAsync(users.AsEnumerable(), CancellationToken.None);
 
-        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
+        var getAllUsersQuery = new GetAllUsersCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -91,7 +91,7 @@ public class GetAllUsersQueryTests
 
         await userRepo.AddRangeAsync(new[] { user1, user2 }, CancellationToken.None);
 
-        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
+        var getAllUsersQuery = new GetAllUsersCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -167,7 +167,7 @@ public class GetAllUsersQueryTests
 
         await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
 
-        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
+        var getAllUsersQuery = new GetAllUsersCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -201,7 +201,7 @@ public class GetAllUsersQueryTests
 
         await userRepo.AddRangeAsync(users.AsEnumerable(), CancellationToken.None);
 
-        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
+        var getAllUsersQuery = new GetAllUsersCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -228,7 +228,7 @@ public class GetAllUsersQueryTests
         var mockUnitOfWork = new Mock<IUnitOfWork>();
         mockUnitOfWork.Setup(u => u.GetRepository<User>()).Returns(mockUserRepo.Object);
 
-        var getAllUsersQuery = new GetAllUsersQuery(mockUnitOfWork.Object, Converter);
+        var getAllUsersQuery = new GetAllUsersCommand(mockUnitOfWork.Object, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act
@@ -251,7 +251,7 @@ public class GetAllUsersQueryTests
             .Generate(3)
             .AsEnumerable(), CancellationToken.None);
 
-        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork, Converter);
+        var getAllUsersQuery = new GetAllUsersCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
         var cancellationToken = new CancellationToken();
 
@@ -269,7 +269,7 @@ public class GetAllUsersQueryTests
         // Arrange
         var unitOfWork2 = new FakeUnitOfWork();
         var userRepo2 = (FakeRepository<User>)unitOfWork2.GetRepository<User>();
-        var getAllUsersQuery = new GetAllUsersQuery(unitOfWork2, Converter);
+        var getAllUsersQuery = new GetAllUsersCommand(unitOfWork2, Converter);
         var emptyRequest = new EmptyRequest();
 
         // Act

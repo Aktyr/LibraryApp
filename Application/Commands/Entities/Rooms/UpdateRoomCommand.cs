@@ -50,7 +50,6 @@ public class UpdateRoomCommand(
     private async Task<bool> IsNameTakenAsync(string name, CancellationToken ct)
     {
         var repo = unitOfWork.GetRepository<Room>();
-        var existing = await repo.GetWithoutTrackingAsync(r => r.Name == name, ct);
-        return existing.Any();
+        return await repo.AnyAsync(r => r.Name == name, ct);
     }
 }

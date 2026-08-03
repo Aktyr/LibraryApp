@@ -8,8 +8,8 @@ public class UpdateUserCommand(
     public async Task<BasicCreateDeleteResponse> Execute(UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var userRepo = unitOfWork.GetRepository<User>();
-        var users = await userRepo.GetAsync(x => x.Id.Value == request.Id.Value, cancellationToken);
-        var user = users.FirstOrDefault() ?? throw new UserNotFoundException();
+        var user = await userRepo.FirstOrDefaultAsync(u => u.Id.Value == request.Id.Value, cancellationToken);
+        if (user == null) throw new UserNotFoundException();
 
         // Временное DTO для валидации
         var userDto = new UserDTO(request.Id.Value,

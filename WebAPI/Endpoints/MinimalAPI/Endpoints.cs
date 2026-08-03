@@ -164,19 +164,19 @@ public static class Endpoints
         var users = app.MapGroup("/api/users").RequireRoles(UserRole.Admin, UserRole.Librarian).WithTags(_usersGroup);
         users.MapGet("/", async (IServiceProvider sp, CancellationToken ct) =>
         {
-            var result = await MinimalApiController.ExecuteAsync<GetAllUsersQuery, EmptyRequest, UserResponse>(sp, new EmptyRequest(), ct);
+            var result = await MinimalApiController.ExecuteAsync<GetAllUsersCommand, EmptyRequest, UserResponse>(sp, new EmptyRequest(), ct);
             return Results.Ok(result);
         });
         users.MapGet("/{id}", async (Guid id, IServiceProvider sp, CancellationToken ct) =>
         {
             var request = new GetUserRequest { Id = new Id(id) };
-            var result = await MinimalApiController.ExecuteAsync<GetUserQuery, GetUserRequest, UserResponse>(sp, request, ct);
+            var result = await MinimalApiController.ExecuteAsync<GetUserCommand, GetUserRequest, UserResponse>(sp, request, ct);
             return Results.Ok(result);
         });
         users.MapGet("/{id}/books", async (Guid id, IServiceProvider sp, CancellationToken ct) =>
         {
             var request = new GetUserBooksRequest { UserId = id };
-            var result = await MinimalApiController.ExecuteAsync<GetUserRoomBooksQuery, GetUserBooksRequest, BorrowResponse>(sp, request, ct);
+            var result = await MinimalApiController.ExecuteAsync<GetUserRoomBooksCommand, GetUserBooksRequest, BorrowResponse>(sp, request, ct);
             return Results.Ok(result);
         });
         users.MapPost("/", async (CreateUserRequest request, IServiceProvider sp, CancellationToken ct) =>

@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class GetAllUsersQuery(IUnitOfWork unitOfWork, IConverter<User, UserDTO> userConverter)
+public class GetAllUsersCommand(IUnitOfWork unitOfWork, IConverter<User, UserDTO> userConverter)
     : IGetQuery<EmptyRequest, UserResponse>, ICommand
 {
     public async Task<UserResponse> Execute(EmptyRequest emptyRequest, CancellationToken cancellationToken)

@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class GetUserRoomBooksQuery(
+public class GetUserRoomBooksCommand(
     IUnitOfWork unitOfWork,
     IConverter<UserRoomBook, BorrowedBookDTO> converter,
     BorrowingValidatorAsync validator) : IGetQuery<GetUserBooksRequest, BorrowResponse>, ICommand

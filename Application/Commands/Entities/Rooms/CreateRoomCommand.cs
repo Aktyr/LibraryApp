@@ -21,14 +21,12 @@ public class CreateRoomCommand(
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         // Проверка существования комнаты с таким именем
-        if ((await roomRepo.GetAsync(x => x.Name == request.Name, cancellationToken)).Any())
+        if (await roomRepo.AnyAsync(r => r.Name == request.Name, cancellationToken))
             throw new RoomExistsException(request.Name);
 
         // Добавление
         await roomRepo.AddAsync(room, cancellationToken);
-
         await unitOfWork.SaveChangesAsync(cancellationToken);
-
         return ResponseFactory.Created<Room>();
     }
 }

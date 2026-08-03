@@ -19,7 +19,7 @@ public class GetUserRoomBooksQueryTests
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var converter = new BorrowDTOConverter(); // Используем реальный конвертер для поднятия его coverage
-        var query = new GetUserRoomBooksQuery(unitOfWork, converter, CreateValidator());
+        var query = new GetUserRoomBooksCommand(unitOfWork, converter, CreateValidator());
 
         var request = new GetUserBooksRequest { UserId = Guid.NewGuid() };
 
@@ -66,7 +66,7 @@ public class GetUserRoomBooksQueryTests
 
         await repo.AddRangeAsync(new[] { urb1, urb2 }, CancellationToken.None);
 
-        var query = new GetUserRoomBooksQuery(unitOfWork, converter, CreateValidator());
+        var query = new GetUserRoomBooksCommand(unitOfWork, converter, CreateValidator());
         var request = new GetUserBooksRequest { UserId = userId };
 
         // Act

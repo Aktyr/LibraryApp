@@ -7,8 +7,8 @@ public class UpdateBookCommand(IUnitOfWork unitOfWork, BookValidatorAsync bookVa
     {
         var bookRepo = unitOfWork.GetRepository<Book>();
 
-        var books = await bookRepo.GetAsync(x => x.Id.Value == request.Id.Value, cancellationToken);
-        var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
+        var book = await bookRepo.FirstOrDefaultAsync(b => b.Id.Value == request.Id.Value, cancellationToken);
+        if (book == null) throw new BookNotFoundException();
 
         // Временное DTO для валидации
         var bookDTO = new BookDTO(Guid.NewGuid(),

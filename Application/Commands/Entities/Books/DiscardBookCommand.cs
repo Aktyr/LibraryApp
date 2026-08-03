@@ -4,22 +4,20 @@ public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(DiscardBookRequest request, CancellationToken ct)
     {
+        if (request.Amount <= 0)
+            throw new LibValidationException { ExceptionDetails = ["Количество списываемых экземпляров должно быть больше нуля"] };
+
         var bookRepo = unitOfWork.GetRepository<Book>();
         var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
-        if (request.Amount <= 0)
-            throw new LibValidationException { ExceptionDetails = ["Количество списываемых экземпляров должно быть больше нуля"] };
-
         // Валидация
         // Находим книгу
-        var books = await bookRepo.GetAsync(b => b.Id.Value == request.BookId, ct);
-        var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
+        var book = await bookRepo.FirstOrDefaultAsync(b => b.Id.Value == request.BookId, ct);
+        if (book == null) throw new BookNotFoundException();
 
         // Находим RoomBook
-        var roomBooks = await roomBookRepo.GetAsync(rb => rb.Book.Id.Value == request.BookId, ct);
-        var roomBook = roomBooks.FirstOrDefault();
-
+        var roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Book.Id.Value == request.BookId, ct);
         if (roomBook == null)
             throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнатах"] };
 
@@ -31,10 +29,9 @@ public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
         if (request.Amount > roomBook.AvailableCount)
             throw new LibValidationException { ExceptionDetails = [$"Нельзя списать {request.Amount} экз. Выдано: {roomBook.BorrowedCount}, доступно: {roomBook.AvailableCount}"] };
 
-        //todo возможно заменить проверку на конкретных пользователей
+        //todo возможно заменить проверку на конкретных пользователей (библиотекарей)
         if (!string.IsNullOrEmpty(request.ApprovedBy) && request.ApprovedBy.Length > 100)
             throw new LibValidationException { ExceptionDetails = ["ApprovedBy не может превышать 100 символов"] };
-
 
         //  Создаём запись о списании
         var discarded = new DiscardedBook

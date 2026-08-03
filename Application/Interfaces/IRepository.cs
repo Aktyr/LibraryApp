@@ -31,7 +31,6 @@ public interface IRepository<TEntity> where TEntity : class, IEntity
 
     #endregion
 
-    // todo заменить неоптимизированные методы на оптимизированные
     #region Оптимизация запросов
     /// <summary>
     /// Возвращает первый элемент, удовлетворяющий условию, или null, если таких нет.

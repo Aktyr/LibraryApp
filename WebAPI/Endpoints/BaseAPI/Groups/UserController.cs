@@ -9,7 +9,7 @@ public class UserController : BaseApiController
     [HttpGet]
     public async Task<ActionResult<UserResponse>> GetAll(CancellationToken cancellationToken)
     {
-        var result = await ExecuteQuery<GetAllUsersQuery, EmptyRequest, UserResponse>(
+        var result = await ExecuteQuery<GetAllUsersCommand, EmptyRequest, UserResponse>(
             new EmptyRequest(), cancellationToken);
         return Ok(result);
     }
@@ -18,7 +18,7 @@ public class UserController : BaseApiController
     public async Task<ActionResult<UserResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var request = new GetUserRequest { Id = new Id(id) };
-        var result = await ExecuteQuery<GetUserQuery, GetUserRequest, UserResponse>(
+        var result = await ExecuteQuery<GetUserCommand, GetUserRequest, UserResponse>(
             request, cancellationToken);
         return Ok(result);
     }
@@ -27,7 +27,7 @@ public class UserController : BaseApiController
     public async Task<ActionResult<BorrowResponse>> GetUserBooks(Guid id, CancellationToken cancellationToken)
     {
         var request = new GetUserBooksRequest { UserId = id };
-        var result = await ExecuteQuery<GetUserRoomBooksQuery, GetUserBooksRequest, BorrowResponse>(
+        var result = await ExecuteQuery<GetUserRoomBooksCommand, GetUserBooksRequest, BorrowResponse>(
             request, cancellationToken);
         return Ok(result);
     }

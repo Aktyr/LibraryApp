@@ -8,8 +8,8 @@ public class ExtendDeadlineCommand(
     {
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         // Валидация
-        var userRoomBook = (await userRoomBookRepo.GetAsync(urb => urb.Id.Value == request.UserRoomBookId, cancellationToken)).FirstOrDefault()
-            ?? throw new UserRoomBookNotFoundException();
+        var userRoomBook = await userRoomBookRepo.FirstOrDefaultAsync(urb => urb.Id.Value == request.UserRoomBookId, cancellationToken);
+        if (userRoomBook == null) throw new UserRoomBookNotFoundException();
 
         var validationResult = await validator.ValidateExtendAsync(userRoomBook, request.ExtraDays, cancellationToken);
         if (!validationResult.IsValid)

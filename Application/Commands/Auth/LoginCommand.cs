@@ -7,8 +7,7 @@ public class LoginCommand(IUnitOfWork unitOfWork, JwtService jwtService) : IGetQ
         var userRepo = unitOfWork.GetRepository<User>();
 
         // Поиск пользователя по email
-        var users = await userRepo.GetAsync(u => u.Email == request.Email, cancellationToken);
-        var user = users.FirstOrDefault();
+        var user = await userRepo.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
         if (user == null)
             throw new UnauthorizedException("Неверный email или пароль");
