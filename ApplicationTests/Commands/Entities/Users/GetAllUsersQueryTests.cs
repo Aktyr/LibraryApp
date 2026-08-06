@@ -22,7 +22,7 @@ public class GetAllUsersQueryTests
         {
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Status, Is.EqualTo("Ok"));
-            Assert.That(result.Message, Is.EqualTo("List of users issued successfully."));
+            Assert.That(result.Message, Is.EqualTo("List of Users retrieved successfully. Total: 0."));
             Assert.That(result.Users, Is.Not.Null);
             Assert.That(result.Users, Is.Empty);
         });

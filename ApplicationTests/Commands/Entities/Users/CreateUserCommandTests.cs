@@ -6,6 +6,14 @@ public class CreateUserCommandTests
     private UserValidatorAsync CreateUserValidator => new();
     private IConverter<User, UserDTO> Converter => new UserDTOConverter();
 
+    private CreateUserCommand CreateCommand(FakeUnitOfWork unitOfWork)
+    {
+        var emailValidator = new EmailValidatorAsync();
+        var userRegistrationValidator = new UserRegistrationValidator(emailValidator);
+        var userService = new UserService(unitOfWork, userRegistrationValidator);
+        return new CreateUserCommand(userService);
+    }
+
 
     [TestCase("Иванов", "Иван", "Иванович", "ivanov@example.com")]
     [TestCase("Петров", "Петр", "", "petrov@example.com")] // MiddleName может быть пустым
@@ -76,7 +84,9 @@ public class CreateUserCommandTests
                                    .RuleFor(x => x.RoomBooks, f => [])
                                    .Generate(10)
                                    .AsEnumerable());
-        var createUserCommand = new CreateUserCommand(new FakeUserService(unitOfWork));
+
+        var createUserCommand = CreateCommand(unitOfWork);
+
         var createUserRequest = new CreateUserRequest
         {
             LastName = lastName,
@@ -96,7 +106,7 @@ public class CreateUserCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        var createUserCommand = new CreateUserCommand(new FakeUserService(unitOfWork));
+        var createUserCommand = CreateCommand(unitOfWork);
 
         // Генерируем слишком длинные строки (предполагая, что валидатор имеет ограничения по длине)
         var createUserRequest = new CreateUserRequest
@@ -193,7 +203,7 @@ public class CreateUserCommandTests
                       .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
                       .Generate(10));
 
-        var createUserCommand = new CreateUserCommand(new FakeUserService(unitOfWork));
+        var createUserCommand = CreateCommand(unitOfWork);
 
         var createUserRequest = new CreateUserRequest
         {

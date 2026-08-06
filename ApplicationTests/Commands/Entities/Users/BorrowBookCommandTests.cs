@@ -369,8 +369,8 @@ public class BorrowBookCommandTests
             var userRoomBook = updatedUser.RoomBooks.First();
             Assert.That(userRoomBook.User, Is.SameAs(updatedUser));
             Assert.That(userRoomBook.RoomBook, Is.SameAs(roomBook));
-            Assert.That(userRoomBook.BorrowDate, Is.EqualTo(DateTime.Now).Within(TimeSpan.FromSeconds(5)));
-            Assert.That(userRoomBook.Deadline, Is.EqualTo(DateTime.Now.AddDays(14)).Within(TimeSpan.FromSeconds(5)));
+            Assert.That(userRoomBook.BorrowDate, Is.EqualTo(DateTime.UtcNow).Within(TimeSpan.FromSeconds(5)));
+            Assert.That(userRoomBook.Deadline, Is.EqualTo(DateTime.UtcNow.AddDays(14)).Within(TimeSpan.FromSeconds(5)));
             Assert.That(userRoomBook.IsReturned, Is.False);
 
             // Проверяем, что счетчик увеличился

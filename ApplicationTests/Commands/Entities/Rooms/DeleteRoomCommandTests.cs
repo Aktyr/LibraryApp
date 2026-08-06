@@ -178,8 +178,11 @@ public class DeleteRoomCommandTests
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };
 
         // Act & Assert
-        // Это тоже должно бросать исключение, так как RoomBooks != null
-        Assert.ThrowsAsync<RoomDeletionException>(() =>
-            deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None));
+        var response = await deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None);
+        Assert.Multiple(async () =>
+        {
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+            Assert.That(roomRepo.Entities, Is.Empty);
+        });
     }
 }

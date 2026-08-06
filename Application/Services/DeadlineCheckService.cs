@@ -63,7 +63,10 @@ public class DeadlineCheckService : BackgroundService, IService
                 && urb.Deadline.Value.Date == now.AddDays(settings.ReturnReminderInDays).Date,
             cancellationToken);
 
-        foreach (var urb in soonDue)
+        var soonDueList = soonDue.ToList();
+
+
+        foreach (var urb in soonDueList)
             await notificationService.SendReturnReminderAsync(urb.User, urb, cancellationToken);
 
 
@@ -74,7 +77,9 @@ public class DeadlineCheckService : BackgroundService, IService
                 && urb.Deadline.Value < now,
             cancellationToken);
 
-        foreach (var urb in overdue)
+        var overdueList = overdue.ToList(); 
+
+        foreach (var urb in overdueList)
         {
             var daysOverdue = (now - urb.Deadline!.Value).Days;
             var penalty = CalculatePenalty(daysOverdue, penaltySettings);

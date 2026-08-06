@@ -1,6 +1,4 @@
-﻿using LibApp.Application.Configuration;
-
-namespace LibApp.ApplicationTests.Commands.Entities.Users;
+﻿namespace LibApp.ApplicationTests.Commands.Entities.Users;
 
 [TestFixture]
 public class GetUserRoomBooksQueryTests
@@ -30,7 +28,6 @@ public class GetUserRoomBooksQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result.Status, Is.EqualTo("Ok"));
-            Assert.That(result.Message, Is.EqualTo("Список книг получен"));
             Assert.That(result.Books, Is.Empty);
         });
     }

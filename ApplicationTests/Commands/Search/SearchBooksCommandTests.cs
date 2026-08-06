@@ -20,7 +20,7 @@ public class SearchBooksCommandTests
         Assert.Multiple(() =>
         {
             Assert.That(result.Status, Is.EqualTo("Ok"));
-            Assert.That(result.Message, Does.Contain("Найдено книг: 0"));
+            Assert.That(result.Message, Does.Contain("Found 0 books."));
             Assert.That(result.Book, Is.Empty);
         });
     }
@@ -53,7 +53,7 @@ public class SearchBooksCommandTests
         Assert.Multiple(() =>
         {
             Assert.That(result.Status, Is.EqualTo("Ok"));
-            Assert.That(result.Message, Does.Contain("Найдено книг: 5"));
+            Assert.That(result.Message, Does.Contain("Found 5 books."));
             Assert.That(result.Book, Has.Length.EqualTo(5));
         });
     }
@@ -222,39 +222,54 @@ public class SearchBooksCommandTests
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
-        var bookRepo = unitOfWork.GetRepository<Book>();
-        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
-
+        var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var availableBookId = new Id(Guid.NewGuid());
         var unavailableBookId = new Id(Guid.NewGuid());
 
-        var availableBook = new Book { Id = availableBookId, Title = "Available", Author = "Author", RoomBook = [] };
-        var unavailableBook = new Book { Id = unavailableBookId, Title = "Unavailable", Author = "Author", RoomBook = [] };
+        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" };
 
-        await bookRepo.AddRangeAsync([availableBook, unavailableBook], CancellationToken.None);
-
-        // Книга с доступными экземплярами: BookCount > BorrowedCount
+        // Создаём RoomBook для доступной книги (BookCount > BorrowedCount)
         var availableRoomBook = new RoomBook
         {
             Id = new Id(Guid.NewGuid()),
             BookCount = 5,
-            BorrowedCount = 2, // AvailableCount = 3 > 0
-            Book = availableBook,
-            Room = new Room { Id = new Id(Guid.NewGuid()) }
+            BorrowedCount = 2,      // доступно 3 экземпляра
+            Room = room
         };
 
-        // Книга без доступных экземпляров: BookCount == BorrowedCount
+        // Создаём RoomBook для недоступной книги (BookCount == BorrowedCount)
         var unavailableRoomBook = new RoomBook
         {
             Id = new Id(Guid.NewGuid()),
             BookCount = 5,
-            BorrowedCount = 5, // AvailableCount = 0
-            Book = unavailableBook,
-            Room = new Room { Id = new Id(Guid.NewGuid()) }
+            BorrowedCount = 5,      // доступно 0 экземпляров
+            Room = room
         };
 
-        await roomBookRepo.AddRangeAsync([availableRoomBook, unavailableRoomBook], CancellationToken.None);
+        // Создаём книги и сразу добавляем RoomBook в их коллекции
+        var availableBook = new Book
+        {
+            Id = availableBookId,
+            Title = "Available",
+            Author = "Author",
+            RoomBook = new List<RoomBook> { availableRoomBook }
+        };
+        var unavailableBook = new Book
+        {
+            Id = unavailableBookId,
+            Title = "Unavailable",
+            Author = "Author",
+            RoomBook = new List<RoomBook> { unavailableRoomBook }
+        };
 
+        // Устанавливаем обратные ссылки (чтобы навигация работала в обе стороны)
+        availableRoomBook.Book = availableBook;
+        unavailableRoomBook.Book = unavailableBook;
+
+        // Сохраняем только книги — RoomBook добавятся автоматически (каскадно)
+        await bookRepo.AddRangeAsync(new[] { availableBook, unavailableBook }, CancellationToken.None);
+
+        // Выполняем команду поиска с фильтром AvailableOnly = true
         var command = new SearchBooksCommand(unitOfWork, Converter);
         var request = new SearchBooksRequest { AvailableOnly = true };
 
@@ -268,7 +283,6 @@ public class SearchBooksCommandTests
             Assert.That(result.Book[0].Title, Is.EqualTo("Available"));
         });
     }
-
     [Test]
     public async Task Execute_WithSortByTitleDescending_ReturnsBooksSorted()
     {
@@ -694,7 +708,7 @@ public class SearchBooksCommandTests
         Assert.Multiple(() =>
         {
             Assert.That(result.Status, Is.EqualTo("Ok"));
-            Assert.That(result.Message, Does.Contain("Найдено книг: 0"));
+            Assert.That(result.Message, Does.Contain("Found 0 books."));
             Assert.That(result.Book, Is.Empty);
         });
     }

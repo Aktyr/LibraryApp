@@ -5,6 +5,15 @@ public class RegisterCommandTests
 {
     private RegisterValidatorAsync CreateRegisterValidator => new();
     private IConverter<User, UserDTO> Converter => new UserDTOConverter();
+
+    private RegisterCommand CreateCommand(FakeUnitOfWork unitOfWork, JwtService jwtService)
+    {
+        var emailValidator = new EmailValidatorAsync();
+        var userRegistrationValidator = new UserRegistrationValidator(emailValidator);
+        var userService = new UserService(unitOfWork, userRegistrationValidator);
+        return new RegisterCommand(userService, jwtService);
+    }
+
     private JwtService JwtService => new(Options.Create(new JwtSettings
     {
         SecretKey = "test-secret-key-for-testing-purposes-only-12345",
@@ -107,7 +116,7 @@ public class RegisterCommandTests
         };
         await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(new FakeUserService(unitOfWork), JwtService);
+        var registerCommand = CreateCommand(unitOfWork, JwtService);
         var registerRequest = new RegisterRequest
         {
             Email = email,
@@ -148,7 +157,8 @@ public class RegisterCommandTests
             .Generate(3)
             .AsEnumerable(), CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(new FakeUserService(unitOfWork), JwtService);
+        var registerCommand = CreateCommand(unitOfWork, JwtService);
+
         var registerRequest = new RegisterRequest
         {
             Email = email,
@@ -174,7 +184,7 @@ public class RegisterCommandTests
             .Generate(3)
             .AsEnumerable(), CancellationToken.None);
 
-        var registerCommand = new RegisterCommand(new FakeUserService(unitOfWork), JwtService);
+        var registerCommand = CreateCommand(unitOfWork, JwtService);
         var registerRequest = new RegisterRequest
         {
             Email = "test@test.com",

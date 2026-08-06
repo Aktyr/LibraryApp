@@ -1,12 +1,10 @@
-﻿using LibApp.Application.Configuration;
-
-namespace LibApp.ApplicationTests.Services;
+﻿namespace LibApp.ApplicationTests.Services;
 
 [TestFixture]
 public class DeadlineCheckServiceTests
 {
     private Mock<IServiceProvider> CreateServiceProvider(
-        FakeRepository<UserRoomBook> userRoomBookRepo,
+        FakeUnitOfWork unitOfWork,
         Mock<INotificationService>? notificationMock = null)
     {
         var scopeMock = new Mock<IServiceScope>();
@@ -15,15 +13,16 @@ public class DeadlineCheckServiceTests
 
         notificationMock ??= new Mock<INotificationService>();
 
-        scopeMock.Setup(x => x.ServiceProvider).Returns(serviceProviderMock.Object);
-        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
-
         serviceProviderMock
-            .Setup(x => x.GetService(typeof(IRepository<UserRoomBook>)))
-            .Returns(userRoomBookRepo);
+            .Setup(x => x.GetService(typeof(IUnitOfWork)))
+            .Returns(unitOfWork);
+
         serviceProviderMock
             .Setup(x => x.GetService(typeof(INotificationService)))
             .Returns(notificationMock.Object);
+
+        scopeMock.Setup(x => x.ServiceProvider).Returns(serviceProviderMock.Object);
+        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
 
         var fullProviderMock = new Mock<IServiceProvider>();
         fullProviderMock
@@ -32,19 +31,6 @@ public class DeadlineCheckServiceTests
 
         return fullProviderMock;
     }
-
-    private Mock<IOptionsMonitor<DeadlineCheckSettings>> CreateDeadlineSettingsMonitor(
-        DeadlineCheckSettings? settings = null)
-    {
-        var mock = new Mock<IOptionsMonitor<DeadlineCheckSettings>>();
-        mock.Setup(x => x.CurrentValue).Returns(settings ?? new DeadlineCheckSettings
-        {
-            ReturnReminderInDays = 3,
-            CheckIntervalInHours = 24
-        });
-        return mock;
-    }
-
     private Mock<IOptionsMonitor<PenaltySettings>> CreatePenaltySettingsMonitor(
         PenaltySettings? settings = null)
     {
@@ -59,20 +45,36 @@ public class DeadlineCheckServiceTests
     }
 
     private DeadlineCheckService CreateService(
-        FakeRepository<UserRoomBook> userRoomBookRepo,
-        DeadlineCheckSettings? deadlineSettings = null,
-        PenaltySettings? penaltySettings = null,
-        Mock<INotificationService>? notificationMock = null)
+    FakeUnitOfWork unitOfWork,
+    DeadlineCheckSettings? deadlineSettings = null,
+    PenaltySettings? penaltySettings = null,
+    Mock<INotificationService>? notificationMock = null)
     {
         var logger = new Logger<DeadlineCheckService>(new LoggerFactory());
-        var serviceProvider = CreateServiceProvider(userRoomBookRepo, notificationMock);
+        var serviceProvider = CreateServiceProvider(unitOfWork, notificationMock);
+
+        var deadlineMonitor = new Mock<IOptionsMonitor<DeadlineCheckSettings>>();
+        deadlineMonitor.Setup(x => x.CurrentValue).Returns(deadlineSettings ?? new DeadlineCheckSettings
+        {
+            ReturnReminderInDays = 3,
+            CheckIntervalInHours = 24
+        });
+
+        var penaltyMonitor = new Mock<IOptionsMonitor<PenaltySettings>>();
+        penaltyMonitor.Setup(x => x.CurrentValue).Returns(penaltySettings ?? new PenaltySettings
+        {
+            DailyRate = 10m,
+            MaxPenalty = 500m,
+            GracePeriodDays = 0
+        });
 
         return new DeadlineCheckService(
             serviceProvider.Object,
             logger,
-            CreateDeadlineSettingsMonitor(deadlineSettings).Object,
-            CreatePenaltySettingsMonitor(penaltySettings).Object);
+            deadlineMonitor.Object,
+            penaltyMonitor.Object);
     }
+
 
     [Test]
     public async Task CheckDeadlines_WithSoonDueBooks_SendsReturnReminders()
@@ -81,7 +83,7 @@ public class DeadlineCheckServiceTests
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
-        var realNow = DateTime.Now;
+        var realNow = DateTime.UtcNow;
 
         var user = new User
         {
@@ -114,7 +116,7 @@ public class DeadlineCheckServiceTests
             CheckIntervalInHours = 24
         };
 
-        var service = CreateService(repo, deadlineSettings, notificationMock: notificationMock);
+        var service = CreateService(unitOfWork, deadlineSettings, notificationMock: notificationMock);
 
         var method = typeof(DeadlineCheckService)
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -138,7 +140,7 @@ public class DeadlineCheckServiceTests
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
-        var realNow = DateTime.Now;
+        var realNow = DateTime.UtcNow;
 
         var user = new User
         {
@@ -148,7 +150,7 @@ public class DeadlineCheckServiceTests
             FirstName = "User"
         };
 
-        // Просрочено ровно на 5 дней (реальный DateTime.Now - 5 дней)
+        // Просрочено ровно на 5 дней (реальный DateTime.UtcNow - 5 дней)
         var userRoomBook = new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
@@ -173,7 +175,7 @@ public class DeadlineCheckServiceTests
             GracePeriodDays = 0
         };
 
-        var service = CreateService(repo, penaltySettings: penaltySettings, notificationMock: notificationMock);
+        var service = CreateService(unitOfWork, penaltySettings: penaltySettings, notificationMock: notificationMock);
 
         var method = typeof(DeadlineCheckService)
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -239,7 +241,7 @@ public class DeadlineCheckServiceTests
             GracePeriodDays = 0
         };
 
-        var service = CreateService(repo, penaltySettings: penaltySettings, notificationMock: notificationMock);
+        var service = CreateService(unitOfWork, penaltySettings: penaltySettings, notificationMock: notificationMock);
 
         var method = typeof(DeadlineCheckService)
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -260,7 +262,7 @@ public class DeadlineCheckServiceTests
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
-        var service = CreateService(repo, notificationMock: notificationMock);
+        var service = CreateService(unitOfWork, notificationMock: notificationMock);
 
         var method = typeof(DeadlineCheckService)
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -290,7 +292,7 @@ public class DeadlineCheckServiceTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
-        var service = CreateService(repo);
+        var service = CreateService(unitOfWork);
         var cts = new CancellationTokenSource();
 
         // Act
@@ -312,7 +314,7 @@ public class DeadlineCheckServiceTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
-        var service = CreateService(repo);
+        var service = CreateService(unitOfWork);
         var settings = new PenaltySettings
         {
             DailyRate = 10m,
@@ -336,7 +338,7 @@ public class DeadlineCheckServiceTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
-        var service = CreateService(repo);
+        var service = CreateService(unitOfWork);
         var settings = new PenaltySettings
         {
             DailyRate = 10m,
@@ -371,7 +373,7 @@ public class DeadlineCheckServiceTests
             });
 
         var service = new DeadlineCheckService(
-            CreateServiceProvider(repo).Object,
+            CreateServiceProvider(unitOfWork).Object,
             new Logger<DeadlineCheckService>(new LoggerFactory()),
             deadlineMonitorMock.Object,
             CreatePenaltySettingsMonitor().Object);
@@ -436,7 +438,7 @@ public class DeadlineCheckServiceTests
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
-        var realNow = DateTime.Now;
+        var realNow = DateTime.UtcNow;
 
         var user = new User
         {
@@ -485,7 +487,7 @@ public class DeadlineCheckServiceTests
             CheckIntervalInHours = 24
         };
 
-        var service = CreateService(repo, deadlineSettings, notificationMock: notificationMock);
+        var service = CreateService(unitOfWork, deadlineSettings, notificationMock: notificationMock);
 
         var method = typeof(DeadlineCheckService)
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -543,7 +545,7 @@ public class DeadlineCheckServiceTests
 
         await repo.AddRangeAsync([bookWithoutDeadline]);
 
-        var service = CreateService(repo, notificationMock: notificationMock);
+        var service = CreateService(unitOfWork, notificationMock: notificationMock);
 
         var method = typeof(DeadlineCheckService)
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -575,7 +577,7 @@ public class DeadlineCheckServiceTests
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var notificationMock = new Mock<INotificationService>();
-        var realNow = DateTime.Now;
+        var realNow = DateTime.UtcNow;
 
         var user = new User
         {
@@ -602,7 +604,7 @@ public class DeadlineCheckServiceTests
 
         await repo.AddRangeAsync([returnedBook]);
 
-        var service = CreateService(repo, notificationMock: notificationMock);
+        var service = CreateService(unitOfWork, notificationMock: notificationMock);
 
         var method = typeof(DeadlineCheckService)
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;

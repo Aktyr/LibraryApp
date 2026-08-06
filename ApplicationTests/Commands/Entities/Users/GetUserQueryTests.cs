@@ -35,7 +35,7 @@ public class GetUserQueryTests
         {
             Assert.That(result, Is.Not.Null);
             Assert.That(result!.Status, Is.EqualTo("Ok"));
-            Assert.That(result.Message, Is.EqualTo("User issued successfully."));
+            Assert.That(result.Message, Is.EqualTo("User retrieved successfully."));
             Assert.That(result.Users, Has.Length.EqualTo(1));
             Assert.That(result.Users[0].Id, Is.EqualTo(targetUser.Id.Value));
             Assert.That(result.Users[0].LastName, Is.EqualTo(targetUser.LastName));
