@@ -1,9 +1,9 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
+// fixme удалить IConverter<User, UserDTO> userConverter
 public class UpdateUserCommand(
-    IUnitOfWork unitOfWork, 
-    UserValidatorAsync userValidator, 
-    IConverter<User, UserDTO> userConverter) : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>, ICommand
+    IUnitOfWork unitOfWork,
+    UserValidatorAsync userValidator) : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateUserRequest request, CancellationToken cancellationToken)
     {
@@ -11,17 +11,12 @@ public class UpdateUserCommand(
         var user = await userRepo.FirstOrDefaultAsync(u => u.Id.Value == request.Id.Value, cancellationToken);
         if (user == null) throw new UserNotFoundException();
 
-        // Временное DTO для валидации
-        var userDto = new UserDTO(request.Id.Value,
-                                  request.LastName,
-                                  request.FirstName,
-                                  request.MiddleName,
-                                  request.ContactInfo,
-                                  user.NearestReturnTimeSpan, []);
-
-        var userForValidation = userConverter.ToEntity(userDto);
-
-        var validationResult = await userValidator.ValidateAsync(userForValidation, cancellationToken);
+        // Валидация
+        var validationResult = await userValidator.ValidateNameAndContactAsync(
+            request.LastName,
+            request.FirstName,
+            request.MiddleName,
+            request.ContactInfo);
 
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };

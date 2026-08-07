@@ -6,7 +6,7 @@ public class CreateUserCommandTests
     private CreateUserCommand CreateCommand(FakeUnitOfWork unitOfWork)
     {
         var emailValidator = new EmailValidatorAsync();
-        var userRegistrationValidator = new UserRegistrationValidator(emailValidator);
+        var userRegistrationValidator = new UserValidatorAsync(emailValidator);
         var userService = new UserService(unitOfWork, userRegistrationValidator);
         return new CreateUserCommand(userService);
     }
@@ -216,7 +216,8 @@ public class CreateUserCommandTests
     public async Task ValidateAsync_WhenMiddleNameTooLong_ReturnsError()
     {
         // Arrange
-        var validator = new UserValidatorAsync();
+        var validator = new UserValidatorAsync(new EmailValidatorAsync());
+
         var user = new User
         {
             Id = new Id(Guid.NewGuid()),
@@ -227,7 +228,11 @@ public class CreateUserCommandTests
         };
 
         // Act
-        var result = await validator.ValidateAsync(user);
+        var result = await validator.ValidateNameAndContactAsync(
+            user.LastName, 
+            user.FirstName, 
+            user.MiddleName, 
+            user.ContactInfo);
 
         // Assert
         Assert.Multiple(() =>

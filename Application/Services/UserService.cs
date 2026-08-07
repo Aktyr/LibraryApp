@@ -3,9 +3,9 @@
 public class UserService : IUserService, IService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly UserRegistrationValidator _validator;
+    private readonly UserValidatorAsync _validator;
 
-    public UserService(IUnitOfWork unitOfWork, UserRegistrationValidator validator)
+    public UserService(IUnitOfWork unitOfWork, UserValidatorAsync validator)
     {
         _unitOfWork = unitOfWork;
         _validator = validator;
@@ -23,7 +23,14 @@ public class UserService : IUserService, IService
     {
         // Валидация
         var validationResult = await _validator.ValidateAllAsync(
-            email, password, lastName, firstName, middleName, contactInfo, cancellationToken);
+            email, 
+            password, 
+            lastName, 
+            firstName, 
+            middleName, 
+            contactInfo, 
+            cancellationToken);
+
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 

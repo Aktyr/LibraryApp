@@ -3,9 +3,9 @@
 [TestFixture]
 public class UserServiceTests
 {
-    private UserService CreateService(FakeUnitOfWork unitOfWork, UserRegistrationValidator? validator = null)
+    private UserService CreateService(FakeUnitOfWork unitOfWork, UserValidatorAsync? validator = null)
     {
-        validator ??= new UserRegistrationValidator(new EmailValidatorAsync());
+        validator ??= new UserValidatorAsync(new EmailValidatorAsync());
         return new UserService(unitOfWork, validator);
     }
 
@@ -82,7 +82,7 @@ public class UserServiceTests
         mockUnitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("DB error"));
         // Rollback должен быть вызван
-        var validator = new UserRegistrationValidator(new EmailValidatorAsync());
+        var validator = new UserValidatorAsync(new EmailValidatorAsync());
         var service = new UserService(mockUnitOfWork.Object, validator);
 
         // Act & Assert

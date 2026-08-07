@@ -3,8 +3,7 @@
 [TestFixture]
 public class UpdateUserCommandTests
 {
-    private UserValidatorAsync CreateUserValidator => new();
-    private IConverter<User, UserDTO> Converter => new UserDTOConverter();
+    private UserValidatorAsync CreateUserValidator => new(new EmailValidatorAsync());
 
     [Test]
     public async Task Execute_UpdateExistingUserWithValidData_UpdatesSuccessfully()
@@ -26,7 +25,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -70,7 +69,7 @@ public class UpdateUserCommandTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = nonExistingId,
@@ -104,7 +103,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
 
         // Пытаемся обновить с пустой фамилией (невалидные данные)
         var updateUserRequest = new UpdateUserRequest
@@ -140,7 +139,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -191,7 +190,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -235,7 +234,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -280,7 +279,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
 
         // Обновляем теми же данными
         var updateUserRequest = new UpdateUserRequest
@@ -319,7 +318,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
 
         // Слишком длинная фамилия (предполагая, что валидатор проверяет длину)
         var updateUserRequest = new UpdateUserRequest
@@ -364,7 +363,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -408,7 +407,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Converter);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
