@@ -100,4 +100,29 @@ public class UserValidatorAsyncTests
             Assert.That(result.Errors, Contains.Item("Имя не может превышать 100 символов"));
         });
     }
+
+    [Test]
+    public async Task ValidateAsync_WhenMiddleNameExceedsMaxLength_ReturnsError()
+    {
+        // Arrange
+        var validator = new UserValidatorAsync();
+        var user = new User
+        {
+            Id = new Id(Guid.NewGuid()),
+            LastName = "Иванов",
+            FirstName = "Иван",
+            MiddleName = new string('C', 101),
+            ContactInfo = "test@test.com"
+        };
+
+        // Act
+        var result = await validator.ValidateAsync(user);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Contains.Item("Отчество не может превышать 100 символов"));
+        });
+    }
 }

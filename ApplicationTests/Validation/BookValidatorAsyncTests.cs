@@ -152,4 +152,31 @@ public class BookValidatorAsyncTests
             Assert.That(result.Errors, Contains.Item($"Год должен быть между 0 и {DateTime.Now.Year + 5}"));
         });
     }
+
+    [Test]
+    public async Task ValidateAsync_WhenGenreTooLong_ReturnsError()
+    {
+        // Arrange
+        var validator = new BookValidatorAsync();
+        var book = new Book
+        {
+            Id = new Id(Guid.NewGuid()),
+            Title = "Valid Title",
+            Author = "Valid Author",
+            Year = 2000,
+            Publisher = "Valid Publisher",
+            Genre = new string('A', 101) // > 100
+        };
+
+        // Act
+        var result = await validator.ValidateAsync(book);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Contains.Item("Название жанра не может превышать 100 символов"));
+        });
+    }
+
 }

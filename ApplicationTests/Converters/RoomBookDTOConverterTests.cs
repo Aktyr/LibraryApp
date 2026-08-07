@@ -77,4 +77,26 @@ public class RoomBookDTOConverterTests
             Assert.That(entity.Book, Is.Null);
         });
     }
+
+    [Test]
+    public void ToDto_WhenRoomBookIsNull_ReturnsEmptyCollection()
+    {
+        // Arrange
+        var converter = new BookDTOConverter();
+        var book = new Book
+        {
+            Id = new Id(Guid.NewGuid()),
+            Title = "Test",
+            Author = "Author",
+            RoomBook = null! // Явно null
+        };
+
+        // Act
+        var dto = converter.ToDto(book);
+
+        // Assert
+        Assert.That(dto.RoomBook, Is.Not.Null);
+        Assert.That(dto.RoomBook, Is.Empty);
+    }
+
 }

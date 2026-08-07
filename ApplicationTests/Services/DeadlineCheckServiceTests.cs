@@ -628,5 +628,34 @@ public class DeadlineCheckServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
+    [Test]
+    public void Constructor_WhenSettingsChanged_UpdatesCheckInterval_2()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var deadlineMonitorMock = new Mock<IOptionsMonitor<DeadlineCheckSettings>>();
+        var initialSettings = new DeadlineCheckSettings { CheckIntervalInHours = 24, ReturnReminderInDays = 3 };
+        var newSettings = new DeadlineCheckSettings { CheckIntervalInHours = 12, ReturnReminderInDays = 3 };
+        deadlineMonitorMock.Setup(x => x.CurrentValue).Returns(initialSettings);
+        deadlineMonitorMock.Setup(x => x.OnChange(It.IsAny<Action<DeadlineCheckSettings, string>>()))
+                           .Callback<Action<DeadlineCheckSettings, string>>(action =>
+                           {
+                               // Имитируем вызов OnChange при изменении
+                               action(newSettings, "");
+                           });
 
+        var service = new DeadlineCheckService(
+            CreateServiceProvider(unitOfWork).Object,
+            new Logger<DeadlineCheckService>(new LoggerFactory()),
+            deadlineMonitorMock.Object,
+            CreatePenaltySettingsMonitor().Object);
+
+        // Act – вызываем OnChange через рефлексию или просто проверяем, что поле _checkInterval обновилось.
+        // В конструкторе подписка происходит, но мы не можем проверить приватное поле напрямую.
+        // Вместо этого мы можем проверить, что метод ExecuteAsync использует обновлённое значение.
+        // Для простоты проверим через рефлексию.
+        var field = typeof(DeadlineCheckService).GetField("_checkInterval", BindingFlags.NonPublic | BindingFlags.Instance);
+        var interval = (TimeSpan)field.GetValue(service);
+        Assert.That(interval, Is.EqualTo(TimeSpan.FromHours(12)));
+    }
 }

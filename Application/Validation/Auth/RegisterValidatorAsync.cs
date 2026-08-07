@@ -25,7 +25,6 @@ public class RegisterValidatorAsync : IValidator // По сути расширя
             errors.Add("Пароль должен быть не менее 6 символов");
         else if (request.Password.Length > 100)
             errors.Add("Пароль слишком длинный");   
-        //todo улучшить условия пароля
 
         if (string.IsNullOrWhiteSpace(request.LastName))
             errors.Add("Фамилия обязательна");

@@ -3,9 +3,6 @@
 [TestFixture]
 public class CreateUserCommandTests
 {
-    private UserValidatorAsync CreateUserValidator => new();
-    private IConverter<User, UserDTO> Converter => new UserDTOConverter();
-
     private CreateUserCommand CreateCommand(FakeUnitOfWork unitOfWork)
     {
         var emailValidator = new EmailValidatorAsync();
@@ -13,7 +10,6 @@ public class CreateUserCommandTests
         var userService = new UserService(unitOfWork, userRegistrationValidator);
         return new CreateUserCommand(userService);
     }
-
 
     [TestCase("Иванов", "Иван", "Иванович", "ivanov@example.com")]
     [TestCase("Петров", "Петр", "", "petrov@example.com")] // MiddleName может быть пустым
@@ -265,5 +261,31 @@ public class CreateUserCommandTests
             await repo.AddRangeAsync([user], cancellationToken);
             return user;
         }
+    }
+    [Test]
+    public async Task Execute_WhenRoleIsNull_SetsDefaultRoleReader()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var service = new FakeUserService(unitOfWork);
+        var command = new CreateUserCommand(service);
+
+        var request = new CreateUserRequest
+        {
+            Email = "test@test.com",
+            Password = "Password123!",
+            LastName = "Иванов",
+            FirstName = "Иван",
+            ContactInfo = "test@test.com",
+            Role = null
+        };
+
+        // Act
+        var response = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        var created = (await userRepo.GetAsync(u => u.Email == "test@test.com")).First();
+        Assert.That(created.Role, Is.EqualTo(UserRole.Reader));
     }
 }

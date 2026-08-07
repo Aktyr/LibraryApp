@@ -46,7 +46,7 @@ public class DeadlineCheckService : BackgroundService, IService
 
     private async Task CheckDeadlines(CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope(); //todo ??
+        using var scope = _serviceProvider.CreateScope();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>(); 
         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();

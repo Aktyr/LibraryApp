@@ -603,5 +603,40 @@ public class ReturnBookCommandTests
                 Times.Never);
         });
     }
+    [Test]
+    public async Task Execute_WhenSaveFails_RollsBackTransaction()
+    {
+        // Arrange
+        var unitOfWorkMock = new Mock<IUnitOfWork>();
+        var userRoomBookRepoMock = new Mock<IRepository<UserRoomBook>>();
+        var roomBookRepoMock = new Mock<IRepository<RoomBook>>();
 
+        unitOfWorkMock.Setup(u => u.GetRepository<UserRoomBook>()).Returns(userRoomBookRepoMock.Object);
+        unitOfWorkMock.Setup(u => u.GetRepository<RoomBook>()).Returns(roomBookRepoMock.Object);
+
+        var userRoomBook = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = new User { Id = new Id(Guid.NewGuid()) },
+            RoomBook = new RoomBook { Id = new Id(Guid.NewGuid()), BorrowedCount = 1 }
+        };
+        userRoomBookRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<UserRoomBook, bool>>>(), It.IsAny<CancellationToken>()))
+                            .ReturnsAsync(userRoomBook);
+
+        unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                      .ThrowsAsync(new Exception("DB error"));
+
+        var validator = new BorrowingValidatorAsync(Mock.Of<IOptionsSnapshot<BorrowingSettings>>());
+        var penaltyService = new PenaltyCalculatorService(Mock.Of<IOptionsSnapshot<PenaltySettings>>());
+        var notificationMock = new Mock<INotificationService>();
+        var command = new ReturnBookCommand(unitOfWorkMock.Object, validator, penaltyService, notificationMock.Object);
+        var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
+
+        // Act & Assert
+        Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+
+        unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

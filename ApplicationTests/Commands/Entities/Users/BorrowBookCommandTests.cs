@@ -449,4 +449,71 @@ public class BorrowBookCommandTests
             Assert.That(dbUser2.RoomBooks, Has.Count.EqualTo(1));
         });
     }
+
+    [Test]
+    public async Task Execute_WhenUserAlreadyHasBook_ThrowsValidationException()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+
+        var user = new User { Id = new Id(Guid.NewGuid()), LastName = "Test", FirstName = "User", ContactInfo = "test@test.com", RoomBooks = new List<UserRoomBook>() };
+        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+
+        var roomBook = new RoomBook { Id = new Id(Guid.NewGuid()), BookCount = 5, BorrowedCount = 0, Book = new Book { Id = new Id(Guid.NewGuid()) }, Room = new Room { Id = new Id(Guid.NewGuid()) } };
+        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
+
+        // Первая выдача
+        var borrow = new UserRoomBook { Id = new Id(Guid.NewGuid()), User = user, RoomBook = roomBook, BorrowDate = DateTime.UtcNow, ReturnDate = null };
+        await userRoomBookRepo.AddRangeAsync(new[] { borrow }, CancellationToken.None);
+
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
+        var request = new BorrowBookRequest { UserId = user.Id.Value, RoomBookId = roomBook.Id.Value, BorrowDays = 7 };
+
+        // Act & Assert
+        var ex = Assert.ThrowsAsync<LibValidationException>(() => command.Execute(request, CancellationToken.None));
+        Assert.That(ex.ExceptionDetails, Has.Member("Пользователь уже взял эту книгу и ещё не вернул её"));
+    }
+
+    [Test]
+    public async Task Execute_WhenSaveFails_RollsBackTransaction()
+    {
+        // Arrange
+        var unitOfWorkMock = new Mock<IUnitOfWork>();
+        var userRoomBookRepoMock = new Mock<IRepository<UserRoomBook>>();
+        var roomBookRepoMock = new Mock<IRepository<RoomBook>>();
+
+        unitOfWorkMock.Setup(u => u.GetRepository<UserRoomBook>()).Returns(userRoomBookRepoMock.Object);
+        unitOfWorkMock.Setup(u => u.GetRepository<RoomBook>()).Returns(roomBookRepoMock.Object);
+
+        var userRoomBook = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = new User { Id = new Id(Guid.NewGuid()) },
+            RoomBook = new RoomBook { Id = new Id(Guid.NewGuid()), BorrowedCount = 1 }
+        };
+        userRoomBookRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<UserRoomBook, bool>>>(), It.IsAny<CancellationToken>()))
+                            .ReturnsAsync(userRoomBook);
+
+        unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                      .ThrowsAsync(new Exception("DB error"));
+
+        var settingsMock = new Mock<IOptionsSnapshot<BorrowingSettings>>();
+        settingsMock.Setup(s => s.Value).Returns(new BorrowingSettings());
+        var validator = new BorrowingValidatorAsync(settingsMock.Object);
+
+        var penaltyService = new PenaltyCalculatorService(Mock.Of<IOptionsSnapshot<PenaltySettings>>());
+        var notificationMock = new Mock<INotificationService>();
+        var command = new ReturnBookCommand(unitOfWorkMock.Object, validator, penaltyService, notificationMock.Object);
+        var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
+
+        // Act & Assert
+        Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+
+        unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

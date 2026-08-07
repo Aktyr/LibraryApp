@@ -9,7 +9,7 @@ public class UserRegistrationValidator : IValidator
         _emailValidator = emailValidator;
     }
 
-    public async Task<ValidationResponse> ValidateAsync(
+    public async Task<ValidationResponse> ValidateAllAsync(
         string email,
         string password,
         string lastName,

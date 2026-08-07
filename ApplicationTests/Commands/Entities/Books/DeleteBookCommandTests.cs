@@ -107,4 +107,29 @@ public class DeleteBookCommandTests
             Assert.That((await bookRepo.GetAsync()).Any(), Is.False);
         });
     }
+    [Test]
+    public async Task Execute_WhenBookHasRoomBooks_ThrowsValidationException()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = unitOfWork.GetRepository<Book>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+        var roomRepo = unitOfWork.GetRepository<Room>();
+
+        var book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book", RoomBook = new List<RoomBook>() };
+        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Room" };
+        var rb = new RoomBook { Id = new Id(Guid.NewGuid()), Book = book, Room = room, BookCount = 1 };
+        book.RoomBook.Add(rb);
+        // Важно: добавляем книгу, у которой уже заполнена коллекция RoomBook
+        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
+        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync(new[] { rb }, CancellationToken.None);
+
+        var command = new DeleteBookCommand(unitOfWork);
+        var request = new DeleteBookRequest { Id = book.Id };
+
+        // Act & Assert
+        var ex = Assert.ThrowsAsync<LibValidationException>(() => command.Execute(request, CancellationToken.None));
+        Assert.That(ex.ExceptionDetails, Has.Member("Невозможно удалить книгу, так как она присутствует в одной или нескольких комнатах"));
+    }
 }

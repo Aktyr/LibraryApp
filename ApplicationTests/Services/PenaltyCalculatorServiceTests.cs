@@ -546,4 +546,60 @@ public class PenaltyCalculatorServiceTests
         // 3 дня × 10 = 30, сохраненный = 30 → берём 30
         Assert.That(result, Is.EqualTo(30m));
     }
+
+    [Test]
+    public void CalculatePenalty_WithGracePeriod_ReturnsCorrectPenalty()
+    {
+        // Arrange
+        var settings = new PenaltySettings { DailyRate = 10m, GracePeriodDays = 3 };
+        var service = CreateService(settings);
+        var now = new DateTime(2024, 1, 10, 12, 0, 0);
+        var deadline = now.AddDays(-5); // 5 дней просрочки, grace 3 => штраф за 2 дня
+
+        // Act
+        var result = service.CalculatePenalty(deadline, now);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(20m));
+    }
+
+    [Test]
+    public void CalculatePenaltyForReturn_WhenReturnedWithSavedPenalty_ReturnsSavedPenalty()
+    {
+        // Arrange
+        var service = CreateService(new PenaltySettings());
+        var userRoomBook = new UserRoomBook
+        {
+            ReturnDate = DateTime.Now,
+            Penalty = 75m,
+            Deadline = DateTime.Now.AddDays(-5) // не важно
+        };
+
+        // Act
+        var result = service.CalculatePenaltyForReturn(userRoomBook);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(75m));
+    }
+
+    [Test]
+    public void CalculatePenaltyForReturn_WhenNotReturnedAndSavedPenaltyHigher_ReturnsMax()
+    {
+        // Arrange
+        var settings = new PenaltySettings { DailyRate = 10m };
+        var service = CreateService(settings);
+        var now = new DateTime(2024, 1, 10, 12, 0, 0);
+        var userRoomBook = new UserRoomBook
+        {
+            ReturnDate = null,
+            Deadline = now.AddDays(-2), // 2 дня просрочки => 20
+            Penalty = 50m // сохранённый больше
+        };
+
+        // Act
+        var result = service.CalculatePenaltyForReturn(userRoomBook, now);
+
+        // Assert
+        Assert.That(result, Is.EqualTo(50m));
+    }
 }

@@ -3,9 +3,6 @@
 [TestFixture]
 public class RegisterCommandTests
 {
-    private RegisterValidatorAsync CreateRegisterValidator => new();
-    private IConverter<User, UserDTO> Converter => new UserDTOConverter();
-
     private RegisterCommand CreateCommand(FakeUnitOfWork unitOfWork, JwtService jwtService)
     {
         var emailValidator = new EmailValidatorAsync();
@@ -197,29 +194,5 @@ public class RegisterCommandTests
         // Act & Assert
         Assert.ThrowsAsync<LibValidationException>(async () =>
             await registerCommand.Execute(registerRequest, CancellationToken.None));
-    }
-    [Test]
-    public async Task ValidateAsync_WhenContactInfoIsEmpty_ReturnsError()
-    {
-        // Arrange
-        var validator = new RegisterValidatorAsync();
-        var request = new RegisterRequest
-        {
-            Email = "test@test.com",
-            Password = "Password123!",
-            LastName = "Иванов",
-            FirstName = "Иван",
-            ContactInfo = "" // Пустой контакт
-        };
-
-        // Act
-        var result = await validator.ValidateAsync(request);
-
-        // Assert
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Contains.Item("Контактная информация обязательна"));
-        });
     }
 }

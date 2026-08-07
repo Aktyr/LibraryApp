@@ -22,7 +22,7 @@ public class UserService : IUserService, IService
         CancellationToken cancellationToken = default)
     {
         // Валидация
-        var validationResult = await _validator.ValidateAsync(
+        var validationResult = await _validator.ValidateAllAsync(
             email, password, lastName, firstName, middleName, contactInfo, cancellationToken);
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };

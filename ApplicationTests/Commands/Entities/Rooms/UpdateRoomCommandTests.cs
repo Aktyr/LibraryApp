@@ -362,4 +362,70 @@ public class UpdateRoomCommandTests
             Assert.That(updatedRoom!.Name, Is.EqualTo("R"));
         });
     }
+
+    [Test]
+    public async Task Execute_WhenNameAlreadyExists_ThrowsRoomExistsException()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = unitOfWork.GetRepository<Room>();
+        var room1 = new Room { Id = new Id(Guid.NewGuid()), Name = "Existing" };
+        var room2 = new Room { Id = new Id(Guid.NewGuid()), Name = "ToUpdate" };
+        await roomRepo.AddRangeAsync(new[] { room1, room2 }, CancellationToken.None);
+
+        var command = new UpdateRoomCommand(unitOfWork, new RoomValidatorAsync(), new FakeRoomBookSynchronizer(), NullLogger<UpdateRoomCommand>.Instance);
+        var request = new UpdateRoomRequest { Id = room2.Id, Name = "Existing", RoomBookDTO = new List<RoomBookDTO>() };
+
+        // Act & Assert
+        Assert.ThrowsAsync<RoomExistsException>(() => command.Execute(request, CancellationToken.None));
+    }
+
+    [Test]
+    public async Task Execute_WhenSynchronizerThrows_RollsBackTransaction()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = unitOfWork.GetRepository<Room>();
+        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Room" };
+        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
+
+        var syncMock = new Mock<IRoomBookSynchronizer>();
+        syncMock.Setup(s => s.SynchronizeAsync(It.IsAny<Room>(), It.IsAny<ICollection<RoomBookDTO>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Sync error"));
+
+        var command = new UpdateRoomCommand(unitOfWork, new RoomValidatorAsync(), syncMock.Object, NullLogger<UpdateRoomCommand>.Instance);
+        var request = new UpdateRoomRequest { Id = room.Id, Name = "NewName", RoomBookDTO = new List<RoomBookDTO>() };
+
+        // Act & Assert
+        Assert.ThrowsAsync<InvalidOperationException>(() => command.Execute(request, CancellationToken.None));
+    }
+    [Test]
+    public async Task Execute_WhenSaveFails_RollsBackTransaction()
+    {
+        // Arrange
+        var unitOfWorkMock = new Mock<IUnitOfWork>();
+        var roomRepoMock = new Mock<IRepository<Room>>();
+        unitOfWorkMock.Setup(u => u.GetRepository<Room>()).Returns(roomRepoMock.Object);
+
+        var roomId = new Id(Guid.NewGuid());
+        var room = new Room { Id = roomId, Name = "Room", RoomBooks = new List<RoomBook>() };
+        roomRepoMock.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Room, bool>>>(), null, null, null, It.IsAny<string[]>()))
+                    .ReturnsAsync(new[] { room });
+
+        unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                      .ThrowsAsync(new Exception("DB error"));
+
+        var validator = new RoomValidatorAsync();
+        var synchronizerMock = new Mock<IRoomBookSynchronizer>();
+        var logger = NullLogger<UpdateRoomCommand>.Instance;
+        var command = new UpdateRoomCommand(unitOfWorkMock.Object, validator, synchronizerMock.Object, logger);
+        var request = new UpdateRoomRequest { Id = roomId, Name = "NewName", RoomBookDTO = new List<RoomBookDTO>() };
+
+        // Act & Assert
+        Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+
+        unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

@@ -712,5 +712,46 @@ public class SearchBooksCommandTests
             Assert.That(result.Book, Is.Empty);
         });
     }
+    [Test]
+    public async Task Execute_WithGenreFilter_ReturnsMatchingBooks()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = unitOfWork.GetRepository<Book>();
+        var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 1", Genre = "Science" };
+        var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 2", Genre = "History" };
+        await bookRepo.AddRangeAsync(new[] { book1, book2 }, CancellationToken.None);
 
+        var command = new SearchBooksCommand(unitOfWork, new BookDTOConverter());
+        var request = new SearchBooksRequest { Genre = "Science" };
+
+        // Act
+        var result = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.That(result.Book, Has.Length.EqualTo(1));
+        Assert.That(result.Book[0].Title, Is.EqualTo("Book 1"));
+    }
+
+    [Test]
+    public async Task Execute_WithMultipleFilters_CorrectlyCombines()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = unitOfWork.GetRepository<Book>();
+        var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Clean Code", Author = "Martin", Year = 2008 };
+        var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Clean Architecture", Author = "Martin", Year = 2017 };
+        var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Design Patterns", Author = "Gamma", Year = 1994 };
+        await bookRepo.AddRangeAsync(new[] { book1, book2, book3 }, CancellationToken.None);
+
+        var command = new SearchBooksCommand(unitOfWork, new BookDTOConverter());
+        var request = new SearchBooksRequest { Author = "Martin", YearFrom = 2010 };
+
+        // Act
+        var result = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.That(result.Book, Has.Length.EqualTo(1));
+        Assert.That(result.Book[0].Title, Is.EqualTo("Clean Architecture"));
+    }
 }
