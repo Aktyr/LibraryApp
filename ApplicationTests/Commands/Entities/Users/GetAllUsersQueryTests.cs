@@ -3,7 +3,7 @@
 [TestFixture]
 public class GetAllUsersQueryTests
 {
-    private IConverter<User, UserDTO> Converter => new UserDTOConverter();
+    private static IConverter<User, UserDTO> Converter => new UserDTOConverter();
 
     [Test]
     public async Task Execute_GetAllUsersFromEmptyRepository_ReturnsEmptyArray()
@@ -40,7 +40,7 @@ public class GetAllUsersQueryTests
             .RuleFor(x => x.FirstName, f => f.Name.FirstName())
             .RuleFor(x => x.MiddleName, f => f.Name.FirstName())
             .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
-            .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate(15)
             .ToList();
 
@@ -89,7 +89,7 @@ public class GetAllUsersQueryTests
             RoomBooks = []
         };
 
-        await userRepo.AddRangeAsync(new[] { user1, user2 }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user1, user2], CancellationToken.None);
 
         var getAllUsersQuery = new GetAllUsersCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -136,36 +136,33 @@ public class GetAllUsersQueryTests
             FirstName = "Алексей",
             MiddleName = "Владимирович",
             ContactInfo = "sidorov@test.ru",
-            RoomBooks = new List<UserRoomBook>
-            {
-                new UserRoomBook
-                {
+            RoomBooks =
+            [
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-10),
                     Deadline = DateTime.Now.AddDays(2), // Через 2 дня
                     User = null,
                     RoomBook = null
                 },
-                new UserRoomBook
-                {
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(5), // Через 5 дней
                     User = null,
                     RoomBook = null
                 },
-                new UserRoomBook
-                {
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-3),
                     Deadline = null, // Без дедлайна
                     User = null,
                     RoomBook = null
                 }
-            }
+            ]
         };
 
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var getAllUsersQuery = new GetAllUsersCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -194,9 +191,9 @@ public class GetAllUsersQueryTests
 
         var users = new List<User>
         {
-            new User { Id = new Id(Guid.NewGuid()), LastName = "Абрамов", FirstName = "Алексей", ContactInfo = "a@test.ru" },
-            new User { Id = new Id(Guid.NewGuid()), LastName = "Борисов", FirstName = "Борис", ContactInfo = "b@test.ru" },
-            new User { Id = new Id(Guid.NewGuid()), LastName = "Васильев", FirstName = "Василий", ContactInfo = "c@test.ru" },
+            new() { Id = new Id(Guid.NewGuid()), LastName = "Абрамов", FirstName = "Алексей", ContactInfo = "a@test.ru" },
+            new() { Id = new Id(Guid.NewGuid()), LastName = "Борисов", FirstName = "Борис", ContactInfo = "b@test.ru" },
+            new() { Id = new Id(Guid.NewGuid()), LastName = "Васильев", FirstName = "Василий", ContactInfo = "c@test.ru" },
         };
 
         await userRepo.AddRangeAsync(users.AsEnumerable(), CancellationToken.None);
@@ -219,7 +216,7 @@ public class GetAllUsersQueryTests
         var mockUserRepo = new Mock<IRepository<User>>();
         var users = new List<User>
         {
-            new User { Id = new Id(Guid.NewGuid()), LastName = "Test", FirstName = "User", ContactInfo = "test@test.ru" }
+            new() { Id = new Id(Guid.NewGuid()), LastName = "Test", FirstName = "User", ContactInfo = "test@test.ru" }
         };
 
         mockUserRepo.Setup(repo => repo.GetWithoutTrackingAsync(It.IsAny<CancellationToken>()))
@@ -268,7 +265,6 @@ public class GetAllUsersQueryTests
     {
         // Arrange
         var unitOfWork2 = new FakeUnitOfWork();
-        var userRepo2 = (FakeRepository<User>)unitOfWork2.GetRepository<User>();
         var getAllUsersQuery = new GetAllUsersCommand(unitOfWork2, Converter);
         var emptyRequest = new EmptyRequest();
 

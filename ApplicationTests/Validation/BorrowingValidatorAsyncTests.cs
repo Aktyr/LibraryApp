@@ -5,7 +5,7 @@ namespace LibApp.ApplicationTests.Validation;
 [TestFixture]
 public class BorrowingValidatorAsyncTests
 {
-    private BorrowingValidatorAsync CreateValidator(BorrowingSettings? settings = null)
+    private static BorrowingValidatorAsync CreateValidator(BorrowingSettings? settings = null)
     {
         var optionsMock = new Mock<IOptionsSnapshot<BorrowingSettings>>();
         optionsMock.Setup(x => x.Value).Returns(settings ?? new BorrowingSettings());
@@ -27,9 +27,12 @@ public class BorrowingValidatorAsyncTests
         // Act
         var result = await validator.ValidateBorrowRequestAsync(request);
 
-        // Assert
-        Assert.That(result.IsValid, Is.True);
-        Assert.That(result.Errors, Is.Empty);
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(result.Errors, Is.Empty);
+        });
     }
 
     [Test]
@@ -289,7 +292,7 @@ public class BorrowingValidatorAsyncTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
 
         // Act
@@ -314,7 +317,7 @@ public class BorrowingValidatorAsyncTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
 
         var roomBook = new RoomBook
@@ -349,11 +352,11 @@ public class BorrowingValidatorAsyncTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>
-        {
-            new UserRoomBook { BorrowDate = DateTime.Now.AddDays(-5), Deadline = DateTime.Now.AddDays(5), ReturnDate = null },
-            new UserRoomBook { BorrowDate = DateTime.Now.AddDays(-3), Deadline = DateTime.Now.AddDays(12), ReturnDate = null }
-        }
+            RoomBooks =
+        [
+            new() { BorrowDate = DateTime.Now.AddDays(-5), Deadline = DateTime.Now.AddDays(5), ReturnDate = null },
+            new() { BorrowDate = DateTime.Now.AddDays(-3), Deadline = DateTime.Now.AddDays(12), ReturnDate = null }
+        ]
         };
 
         var roomBook = new RoomBook
@@ -391,17 +394,16 @@ public class BorrowingValidatorAsyncTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>
-        {
-            new UserRoomBook
-            {
+            RoomBooks =
+        [
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 BorrowDate = DateTime.Now.AddDays(-30),
                 Deadline = DateTime.Now.AddDays(-5), // Просрочена
                 ReturnDate = null,
                 RoomBook = new RoomBook { Id = new Id(Guid.NewGuid()) }
             }
-        }
+        ]
         };
 
         var roomBook = new RoomBook
@@ -435,7 +437,7 @@ public class BorrowingValidatorAsyncTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
 
         var roomBook = new RoomBook
@@ -450,9 +452,12 @@ public class BorrowingValidatorAsyncTests
         // Act
         var result = await validator.ValidateBorrowAsync(user, roomBook, 14);
 
-        // Assert
-        Assert.That(result.IsValid, Is.True);
-        Assert.That(result.Errors, Is.Empty);
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(result.Errors, Is.Empty);
+        });
     }
 
 

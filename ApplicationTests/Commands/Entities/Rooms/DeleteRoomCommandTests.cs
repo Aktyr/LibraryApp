@@ -82,7 +82,7 @@ public class DeleteRoomCommandTests
             .RuleFor(x => x.Name, f => "Last Room")
             .RuleFor(x => x.RoomBooks, f => null!) // Должно быть null
             .Generate();
-        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };
@@ -109,18 +109,18 @@ public class DeleteRoomCommandTests
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Room with Books",
-            RoomBooks = new List<RoomBook> // Не null и не пустой список
-            {
-                new RoomBook
-                {
+            RoomBooks =
+            // Не null и не пустой список
+            [
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BookCount = 5,
                     Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 1" },
                     Room = new Room { Id = new Id(Guid.NewGuid()) }
                 }
-            }
+            ]
         };
-        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };
@@ -170,9 +170,9 @@ public class DeleteRoomCommandTests
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Room with Empty Books",
-            RoomBooks = new List<RoomBook>() // Пустой список, но не null
+            RoomBooks = [] // Пустой список, но не null
         };
-        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };

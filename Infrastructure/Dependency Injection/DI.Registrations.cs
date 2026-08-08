@@ -1,4 +1,4 @@
-﻿namespace LibApp.Infrastructure.DependencyInjection;
+﻿    namespace LibApp.Infrastructure.DependencyInjection;
 
 public static partial class DI
 {
@@ -28,6 +28,11 @@ public static partial class DI
     public static IServiceCollection AddUnitOfWork(this IServiceCollection services)
     {
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        return services;
+    }
+    public static IServiceCollection AddSmtpClient(this IServiceCollection services)
+    {
+        services.AddScoped<ISmtpClient, SmtpClientWrapper>();
         return services;
     }
 

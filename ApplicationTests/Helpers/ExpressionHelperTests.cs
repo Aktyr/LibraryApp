@@ -44,7 +44,7 @@ public class ExpressionHelperTests
     {
         // Arrange
         Expression<Func<Book, bool>> left = b => b.Year > 2000;
-        Expression<Func<Book, bool>> right = b => b.Title.StartsWith("A");
+        Expression<Func<Book, bool>> right = b => b.Title.StartsWith('A');
 
         // Act
         var combined = ExpressionHelper.CombineAnd(left, right);

@@ -3,7 +3,7 @@
 [TestFixture]
 public class DeadlineCheckServiceTests
 {
-    private Mock<IServiceProvider> CreateServiceProvider(
+    private static Mock<IServiceProvider> CreateServiceProvider(
         FakeUnitOfWork unitOfWork,
         Mock<INotificationService>? notificationMock = null)
     {
@@ -31,7 +31,7 @@ public class DeadlineCheckServiceTests
 
         return fullProviderMock;
     }
-    private Mock<IOptionsMonitor<PenaltySettings>> CreatePenaltySettingsMonitor(
+    private static Mock<IOptionsMonitor<PenaltySettings>> CreatePenaltySettingsMonitor(
         PenaltySettings? settings = null)
     {
         var mock = new Mock<IOptionsMonitor<PenaltySettings>>();
@@ -44,7 +44,7 @@ public class DeadlineCheckServiceTests
         return mock;
     }
 
-    private DeadlineCheckService CreateService(
+    private static DeadlineCheckService CreateService(
     FakeUnitOfWork unitOfWork,
     DeadlineCheckSettings? deadlineSettings = null,
     PenaltySettings? penaltySettings = null,
@@ -122,7 +122,7 @@ public class DeadlineCheckServiceTests
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
         // Act
-        await (Task)method.Invoke(service, new object?[] { CancellationToken.None })!;
+        await (Task)method.Invoke(service, [CancellationToken.None])!;
 
         // Assert
         notificationMock.Verify(
@@ -232,7 +232,7 @@ public class DeadlineCheckServiceTests
             }
         };
 
-        await repo.AddRangeAsync(new[] { userRoomBook }, CancellationToken.None);
+        await repo.AddRangeAsync([userRoomBook], CancellationToken.None);
 
         var penaltySettings = new PenaltySettings
         {
@@ -247,7 +247,7 @@ public class DeadlineCheckServiceTests
             .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
 
         // Act
-        await (Task)method.Invoke(service, new object?[] { CancellationToken.None })!;
+        await (Task)method.Invoke(service, [CancellationToken.None])!;
 
         // Assert
         var updatedUrb = repo.Entities.First();
@@ -313,7 +313,6 @@ public class DeadlineCheckServiceTests
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
-        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var service = CreateService(unitOfWork);
         var settings = new PenaltySettings
         {
@@ -337,7 +336,6 @@ public class DeadlineCheckServiceTests
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
-        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var service = CreateService(unitOfWork);
         var settings = new PenaltySettings
         {

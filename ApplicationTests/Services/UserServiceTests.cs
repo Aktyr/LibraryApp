@@ -3,7 +3,7 @@
 [TestFixture]
 public class UserServiceTests
 {
-    private UserService CreateService(FakeUnitOfWork unitOfWork, UserValidatorAsync? validator = null)
+    private static UserService CreateService(FakeUnitOfWork unitOfWork, UserValidatorAsync? validator = null)
     {
         validator ??= new UserValidatorAsync(new EmailValidatorAsync());
         return new UserService(unitOfWork, validator);
@@ -49,7 +49,7 @@ public class UserServiceTests
         var unitOfWork = new FakeUnitOfWork();
         var repo = unitOfWork.GetRepository<User>();
         var existing = new User { Id = new Id(Guid.NewGuid()), Email = "test@test.com", PasswordHash = "hash", LastName = "Test", FirstName = "User", ContactInfo = "info" };
-        repo.AddRangeAsync(new[] { existing }, CancellationToken.None).Wait();
+        repo.AddRangeAsync([existing], CancellationToken.None).Wait();
 
         var service = CreateService(unitOfWork);
 

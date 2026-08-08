@@ -39,9 +39,9 @@ public class UndoDiscardCommandTests
             ApprovedBy = "Admin"
         };
 
-        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
-        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
-        await discardedRepo.AddRangeAsync(new[] { discarded }, CancellationToken.None);
+        await bookRepo.AddRangeAsync([book], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
+        await discardedRepo.AddRangeAsync([discarded], CancellationToken.None);
 
         var command = new UndoDiscardCommand(unitOfWork);
         var request = new UndoDiscardRequest
@@ -111,8 +111,8 @@ public class UndoDiscardCommandTests
             DiscardReason = DiscardReason.Wear
         };
 
-        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
-        await discardedRepo.AddRangeAsync(new[] { discarded }, CancellationToken.None);
+        await bookRepo.AddRangeAsync([book], CancellationToken.None);
+        await discardedRepo.AddRangeAsync([discarded], CancellationToken.None);
         // RoomBook не добавляем
 
         var command = new UndoDiscardCommand(unitOfWork);
@@ -143,9 +143,9 @@ public class UndoDiscardCommandTests
         var room = new Room { Id = roomId };
         var roomBook = new RoomBook { Id = new Id(Guid.NewGuid()), Book = book, Room = room, BookCount = 10, BorrowedCount = 0 };
         var discarded = new DiscardedBook { Id = new Id(Guid.NewGuid()), Book = book, Room = room, RoomId = roomId, Amount = 3, DiscardedDate = DateTime.UtcNow, DiscardReason = DiscardReason.Wear };
-        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
-        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
-        await discardedRepo.AddRangeAsync(new[] { discarded }, CancellationToken.None);
+        await bookRepo.AddRangeAsync([book], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
+        await discardedRepo.AddRangeAsync([discarded], CancellationToken.None);
 
         var command = new UndoDiscardCommand(unitOfWork);
         var request = new UndoDiscardRequest { DiscardId = discarded.Id.Value, UndoReason = "Test undo reason", ApprovedBy = "Admin" };

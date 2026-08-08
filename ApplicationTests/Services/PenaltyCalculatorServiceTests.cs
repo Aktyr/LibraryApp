@@ -5,7 +5,7 @@ namespace LibApp.ApplicationTests.Services;
 [TestFixture]
 public class PenaltyCalculatorServiceTests
 {
-    private PenaltyCalculatorService CreateService(PenaltySettings settings)
+    private static PenaltyCalculatorService CreateService(PenaltySettings settings)
     {
         var options = new Mock<IOptionsSnapshot<PenaltySettings>>();
         options.Setup(x => x.Value).Returns(settings);

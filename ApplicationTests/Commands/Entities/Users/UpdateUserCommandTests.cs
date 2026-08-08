@@ -3,7 +3,7 @@
 [TestFixture]
 public class UpdateUserCommandTests
 {
-    private UserValidatorAsync CreateUserValidator => new(new EmailValidatorAsync());
+    private static UserValidatorAsync CreateUserValidator => new(new EmailValidatorAsync());
 
     [Test]
     public async Task Execute_UpdateExistingUserWithValidData_UpdatesSuccessfully()
@@ -23,7 +23,7 @@ public class UpdateUserCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest
@@ -101,7 +101,7 @@ public class UpdateUserCommandTests
             ContactInfo = "valid@example.com"
         };
 
-        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
 
@@ -137,7 +137,7 @@ public class UpdateUserCommandTests
             ContactInfo = "petrov@example.com"
         };
 
-        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest
@@ -177,18 +177,17 @@ public class UpdateUserCommandTests
             FirstName = "Сидор",
             MiddleName = "Сидорович",
             ContactInfo = "sidorov@example.com",
-            RoomBooks = new List<UserRoomBook>
-            {
-                new UserRoomBook
-                {
+            RoomBooks =
+            [
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(5)
                 }
-            }
+            ]
         };
 
-        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest
@@ -277,7 +276,7 @@ public class UpdateUserCommandTests
             ContactInfo = "ivanov@example.com"
         };
 
-        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
 
@@ -294,9 +293,12 @@ public class UpdateUserCommandTests
         // Act
         var response = await updateUserCommand.Execute(updateUserRequest, CancellationToken.None);
 
-        // Assert
-        Assert.That(response.Status, Is.EqualTo("Ok"));
-        Assert.That(response.Message, Is.EqualTo("User updated successfully."));
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+            Assert.That(response.Message, Is.EqualTo("User updated successfully."));
+        });
     }
 
     [Test]
@@ -361,7 +363,7 @@ public class UpdateUserCommandTests
             ContactInfo = "old@old.com"
         };
 
-        await userRepo.AddRangeAsync(new[] { existingUser }, CancellationToken.None);
+        await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
         var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
         var updateUserRequest = new UpdateUserRequest

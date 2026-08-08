@@ -89,7 +89,7 @@ public class ExceptionConstructorsTests
         // Arrange
         var ex = new LibValidationException
         {
-            ExceptionDetails = new List<string> { "Error 1", "Error 2", "Error 3" }
+            ExceptionDetails = ["Error 1", "Error 2", "Error 3"]
         };
 
         // Act

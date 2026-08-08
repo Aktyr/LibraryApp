@@ -19,9 +19,12 @@ public class RoomBookValidatorAsyncTests
         // Act
         var result = await validator.ValidateAsync(roomBook);
 
-        // Assert
-        Assert.That(result.IsValid, Is.True);
-        Assert.That(result.Errors, Is.Empty);
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(result.Errors, Is.Empty);
+        });
     }
 
     [Test]

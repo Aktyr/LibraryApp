@@ -1,9 +1,9 @@
-﻿namespace LibApp.ApplicationTests.Validation.Services;
+﻿namespace LibApp.ApplicationTests.Validation;
 
 [TestFixture]
 public class RoomBookSynchronizationValidatorTests
 {
-    private RoomBookSynchronizationValidator CreateValidator() => new();
+    private static RoomBookSynchronizationValidator CreateValidator() => new();
 
     [Test]
     public async Task ValidateAsync_WhenRoomIsNull_ReturnsError()
@@ -32,7 +32,7 @@ public class RoomBookSynchronizationValidatorTests
         var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test" };
         var dtoList = new List<RoomBookDTO>
         {
-            new RoomBookDTO(Guid.NewGuid(), room.Id.Value, Guid.NewGuid(), -5)
+            new(Guid.NewGuid(), room.Id.Value, Guid.NewGuid(), -5)
         };
         var existing = new List<RoomBook>();
 
@@ -56,8 +56,8 @@ public class RoomBookSynchronizationValidatorTests
         var bookId = Guid.NewGuid();
         var dtoList = new List<RoomBookDTO>
         {
-            new RoomBookDTO(Guid.NewGuid(), room.Id.Value, bookId, 5),
-            new RoomBookDTO(Guid.NewGuid(), room.Id.Value, bookId, 3)
+            new(Guid.NewGuid(), room.Id.Value, bookId, 5),
+            new(Guid.NewGuid(), room.Id.Value, bookId, 3)
         };
         var existing = new List<RoomBook>();
 
@@ -84,8 +84,7 @@ public class RoomBookSynchronizationValidatorTests
 
         var existing = new List<RoomBook>
         {
-            new RoomBook
-            {
+            new() {
                 Id = new Id(existingRoomBookId),
                 Book = new Book { Id = new Id(bookId1) },
                 Room = new Room { Id = roomId },
@@ -96,7 +95,7 @@ public class RoomBookSynchronizationValidatorTests
 
         var dtoList = new List<RoomBookDTO>
         {
-            new RoomBookDTO(existingRoomBookId, roomId.Value, bookId2, 10)
+            new(existingRoomBookId, roomId.Value, bookId2, 10)
         };
 
         // Act
@@ -121,8 +120,7 @@ public class RoomBookSynchronizationValidatorTests
 
         var existing = new List<RoomBook>
         {
-            new RoomBook
-            {
+            new() {
                 Id = new Id(existingRoomBookId),
                 Book = new Book { Id = new Id(bookId) },
                 Room = new Room { Id = roomId },
@@ -133,7 +131,7 @@ public class RoomBookSynchronizationValidatorTests
 
         var dtoList = new List<RoomBookDTO>
         {
-            new RoomBookDTO(existingRoomBookId, roomId.Value, bookId, 5)
+            new(existingRoomBookId, roomId.Value, bookId, 5)
         };
 
         // Act
@@ -157,8 +155,7 @@ public class RoomBookSynchronizationValidatorTests
 
         var existing = new List<RoomBook>
         {
-            new RoomBook
-            {
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 Book = new Book { Id = new Id(bookId) },
                 Room = new Room { Id = roomId },
@@ -169,7 +166,7 @@ public class RoomBookSynchronizationValidatorTests
 
         var dtoList = new List<RoomBookDTO>
         {
-            new RoomBookDTO(Guid.Empty, roomId.Value, bookId, 3)
+            new(Guid.Empty, roomId.Value, bookId, 3)
         };
 
         // Act
@@ -194,8 +191,7 @@ public class RoomBookSynchronizationValidatorTests
 
         var existing = new List<RoomBook>
         {
-            new RoomBook
-            {
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 Book = new Book { Id = new Id(bookId1) },
                 Room = new Room { Id = roomId },
@@ -206,8 +202,8 @@ public class RoomBookSynchronizationValidatorTests
 
         var dtoList = new List<RoomBookDTO>
         {
-            new RoomBookDTO(existing[0].Id.Value, roomId.Value, bookId1, 12),
-            new RoomBookDTO(Guid.Empty, roomId.Value, bookId2, 5)
+            new(existing[0].Id.Value, roomId.Value, bookId1, 12),
+            new(Guid.Empty, roomId.Value, bookId2, 5)
         };
 
         // Act

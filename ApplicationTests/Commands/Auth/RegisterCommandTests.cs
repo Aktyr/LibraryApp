@@ -3,7 +3,7 @@
 [TestFixture]
 public class RegisterCommandTests
 {
-    private RegisterCommand CreateCommand(FakeUnitOfWork unitOfWork, JwtService jwtService)
+    private static RegisterCommand CreateCommand(FakeUnitOfWork unitOfWork, JwtService jwtService)
     {
         var emailValidator = new EmailValidatorAsync();
         var userRegistrationValidator = new UserValidatorAsync(emailValidator);
@@ -11,7 +11,7 @@ public class RegisterCommandTests
         return new RegisterCommand(userService, jwtService);
     }
 
-    private JwtService JwtService => new(Options.Create(new JwtSettings
+    private static JwtService JwtService => new(Options.Create(new JwtSettings
     {
         SecretKey = "test-secret-key-for-testing-purposes-only-12345",
         Issuer = "test-issuer",
@@ -69,10 +69,9 @@ public class RegisterCommandTests
     }
 
     // В тестовом проекте создаём фейковую реализацию IUserService
-    private class FakeUserService : IUserService
+    private class FakeUserService(FakeUnitOfWork uow) : IUserService
     {
-        private readonly FakeUnitOfWork _uow;
-        public FakeUserService(FakeUnitOfWork uow) => _uow = uow;
+        private readonly FakeUnitOfWork _uow = uow;
 
         public async Task<User> CreateUserAsync(string email, string password, string lastName, string firstName, string middleName, string contactInfo, UserRole role, CancellationToken cancellationToken = default)
         {

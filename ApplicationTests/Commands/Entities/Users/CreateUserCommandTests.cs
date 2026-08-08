@@ -3,7 +3,7 @@
 [TestFixture]
 public class CreateUserCommandTests
 {
-    private CreateUserCommand CreateCommand(FakeUnitOfWork unitOfWork)
+    private static CreateUserCommand CreateCommand(FakeUnitOfWork unitOfWork)
     {
         var emailValidator = new EmailValidatorAsync();
         var userRegistrationValidator = new UserValidatorAsync(emailValidator);
@@ -242,10 +242,9 @@ public class CreateUserCommandTests
         });
     }
     // Тестовая реализация IUserService для использования в тестах
-    private class FakeUserService : IUserService
+    private class FakeUserService(FakeUnitOfWork uow) : IUserService
     {
-        private readonly FakeUnitOfWork _uow;
-        public FakeUserService(FakeUnitOfWork uow) => _uow = uow;
+        private readonly FakeUnitOfWork _uow = uow;
 
         public async Task<User> CreateUserAsync(string email, string password, string lastName, string firstName, string middleName, string contactInfo, UserRole role, CancellationToken cancellationToken = default)
         {

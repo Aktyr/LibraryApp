@@ -31,12 +31,12 @@ public class EntityMethodsTests
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Test Room",
-            RoomBooks = new List<RoomBook>
-            {
-                new RoomBook { Id = new Id(Guid.NewGuid()), BookCount = 5, Book = new Book { Id = new Id(Guid.NewGuid()), Title = "B1" }, Room = new Room { Id = new Id(Guid.NewGuid()) } },
-                new RoomBook { Id = new Id(Guid.NewGuid()), BookCount = 3, Book = new Book { Id = new Id(Guid.NewGuid()), Title = "B2" }, Room = new Room { Id = new Id(Guid.NewGuid()) } },
-                new RoomBook { Id = new Id(Guid.NewGuid()), BookCount = 7, Book = new Book { Id = new Id(Guid.NewGuid()), Title = "B3" }, Room = new Room { Id = new Id(Guid.NewGuid()) } }
-            }
+            RoomBooks =
+            [
+                new() { Id = new Id(Guid.NewGuid()), BookCount = 5, Book = new Book { Id = new Id(Guid.NewGuid()), Title = "B1" }, Room = new Room { Id = new Id(Guid.NewGuid()) } },
+                new() { Id = new Id(Guid.NewGuid()), BookCount = 3, Book = new Book { Id = new Id(Guid.NewGuid()), Title = "B2" }, Room = new Room { Id = new Id(Guid.NewGuid()) } },
+                new() { Id = new Id(Guid.NewGuid()), BookCount = 7, Book = new Book { Id = new Id(Guid.NewGuid()), Title = "B3" }, Room = new Room { Id = new Id(Guid.NewGuid()) } }
+            ]
         };
 
         // Act
@@ -54,7 +54,7 @@ public class EntityMethodsTests
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Empty Room",
-            RoomBooks = new List<RoomBook>()
+            RoomBooks = []
         };
 
         // Act

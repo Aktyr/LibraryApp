@@ -3,8 +3,8 @@
 [TestFixture]
 public class CreateRoomCommandTests
 {
-    private RoomValidatorAsync CreateRoomValidator => new();
-    private IConverter<Room, RoomDTO> Converter => new RoomDTOConverter();
+    private static RoomValidatorAsync CreateRoomValidator => new();
+    private static IConverter<Room, RoomDTO> Converter => new RoomDTOConverter();
 
 
     [TestCase("newRoom")]
@@ -26,7 +26,7 @@ public class CreateRoomCommandTests
 
 
         var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
-        var createRoomRequest = new CreateRoomRequest(roomName, new List<Guid>());
+        var createRoomRequest = new CreateRoomRequest(roomName, []);
 
         // Act
         var response = await createRoomCommand.Execute(createRoomRequest, CancellationToken.None);
@@ -59,7 +59,7 @@ public class CreateRoomCommandTests
         (await roomRepo.GetAsync()).Last().Name = roomName;
 
         var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
-        var createRoomRequest = new CreateRoomRequest(roomName, new List<Guid>());
+        var createRoomRequest = new CreateRoomRequest(roomName, []);
 
         // Act & Assert
         Assert.ThrowsAsync<RoomExistsException>(() =>
@@ -77,7 +77,7 @@ public class CreateRoomCommandTests
             .AsEnumerable());
 
         var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
-        var createRoomRequest = new CreateRoomRequest(new string('A', 101), new List<Guid>());
+        var createRoomRequest = new CreateRoomRequest(new string('A', 101), []);
 
         Assert.ThrowsAsync<LibValidationException>(() =>
             createRoomCommand.Execute(createRoomRequest, CancellationToken.None));

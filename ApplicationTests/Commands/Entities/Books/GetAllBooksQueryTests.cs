@@ -3,7 +3,7 @@
 [TestFixture]
 public class GetAllBooksQueryTests
 {
-    private IConverter<Book, BookDTO> Converter => new BookDTOConverter();
+    private static IConverter<Book, BookDTO> Converter => new BookDTOConverter();
 
     [Test]
     public async Task Execute_GetAllBooksFromRepositoryWithBooks_ReturnsAllBooks()
@@ -17,7 +17,7 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => [])
             .Generate(7)
             .ToList();
         await bookRepo.AddRangeAsync(books.AsEnumerable(), CancellationToken.None);
@@ -78,9 +78,9 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.Author, f => "Test Author")
             .RuleFor(x => x.Year, f => 2020)
             .RuleFor(x => x.Publisher, f => "Test Publisher")
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => [])
             .Generate();
-        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
+        await bookRepo.AddRangeAsync([book], CancellationToken.None);
 
         var getAllBooksQuery = new GetAllBooksCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -110,7 +110,7 @@ public class GetAllBooksQueryTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => [])
             .Generate(5)
             .ToList();
         await bookRepo.AddRangeAsync(books.AsEnumerable(), CancellationToken.None);
@@ -132,10 +132,10 @@ public class GetAllBooksQueryTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
-        var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book A", Author = "Author", RoomBook = new List<RoomBook>() };
-        var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book B", Author = "Author", RoomBook = new List<RoomBook>() };
+        var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book A", Author = "Author", RoomBook = [] };
+        var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book B", Author = "Author", RoomBook = [] };
 
-        await repo.AddRangeAsync(new[] { book1, book2 }, CancellationToken.None);
+        await repo.AddRangeAsync([book1, book2], CancellationToken.None);
 
         // Act
         var result = await repo.GetWithoutTrackingAsync(b => b.Title == "Book A", CancellationToken.None);

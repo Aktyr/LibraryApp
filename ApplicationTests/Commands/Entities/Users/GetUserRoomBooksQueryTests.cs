@@ -3,7 +3,7 @@
 [TestFixture]
 public class GetUserRoomBooksQueryTests
 {
-    private BorrowingValidatorAsync CreateValidator()
+    private static BorrowingValidatorAsync CreateValidator()
     {
         var optionsMock = new Mock<IOptionsSnapshot<BorrowingSettings>>();
         optionsMock.Setup(x => x.Value).Returns(new BorrowingSettings());
@@ -61,7 +61,7 @@ public class GetUserRoomBooksQueryTests
             RoomBook = new RoomBook { Book = new Book { Title = "Book 2", Author = "Author 2" }, Room = new Room { Name = "Room B" } }
         };
 
-        await repo.AddRangeAsync(new[] { urb1, urb2 }, CancellationToken.None);
+        await repo.AddRangeAsync([urb1, urb2], CancellationToken.None);
 
         var query = new GetUserRoomBooksCommand(unitOfWork, converter, CreateValidator());
         var request = new GetUserBooksRequest { UserId = userId };

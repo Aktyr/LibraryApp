@@ -38,7 +38,7 @@ public class GetDiscardedBooksCommandTests
             ApprovedBy = "Librarian"
         };
 
-        await discardedRepo.AddRangeAsync(new[] { discarded1, discarded2 }, CancellationToken.None);
+        await discardedRepo.AddRangeAsync([discarded1, discarded2], CancellationToken.None);
 
         var command = new GetDiscardedBooksCommand(unitOfWork);
         var request = new GetDiscardedBooksRequest();
@@ -89,7 +89,7 @@ public class GetDiscardedBooksCommandTests
             DiscardReason = DiscardReason.Loss
         };
 
-        await discardedRepo.AddRangeAsync(new[] { discarded1, discarded2 }, CancellationToken.None);
+        await discardedRepo.AddRangeAsync([discarded1, discarded2], CancellationToken.None);
 
         var command = new GetDiscardedBooksCommand(unitOfWork);
         var request = new GetDiscardedBooksRequest
@@ -141,7 +141,7 @@ public class GetDiscardedBooksCommandTests
             DiscardReason = DiscardReason.Loss
         };
 
-        await discardedRepo.AddRangeAsync(new[] { discarded1, discarded2 }, CancellationToken.None);
+        await discardedRepo.AddRangeAsync([discarded1, discarded2], CancellationToken.None);
 
         var command = new GetDiscardedBooksCommand(unitOfWork);
         var request = new GetDiscardedBooksRequest
@@ -193,7 +193,7 @@ public class GetDiscardedBooksCommandTests
             DiscardReason = DiscardReason.Loss
         };
 
-        await discardedRepo.AddRangeAsync(new[] { discarded1, discarded2 }, CancellationToken.None);
+        await discardedRepo.AddRangeAsync([discarded1, discarded2], CancellationToken.None);
 
         var command = new GetDiscardedBooksCommand(unitOfWork);
         var request = new GetDiscardedBooksRequest
@@ -256,7 +256,8 @@ public class GetDiscardedBooksCommandTests
             DiscardReason = DiscardReason.Loss
         };
 
-        await discardedRepo.AddRangeAsync(new[] { discarded1, discarded2, discarded3 }, CancellationToken.None);
+        IEnumerable<DiscardedBook> entities = [discarded1, discarded2, discarded3];
+        await discardedRepo.AddRangeAsync(entities, CancellationToken.None);
 
         var command = new GetDiscardedBooksCommand(unitOfWork);
         var request = new GetDiscardedBooksRequest
@@ -299,7 +300,7 @@ public class GetDiscardedBooksCommandTests
             DiscardReason = DiscardReason.Wear
         };
 
-        await discardedRepo.AddRangeAsync(new[] { discarded }, CancellationToken.None);
+        await discardedRepo.AddRangeAsync([discarded], CancellationToken.None);
 
         var command = new GetDiscardedBooksCommand(unitOfWork);
         var request = new GetDiscardedBooksRequest

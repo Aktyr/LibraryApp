@@ -5,7 +5,7 @@ public class LoginCommandTests
 {
     // private IConverter<User, UserDTO> Converter => new UserDTOConverter();
     // Потребуется добавить: using Microsoft.Extensions.Options;
-    private JwtService JwtService => new(Options.Create(new JwtSettings
+    private static JwtService JwtService => new(Options.Create(new JwtSettings
     {
         SecretKey = "test-secret-key-for-testing-purposes-only-12345",
         Issuer = "test-issuer",

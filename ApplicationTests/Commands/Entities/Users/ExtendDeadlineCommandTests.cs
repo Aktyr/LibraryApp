@@ -5,7 +5,7 @@ namespace LibApp.ApplicationTests.Commands.Entities.Users;
 [TestFixture]
 public class ExtendDeadlineCommandTests
 {
-    private BorrowingValidatorAsync CreateValidator(BorrowingSettings? settings = null)
+    private static BorrowingValidatorAsync CreateValidator(BorrowingSettings? settings = null)
     {
         var optionsMock = new Mock<IOptionsSnapshot<BorrowingSettings>>();
         optionsMock.Setup(x => x.Value).Returns(settings ?? new BorrowingSettings { MaxExtendDeadlineDays = 14 });

@@ -5,7 +5,7 @@ namespace LibApp.ApplicationTests.Commands.Entities.Users;
 [TestFixture]
 public class BorrowBookCommandTests
 {
-    private BorrowingValidatorAsync CreateValidator(BorrowingSettings? settings = null)
+    private static BorrowingValidatorAsync CreateValidator(BorrowingSettings? settings = null)
     {
         var options = new Mock<IOptionsSnapshot<BorrowingSettings>>();
         options.Setup(x => x.Value).Returns(settings ?? new BorrowingSettings());
@@ -28,7 +28,7 @@ public class BorrowBookCommandTests
             Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Test Book" },
             Room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" }
         };
-        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
@@ -51,15 +51,16 @@ public class BorrowBookCommandTests
         var userRepo = unitOfWork.GetRepository<User>();
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
+        ICollection<UserRoomBook> value = [];
         var user = new User
         {
             Id = new Id(Guid.NewGuid()),
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = value
         };
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest
@@ -89,7 +90,7 @@ public class BorrowBookCommandTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
         var roomBook = new RoomBook
         {
@@ -100,8 +101,8 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
-        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
         var request = new BorrowBookRequest
@@ -131,7 +132,7 @@ public class BorrowBookCommandTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
         var roomBook = new RoomBook
         {
@@ -142,8 +143,8 @@ public class BorrowBookCommandTests
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
 
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
-        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
         var request = new BorrowBookRequest
@@ -173,25 +174,23 @@ public class BorrowBookCommandTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>
-            {
-                new UserRoomBook
-                {
+            RoomBooks =
+            [
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(10),
                     ReturnDate = null,
                     RoomBook = new RoomBook { Id = new Id(Guid.NewGuid()) }
                 },
-                new UserRoomBook
-                {
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-3),
                     Deadline = DateTime.Now.AddDays(12),
                     ReturnDate = null,
                     RoomBook = new RoomBook { Id = new Id(Guid.NewGuid()) }
                 }
-            }
+            ]
         };
 
         var roomBook = new RoomBook
@@ -233,17 +232,16 @@ public class BorrowBookCommandTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>
-            {
-                new UserRoomBook
-                {
+            RoomBooks =
+            [
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-30),
                     Deadline = DateTime.Now.AddDays(-5), // Просрочена
                     ReturnDate = null,
                     RoomBook = new RoomBook { Id = new Id(Guid.NewGuid()) }
                 }
-            }
+            ]
         };
 
         var roomBook = new RoomBook
@@ -285,7 +283,7 @@ public class BorrowBookCommandTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
 
         var roomBook = new RoomBook
@@ -330,7 +328,7 @@ public class BorrowBookCommandTests
             LastName = "Иванов",
             FirstName = "Иван",
             ContactInfo = "ivanov@example.com",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
 
         var roomBook = new RoomBook
@@ -392,15 +390,14 @@ public class BorrowBookCommandTests
             LastName = "Иванов",
             FirstName = "Иван",
             ContactInfo = "ivanov@example.com",
-            RoomBooks = new List<UserRoomBook>
-        {
-            new UserRoomBook
-            {
+            RoomBooks =
+        [
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 BorrowDate = DateTime.Now.AddDays(-5),
                 Deadline = DateTime.Now.AddDays(10)
             }
-        }
+        ]
         };
 
         var user2 = new User
@@ -409,7 +406,7 @@ public class BorrowBookCommandTests
             LastName = "Петров",
             FirstName = "Петр",
             ContactInfo = "petrov@example.com",
-            RoomBooks = new List<UserRoomBook>()
+            RoomBooks = []
         };
 
         var roomBook = new RoomBook
@@ -459,15 +456,15 @@ public class BorrowBookCommandTests
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
-        var user = new User { Id = new Id(Guid.NewGuid()), LastName = "Test", FirstName = "User", ContactInfo = "test@test.com", RoomBooks = new List<UserRoomBook>() };
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        var user = new User { Id = new Id(Guid.NewGuid()), LastName = "Test", FirstName = "User", ContactInfo = "test@test.com", RoomBooks = [] };
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var roomBook = new RoomBook { Id = new Id(Guid.NewGuid()), BookCount = 5, BorrowedCount = 0, Book = new Book { Id = new Id(Guid.NewGuid()) }, Room = new Room { Id = new Id(Guid.NewGuid()) } };
-        await roomBookRepo.AddRangeAsync(new[] { roomBook }, CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
         // Первая выдача
         var borrow = new UserRoomBook { Id = new Id(Guid.NewGuid()), User = user, RoomBook = roomBook, BorrowDate = DateTime.UtcNow, ReturnDate = null };
-        await userRoomBookRepo.AddRangeAsync(new[] { borrow }, CancellationToken.None);
+        await userRoomBookRepo.AddRangeAsync([borrow], CancellationToken.None);
 
         var command = new BorrowBookCommand(unitOfWork, CreateValidator());
         var request = new BorrowBookRequest { UserId = user.Id.Value, RoomBookId = roomBook.Id.Value, BorrowDays = 7 };

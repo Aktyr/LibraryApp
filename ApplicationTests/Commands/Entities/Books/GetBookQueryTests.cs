@@ -3,7 +3,7 @@
 [TestFixture]
 public class GetBookQueryTests
 {
-    private IConverter<Book, BookDTO> Converter => new BookDTOConverter();
+    private static IConverter<Book, BookDTO> Converter => new BookDTOConverter();
 
     [Test]
     public async Task Execute_GetExistingBook_ReturnsBookResponse()
@@ -17,7 +17,7 @@ public class GetBookQueryTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => [])
             .Generate(10)
             .ToList();
         await bookRepo.AddRangeAsync(books.AsEnumerable(), CancellationToken.None);
@@ -53,7 +53,7 @@ public class GetBookQueryTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => [])
                                    .Generate(10)
                                    .AsEnumerable());
 

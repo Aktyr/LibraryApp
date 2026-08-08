@@ -3,8 +3,8 @@
 [TestFixture]   
 public class CreateBookCommandTests
 {
-    private BookValidatorAsync CreateBookValidator => new();
-    private IConverter<Book, BookDTO> Converter => new BookDTOConverter();
+    private static BookValidatorAsync CreateBookValidator => new();
+    private static IConverter<Book, BookDTO> Converter => new BookDTOConverter();
 
     [TestCase("Clean Code", "Robert C. Martin", 2008, "Prentice Hall")]
     [TestCase("Design Patterns", "Erich Gamma", 1994, "Addison-Wesley")]
@@ -23,7 +23,7 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => [])
                                    .Generate(10)
                                    .AsEnumerable());
         var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter);
@@ -68,7 +68,7 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => [])
                                    .Generate(10)
                                    .AsEnumerable());
         var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter);
@@ -127,7 +127,7 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => [])
                                    .Generate(10)
                                    .AsEnumerable());
 

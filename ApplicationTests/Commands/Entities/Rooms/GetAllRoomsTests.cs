@@ -3,7 +3,7 @@
 [TestFixture]
 public class GetAllRoomsTests
 {
-    private IConverter<Room, RoomDTO> Converter => new RoomDTOConverter();
+    private static IConverter<Room, RoomDTO> Converter => new RoomDTOConverter();
 
     [Test]
     public async Task Execute_GetAllRoomsFromRepositoryWithRooms_ReturnsAllRooms()
@@ -14,7 +14,7 @@ public class GetAllRoomsTests
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate(7)
             .ToList();
         await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
@@ -74,25 +74,23 @@ public class GetAllRoomsTests
         {
             Id = roomId,
             Name = "Test Room",
-            RoomBooks = new List<RoomBook>
-        {
-            new RoomBook
-            {
+            RoomBooks =
+        [
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 BookCount = 5,
                 Book = new Book { Id = bookId1, Title = "Book 1" },
                 Room = new Room { Id = roomId, Name = "Test Room" }
             },
-            new RoomBook
-            {
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 BookCount = 3,
                 Book = new Book { Id = bookId2, Title = "Book 2" },
                 Room = new Room { Id = roomId, Name = "Test Room" }
             }
-        }
+        ]
         };
-        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var getAllRooms = new GetAllRoomsCommand(unitOfWork, Converter);
         var emptyRequest = new EmptyRequest();
@@ -124,17 +122,15 @@ public class GetAllRoomsTests
         var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
         var rooms = new List<Room>
         {
-            new Room
-            {
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 Name = "Room 1",
-                RoomBooks = new List<RoomBook>()
+                RoomBooks = []
             },
-            new Room
-            {
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 Name = "Room 2",
-                RoomBooks = new List<RoomBook>()
+                RoomBooks = []
             }
         };
         await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
@@ -163,7 +159,7 @@ public class GetAllRoomsTests
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate(3)
             .ToList();
         await roomRepo.AddRangeAsync(rooms.AsEnumerable());

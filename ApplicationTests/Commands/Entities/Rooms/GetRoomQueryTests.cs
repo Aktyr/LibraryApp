@@ -3,7 +3,7 @@
 [TestFixture]
 public class GetRoomQueryTests
 {
-    private IConverter<Room, RoomDTO> Converter => new RoomDTOConverter();
+    private static IConverter<Room, RoomDTO> Converter => new RoomDTOConverter();
 
     [Test]
     public async Task Execute_GetExistingRoom_ReturnsRoomResponse()
@@ -14,7 +14,7 @@ public class GetRoomQueryTests
         var rooms = new Bogus.Faker<Room>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Name, f => f.Name.FirstName())
-            .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate(10)
             .ToList();
         await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
@@ -45,7 +45,7 @@ public class GetRoomQueryTests
         await roomRepo.AddRangeAsync(new Bogus.Faker<Room>()
                                    .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
                                    .RuleFor(x => x.Name, f => f.Name.FirstName())
-                                   .RuleFor(x => x.RoomBooks, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBooks, f => [])
                                    .Generate(10)
                                    .AsEnumerable());
 
@@ -86,25 +86,23 @@ public class GetRoomQueryTests
         {
             Id = roomId,
             Name = "Library Room",
-            RoomBooks = new List<RoomBook>
-        {
-            new RoomBook
-            {
+            RoomBooks =
+        [
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 BookCount = 10,
                 Book = new Book { Id = bookId1, Title = "Book 1" },
                 Room = new Room { Id = roomId, Name = "Library Room" }
             },
-            new RoomBook
-            {
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 BookCount = 15,
                 Book = new Book { Id = bookId2, Title = "Book 2" },
                 Room = new Room { Id = roomId, Name = "Library Room" }
             }
-        }
+        ]
         };
-        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = roomId };
@@ -116,7 +114,7 @@ public class GetRoomQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.Room[0].RoomBook.Count, Is.EqualTo(2));
+            Assert.That(result!.Room[0].RoomBook, Has.Count.EqualTo(2));
 
             // Используем ToList() для индексирования или First()/Last()
             var roomBookList = result.Room[0].RoomBook.ToList();
@@ -143,18 +141,17 @@ public class GetRoomQueryTests
         {
             Id = roomId,
             Name = "Test Room",
-            RoomBooks = new List<RoomBook>
-        {
-            new RoomBook
-            {
+            RoomBooks =
+        [
+            new() {
                 Id = new Id(Guid.NewGuid()),
                 BookCount = 5,
                 Book = new Book { Id = bookId, Title = "Test Book" }
                 // Room не устанавливаем - это может быть null
             }
-        }
+        ]
         };
-        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = roomId };
@@ -166,7 +163,7 @@ public class GetRoomQueryTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.Room[0].RoomBook.Count, Is.EqualTo(1));
+            Assert.That(result!.Room[0].RoomBook, Has.Count.EqualTo(1));
             Assert.That(result.Room[0].RoomBook.First().BookCount, Is.EqualTo(5));
             // RoomId может быть Guid.Empty если rb.Room == null
             Assert.That(result.Room[0].RoomBook.First().RoomId, Is.EqualTo(Guid.Empty));
@@ -184,9 +181,9 @@ public class GetRoomQueryTests
         {
             Id = new Id(Guid.NewGuid()),
             Name = "Empty Room",
-            RoomBooks = new List<RoomBook>()
+            RoomBooks = []
         };
-        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
         var getRoomQuery = new GetRoomCommand(unitOfWork, Converter);
         var getRoomRequest = new GetRoomRequest { Id = room.Id };

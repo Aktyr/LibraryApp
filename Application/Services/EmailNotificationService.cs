@@ -1,21 +1,15 @@
 ﻿namespace LibApp.Application.Services;
 
-public class EmailNotificationService : INotificationService, IService
+public class EmailNotificationService(
+    ILogger<EmailNotificationService> logger,
+    EmailValidatorAsync validator,
+    IOptions<NotificationSettings> settings,
+    ISmtpClient smtpClient) : INotificationService, IService
 {
-    private readonly ILogger<EmailNotificationService> _logger;
-    private readonly EmailValidatorAsync _validator;
-    private readonly NotificationSettings _settings;
-
-    public EmailNotificationService(
-        ILogger<EmailNotificationService> logger, 
-        EmailValidatorAsync validator,
-        IOptions<NotificationSettings> settings) 
-    { 
-        _logger = logger;
-        _validator = validator;
-        _settings = settings.Value;
-    }
-
+    private readonly ILogger<EmailNotificationService> _logger = logger;
+    private readonly EmailValidatorAsync _validator = validator;
+    private readonly NotificationSettings _settings = settings.Value;
+    private readonly ISmtpClient _smtpClient = smtpClient;
 
     public async Task SendEmailAsync(string email, string subject, string body, CancellationToken cancellationToken = default)
     {
@@ -24,8 +18,6 @@ public class EmailNotificationService : INotificationService, IService
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
-        //_logger.LogInformation($"Email sent to {email}: {subject}\n{body}");
-        //await Task.CompletedTask;
         if (!_settings.Enabled)
         {
             _logger.LogInformation($"[EMAIL DISABLED] To: {email}, Subject: {subject}\n{body}");
@@ -40,13 +32,6 @@ public class EmailNotificationService : INotificationService, IService
 
         try
         {
-            using var client = new SmtpClient(_settings.SmtpServer, _settings.SmtpPort)
-            {
-                EnableSsl = true,
-                Credentials = new NetworkCredential(_settings.SmtpUsername, _settings.SmtpPassword),
-                Timeout = 30000
-            };
-
             var mailMessage = new MailMessage
             {
                 From = new MailAddress(_settings.FromEmail),
@@ -56,7 +41,7 @@ public class EmailNotificationService : INotificationService, IService
             };
             mailMessage.To.Add(email);
 
-            await client.SendMailAsync(mailMessage, cancellationToken);
+            await _smtpClient.SendMailAsync(mailMessage, cancellationToken);
             _logger.LogInformation($"Email sent successfully to {email}: {subject}");
         }
         catch (Exception ex)

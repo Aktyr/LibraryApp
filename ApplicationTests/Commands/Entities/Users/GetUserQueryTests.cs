@@ -3,7 +3,7 @@
 [TestFixture]
 public class GetUserQueryTests
 {
-    private IConverter<User, UserDTO> Converter => new UserDTOConverter();
+    private static IConverter<User, UserDTO> Converter => new UserDTOConverter();
 
     [Test]
     public async Task Execute_GetExistingUser_ReturnsUserResponse()
@@ -17,7 +17,7 @@ public class GetUserQueryTests
             .RuleFor(x => x.FirstName, f => f.Name.FirstName())
             .RuleFor(x => x.MiddleName, f => f.Name.FirstName())
             .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
-            .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate(10)
             .ToList();
 
@@ -58,7 +58,7 @@ public class GetUserQueryTests
                                    .RuleFor(x => x.FirstName, f => f.Name.FirstName())
                                    .RuleFor(x => x.MiddleName, f => f.Name.FirstName())
                                    .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
-                                   .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
+                                   .RuleFor(x => x.RoomBooks, f => [])
                                    .Generate(5)
                                    .AsEnumerable());
 
@@ -100,36 +100,33 @@ public class GetUserQueryTests
             FirstName = "Иван",
             MiddleName = "Иванович",
             ContactInfo = "ivanov@example.com",
-            RoomBooks = new List<UserRoomBook>
-            {
-                new UserRoomBook
-                {
+            RoomBooks =
+            [
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-7),
                     Deadline = DateTime.Now.AddDays(3), // Через 3 дня
                     User = null,
                     RoomBook = null
                 },
-                new UserRoomBook
-                {
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-2),
                     Deadline = DateTime.Now.AddDays(1), // Через 1 день (ближайший)
                     User = null,
                     RoomBook = null
                 },
-                new UserRoomBook
-                {
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-1),
                     Deadline = null, // Без дедлайна
                     User = null,
                     RoomBook = null
                 }
-            }
+            ]
         };
 
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var getUserQuery = new GetUserCommand(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
@@ -165,10 +162,10 @@ public class GetUserQueryTests
             FirstName = "Петр",
             MiddleName = "",
             ContactInfo = "petrov@example.com",
-            RoomBooks = new List<UserRoomBook>() // Пустой список
+            RoomBooks = [] // Пустой список
         };
 
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var getUserQuery = new GetUserCommand(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
@@ -200,28 +197,26 @@ public class GetUserQueryTests
             FirstName = "Сидор",
             MiddleName = "Сидорович",
             ContactInfo = "sidorov@example.com",
-            RoomBooks = new List<UserRoomBook>
-            {
-                new UserRoomBook
-                {
+            RoomBooks =
+            [
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-5),
                     Deadline = null, // Без дедлайна
                     User = null,
                     RoomBook = null
                 },
-                new UserRoomBook
-                {
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-10),
                     Deadline = null, // Без дедлайна
                     User = null,
                     RoomBook = null
                 }
-            }
+            ]
         };
 
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var getUserQuery = new GetUserCommand(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = userId };
@@ -396,7 +391,7 @@ public class GetUserQueryTests
             ContactInfo = "ivanov2@example.com" // Разный контакт
         };
 
-        await userRepo.AddRangeAsync(new[] { user1, user2 }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user1, user2], CancellationToken.None);
 
         var getUserQuery = new GetUserCommand(unitOfWork, Converter);
         var getUserRequest = new GetUserRequest { Id = user2.Id };

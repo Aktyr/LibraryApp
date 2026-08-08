@@ -20,7 +20,8 @@ public static partial class DI
                 .AddServices()
                 .AddJwtAuthentication()
                 .AddBackgroundServices()
-                .AddUnitOfWork();
+                .AddUnitOfWork()
+                .AddSmtpClient();
         return services;
     }
 

@@ -3,20 +3,25 @@
 [TestFixture]
 public class EmailNotificationServiceTests
 {
-    private EmailNotificationService CreateService()
+    private static EmailNotificationService CreateService(
+        NotificationSettings? settings = null,
+        Mock<ILogger<EmailNotificationService>>? loggerMock = null,
+        Mock<ISmtpClient>? smtpMock = null)
     {
-        var logger = new Logger<EmailNotificationService>(new LoggerFactory());
-        var settings = Options.Create(new NotificationSettings
+        loggerMock ??= new Mock<ILogger<EmailNotificationService>>();
+        smtpMock ??= new Mock<ISmtpClient>();
+        settings ??= new NotificationSettings
         {
-            SmtpServer = "smtp.gmail.com",
+            Enabled = false, // по умолчанию отключаем реальную отправку
+            SmtpServer = "smtp.test.com",
             SmtpPort = 587,
-            SmtpUsername = "test@gmail.com",
-            SmtpPassword = "test-password",
-            FromEmail = "test@library.com",
-            Enabled = false  // Отключаем реальную отправку в тестах
-        });
-
-        return new EmailNotificationService(logger, new EmailValidatorAsync(), settings);
+            SmtpUsername = "user",
+            SmtpPassword = "pass",
+            FromEmail = "from@test.com"
+        };
+        var options = Options.Create(settings);
+        var validator = new EmailValidatorAsync();
+        return new EmailNotificationService(loggerMock.Object, validator, options, smtpMock.Object);
     }
 
     [Test]
@@ -267,23 +272,6 @@ public class EmailNotificationServiceTests
             await service.SendEmailAsync(email, subject, body));
     }
 
-
-}
-
-// EmailNotificationService.SendEmailAsync
-[TestFixture]
-public class EmailNotificationServiceTests2
-{
-    private EmailNotificationService CreateService(
-        NotificationSettings settings,
-        Mock<ILogger<EmailNotificationService>> loggerMock = null)
-    {
-        loggerMock ??= new Mock<ILogger<EmailNotificationService>>();
-        var options = Options.Create(settings);
-        var validator = new EmailValidatorAsync();
-        return new EmailNotificationService(loggerMock.Object, validator, options);
-    }
-
     [Test]
     public async Task SendEmailAsync_WhenDisabled_DoesNotSendEmailAndLogs()
     {
@@ -333,33 +321,6 @@ public class EmailNotificationServiceTests2
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()),
             Times.Once);
-    }
-
-    [Test]
-    public void SendEmailAsync_WithInvalidEmail_ThrowsLibValidationException()
-    {
-        // Arrange
-        var settings = new NotificationSettings { Enabled = true, SmtpServer = "smtp.test.com", SmtpUsername = "user", SmtpPassword = "pass", FromEmail = "from@test.com" };
-        var service = CreateService(settings);
-
-        // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            service.SendEmailAsync("invalid-email", "Subject", "Body", CancellationToken.None));
-        Assert.That(ex.ExceptionDetails, Has.Member("Некорректный формат email"));
-    }
-
-
-    [Test]
-    public void SendEmailAsync_WithEmptyEmail_ThrowsLibValidationException()
-    {
-        // Arrange
-        var settings = new NotificationSettings { Enabled = true };
-        var service = CreateService(settings);
-
-        // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            service.SendEmailAsync("", "Subject", "Body", CancellationToken.None));
-        Assert.That(ex.ExceptionDetails, Has.Member("Email обязателен"));
     }
 
     [Test]
@@ -444,7 +405,7 @@ public class EmailNotificationServiceTests2
     }
 
     [Test]
-    public async Task SendEmailAsync_WhenSmtpConfiguredAndEnabled_SendsEmail() // fixme проверить, что реально отправляется письмо, но это сложно в юнит-тестах
+    public async Task SendEmailAsync_WhenSmtpConfiguredAndEnabled_SendsEmail()
     {
         // Arrange
         var settings = new NotificationSettings
@@ -456,42 +417,55 @@ public class EmailNotificationServiceTests2
             SmtpPassword = "pass",
             FromEmail = "from@test.com"
         };
-        var loggerMock = new Mock<ILogger<EmailNotificationService>>();
-        var service = CreateService(settings, loggerMock);
 
-        // Act & Assert — не должно быть исключений (мы не можем реально отправить, но метод должен попытаться)
-        // Чтобы избежать реальной отправки, можно замокать SmtpClient, но это сложно.
-        // Вместо этого проверяем, что метод не падает, если настройки корректны,
-        // но поскольку SmtpClient не сконфигурирован реально, он выбросит исключение.
-        // Мы можем перехватить исключение и проверить, что это не валидационное.
-        try
-        {
-            await service.SendEmailAsync("test@example.com", "Subject", "Body");
-        }
-        catch (Exception ex)
-        {
-            // Ожидаем, что это будет SocketException или SmtpException, но не LibValidationException
-            Assert.That(ex, Is.Not.InstanceOf<LibValidationException>());
-        }
+        var smtpMock = new Mock<ISmtpClient>();
+        smtpMock.Setup(x => x.SendMailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+        var loggerMock = new Mock<ILogger<EmailNotificationService>>();
+        var service = CreateService(settings, loggerMock, smtpMock);
+
+        // Act
+        await service.SendEmailAsync("test@example.com", "Subject", "Body", CancellationToken.None);
+
+        // Assert
+        smtpMock.Verify(x => x.SendMailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()), Times.Once);
+        loggerMock.Verify(x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Email sent successfully")),
+            It.IsAny<Exception>(),
+            It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
     }
 
     [Test]
     public async Task SendEmailAsync_WhenSmtpThrows_PropagatesException()
     {
-        // Arrange — используем настройки, которые заведомо не работают
+        // Arrange
         var settings = new NotificationSettings
         {
             Enabled = true,
-            SmtpServer = "invalid.server",
-            SmtpPort = 25,
+            SmtpServer = "smtp.test.com",
+            SmtpPort = 587,
             SmtpUsername = "user",
             SmtpPassword = "pass",
             FromEmail = "from@test.com"
         };
-        var service = CreateService(settings);
+
+        var smtpMock = new Mock<ISmtpClient>();
+        smtpMock.Setup(x => x.SendMailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new SmtpException("Simulated failure"));
+
+        var service = CreateService(settings, smtpMock: smtpMock);
 
         // Act & Assert
-        Assert.ThrowsAsync<SmtpException>(() =>
-            service.SendEmailAsync("test@example.com", "Subject", "Body"));
+        var ex = Assert.ThrowsAsync<SmtpException>(() =>
+            service.SendEmailAsync("test@example.com", "Subject", "Body", CancellationToken.None));
+        Assert.That(ex.Message, Is.EqualTo("Simulated failure"));
+
+        // Проверяем, что метод был вызван ровно один раз
+        smtpMock.Verify(x => x.SendMailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
 }

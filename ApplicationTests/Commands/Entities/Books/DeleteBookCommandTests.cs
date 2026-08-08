@@ -15,7 +15,7 @@ public class DeleteBookCommandTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => [])
             .Generate(10)
             .ToList();
         await bookRepo.AddRangeAsync(books.AsEnumerable(), CancellationToken.None);
@@ -49,7 +49,7 @@ public class DeleteBookCommandTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => [])
                                    .Generate(10)
                                    .AsEnumerable(), CancellationToken.None);
 
@@ -89,9 +89,9 @@ public class DeleteBookCommandTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => [])
             .Generate();
-        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
+        await bookRepo.AddRangeAsync([book], CancellationToken.None);
 
         var deleteBookCommand = new DeleteBookCommand(unitOfWork);
         var deleteBookRequest = new DeleteBookRequest { Id = book.Id };
@@ -116,14 +116,14 @@ public class DeleteBookCommandTests
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
         var roomRepo = unitOfWork.GetRepository<Room>();
 
-        var book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book", RoomBook = new List<RoomBook>() };
+        var book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book", RoomBook = [] };
         var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Room" };
         var rb = new RoomBook { Id = new Id(Guid.NewGuid()), Book = book, Room = room, BookCount = 1 };
         book.RoomBook.Add(rb);
         // Важно: добавляем книгу, у которой уже заполнена коллекция RoomBook
-        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
-        await roomRepo.AddRangeAsync(new[] { room }, CancellationToken.None);
-        await roomBookRepo.AddRangeAsync(new[] { rb }, CancellationToken.None);
+        await bookRepo.AddRangeAsync([book], CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([rb], CancellationToken.None);
 
         var command = new DeleteBookCommand(unitOfWork);
         var request = new DeleteBookRequest { Id = book.Id };

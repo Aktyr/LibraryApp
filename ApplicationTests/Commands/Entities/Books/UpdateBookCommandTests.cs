@@ -3,8 +3,8 @@
 [TestFixture]
 public class UpdateBookCommandTests
 {
-    private BookValidatorAsync CreateBookValidator => new();
-    private IConverter<Book, BookDTO> Converter => new BookDTOConverter();
+    private static BookValidatorAsync CreateBookValidator => new();
+    private static IConverter<Book, BookDTO> Converter => new BookDTOConverter();
 
 
     [Test]
@@ -19,7 +19,7 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Author, f => f.Name.FullName())
             .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
             .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => [])
             .Generate(10)
             .ToList();
         await bookRepo.AddRangeAsync(books.AsEnumerable(), CancellationToken.None);
@@ -70,7 +70,7 @@ public class UpdateBookCommandTests
                                    .RuleFor(x => x.Author, f => f.Name.FullName())
                                    .RuleFor(x => x.Year, f => f.Random.Int(1900, 2024))
                                    .RuleFor(x => x.Publisher, f => f.Company.CompanyName())
-                                   .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+                                   .RuleFor(x => x.RoomBook, f => [])
                                    .Generate(10)
                                    .AsEnumerable(), CancellationToken.None);
         var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
@@ -117,15 +117,16 @@ public class UpdateBookCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
-        var book = new Bogus.Faker<Book>()
+        Bogus.Faker<Book> faker = new Bogus.Faker<Book>()
             .RuleFor(x => x.Id, f => new Id(Guid.NewGuid()))
             .RuleFor(x => x.Title, f => "Original Title")
             .RuleFor(x => x.Author, f => "Original Author")
             .RuleFor(x => x.Year, f => 2000)
             .RuleFor(x => x.Publisher, f => "Original Publisher")
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => []);
+        var book = faker
             .Generate();
-        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
+        await bookRepo.AddRangeAsync([book], CancellationToken.None);
 
         var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
@@ -164,9 +165,9 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Author, f => "Original Author")
             .RuleFor(x => x.Year, f => 2000)
             .RuleFor(x => x.Publisher, f => "Original Publisher")
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => [])
             .Generate();
-        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
+        await bookRepo.AddRangeAsync([book], CancellationToken.None);
 
         var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
         var updateBookRequest = new UpdateBookRequest
@@ -196,7 +197,7 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Author, f => "Original Author")
             .RuleFor(x => x.Year, f => 2000)
             .RuleFor(x => x.Publisher, f => "Original Publisher")
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => [])
             .Generate();
         await bookRepo.AddRangeAsync([book]);
 
@@ -226,7 +227,7 @@ public class UpdateBookCommandTests
             .RuleFor(x => x.Author, f => "Original Author")
             .RuleFor(x => x.Year, f => 2000)
             .RuleFor(x => x.Publisher, f => "Original Publisher")
-            .RuleFor(x => x.RoomBook, f => new List<RoomBook>())
+            .RuleFor(x => x.RoomBook, f => [])
             .Generate();
         await bookRepo.AddRangeAsync([book]);
 

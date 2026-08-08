@@ -154,16 +154,19 @@ public class BaseConverterTests
         var guid = Guid.NewGuid();
 
         // Создаём DTO с ReadOnly свойством через record (все свойства record — init-only)
-        var dto = new UserDTO(guid, "Test", "User", "", "test@test.com", null, new List<UserRoomBookDTO>());
+        var dto = new UserDTO(guid, "Test", "User", "", "test@test.com", null, []);
 
         // Act
         var entity = converter.ToEntity(dto);
 
-        // Assert
-        Assert.That(entity.Id.Value, Is.EqualTo(guid));
-        Assert.That(entity.LastName, Is.EqualTo("Test"));
-        Assert.That(entity.FirstName, Is.EqualTo("User"));
-        Assert.That(entity.ContactInfo, Is.EqualTo("test@test.com"));
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(entity.Id.Value, Is.EqualTo(guid));
+            Assert.That(entity.LastName, Is.EqualTo("Test"));
+            Assert.That(entity.FirstName, Is.EqualTo("User"));
+            Assert.That(entity.ContactInfo, Is.EqualTo("test@test.com"));
+        });
         // RoomBooks маппится через InitializeCollections, а не через MapProperties
     }
 
@@ -248,7 +251,7 @@ public class BaseConverterTests
         var user = new User
         {
             Id = new Id(Guid.NewGuid()),
-            RoomBooks = new List<UserRoomBook>{ new() {Id = new Id(Guid.NewGuid())}}
+            RoomBooks = [new() { Id = new Id(Guid.NewGuid()) }]
         };
 
         var roomBooksBefore = user.RoomBooks;
@@ -290,8 +293,6 @@ public class BaseConverterTests
             Name = "Test"
         };
 
-        var dto = new RoomDTO(Guid.NewGuid(), "Test Room", new List<RoomBookDTO>());
-
         // Act
         var result = converter.ToDto(entity);
 
@@ -311,7 +312,7 @@ public class BaseConverterTests
             FirstName = "Иван",
             MiddleName = "Иванович",
             ContactInfo = "test@test.com",
-            RoomBooks = new List<UserRoomBook>() // Не проверяется маппингом напрямую
+            RoomBooks = [] // Не проверяется маппингом напрямую
         };
 
         // Act

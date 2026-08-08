@@ -15,7 +15,7 @@ public class DeleteUserCommandTests
             .RuleFor(x => x.FirstName, f => f.Name.FirstName())
             .RuleFor(x => x.MiddleName, f => f.Name.FirstName())
             .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
-            .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate(10)
             .ToList();
 
@@ -56,7 +56,7 @@ public class DeleteUserCommandTests
                                    .RuleFor(x => x.FirstName, f => f.Name.FirstName())
                                    .RuleFor(x => x.MiddleName, f => f.Name.FirstName())
                                    .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
-                                   .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
+                                   .RuleFor(x => x.RoomBooks, f => [])
                                    .Generate(5)
                                    .AsEnumerable());
 
@@ -99,20 +99,19 @@ public class DeleteUserCommandTests
             FirstName = "Иван",
             MiddleName = "Иванович",
             ContactInfo = "ivanov@example.com",
-            RoomBooks = new List<UserRoomBook>
-            {
-                new UserRoomBook
-                {
+            RoomBooks =
+            [
+                new() {
                     Id = new Id(Guid.NewGuid()),
                     BorrowDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(5),
                     User = null, // Это не важно для теста
                     RoomBook = null // Это не важно для теста
                 }
-            }
+            ]
         };
 
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = userId };
@@ -141,7 +140,7 @@ public class DeleteUserCommandTests
             .RuleFor(x => x.FirstName, f => f.Name.FirstName())
             .RuleFor(x => x.MiddleName, f => f.Name.FirstName())
             .RuleFor(x => x.ContactInfo, f => f.Internet.Email())
-            .RuleFor(x => x.RoomBooks, f => new List<UserRoomBook>())
+            .RuleFor(x => x.RoomBooks, f => [])
             .Generate(5)
             .ToList();
 
@@ -179,7 +178,7 @@ public class DeleteUserCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = user.Id };
@@ -212,7 +211,7 @@ public class DeleteUserCommandTests
             RoomBooks = []
         };
 
-        await userRepo.AddRangeAsync(new[] { user }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
 
         var deleteUserCommand = new DeleteUserCommand(unitOfWork);
         var deleteUserRequest = new DeleteUserRequest { Id = user.Id };
