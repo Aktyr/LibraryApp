@@ -1,6 +1,4 @@
-﻿using WebAPI.Misc.Helpers;
-
-namespace WebAPI.Endpoints.BaseAPI;
+﻿namespace WebAPI.Endpoints.BaseAPI;
 
 [ApiController]
 [Obsolete("This class is deprecated. Use the new endpoint classes instead.")]

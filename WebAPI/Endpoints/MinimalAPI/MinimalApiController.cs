@@ -1,6 +1,4 @@
-﻿using WebAPI.Misc.Helpers;
-
-namespace WebAPI.Endpoints.MinimalAPI;
+﻿namespace WebAPI.Endpoints.MinimalAPI;
 
 public static class MinimalApiController
 {

@@ -30,7 +30,7 @@ public class User : IEntity
                 .FirstOrDefault();
 
             return nearestDeadline.HasValue
-                ? nearestDeadline.Value - DateTime.Now
+                ? nearestDeadline.Value - DateTime.UtcNow
                 : null;
         }
     }
