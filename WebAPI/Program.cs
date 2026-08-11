@@ -13,8 +13,11 @@ public class Program
         //builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
 
         var app = builder.Build();
+
+        app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
         // Применяем миграции при запуске
         using (var scope = app.Services.CreateScope())
