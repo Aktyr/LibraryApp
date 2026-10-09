@@ -2,11 +2,11 @@
 
 public class UnitOfWork : IUnitOfWork
 {
-    private readonly LibraryContext _context;
+    private readonly DbContext _context;
     private IDbContextTransaction? _transaction;
-    private readonly Dictionary<Type, object> _repositories = new();
+    private readonly Dictionary<Type, object> _repositories = [];
 
-    public UnitOfWork(LibraryContext context)
+    public UnitOfWork(DbContext context)
     {
         _context = context;
     }
