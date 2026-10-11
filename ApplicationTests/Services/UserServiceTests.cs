@@ -29,9 +29,9 @@ public class UserServiceTests
         // Assert
         var repo = unitOfWork.GetRepository<User>();
         var saved = await repo.FirstOrDefaultAsync(u => u.Email == email);
-        Assert.That(saved, Is.Not.Null);
         Assert.Multiple(() =>
         {
+            Assert.That(saved, Is.Not.Null);
             Assert.That(saved!.LastName, Is.EqualTo(lastName));
             Assert.That(saved.FirstName, Is.EqualTo(firstName));
             Assert.That(saved.MiddleName, Is.EqualTo(middleName));
@@ -54,9 +54,12 @@ public class UserServiceTests
         var service = CreateService(unitOfWork);
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            service.CreateUserAsync("test@test.com", "Password123!", "Иванов", "Иван", "", "info", UserRole.Reader));
-        Assert.That(ex.ExceptionDetails, Contains.Item("Email уже зарегистрирован"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                service.CreateUserAsync("test@test.com", "Password123!", "Иванов", "Иван", "", "info", UserRole.Reader));
+            Assert.That(ex.ExceptionDetails, Contains.Item("Email уже зарегистрирован"));
+        });
     }
 
     [Test]
@@ -67,9 +70,12 @@ public class UserServiceTests
         var service = CreateService(unitOfWork);
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            service.CreateUserAsync("invalid-email", "123", "", "Иван", "", "info", UserRole.Reader));
-        Assert.That(ex.ExceptionDetails, Has.Count.GreaterThan(0));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                service.CreateUserAsync("invalid-email", "123", "", "Иван", "", "info", UserRole.Reader));
+            Assert.That(ex.ExceptionDetails, Has.Count.GreaterThan(0));
+        });
     }
 
     [Test]
@@ -86,10 +92,13 @@ public class UserServiceTests
         var service = new UserService(mockUnitOfWork.Object, validator);
 
         // Act & Assert
-        Assert.ThrowsAsync<Exception>(() =>
-            service.CreateUserAsync("test@test.com", "Password123!", "Иванов", "Иван", "", "info", UserRole.Reader));
+        Assert.Multiple(() =>
+        {
+            Assert.ThrowsAsync<Exception>(() =>
+                service.CreateUserAsync("test@test.com", "Password123!", "Иванов", "Иван", "", "info", UserRole.Reader));
 
-        mockUnitOfWork.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        mockUnitOfWork.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            mockUnitOfWork.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            mockUnitOfWork.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+        });
     }
 }

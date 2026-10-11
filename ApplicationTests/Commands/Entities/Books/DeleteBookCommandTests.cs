@@ -129,7 +129,11 @@ public class DeleteBookCommandTests
         var request = new DeleteBookRequest { Id = book.Id };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() => command.Execute(request, CancellationToken.None));
-        Assert.That(ex.ExceptionDetails, Has.Member("Невозможно удалить книгу, так как она присутствует в одной или нескольких комнатах"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+            Assert.That(ex.ExceptionDetails, Has.Member("Невозможно удалить книгу, так как она присутствует в одной или нескольких комнатах"));
+        });
     }
 }

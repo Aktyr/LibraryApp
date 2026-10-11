@@ -50,10 +50,13 @@ public class ExpressionHelperTests
         var combined = ExpressionHelper.CombineAnd(left, right);
 
         // Assert
-        var book = new Book { Year = 2005, Title = "A Book" };
-        Assert.That(combined.Compile()(book), Is.True);
+        Assert.Multiple(() =>
+        {
+            var book = new Book { Year = 2005, Title = "A Book" };
+            Assert.That(combined.Compile()(book), Is.True);
 
-        book = new Book { Year = 1999, Title = "A Book" };
-        Assert.That(combined.Compile()(book), Is.False);
+            book = new Book { Year = 1999, Title = "A Book" };
+            Assert.That(combined.Compile()(book), Is.False);
+        });
     }
 }

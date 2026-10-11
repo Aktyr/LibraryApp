@@ -118,8 +118,8 @@ public class EntityMethodsTests
         // Act
         var deadline = request.Deadline;
 
-        // Assert
-        Assert.That(deadline, Is.EqualTo(DateTime.Now.AddDays(14)).Within(TimeSpan.FromSeconds(5)));
+        // Assert — сравниваем с UTC, как и в самом запросе
+        Assert.That(deadline, Is.EqualTo(DateTime.UtcNow.AddDays(14)).Within(TimeSpan.FromSeconds(5)));
     }
 
     [Test]
@@ -135,7 +135,7 @@ public class EntityMethodsTests
         // Act
         var newDeadline = request.NewDeadline;
 
-        // Assert
-        Assert.That(newDeadline, Is.EqualTo(DateTime.Now.AddDays(7)).Within(TimeSpan.FromSeconds(5)));
+        // Assert — сравниваем с UTC, как и в самом запросе
+        Assert.That(newDeadline, Is.EqualTo(DateTime.UtcNow.AddDays(7)).Within(TimeSpan.FromSeconds(5)));
     }
 }

@@ -333,12 +333,14 @@ public class UpdateUserCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
-            await updateUserCommand.Execute(updateUserRequest, CancellationToken.None));
+        Assert.Multiple(async () =>
+        {
+            Assert.ThrowsAsync<LibValidationException>(async () =>
+                await updateUserCommand.Execute(updateUserRequest, CancellationToken.None));
 
-        // Проверяем, что пользователь НЕ был обновлен
-        var userAfterFailedUpdate = (await userRepo.GetAsync(x => x.Id.Value == userId.Value)).First();
-        Assert.That(userAfterFailedUpdate.LastName, Is.EqualTo("Валидный")); // Осталось прежним
+            var userAfterFailedUpdate = (await userRepo.GetAsync(x => x.Id.Value == userId.Value)).First();
+            Assert.That(userAfterFailedUpdate.LastName, Is.EqualTo("Валидный"));
+        });
     }
 
     [TestCase("Иванов", "Иван", "Иванович", "test@test.com")]

@@ -729,8 +729,11 @@ public class SearchBooksCommandTests
         var result = await command.Execute(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Book, Has.Length.EqualTo(1));
-        Assert.That(result.Book[0].Title, Is.EqualTo("Book 1"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Book, Has.Length.EqualTo(1));
+            Assert.That(result.Book[0].Title, Is.EqualTo("Book 1"));
+        });
     }
 
     [Test]

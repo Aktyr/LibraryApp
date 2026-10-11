@@ -48,6 +48,7 @@ public class LoginCommandTests
 
         // Act
         var result = await loginCommand.Execute(request, CancellationToken.None);
+        var users = await userRepo.GetAsync(x => x.Email == email, CancellationToken.None);
 
         // Assert
         Assert.Multiple(() =>
@@ -59,10 +60,9 @@ public class LoginCommandTests
             Assert.That(result.Email, Is.EqualTo(email));
             Assert.That(result.Role, Is.EqualTo(UserRole.Reader));
             Assert.That(result.UserId, Is.EqualTo(userId));
+            Assert.That(users.Count(), Is.EqualTo(1));
         });
 
-        var users = await userRepo.GetAsync(x => x.Email == email, CancellationToken.None);
-        Assert.That(users.Count(), Is.EqualTo(1));
     }
 
     [Test]

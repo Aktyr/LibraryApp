@@ -81,9 +81,12 @@ public class UndoDiscardCommandTests
         };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            command.Execute(request, CancellationToken.None));
-        Assert.That(ex.ExceptionDetails, Has.Member("Запись о списании не найдена"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+            Assert.That(ex.ExceptionDetails, Has.Member("Запись о списании не найдена"));
+        });
     }
 
     [Test]
@@ -123,9 +126,12 @@ public class UndoDiscardCommandTests
         };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            command.Execute(request, CancellationToken.None));
-        Assert.That(ex.ExceptionDetails, Has.Member("Книга не найдена в комнате"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+            Assert.That(ex.ExceptionDetails, Has.Member("Книга не найдена в комнате"));
+        });
     }
 
     [Test]
@@ -189,10 +195,13 @@ public class UndoDiscardCommandTests
         var request = new UndoDiscardRequest { DiscardId = discardedId, UndoReason = "Test" };
 
         // Act & Assert
-        Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+        Assert.Multiple(() =>
+        {
+            Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
 
-        unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+        });
     }
 }

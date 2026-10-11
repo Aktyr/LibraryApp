@@ -87,12 +87,12 @@ public class RoomDTOConverterTests
         var dto = converter.ToDto(room);
 
         // Assert
-        Assert.That(dto, Is.Not.Null);
-        Assert.That(dto.RoomBook, Has.Count.EqualTo(2));
-
-        var roomBookList = dto.RoomBook.ToList();
         Assert.Multiple(() =>
         {
+            Assert.That(dto, Is.Not.Null);
+            Assert.That(dto.RoomBook, Has.Count.EqualTo(2));
+
+            var roomBookList = dto.RoomBook.ToList();
             Assert.That(roomBookList[0].BookCount, Is.EqualTo(5));
             Assert.That(roomBookList[1].BookCount, Is.EqualTo(3));
             Assert.That(roomBookList[0].RoomId, Is.EqualTo(roomId));

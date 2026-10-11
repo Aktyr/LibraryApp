@@ -95,8 +95,11 @@ public class RoomBookDTOConverterTests
         var dto = converter.ToDto(book);
 
         // Assert
-        Assert.That(dto.RoomBook, Is.Not.Null);
-        Assert.That(dto.RoomBook, Is.Empty);
+        Assert.Multiple(() =>
+        {
+            Assert.That(dto.RoomBook, Is.Not.Null);
+            Assert.That(dto.RoomBook, Is.Empty);
+        });
     }
 
 }

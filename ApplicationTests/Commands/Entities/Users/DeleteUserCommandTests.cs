@@ -150,16 +150,17 @@ public class DeleteUserCommandTests
         var initialCount = userRepo.Entities.Count;
 
         // Act & Assert - удаляем всех пользователей по одному
-        foreach (var user in users.ToList()) // ToList() чтобы создать копию
+        Assert.Multiple(async () =>
         {
-            var deleteUserRequest = new DeleteUserRequest { Id = user.Id };
-            var result = await deleteUserCommand.Execute(deleteUserRequest, CancellationToken.None);
+            foreach (var user in users.ToList())
+            {
+                var deleteUserRequest = new DeleteUserRequest { Id = user.Id };
+                var result = await deleteUserCommand.Execute(deleteUserRequest, CancellationToken.None);
+                Assert.That(result.Status, Is.EqualTo("Ok"));
+            }
 
-            Assert.That(result.Status, Is.EqualTo("Ok"));
-        }
-
-        // Проверяем, что все пользователи удалены
-        Assert.That(userRepo.Entities, Is.Empty);
+            Assert.That(userRepo.Entities, Is.Empty);
+        });
     }
 
     [Test]

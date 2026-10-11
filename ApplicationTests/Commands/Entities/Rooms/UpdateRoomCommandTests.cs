@@ -420,10 +420,13 @@ public class UpdateRoomCommandTests
         UpdateRoomRequest request = new() { Id = roomId, Name = "NewName", RoomBookDTO = [] };
 
         // Act & Assert
-        Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+        Assert.Multiple(() =>
+        {
+            Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
 
-        unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+        });
     }
 }

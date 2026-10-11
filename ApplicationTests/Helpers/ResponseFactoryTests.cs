@@ -46,9 +46,11 @@ public class ResponseFactoryTests
             .GetMethod("CreateResponse", BindingFlags.NonPublic | BindingFlags.Static)
             .MakeGenericMethod(typeof(FakeResponse), typeof(BookDTO));
 
-        var ex = Assert.Throws<TargetInvocationException>(() =>
-            method.Invoke(null, ["Message", Array.Empty<BookDTO>()]));
-
-        Assert.That(ex.InnerException, Is.InstanceOf<InvalidOperationException>());
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.Throws<TargetInvocationException>(() =>
+                method.Invoke(null, ["Message", Array.Empty<BookDTO>()]));
+            Assert.That(ex.InnerException, Is.InstanceOf<InvalidOperationException>());
+        });
     }
 }

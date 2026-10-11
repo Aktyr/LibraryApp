@@ -103,26 +103,26 @@ public class GetUserQueryTests
             RoomBooks =
             [
                 new() {
-                    Id = new Id(Guid.NewGuid()),
-                    BorrowDate = DateTime.Now.AddDays(-7),
-                    Deadline = DateTime.Now.AddDays(3), // Через 3 дня
-                    User = null,
-                    RoomBook = null
-                },
-                new() {
-                    Id = new Id(Guid.NewGuid()),
-                    BorrowDate = DateTime.Now.AddDays(-2),
-                    Deadline = DateTime.Now.AddDays(1), // Через 1 день (ближайший)
-                    User = null,
-                    RoomBook = null
-                },
-                new() {
-                    Id = new Id(Guid.NewGuid()),
-                    BorrowDate = DateTime.Now.AddDays(-1),
-                    Deadline = null, // Без дедлайна
-                    User = null,
-                    RoomBook = null
-                }
+                Id = new Id(Guid.NewGuid()),
+                BorrowDate = DateTime.UtcNow.AddDays(-7),
+                Deadline = DateTime.UtcNow.AddDays(3), // Через 3 дня
+                User = null,
+                RoomBook = null
+            },
+            new() {
+                Id = new Id(Guid.NewGuid()),
+                BorrowDate = DateTime.UtcNow.AddDays(-2),
+                Deadline = DateTime.UtcNow.AddDays(1), // Через 1 день (ближайший)
+                User = null,
+                RoomBook = null
+            },
+            new() {
+                Id = new Id(Guid.NewGuid()),
+                BorrowDate = DateTime.UtcNow.AddDays(-1),
+                Deadline = null, // Без дедлайна
+                User = null,
+                RoomBook = null
+            }
             ]
         };
 
@@ -141,7 +141,6 @@ public class GetUserQueryTests
             Assert.That(result!.Users, Has.Length.EqualTo(1));
             var userDTO = result.Users[0];
 
-            // Ближайший дедлайн должен быть ~1 день
             Assert.That(userDTO.NearestReturnTimeSpan, Is.Not.Null);
             Assert.That(userDTO.NearestReturnTimeSpan!.Value.TotalDays, Is.EqualTo(1).Within(0.1));
         });
@@ -362,8 +361,11 @@ public class GetUserQueryTests
         var result = await getUserQuery.Execute(getUserRequest, cancellationToken);
 
         // Assert
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Status, Is.EqualTo("Ok"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result!.Status, Is.EqualTo("Ok"));
+        });
     }
 
     [Test]

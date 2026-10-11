@@ -187,17 +187,13 @@ public class DeadlineCheckServiceTests
         var updatedUrb = repo.Entities.First();
         Assert.Multiple(() =>
         {
-            // 5 дней × 10 = 50
+            var updatedUrb = repo.Entities.First();
             Assert.That(updatedUrb.Penalty, Is.EqualTo(50m));
-        });
 
-        notificationMock.Verify(
-            x => x.SendOverdueNotificationAsync(
-                user,
-                userRoomBook,
-                50m,
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+            notificationMock.Verify(
+                x => x.SendOverdueNotificationAsync(user, userRoomBook, 50m, It.IsAny<CancellationToken>()),
+                Times.Once);
+        });
     }
 
     [Test]
@@ -271,19 +267,23 @@ public class DeadlineCheckServiceTests
         await (Task)method.Invoke(service, [CancellationToken.None])!;
 
         // Assert
-        notificationMock.Verify(
-            x => x.SendReturnReminderAsync(
-                It.IsAny<User>(),
-                It.IsAny<UserRoomBook>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
-        notificationMock.Verify(
-            x => x.SendOverdueNotificationAsync(
-                It.IsAny<User>(),
-                It.IsAny<UserRoomBook>(),
-                It.IsAny<decimal>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        Assert.Multiple(() =>
+        {
+            notificationMock.Verify(
+                x => x.SendReturnReminderAsync(
+                    It.IsAny<User>(), 
+                    It.IsAny<UserRoomBook>(), 
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
+
+            notificationMock.Verify(
+                x => x.SendOverdueNotificationAsync(
+                    It.IsAny<User>(), 
+                    It.IsAny<UserRoomBook>(), 
+                    It.IsAny<decimal>(), 
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
+        });
     }
 
     [Test]
@@ -494,20 +494,16 @@ public class DeadlineCheckServiceTests
         await (Task)method.Invoke(service, [CancellationToken.None])!;
 
         // Assert
-        notificationMock.Verify(
-            x => x.SendReturnReminderAsync(
-                user,
-                soonDueBook,
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        Assert.Multiple(() =>
+        {
+            notificationMock.Verify(
+                x => x.SendReturnReminderAsync(user, soonDueBook, It.IsAny<CancellationToken>()),
+                Times.Once);
 
-        notificationMock.Verify(
-            x => x.SendOverdueNotificationAsync(
-                user,
-                overdueBook,
-                It.IsAny<decimal>(),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+            notificationMock.Verify(
+                x => x.SendOverdueNotificationAsync(user, overdueBook, It.IsAny<decimal>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        });
     }
 
     [Test]
@@ -552,20 +548,18 @@ public class DeadlineCheckServiceTests
         await (Task)method.Invoke(service, [CancellationToken.None])!;
 
         // Assert
-        notificationMock.Verify(
-            x => x.SendReturnReminderAsync(
-                It.IsAny<User>(),
-                It.IsAny<UserRoomBook>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        Assert.Multiple(() =>
+        {
+            notificationMock.Verify(
+                x => x.SendReturnReminderAsync(
+                    It.IsAny<User>(), It.IsAny<UserRoomBook>(), It.IsAny<CancellationToken>()),
+                Times.Never);
 
-        notificationMock.Verify(
-            x => x.SendOverdueNotificationAsync(
-                It.IsAny<User>(),
-                It.IsAny<UserRoomBook>(),
-                It.IsAny<decimal>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+            notificationMock.Verify(
+                x => x.SendOverdueNotificationAsync(
+                    It.IsAny<User>(), It.IsAny<UserRoomBook>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        });
     }
 
     [Test]
@@ -611,20 +605,23 @@ public class DeadlineCheckServiceTests
         await (Task)method.Invoke(service, [CancellationToken.None])!;
 
         // Assert
-        notificationMock.Verify(
-            x => x.SendReturnReminderAsync(
-                It.IsAny<User>(),
-                It.IsAny<UserRoomBook>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        Assert.Multiple(() =>
+        {
+            notificationMock.Verify(
+                x => x.SendReturnReminderAsync(
+                    It.IsAny<User>(), 
+                    It.IsAny<UserRoomBook>(), 
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
 
-        notificationMock.Verify(
-            x => x.SendOverdueNotificationAsync(
-                It.IsAny<User>(),
-                It.IsAny<UserRoomBook>(),
-                It.IsAny<decimal>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+            notificationMock.Verify(
+                x => x.SendOverdueNotificationAsync(
+                    It.IsAny<User>(), 
+                    It.IsAny<UserRoomBook>(), 
+                    It.IsAny<decimal>(), 
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
+        });
     }
     [Test]
     public void Constructor_WhenSettingsChanged_UpdatesCheckInterval_2()

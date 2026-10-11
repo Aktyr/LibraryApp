@@ -470,8 +470,13 @@ public class BorrowBookCommandTests
         var request = new BorrowBookRequest { UserId = user.Id.Value, RoomBookId = roomBook.Id.Value, BorrowDays = 7 };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() => command.Execute(request, CancellationToken.None));
-        Assert.That(ex.ExceptionDetails, Has.Member("Пользователь уже взял эту книгу и ещё не вернул её"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+            Assert.That(ex.ExceptionDetails, Has.Member(
+                "Пользователь уже взял эту книгу и ещё не вернул её"));
+        });
     }
 
     [Test]
@@ -507,10 +512,13 @@ public class BorrowBookCommandTests
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
         // Act & Assert
-        Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+        Assert.Multiple(() =>
+        {
+            Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
 
-        unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+        });
     }
 }

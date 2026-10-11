@@ -49,10 +49,12 @@ public class ExtendDeadlineCommandTests
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 20 };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            command.Execute(request, CancellationToken.None));
-
-        Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+            Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
+        });
     }
 
     [Test]
@@ -109,10 +111,12 @@ public class ExtendDeadlineCommandTests
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 0 };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            command.Execute(request, CancellationToken.None));
-
-        Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+            Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
+        });
     }
 
     [Test]

@@ -139,26 +139,26 @@ public class GetAllUsersQueryTests
             RoomBooks =
             [
                 new() {
-                    Id = new Id(Guid.NewGuid()),
-                    BorrowDate = DateTime.Now.AddDays(-10),
-                    Deadline = DateTime.Now.AddDays(2), // Через 2 дня
-                    User = null,
-                    RoomBook = null
-                },
-                new() {
-                    Id = new Id(Guid.NewGuid()),
-                    BorrowDate = DateTime.Now.AddDays(-5),
-                    Deadline = DateTime.Now.AddDays(5), // Через 5 дней
-                    User = null,
-                    RoomBook = null
-                },
-                new() {
-                    Id = new Id(Guid.NewGuid()),
-                    BorrowDate = DateTime.Now.AddDays(-3),
-                    Deadline = null, // Без дедлайна
-                    User = null,
-                    RoomBook = null
-                }
+                Id = new Id(Guid.NewGuid()),
+                BorrowDate = DateTime.UtcNow.AddDays(-10),
+                Deadline = DateTime.UtcNow.AddDays(2), // Через 2 дня
+                User = null,
+                RoomBook = null
+            },
+            new() {
+                Id = new Id(Guid.NewGuid()),
+                BorrowDate = DateTime.UtcNow.AddDays(-5),
+                Deadline = DateTime.UtcNow.AddDays(5), // Через 5 дней
+                User = null,
+                RoomBook = null
+            },
+            new() {
+                Id = new Id(Guid.NewGuid()),
+                BorrowDate = DateTime.UtcNow.AddDays(-3),
+                Deadline = null, // Без дедлайна
+                User = null,
+                RoomBook = null
+            }
             ]
         };
 
@@ -176,7 +176,6 @@ public class GetAllUsersQueryTests
             Assert.That(result.Users, Has.Length.EqualTo(1));
             var resultUser = result.Users[0];
 
-            // NearestReturnTimeSpan должен быть ~2 дня (ближайший дедлайн)
             Assert.That(resultUser.NearestReturnTimeSpan, Is.Not.Null);
             Assert.That(resultUser.NearestReturnTimeSpan!.Value.TotalDays, Is.EqualTo(2).Within(0.1));
         });
@@ -232,8 +231,11 @@ public class GetAllUsersQueryTests
         var result = await getAllUsersQuery.Execute(emptyRequest, CancellationToken.None);
 
         // Assert
-        mockUserRepo.Verify(repo => repo.GetWithoutTrackingAsync(It.IsAny<CancellationToken>()), Times.Once);
-        Assert.That(result.Users, Has.Length.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            mockUserRepo.Verify(repo => repo.GetWithoutTrackingAsync(It.IsAny<CancellationToken>()), Times.Once);
+            Assert.That(result.Users, Has.Length.EqualTo(1));
+        });
     }
 
     [Test]
@@ -256,8 +258,11 @@ public class GetAllUsersQueryTests
         var result = await getAllUsersQuery.Execute(emptyRequest, cancellationToken);
 
         // Assert
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Users, Has.Length.EqualTo(3));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Users, Has.Length.EqualTo(3));
+        });
     }
 
     [Test]
@@ -272,7 +277,10 @@ public class GetAllUsersQueryTests
         var result = await getAllUsersQuery.Execute(emptyRequest, CancellationToken.None);
 
         // Assert
-        Assert.That(result, Is.InstanceOf<UserResponse>());
-        Assert.That(result, Is.TypeOf<UserResponse>());
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.InstanceOf<UserResponse>());
+            Assert.That(result, Is.TypeOf<UserResponse>());
+        });
     }
 }

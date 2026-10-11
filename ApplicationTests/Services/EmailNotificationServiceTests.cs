@@ -251,10 +251,12 @@ public class EmailNotificationServiceTests
 
         // Act & Assert
         // Валидатор EmailValidatorAsync выбрасывает LibValidationException для null
-        var ex = Assert.ThrowsAsync<LibValidationException>(async () =>
-            await service.SendEmailAsync(email!, subject, body));
-
-        Assert.That(ex.ExceptionDetails, Contains.Item("Email обязателен"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(async () =>
+                await service.SendEmailAsync(email!, subject, body));
+            Assert.That(ex.ExceptionDetails, Contains.Item("Email обязателен"));
+        });
     }
 
 
@@ -429,14 +431,17 @@ public class EmailNotificationServiceTests
         await service.SendEmailAsync("test@example.com", "Subject", "Body", CancellationToken.None);
 
         // Assert
-        smtpMock.Verify(x => x.SendMailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()), Times.Once);
-        loggerMock.Verify(x => x.Log(
-            LogLevel.Information,
-            It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Email sent successfully")),
-            It.IsAny<Exception>(),
-            It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-            Times.Once);
+        Assert.Multiple(() =>
+        {
+            smtpMock.Verify(x => x.SendMailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()), Times.Once);
+            loggerMock.Verify(x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Email sent successfully")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                Times.Once);
+        });
     }
 
     [Test]
@@ -460,12 +465,14 @@ public class EmailNotificationServiceTests
         var service = CreateService(settings, smtpMock: smtpMock);
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<SmtpException>(() =>
-            service.SendEmailAsync("test@example.com", "Subject", "Body", CancellationToken.None));
-        Assert.That(ex.Message, Is.EqualTo("Simulated failure"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<SmtpException>(() =>
+                service.SendEmailAsync("test@example.com", "Subject", "Body", CancellationToken.None));
+            Assert.That(ex.Message, Is.EqualTo("Simulated failure"));
 
-        // Проверяем, что метод был вызван ровно один раз
-        smtpMock.Verify(x => x.SendMailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()), Times.Once);
+            smtpMock.Verify(x => x.SendMailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()), Times.Once);
+        });
     }
 
 }

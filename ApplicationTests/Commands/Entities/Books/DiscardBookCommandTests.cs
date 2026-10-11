@@ -81,9 +81,12 @@ public class DiscardBookCommandTests
         };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            command.Execute(request, CancellationToken.None));
-        Assert.That(ex.ExceptionDetails, Has.Member("Количество списываемых экземпляров должно быть больше нуля"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+            Assert.That(ex.ExceptionDetails, Has.Member("Количество списываемых экземпляров должно быть больше нуля"));
+        });
     }
 
     [Test]
@@ -138,9 +141,12 @@ public class DiscardBookCommandTests
         };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            command.Execute(request, CancellationToken.None));
-        Assert.That(ex.ExceptionDetails, Has.Member("Нельзя списать 10 экз. Доступно: 5"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+            Assert.That(ex.ExceptionDetails, Has.Member("Нельзя списать 10 экз. Доступно: 5"));
+        });
     }
 
     [Test]
@@ -177,9 +183,12 @@ public class DiscardBookCommandTests
         };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            command.Execute(request, CancellationToken.None));
-        Assert.That(ex.ExceptionDetails, Has.Member("Нельзя списать 2 экз. Выдано: 4, доступно: 1"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+            Assert.That(ex.ExceptionDetails, Has.Member("Нельзя списать 2 экз. Выдано: 4, доступно: 1"));
+        });
     }
 
     [Test]
@@ -217,9 +226,12 @@ public class DiscardBookCommandTests
         };
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-            command.Execute(request, CancellationToken.None));
-        Assert.That(ex.ExceptionDetails, Has.Member("ApprovedBy не может превышать 100 символов"));
+        Assert.Multiple(() =>
+        {
+            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+            Assert.That(ex.ExceptionDetails, Has.Member("ApprovedBy не может превышать 100 символов"));
+        });
     }
 
     [Test]
@@ -283,11 +295,13 @@ public class DiscardBookCommandTests
         var request = new UndoDiscardRequest { DiscardId = discardedId, UndoReason = "Test" };
 
         // Act & Assert
-        Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+        Assert.Multiple(() =>
+        {
+            Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
 
-        unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+        });
     }
-
 }

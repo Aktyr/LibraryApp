@@ -79,8 +79,11 @@ public class BaseConverterTests
         var entity = converter.ToEntity(dto);
 
         // Assert
-        Assert.That(entity.RoomBooks, Is.Not.Null);
-        Assert.That(entity.RoomBooks, Is.Empty);
+        Assert.Multiple(() =>
+        {
+            Assert.That(entity.RoomBooks, Is.Not.Null);
+            Assert.That(entity.RoomBooks, Is.Empty);
+        });
     }
 
     [Test]
@@ -143,8 +146,11 @@ public class BaseConverterTests
         method?.Invoke(null, [user]);
 
         // Assert
-        Assert.That(user.RoomBooks, Is.SameAs(existingCollection)); // Коллекция не пересоздалась
-        Assert.That(user.RoomBooks, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(user.RoomBooks, Is.SameAs(existingCollection));
+            Assert.That(user.RoomBooks, Has.Count.EqualTo(1));
+        });
     }
     [Test]
     public void MapProperties_WhenTargetPropertyIsReadOnly_SkipsIt()
