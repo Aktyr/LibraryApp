@@ -1,6 +1,5 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-// fixme удалить IConverter<User, UserDTO> userConverter
 public class UpdateUserCommand(
     IUnitOfWork unitOfWork,
     UserValidatorAsync userValidator) : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>, ICommand

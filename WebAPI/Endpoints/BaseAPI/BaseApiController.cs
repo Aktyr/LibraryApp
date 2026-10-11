@@ -1,7 +1,7 @@
 ﻿namespace WebAPI.Endpoints.BaseAPI;
 
 [ApiController]
-[Obsolete("This class is deprecated. Use the new endpoint classes instead.")]
+[Obsolete("This class is deprecated. Use the HybridAPI.")]
 public abstract class BaseApiController : ControllerBase
 {
     protected readonly IServiceProvider _serviceProvider;

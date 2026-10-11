@@ -8,19 +8,19 @@ public abstract class EndpointBase
         var routeAttr = type.GetCustomAttribute<RouteAttribute>();
         var basePath = routeAttr?.Template ?? "";
 
-        // 1. Группа с префиксом (но авторизацию НЕ применяем на группе, будем добавлять отдельно к каждому методу)
+        // Группа с префиксом (но авторизацию НЕ применяем на группе, будем добавлять отдельно к каждому методу)
         var groupBuilder = app.MapGroup(basePath);
 
-        // 2. Тэги Swagger (если есть атрибут Tags)
+        // Тэги Swagger (если есть атрибут Tags)
         var tagsAttr = type.GetCustomAttribute<TagsAttribute>();
         if (tagsAttr != null && tagsAttr.Tags.Any())
             groupBuilder.WithTags(tagsAttr.Tags.ToArray());
 
-        // 3. Собираем классовые атрибуты авторизации (для методов, у которых нет своих)
+        // Собираем классовые атрибуты авторизации (для методов, у которых нет своих)
         var classAuthAttrs = type.GetCustomAttributes<AuthorizeAttribute>().ToList();
         var classAllowAnonymous = type.GetCustomAttribute<AllowAnonymousAttribute>() != null;
 
-        // 4. Методы класса
+        // Методы класса
         var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Where(m => m.DeclaringType != typeof(object) && !m.IsSpecialName);
 
@@ -52,7 +52,7 @@ public abstract class EndpointBase
             // Регистрируем эндпоинт
             var builder = groupBuilder.MapMethods(fullPath, new[] { httpMethod }, handler);
 
-            // 5. Авторизация – применяется на уровне метода, переопределяя классовые требования
+            // Авторизация – применяется на уровне метода, переопределяя классовые требования
             ApplyAuthorization(builder, method, classAuthAttrs, classAllowAnonymous);
         }
     }
@@ -141,28 +141,28 @@ public abstract class EndpointBase
                 var paramType = param.ParameterType;
                 var paramName = param.Name!;
 
-                // 1. CancellationToken
+                // CancellationToken
                 if (paramType == typeof(CancellationToken))
                 {
                     args[i] = ctx.RequestAborted;
                     continue;
                 }
 
-                // 2. IServiceProvider
+                // IServiceProvider
                 if (paramType == typeof(IServiceProvider))
                 {
                     args[i] = ctx.RequestServices;
                     continue;
                 }
 
-                // 3. [FromServices]
+                // [FromServices]
                 if (param.GetCustomAttribute<FromServicesAttribute>() != null)
                 {
                     args[i] = ctx.RequestServices.GetRequiredService(paramType);
                     continue;
                 }
 
-                // 4. Автоматическое определение сервиса (если тип зарегистрирован в DI)
+                // Автоматическое определение сервиса (если тип зарегистрирован в DI)
                 var serviceFromDi = ctx.RequestServices.GetService(paramType);
                 if (serviceFromDi != null)
                 {
@@ -170,14 +170,14 @@ public abstract class EndpointBase
                     continue;
                 }
 
-                // 5. [FromBody]
+                // [FromBody]
                 if (param.GetCustomAttribute<FromBodyAttribute>() != null)
                 {
                     args[i] = await ctx.Request.ReadFromJsonAsync(paramType, ctx.RequestAborted);
                     continue;
                 }
 
-                // 6. [FromRoute]
+                // [FromRoute]
                 var fromRouteAttr = param.GetCustomAttribute<FromRouteAttribute>();
                 if (fromRouteAttr != null)
                 {
@@ -193,7 +193,7 @@ public abstract class EndpointBase
                     continue;
                 }
 
-                // 7. [FromQuery]
+                // [FromQuery]
                 var fromQueryAttr = param.GetCustomAttribute<FromQueryAttribute>();
                 if (fromQueryAttr != null)
                 {
@@ -210,15 +210,15 @@ public abstract class EndpointBase
                     continue;
                 }
 
-                // 8. Для POST/PUT: если параметр не помечен другими атрибутами,
-                //    читаем из тела (предполагаем, что это DTO запроса)
+                // Для POST/PUT: если параметр не помечен другими атрибутами,
+                // читаем из тела (предполагаем, что это DTO запроса)
                 if (isPostOrPut && !param.GetCustomAttributes().Any(a => a is FromQueryAttribute || a is FromRouteAttribute))
                 {
                     args[i] = await ctx.Request.ReadFromJsonAsync(paramType, ctx.RequestAborted);
                     continue;
                 }
 
-                // 9. По умолчанию (для GET/DELETE): сначала пробуем маршрут, затем query
+                // По умолчанию (для GET/DELETE): сначала пробуем маршрут, затем query
                 if (ctx.Request.RouteValues.TryGetValue(paramName, out var defaultRouteVal))
                 {
                     args[i] = ConvertValue(defaultRouteVal, paramType);

@@ -1,6 +1,6 @@
 ﻿namespace WebAPI.Endpoints.MinimalAPI;
 
-[Obsolete("This class is deprecated. Use the new endpoint classes instead.")]
+[Obsolete("This class is deprecated. Use the HybridAPI.")]
 public static class Endpoints
 {
     private const string _authGroup = "Auth";
