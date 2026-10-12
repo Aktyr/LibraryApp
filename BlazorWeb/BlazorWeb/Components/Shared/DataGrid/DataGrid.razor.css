@@ -1,0 +1,747 @@
+﻿/* ============================================================
+   DataGrid — стили компонента.
+
+   Содержание:
+     · Тулбар
+     · Строка статуса и справка
+     · Обёртка таблицы (скролл + sticky)
+     · Таблица и заголовок
+     · Ручка ресайза колонок
+     · Строки и ячейки
+     · Пагинация
+     · Бейджи статуса (пример кастомных шаблонов)
+     · Контекстное меню
+     · Панель фильтров и чипы
+     · Поповер фильтра
+     · Кастомный дропдаун операторов
+     · Кнопка-справка
+   ============================================================ */
+
+/* ============================================================
+   Тулбар
+   ============================================================ */
+.dg-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    background: #f7f7f8;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+}
+
+.dg-filter {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 200px;
+}
+
+.dg-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+/* Пользовательские действия (задаёт потребитель через Actions). */
+.dg-actions-custom {
+    padding-left: 10px;
+    border-left: 1px solid #ddd;
+}
+
+/* Служебные (встроенные): сброс выделения, сортировки, ширин. */
+.dg-actions-utility {
+    margin-left: auto; /* прижимаем к правому краю */
+    padding-left: 10px;
+    border-left: 1px solid #ddd;
+    gap: 6px;
+    opacity: 0.92; /* чуть приглушаем, чтобы не спорили с кастомными */
+}
+
+    /* Если инфо-строка выключена, utility всё равно у правого края. */
+    .dg-actions-utility + .dg-info {
+        margin-left: 12px;
+    }
+
+.dg-actions button,
+.dg-btn {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+    .dg-actions button:hover:not(:disabled),
+    .dg-btn:hover:not(:disabled) {
+        background: #eef4ff;
+        border-color: #0078d4;
+    }
+
+    .dg-actions button:disabled,
+    .dg-btn:disabled {
+        opacity: 0.45;
+        cursor: default;
+    }
+
+/* Служебные кнопки — более нейтральные. */
+.dg-actions-utility button {
+    background: #fafafa;
+    color: #333;
+    font-size: 12px;
+    padding: 5px 10px;
+}
+
+    .dg-actions-utility button:hover:not(:disabled) {
+        background: #eef4ff;
+        border-color: #0078d4;
+        color: #003a6b;
+    }
+
+.dg-btn-icon {
+    margin-right: 4px;
+}
+
+.dg-info {
+    margin-left: auto;
+    color: #444;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* ============================================================
+   Строка статуса и подсказка
+   ============================================================ */
+.dg-status {
+    padding: 8px 12px;
+    background: #eaf5ff;
+    border-left: 4px solid #0078d4;
+    font-size: 13px;
+    color: #003a6b;
+    font-family: ui-monospace, Consolas, monospace;
+}
+
+.dg-hint {
+    margin: 6px 12px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* ============================================================
+   Обёртка таблицы.
+
+   Sticky-заголовок работает только если у контейнера задана
+   max-height и overflow: auto.
+   ============================================================ */
+.dg-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    /* Ограничение по высоте. Если sticky не нужен — поставьте none. */
+    max-height: 600px;
+    overflow: auto;
+    scrollbar-gutter: stable;
+    border: 1px solid #ddd;
+    border-radius: 0 0 6px 6px;
+    outline: none;
+    user-select: none;
+    /* Изолирует layout содержимого от внешнего мира. */
+    contain: layout paint;
+}
+
+/* ============================================================
+   Таблица.
+
+   border-collapse: separate — обязательное условие для sticky:
+   при collapse Chrome/Safari ломают position: sticky у th.
+   ============================================================ */
+.dg-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    width: 100%;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+}
+
+    /* --- Sticky-заголовок --- */
+    .dg-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: #eef1f5; /* непрозрачный фон обязателен */
+        padding: 0;
+        text-align: left;
+        user-select: none;
+        /* border-bottom у sticky-th «съезжает» — заменяем на inset box-shadow. */
+        border-bottom: none;
+        border-right: 1px solid #e2e5ea;
+        box-shadow: inset 0 -1px 0 #ccc;
+    }
+
+    /* --- Колонка чекбоксов в заголовке — sticky --- */
+    .dg-table thead .dg-check {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        width: 40px;
+        min-width: 40px;
+        max-width: 40px;
+        text-align: center;
+        box-sizing: border-box;
+        background: #eef1f5; /* непрозрачный — иначе видно строки */
+        padding: 6px 0;
+        border-bottom: none;
+        border-right: 1px solid #e2e5ea;
+        box-shadow: inset 0 -1px 0 #ccc;
+    }
+
+    /* --- Колонка чекбоксов в теле — обычная, без sticky --- */
+    .dg-table tbody .dg-check {
+        width: 40px;
+        min-width: 40px;
+        max-width: 40px;
+        text-align: center;
+        box-sizing: border-box;
+        background: #fff; /* обязательно непрозрачный */
+        padding: 6px 0;
+        border-right: 1px solid #e2e5ea;
+        border-top: 1px solid #f0f0f0;
+        border-bottom: none;
+    }
+
+    /* Первая строка сразу под заголовком — без верхней линии. */
+    .dg-table tbody tr:first-child .dg-check {
+        border-top: none;
+    }
+
+    /* --- Фиктивная колонка-заполнитель --- */
+    .dg-table .dg-filler {
+        width: auto;
+        background: transparent;
+        border-bottom: none;
+        border-right: none;
+    }
+
+    .dg-table thead .dg-filler {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: #eef1f5;
+        box-shadow: inset 0 -1px 0 #ccc;
+    }
+
+/* --- Содержимое th: обрезка текста и клик для сортировки --- */
+.dg-th-content {
+    padding: 8px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+    .dg-th-content:hover {
+        background: #e3e8ef;
+    }
+
+.dg-sort {
+    color: #0078d4;
+    font-size: 11px;
+    margin-left: 4px;
+    font-weight: 600;
+}
+
+/* ============================================================
+   Ручка ресайза колонки.
+
+   z-index выше, чем у th (3), чтобы оставалась кликабельной
+   даже поверх sticky-заголовка.
+   ============================================================ */
+.dg-resizer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 8px;
+    cursor: col-resize;
+    z-index: 5;
+    background: transparent;
+    user-select: none;
+    touch-action: none;
+}
+
+    .dg-resizer:hover {
+        background: rgba(0, 120, 212, 0.35);
+    }
+
+    .dg-resizer.dg-resizing,
+    .dg-resizer:active {
+        background: #0078d4;
+    }
+
+/* ============================================================
+   Строки и ячейки.
+
+   Разделители строк — через border-top: при sticky-заголовке
+   border-bottom у tbody-строк «уезжает».
+   ============================================================ */
+.dg-row td {
+    padding: 6px 10px;
+    border-top: 1px solid #f0f0f0;
+    border-bottom: none;
+    border-right: 1px solid #f6f6f6;
+    overflow: hidden;
+}
+
+/* Первая строка сразу после заголовка — без верхней линии. */
+.dg-table tbody tr:first-child td {
+    border-top: none;
+}
+
+.dg-row .dg-check {
+    border-right: 1px solid #e2e5ea;
+    text-align: center;
+    padding: 6px 0;
+}
+
+.dg-ellipsis {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dg-row:hover {
+    background: #f5f8ff;
+}
+
+.dg-selected,
+.dg-selected:hover {
+    background: #cce4ff;
+    color: #000;
+}
+
+/* ============================================================
+   Пагинация
+   ============================================================ */
+.dg-pagination {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background: #f7f7f8;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    font-size: 13px;
+    color: #444;
+    flex-wrap: wrap;
+}
+
+.dg-page-btn {
+    min-width: 32px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.dg-page-current {
+    background: #0078d4;
+    color: #fff;
+    border-color: #0078d4;
+}
+
+    .dg-page-current:hover:not(:disabled) {
+        background: #005a9e;
+        border-color: #005a9e;
+    }
+
+.dg-page-info {
+    margin-left: 8px;
+    font-variant-numeric: tabular-nums;
+    color: #555;
+}
+
+.dg-page-size {
+    margin-left: auto;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+/* ============================================================
+   Бейджи статуса (пример кастомных шаблонов в колонке)
+   ============================================================ */
+.dg-badge-ok {
+    color: #0a7f2e;
+    background: #e6f7eb;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+.dg-badge-off {
+    color: #8a4b00;
+    background: #fff3d9;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+/* ============================================================
+   Контекстное меню
+   ============================================================ */
+.dg-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 998;
+    background: transparent;
+}
+
+.dg-context-menu {
+    position: fixed;
+    z-index: 999;
+    min-width: 200px;
+    background: #fff;
+    border: 1px solid #c8c8c8;
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+}
+
+    .dg-context-menu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 7px 12px;
+        background: transparent;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+        .dg-context-menu button:hover:not(:disabled) {
+            background: #eef4ff;
+            color: #003a6b;
+        }
+
+        .dg-context-menu button:disabled {
+            opacity: 0.45;
+            cursor: default;
+        }
+
+.dg-menu-sep {
+    height: 1px;
+    background: #e5e5e5;
+    margin: 4px 0;
+}
+
+/* ============================================================
+   Панель фильтров и чипы активных условий
+   ============================================================ */
+.dg-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    background: #fbfbfd;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    font-size: 13px;
+}
+
+.dg-add-filter {
+    font-size: 12px;
+    padding: 4px 10px;
+}
+
+.dg-clear-filters {
+    font-size: 12px;
+    padding: 4px 10px;
+    color: #a30000;
+    margin-left: auto;
+}
+
+    .dg-clear-filters:hover:not(:disabled) {
+        background: #ffecec;
+        border-color: #d44;
+        color: #a30000;
+    }
+
+.dg-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 6px 3px 10px;
+    background: #e6f0fb;
+    border: 1px solid #b8d4ee;
+    border-radius: 14px;
+    color: #003a6b;
+    cursor: pointer;
+    font-size: 12px;
+    user-select: none;
+    white-space: nowrap;
+}
+
+    .dg-chip:hover {
+        background: #d4e6f7;
+        border-color: #0078d4;
+    }
+
+.dg-chip-remove {
+    border: none;
+    background: transparent;
+    color: #003a6b;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 1px 5px;
+    border-radius: 8px;
+    margin-left: 2px;
+}
+
+    .dg-chip-remove:hover {
+        background: rgba(0, 0, 0, .12);
+    }
+
+/* ============================================================
+   Поповер редактирования фильтра
+   ============================================================ */
+.dg-filter-popover {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    min-width: 340px;
+    max-width: 90vw;
+    background: #fff;
+    border: 1px solid #c8c8c8;
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .2);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.dg-filter-popover-title {
+    font-weight: 600;
+    color: #222;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.dg-filter-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+    .dg-filter-row > span {
+        color: #666;
+        font-size: 12px;
+    }
+
+    .dg-filter-row select,
+    .dg-filter-row input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 6px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 13px;
+        background: #fff;
+        font-family: inherit;
+    }
+
+        .dg-filter-row select:focus,
+        .dg-filter-row input:focus {
+            outline: 2px solid #0078d4;
+            outline-offset: -1px;
+            border-color: #0078d4;
+        }
+
+.dg-filter-popover-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.dg-btn-primary {
+    background: #0078d4;
+    color: #fff;
+    border-color: #0078d4;
+}
+
+    .dg-btn-primary:hover:not(:disabled) {
+        background: #005a9e;
+        border-color: #005a9e;
+        color: #fff;
+    }
+
+/* Подсказка под полем значения: фиксированная высота, чтобы
+   поповер не «прыгал» при смене оператора. */
+.dg-filter-hint {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+    min-height: 14px;
+}
+
+/* ============================================================
+   Кастомный дропдаун операторов
+   ============================================================ */
+.dg-operator-dropdown {
+    position: relative;
+}
+
+.dg-operator-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+}
+
+    .dg-operator-trigger:hover {
+        border-color: #0078d4;
+    }
+
+.dg-operator-caret {
+    color: #888;
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+.dg-operator-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 260px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: #fff;
+    border: 1px solid #c8c8c8;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .15);
+    padding: 4px;
+}
+
+.dg-operator-group-title {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 6px 10px 2px;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+}
+
+.dg-operator-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 5px 10px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+    font-family: inherit;
+    color: #222;
+}
+
+    .dg-operator-item:hover {
+        background: #eef4ff;
+    }
+
+.dg-operator-item-active {
+    background: #d6e9f8;
+}
+
+.dg-operator-text {
+    white-space: nowrap;
+}
+
+.dg-operator-check {
+    color: #0078d4;
+    font-weight: 700;
+    margin-left: 8px;
+}
+
+/* ============================================================
+   Кнопка-справка ℹ и её поповер
+   ============================================================ */
+.dg-help-wrap {
+    position: relative;
+    margin-left: 8px;
+}
+
+.dg-help-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #0078d4;
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .dg-help-btn:hover {
+        background: #eef4ff;
+        border-color: #0078d4;
+    }
+
+.dg-help-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 50;
+    width: 340px;
+    max-width: 90vw;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid #c8c8c8;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .15);
+    font-size: 12px;
+    color: #444;
+    line-height: 1.5;
+    white-space: normal;
+}

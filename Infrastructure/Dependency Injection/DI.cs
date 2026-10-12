@@ -36,20 +36,15 @@ public static partial class DI
 
         foreach (var type in types)
         {
-            var registered = false;
-
-            // Ищем все интерфейсы, кроме маркерных (IMarker и его наследников)
-            var interfaces = type.GetInterfaces().Where(i => !typeof(IMarker).IsAssignableFrom(i)).ToList();
+            var interfaces = type.GetInterfaces()
+                .Where(i => !typeof(IMarker).IsAssignableFrom(i))
+                .ToList();
 
             foreach (var @interface in interfaces)
-            {
                 services.Add(new ServiceDescriptor(@interface, type, lifetime));
-                registered = true;
-            }
 
-            // Если подходящих интерфейсов нет, регистрируем сам тип
-            if (!registered)
-                services.Add(new ServiceDescriptor(type, type, lifetime));
+            // Регистрируем и сам тип — без этого RequestDelegateFactory не увидит его через IServiceProviderIsService
+            services.Add(new ServiceDescriptor(type, type, lifetime));
         }
         return services;
     }

@@ -1,0 +1,418 @@
+﻿@namespace BlazorWeb.Components.Shared.DataGrid
+@typeparam TItem
+@inject IJSRuntime JS
+
+@* ============================================================
+   Тулбар: поиск, действия, служебные кнопки, инфо, справка
+   ============================================================ *@
+<div class="dg-toolbar">
+
+    @* --- Строка быстрого поиска --- *@
+    @if (ShowFilter)
+    {
+        <input class="dg-filter" type="search" placeholder="@FilterPlaceholder"
+               value="@filter" @oninput="OnFilterChanged" />
+    }
+
+    @* --- Пользовательские действия над выделением --- *@
+    @if (toolbarActions.Count > 0)
+    {
+        <div class="dg-actions dg-actions-custom">
+            @foreach (var action in toolbarActions)
+            {
+                var a = action;
+                <button disabled="@(!CanExecute(a))" @onclick="() => ExecuteActionAsync(a)">
+                    @if (!string.IsNullOrEmpty(a.Icon))
+                    {
+                        <span class="dg-btn-icon">@a.Icon</span>
+                    }
+                    @a.Label
+                </button>
+            }
+        </div>
+    }
+
+    @* --- Строка статуса (если включена и задана) --- *@
+    @if (ShowStatus && !string.IsNullOrEmpty(StatusMessage))
+    {
+        <div class="dg-status">@StatusMessage</div>
+    }
+
+    @* --- Служебные кнопки грида --- *@
+    @if (HasUtilityActions)
+    {
+        <div class="dg-actions dg-actions-utility">
+            @if (ShowClearSelection && SelectionMode != DataGridSelectionMode.None)
+            {
+                <button class="dg-btn" @onclick="ClearSelection"
+                        disabled="@(SelectedItems.Count == 0)"
+                        title="Снять всё выделение">
+                    ✖ Сбросить выделение
+                </button>
+            }
+            @if (ShowResetSort)
+            {
+                <button class="dg-btn" @onclick="ResetSort"
+                        disabled="@(sortCriteria.Count == 0)"
+                        title="Убрать сортировку">
+                    ↔️ Сбросить сортировку
+                </button>
+            }
+            @if (ShowResetColumnWidths)
+            {
+                <button class="dg-btn" @onclick="ResetColumnWidths"
+                        title="Вернуть исходные ширины колонок">
+                    ⇔ Сбросить ширины
+                </button>
+            }
+        </div>
+    }
+
+    @* --- Счётчик выделения --- *@
+    @if (ShowSelectionInfo && SelectionMode != DataGridSelectionMode.None)
+    {
+        <span class="dg-info">
+            Выбрано: <b>@SelectedItems.Count</b> из @filteredItems.Count
+        </span>
+    }
+
+    @* --- Кнопка-справка ℹ --- *@
+    @if (!string.IsNullOrEmpty(Hint))
+    {
+        <div class="dg-help-wrap">
+            <button class="dg-help-btn" type="button"
+                    title="Подсказка по работе с таблицей"
+                    @onclick="ToggleHint">
+                ℹ
+            </button>
+            @if (hintOpen)
+            {
+                <div class="dg-help-popover">
+                    <ul class="dg-help-list">
+                        @foreach (var line in HintLines())
+                        {
+                            <li>@line</li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+@* ============================================================
+   Панель фильтров: чипы активных условий + кнопка «Добавить»
+   ============================================================ *@
+@if (ShowFilterMenu)
+{
+    <div class="dg-filter-bar">
+        <button class="dg-btn dg-add-filter" @onclick="OpenNewFilter"
+                title="Добавить фильтр по колонке">
+            ➕ Фильтр
+        </button>
+
+        @foreach (var c in filterClauses)
+        {
+            var chip = c;
+            <span class="dg-chip" @onclick="() => EditFilter(filterClauses.IndexOf(chip))"
+                  title="Изменить">
+                @FormatChip(chip)
+                <button class="dg-chip-remove" @onclick:stopPropagation="true"
+                        @onclick="() => RemoveFilter(chip)" title="Удалить">
+                    ✕
+                </button>
+            </span>
+        }
+
+        @if (filterClauses.Count > 0)
+        {
+            <button class="dg-btn dg-clear-filters" @onclick="ClearFilters">
+                Очистить всё
+            </button>
+        }
+    </div>
+}
+
+@* ============================================================
+   Строка статуса (если ShowStatus выключен, но StatusMessage задан)
+   ============================================================ *@
+@if (!string.IsNullOrEmpty(StatusMessage))
+{
+    <div class="dg-status">@StatusMessage</div>
+}
+
+@* ============================================================
+   Таблица со sticky-заголовком и ресайзом колонок
+   ============================================================ *@
+<div class="dg-wrapper" tabindex="0" @onkeydown="OnKeyDown">
+    <table class="dg-table" @ref="tableRef">
+        <colgroup>
+            @if (SelectionMode != DataGridSelectionMode.None)
+            {
+                <col data-col-type="check" style="width: 40px" />
+            }
+            @for (int i = 0; i < Columns.Count; i++)
+            {
+                var col = Columns[i];
+                <col data-col-index="@i" style="width: @(WidthFor(col))px" />
+            }
+            <col data-col-type="filler" />
+        </colgroup>
+
+        <thead>
+            <tr>
+                @* --- Колонка чекбоксов --- *@
+                @if (SelectionMode == DataGridSelectionMode.Multiple)
+                {
+                    <th class="dg-check">
+                        <input type="checkbox" checked="@IsAllSelected" @onchange="ToggleSelectAll" />
+                    </th>
+                }
+                else if (SelectionMode == DataGridSelectionMode.Single)
+                {
+                    <th class="dg-check"></th>
+                }
+
+                @* --- Колонки данных --- *@
+                @for (int i = 0; i < Columns.Count; i++)
+                {
+                    var index = i;
+                    var col = Columns[index];
+                    <th class="@(col.Sortable ? "dg-sortable" : null)">
+                        <div class="dg-th-content" @onclick="() => { if (col.Sortable) SortBy(col); }">
+                            @col.Title
+                            @if (col.Sortable)
+                            {
+                                <span class="dg-sort">@SortIcon(col)</span>
+                            }
+                        </div>
+                        @if (col.Resizable)
+                        {
+                            <div class="dg-resizer" data-col-index="@index"></div>
+                        }
+                    </th>
+                }
+
+                <th class="dg-filler"></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @for (int i = 0; i < pageItems.Count; i++)
+            {
+                var pageIndex = i;
+                var item = pageItems[pageIndex];
+                var absIndex = (currentPage - 1) * PageSize + pageIndex;
+                var isSelected = IsSelected(item);
+
+                <tr @key="item"
+                    class="dg-row @(isSelected ? "dg-selected" : null)"
+                    @onclick="@(e => HandleRowClick(item, absIndex, e))"
+                    @ondblclick="@(() => HandleRowDoubleClick(item))"
+                    @oncontextmenu="@(e => OnRowContextMenu(item, e))"
+                    @oncontextmenu:preventDefault="true">
+
+                    @* --- Чекбокс / маркер выделения --- *@
+                    @if (SelectionMode == DataGridSelectionMode.Multiple)
+                    {
+                        <td class="dg-check" @onclick:stopPropagation="true">
+                            <input type="checkbox"
+                                   checked="@isSelected"
+                                   @onchange="@(() => ToggleItem(item))" />
+                        </td>
+                    }
+                    else if (SelectionMode == DataGridSelectionMode.Single)
+                    {
+                        <td class="dg-check"></td>
+                    }
+
+                    @* --- Ячейки данных --- *@
+                    @foreach (var col in Columns)
+                    {
+                        <td class="@col.CssClass">
+                            @if (col.Template is not null)
+                            {
+                                @col.Template(item)
+                            }
+                            else
+                            {
+                                @col.Value?.Invoke(item)?.ToString()
+                            }
+                        </td>
+                    }
+
+                    <td class="dg-filler"></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@* ============================================================
+   Пагинация
+   ============================================================ *@
+@if (ShowPagination && filteredItems.Count > 0)
+{
+    <div class="dg-pagination">
+        <button class="dg-btn" @onclick="FirstPage" disabled="@(currentPage == 1)"
+                title="Первая страница">
+            «
+        </button>
+        <button class="dg-btn" @onclick="PrevPage" disabled="@(currentPage == 1)"
+                title="Назад">
+            ‹
+        </button>
+
+        @foreach (var pageNum in VisiblePages())
+        {
+            var page = pageNum;
+            <button class="dg-btn dg-page-btn @(page == currentPage ? "dg-page-current" : null)"
+                    @onclick="() => GoToPage(page)">
+                @(page)
+            </button>
+        }
+
+        <button class="dg-btn" @onclick="NextPage" disabled="@(currentPage >= TotalPages)"
+                title="Вперёд">
+            ›
+        </button>
+        <button class="dg-btn" @onclick="LastPage" disabled="@(currentPage >= TotalPages)"
+                title="Последняя страница">
+            »
+        </button>
+
+        <span class="dg-page-info">
+            @(((currentPage - 1) * PageSize) + 1)–@(Math.Min(currentPage * PageSize, filteredItems.Count))
+            из @filteredItems.Count
+        </span>
+
+        @if (ShowPageSizeSelector)
+        {
+            <select class="dg-page-size" @onchange="OnPageSizeChanged">
+                @foreach (var size in PageSizeOptions)
+                {
+                    <option value="@size" selected="@(size == PageSize)">@size / стр.</option>
+                }
+            </select>
+        }
+    </div>
+}
+
+@* ============================================================
+   Поповер редактирования фильтра
+   ============================================================ *@
+@if (filterMenuVisible)
+{
+    <div class="dg-overlay" @onclick="CloseFilterMenu"
+         @oncontextmenu="CloseFilterMenu" @oncontextmenu:preventDefault="true"></div>
+
+    <div class="dg-filter-popover">
+        <div class="dg-filter-popover-title">
+            @(editingIndex >= 0 ? "Изменить фильтр" : "Новый фильтр")
+        </div>
+
+        @* --- Выбор колонки --- *@
+        <label class="dg-filter-row">
+            <span>Колонка</span>
+            <select value="@editingClause.ColumnId"
+                    @onchange="OnColumnChanged">
+                @foreach (var col in Columns)
+                {
+                    <option value="@col.Id">@col.Title</option>
+                }
+            </select>
+        </label>
+
+        @* --- Выбор оператора (кастомный дропдаун с группами) --- *@
+        <div class="dg-filter-row">
+            <span>Условие</span>
+
+            <div class="dg-operator-dropdown">
+                <button type="button"
+                        class="dg-operator-trigger"
+                        @onclick="ToggleOperatorMenu">
+                    <span>@OperatorMenuLabel(editingClause.Operator)</span>
+                    <span class="dg-operator-caret">▾</span>
+                </button>
+
+                @if (operatorMenuOpen)
+                {
+                    <div class="dg-operator-menu">
+                        @foreach (var group in GroupedOperators())
+                        {
+                            <div class="dg-operator-group-title">@group.Title</div>
+                            @foreach (var op in group.Operators)
+                            {
+                                var opLocal = op;
+                                var active = opLocal == editingClause.Operator;
+                                <button type="button"
+                                        class="dg-operator-item @(active ? "dg-operator-item-active" : null)"
+                                        @onclick="() => SelectOperator(opLocal)">
+                                    <span class="dg-operator-text">@OperatorMenuLabel(opLocal)</span>
+                                    @if (active)
+                                    {
+                                        <span class="dg-operator-check">✓</span>
+                                    }
+                                </button>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* --- Значение (скрыто для операторов без значения) --- *@
+        @if (!IsValueless(editingClause.Operator))
+        {
+            <label class="dg-filter-row">
+                <span>Значение</span>
+                <input type="@InputType()" value="@editingClause.Value"
+                       placeholder="@InputPlaceholder()"
+                       @oninput="e => editingClause.Value = e.Value?.ToString()" />
+            </label>
+        }
+
+        @* --- Кнопки управления --- *@
+        <div class="dg-filter-popover-actions">
+            <button class="dg-btn" @onclick="CloseFilterMenu">Отмена</button>
+            <button class="dg-btn dg-btn-primary" @onclick="ApplyFilter">
+                @(editingIndex >= 0 ? "Сохранить" : "Добавить")
+            </button>
+        </div>
+    </div>
+}
+
+@* ============================================================
+   Контекстное меню строки
+   ============================================================ *@
+@if (contextMenuVisible)
+{
+    <div class="dg-overlay"
+         @onclick="CloseContextMenu"
+         @oncontextmenu="CloseContextMenu"
+         @oncontextmenu:preventDefault="true"></div>
+
+    <div class="dg-context-menu" style="left: @(contextMenuX)px; top: @(contextMenuY)px;">
+        @foreach (var action in contextMenuActions)
+        {
+            var a = action;
+            if (a.SeparatorBefore)
+            {
+                <div class="dg-menu-sep"></div>
+            }
+            <button disabled="@(!CanExecute(a))" @onclick="() => ExecuteActionAsync(a)">
+                @if (!string.IsNullOrEmpty(a.Icon))
+                {
+                    <span class="dg-btn-icon">@a.Icon</span>
+                }
+                @a.Label
+            </button>
+        }
+        @if (ShowClearSelection && SelectionMode != DataGridSelectionMode.None)
+        {
+            <div class="dg-menu-sep"></div>
+            <button @onclick="ClearSelection">✖ Снять выделение</button>
+        }
+    </div>
+}

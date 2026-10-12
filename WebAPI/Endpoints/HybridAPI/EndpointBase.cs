@@ -1,5 +1,11 @@
 namespace WebAPI.Endpoints.HybridAPI;
 
+/// <summary>
+/// Базовый класс для «гибридных» эндпоинтов: методы класса выглядят как обычные
+/// Minimal API-обработчики, но сервисы (<c>ICommand</c>, валидаторы и т.п.)
+/// резолвятся из DI автоматически, а наружу (в Swagger / OpenAPI) выставляются
+/// только DTO-параметры.
+/// </summary>
 public abstract class EndpointBase
 {
     public virtual void MapEndpoint(IEndpointRouteBuilder app)
@@ -40,17 +46,21 @@ public abstract class EndpointBase
                 _ => "GET"
             };
 
-            // Путь: если шаблон начинается с "/" – абсолютный, иначе относительный внутри группы
-            var methodTemplate = httpAttr.Template ?? "";
-            var fullPath = methodTemplate.StartsWith("/")
-                ? methodTemplate
-                : (string.IsNullOrEmpty(basePath) ? methodTemplate : $"{basePath}/{methodTemplate}".TrimEnd('/'));
+            // Путь: внутри MapGroup всегда относительный — префикс группы применяется автоматически.
+            // Пустой шаблон заменяем на "/", иначе роутинг ругается.
+            var methodTemplate = string.IsNullOrEmpty(httpAttr.Template)
+                ? "/"
+                : httpAttr.Template;
 
-            // Создаём делегат-обработчик
-            var handler = CreateHandler(method);
+            // Создаём делегат-обработчик и метаданные для OpenAPI
+            var (handler, metadata) = CreateHandler(method, app.ServiceProvider);
 
             // Регистрируем эндпоинт
-            var builder = groupBuilder.MapMethods(fullPath, new[] { httpMethod }, handler);
+            var builder = groupBuilder.MapMethods(methodTemplate, new[] { httpMethod }, handler);
+
+            // Приклеиваем метаданные (в т.ч. ParameterBindingMetadata для Swagger)
+            if (metadata.Length > 0)
+                builder.WithMetadata(metadata);
 
             // Авторизация – применяется на уровне метода, переопределяя классовые требования
             ApplyAuthorization(builder, method, classAuthAttrs, classAllowAnonymous);
@@ -118,177 +128,40 @@ public abstract class EndpointBase
     }
 
     /// <summary>
-    /// Создаёт делегат для вызова метода экземпляра с поддержкой атрибутов привязки:
-    /// [FromBody], [FromQuery], [FromRoute], [FromServices], CancellationToken, IServiceProvider,
-    /// а также автоматическое разрешение сервисов из DI для параметров, не помеченных атрибутами.
+    /// Создаёт делегат-обработчик для метода эндпоинта.
+    ///
+    /// Использует <see cref="RequestDelegateFactory"/> — тот же механизм, что и Minimal API
+    /// внутри MapGet/MapPost. Он сам:
+    ///   · биндит DTO-параметры из body/route/query,
+    ///   · резолвит сервисы (ICommand и пр.) из DI,
+    ///   · подставляет HttpContext, CancellationToken, IServiceProvider,
+    ///   · генерирует EndpointMetadata, по которой Swagger рисует параметры и схемы.
+    ///
+    /// ВАЖНО: RequestDelegateFactory.Create НЕ кладёт MethodInfo в EndpointMetadata,
+    /// а MinimalApiActionDescriptorProvider без MethodInfo отбрасывает эндпоинт,
+    /// из-за чего Swagger показывает «No operations defined in spec!».
+    /// Поэтому MethodInfo добавляем вручную.
     /// </summary>
-    private static Func<HttpContext, Task<IResult>> CreateHandler(MethodInfo method)
+    private static (RequestDelegate Handler, object[] Metadata) CreateHandler(MethodInfo method, IServiceProvider services)
     {
-        return async (HttpContext ctx) =>
+        var options = new RequestDelegateFactoryOptions
         {
-            var endpointType = method.DeclaringType!;
-            var instance = ActivatorUtilities.CreateInstance(ctx.RequestServices, endpointType);
-
-            var parameters = method.GetParameters();
-            var args = new object?[parameters.Length];
-
-            bool isPostOrPut = method.GetCustomAttribute<HttpPostAttribute>() != null ||
-                               method.GetCustomAttribute<HttpPutAttribute>() != null;
-
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                var param = parameters[i];
-                var paramType = param.ParameterType;
-                var paramName = param.Name!;
-
-                // CancellationToken
-                if (paramType == typeof(CancellationToken))
-                {
-                    args[i] = ctx.RequestAborted;
-                    continue;
-                }
-
-                // IServiceProvider
-                if (paramType == typeof(IServiceProvider))
-                {
-                    args[i] = ctx.RequestServices;
-                    continue;
-                }
-
-                // [FromServices]
-                if (param.GetCustomAttribute<FromServicesAttribute>() != null)
-                {
-                    args[i] = ctx.RequestServices.GetRequiredService(paramType);
-                    continue;
-                }
-
-                // Автоматическое определение сервиса (если тип зарегистрирован в DI)
-                var serviceFromDi = ctx.RequestServices.GetService(paramType);
-                if (serviceFromDi != null)
-                {
-                    args[i] = serviceFromDi;
-                    continue;
-                }
-
-                // [FromBody]
-                if (param.GetCustomAttribute<FromBodyAttribute>() != null)
-                {
-                    args[i] = await ctx.Request.ReadFromJsonAsync(paramType, ctx.RequestAborted);
-                    continue;
-                }
-
-                // [FromRoute]
-                var fromRouteAttr = param.GetCustomAttribute<FromRouteAttribute>();
-                if (fromRouteAttr != null)
-                {
-                    var routeKey = fromRouteAttr.Name ?? paramName;
-                    if (ctx.Request.RouteValues.TryGetValue(routeKey, out var routeValue))
-                    {
-                        args[i] = ConvertValue(routeValue, paramType);
-                    }
-                    else
-                    {
-                        args[i] = GetDefaultValue(paramType);
-                    }
-                    continue;
-                }
-
-                // [FromQuery]
-                var fromQueryAttr = param.GetCustomAttribute<FromQueryAttribute>();
-                if (fromQueryAttr != null)
-                {
-                    var queryKey = fromQueryAttr.Name ?? paramName;
-                    if (ctx.Request.Query.TryGetValue(queryKey, out var queryValue))
-                    {
-                        var stringVal = queryValue.ToString();
-                        args[i] = ConvertValue(stringVal, paramType);
-                    }
-                    else
-                    {
-                        args[i] = GetDefaultValue(paramType);
-                    }
-                    continue;
-                }
-
-                // Для POST/PUT: если параметр не помечен другими атрибутами,
-                // читаем из тела (предполагаем, что это DTO запроса)
-                if (isPostOrPut && !param.GetCustomAttributes().Any(a => a is FromQueryAttribute || a is FromRouteAttribute))
-                {
-                    args[i] = await ctx.Request.ReadFromJsonAsync(paramType, ctx.RequestAborted);
-                    continue;
-                }
-
-                // По умолчанию (для GET/DELETE): сначала пробуем маршрут, затем query
-                if (ctx.Request.RouteValues.TryGetValue(paramName, out var defaultRouteVal))
-                {
-                    args[i] = ConvertValue(defaultRouteVal, paramType);
-                }
-                else if (ctx.Request.Query.TryGetValue(paramName, out var defaultQueryVal))
-                {
-                    var stringVal = defaultQueryVal.ToString();
-                    args[i] = ConvertValue(stringVal, paramType);
-                }
-                else
-                {
-                    args[i] = GetDefaultValue(paramType);
-                }
-            }
-
-            // Вызов метода
-            var result = method.Invoke(instance, args);
-
-            // Обработка результата
-            if (result is Task task)
-            {
-                await task.ConfigureAwait(false);
-                if (task is Task<IResult> taskResult)
-                    return await taskResult;
-                throw new InvalidOperationException($"Method {method.Name} returns Task but not Task<IResult>.");
-            }
-            else if (result is IResult ires)
-            {
-                return ires;
-            }
-            else
-            {
-                throw new InvalidOperationException($"Method {method.Name} does not return IResult or Task<IResult>.");
-            }
+            ServiceProvider = services,
+            ThrowOnBadRequest = false
         };
-    }
 
-    /// <summary>
-    /// Преобразует значение к целевому типу с поддержкой nullable.
-    /// </summary>
-    private static object? ConvertValue(object? value, Type targetType)
-    {
-        if (value == null)
-            return GetDefaultValue(targetType);
+        var result = RequestDelegateFactory.Create(
+            method,
+            targetFactory: httpContext =>
+                ActivatorUtilities.CreateInstance(
+                    httpContext.RequestServices,
+                    method.DeclaringType!),
+            options);
 
-        var underlyingType = Nullable.GetUnderlyingType(targetType);
-        var effectiveType = underlyingType ?? targetType;
+        // MethodInfo — первым, чтобы Swashbuckle гарантированно его нашёл.
+        var metadata = new List<object>(result.EndpointMetadata.Count + 1) { method };
+        metadata.AddRange(result.EndpointMetadata);
 
-        try
-        {
-            // Если значение уже нужного типа, возвращаем как есть
-            if (effectiveType.IsInstanceOfType(value))
-                return value;
-
-            // Преобразование через Convert.ChangeType
-            var converted = Convert.ChangeType(value, effectiveType);
-            return converted;
-        }
-        catch
-        {
-            // При ошибке конвертации возвращаем default
-            return GetDefaultValue(targetType);
-        }
-    }
-
-    /// <summary>
-    /// Возвращает значение по умолчанию для типа (null для ссылочных, default для значимых).
-    /// </summary>
-    private static object? GetDefaultValue(Type type)
-    {
-        return type.IsValueType ? Activator.CreateInstance(type) : null;
+        return (result.RequestDelegate, metadata.ToArray());
     }
 }
