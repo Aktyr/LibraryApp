@@ -67,8 +67,8 @@ public class GetUserQueryTests
         var getUserRequest = new GetUserRequest { Id = nonExistingId };
 
         // Act & Assert
-        Assert.ThrowsAsync<UserNotFoundException>(() =>
-            getUserQuery.Execute(getUserRequest, CancellationToken.None));
+        await NUnit.Framework.Assert.ThrowsAsync<UserNotFoundException>(async () =>
+            await getUserQuery.Execute(getUserRequest, CancellationToken.None));
     }
 
     [Test]
@@ -81,8 +81,8 @@ public class GetUserQueryTests
         var getUserRequest = new GetUserRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
-        Assert.ThrowsAsync<UserNotFoundException>(() =>
-            getUserQuery.Execute(getUserRequest, CancellationToken.None));
+        await NUnit.Framework.Assert.ThrowsAsync<UserNotFoundException>(async () =>
+            await getUserQuery.Execute(getUserRequest, CancellationToken.None));
     }
 
     [Test]

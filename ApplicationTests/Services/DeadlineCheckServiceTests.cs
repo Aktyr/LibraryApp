@@ -300,7 +300,7 @@ public class DeadlineCheckServiceTests
         cts.Cancel(); // Отменяем немедленно
 
         // Assert
-        Assert.DoesNotThrowAsync(async () =>
+        await Assert.DoesNotThrowAsync(async () =>
         {
             await Task.WhenAny(executeTask, Task.Delay(5000));
         });
@@ -422,7 +422,7 @@ public class DeadlineCheckServiceTests
         cts.Cancel();
 
         // Assert — сервис не упал, а обработал ошибку и продолжил
-        Assert.DoesNotThrowAsync(async () =>
+        await Assert.DoesNotThrowAsync(async () =>
         {
             await Task.WhenAny(executeTask, Task.Delay(5000));
         });

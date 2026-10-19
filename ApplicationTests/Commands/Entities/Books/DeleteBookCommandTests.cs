@@ -28,7 +28,7 @@ public class DeleteBookCommandTests
         var response = await deleteBookCommand.Execute(deleteBookRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Book deleted successfully."));
@@ -58,7 +58,7 @@ public class DeleteBookCommandTests
         var deleteBookRequest = new DeleteBookRequest { Id = nonExistingId };
 
         // Act & Assert
-        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+        await Assert.ThrowsAsync<BookNotFoundException>(async () =>
             await deleteBookCommand.Execute(deleteBookRequest, CancellationToken.None));
     }
 
@@ -73,7 +73,7 @@ public class DeleteBookCommandTests
         var deleteBookRequest = new DeleteBookRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
-        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+        await Assert.ThrowsAsync<BookNotFoundException>(async () =>
             await deleteBookCommand.Execute(deleteBookRequest, CancellationToken.None));
     }
 
@@ -100,7 +100,7 @@ public class DeleteBookCommandTests
         var response = await deleteBookCommand.Execute(deleteBookRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(bookRepo.Entities, Has.Count.EqualTo(0));
@@ -129,9 +129,9 @@ public class DeleteBookCommandTests
         var request = new DeleteBookRequest { Id = book.Id };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        Assert.Multiple(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 command.Execute(request, CancellationToken.None));
             Assert.That(ex.ExceptionDetails, Has.Member("Невозможно удалить книгу, так как она присутствует в одной или нескольких комнатах"));
         });

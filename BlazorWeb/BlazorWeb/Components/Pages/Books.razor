@@ -1,0 +1,55 @@
+﻿@page "/books"
+@rendermode InteractiveWebAssembly
+@using BlazorWeb.Client.Services
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Entities
+@inject IBookApiClient ApiClient
+
+<PageTitle>Книги</PageTitle>
+
+<h1>Библиотечный фонд</h1>
+
+@if (isLoading)
+{
+    <p>Загрузка данных...</p>
+}
+else if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (books != null)
+{
+    <DataGrid TItem="BookDTO" Items="books" PageSize="10" Columns="columns" />
+}
+
+@code {
+    private List<BookDTO>? books;
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    // Создаем список колонок здесь
+    private List<DataGridColumn<BookDTO>> columns = new()
+    {
+        new() { Title = "Название", Value = b => b.Title },
+        new() { Title = "Автор", Value = b => b.Author },
+        new() { Title = "Год", Value = b => b.Year, FilterKind = FilterKind.Number },
+        new() { Title = "Жанр", Value = b => b.Genre }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await ApiClient.GetAllBooksAsync();
+            books = response.Book.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

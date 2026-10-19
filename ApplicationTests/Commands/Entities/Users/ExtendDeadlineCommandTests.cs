@@ -22,7 +22,7 @@ public class ExtendDeadlineCommandTests
         var request = new ExtendDeadlineRequest { UserRoomBookId = Guid.NewGuid(), ExtraDays = 7 };
 
         // Act & Assert
-        Assert.ThrowsAsync<UserRoomBookNotFoundException>(() =>
+        await Assert.ThrowsAsync<UserRoomBookNotFoundException>(() =>
             command.Execute(request, CancellationToken.None));
     }
 
@@ -49,9 +49,9 @@ public class ExtendDeadlineCommandTests
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 20 };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 command.Execute(request, CancellationToken.None));
             Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
         });
@@ -81,7 +81,7 @@ public class ExtendDeadlineCommandTests
         var response = await command.Execute(request, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Does.Contain("Срок продлен до"));
@@ -111,9 +111,9 @@ public class ExtendDeadlineCommandTests
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 0 };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 command.Execute(request, CancellationToken.None));
             Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
         });

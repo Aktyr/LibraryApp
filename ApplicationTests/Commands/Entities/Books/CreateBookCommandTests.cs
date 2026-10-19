@@ -39,7 +39,7 @@ public class CreateBookCommandTests
         var response = await createBookCommand.Execute(createBookRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That((await bookRepo.GetAsync(x => x.Title == title)).Any(), Is.True);
             Assert.That(response.Status, Is.EqualTo("Ok"));
@@ -81,7 +81,7 @@ public class CreateBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await createBookCommand.Execute(createBookRequest, CancellationToken.None));
     }
 
@@ -111,7 +111,7 @@ public class CreateBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await createBookCommand.Execute(createBookRequest, CancellationToken.None));
     }
 
@@ -141,7 +141,7 @@ public class CreateBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await createBookCommand.Execute(createBookRequest, CancellationToken.None));
     }
 }

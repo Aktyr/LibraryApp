@@ -32,7 +32,7 @@ public class UpdateRoomCommandTests
         var response = await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Room updated successfully."));
@@ -86,7 +86,7 @@ public class UpdateRoomCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<RoomNotFoundException>(async () =>
+        await Assert.ThrowsAsync<RoomNotFoundException>(async () =>
             await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None));
     }
 
@@ -106,7 +106,7 @@ public class UpdateRoomCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<RoomNotFoundException>(async () =>
+        await Assert.ThrowsAsync<RoomNotFoundException>(async () =>
             await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None));
     }
 
@@ -135,7 +135,7 @@ public class UpdateRoomCommandTests
         var response = await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Room updated successfully."));
@@ -168,7 +168,7 @@ public class UpdateRoomCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None));
     }
 
@@ -206,7 +206,7 @@ public class UpdateRoomCommandTests
         var response = await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
@@ -257,7 +257,7 @@ public class UpdateRoomCommandTests
         var response = await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
@@ -313,7 +313,7 @@ public class UpdateRoomCommandTests
         var response = await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
@@ -351,7 +351,7 @@ public class UpdateRoomCommandTests
         var response = await updateRoomCommand.Execute(updateRoomRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
@@ -375,7 +375,7 @@ public class UpdateRoomCommandTests
         var request = new UpdateRoomRequest { Id = room2.Id, Name = "Existing", RoomBookDTO = [] };
 
         // Act & Assert
-        Assert.ThrowsAsync<RoomExistsException>(() => command.Execute(request, CancellationToken.None));
+        await Assert.ThrowsAsync<RoomExistsException>(() => command.Execute(request, CancellationToken.None));
     }
 
     [Test]
@@ -395,7 +395,7 @@ public class UpdateRoomCommandTests
         var request = new UpdateRoomRequest { Id = room.Id, Name = "NewName", RoomBookDTO = [] };
 
         // Act & Assert
-        Assert.ThrowsAsync<InvalidOperationException>(() => command.Execute(request, CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => command.Execute(request, CancellationToken.None));
     }
     [Test]
     public async Task Execute_WhenSaveFails_RollsBackTransaction()
@@ -420,9 +420,9 @@ public class UpdateRoomCommandTests
         UpdateRoomRequest request = new() { Id = roomId, Name = "NewName", RoomBookDTO = [] };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+            await Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
 
             unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);

@@ -53,7 +53,7 @@ public class RoomBookSynchronizerTests
         await synchronizer.SynchronizeAsync(room, dtoList, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             var updatedRoom = (await roomRepo.GetAsync(r => r.Id.Value == roomId.Value)).First();
             Assert.That(updatedRoom.RoomBooks, Is.Empty);
@@ -98,7 +98,7 @@ public class RoomBookSynchronizerTests
         await synchronizer.SynchronizeAsync(room, dtoList, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             var updatedRoom = (await roomRepo.GetAsync(r => r.Id.Value == roomId.Value)).First();
             Assert.That(updatedRoom.RoomBooks, Has.Count.EqualTo(2));
@@ -143,9 +143,9 @@ public class RoomBookSynchronizerTests
         };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 synchronizer.SynchronizeAsync(room, dtoList, CancellationToken.None));
             Assert.That(ex.ExceptionDetails, Contains.Item($"Книга с Id {missingBookId} не найдена"));
         });
@@ -188,9 +188,9 @@ public class RoomBookSynchronizerTests
         };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 synchronizer.SynchronizeAsync(room, dtoList, CancellationToken.None));
             Assert.That(ex.ExceptionDetails, Contains.Item("Validation error"));
         });
@@ -226,7 +226,7 @@ public class RoomBookSynchronizerTests
         await synchronizer.SynchronizeAsync(room, dtoList, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             var updatedRoom = (await roomRepo.GetAsync(r => r.Id.Value == roomId.Value)).First();
             Assert.That(updatedRoom.RoomBooks, Is.Not.Null);
@@ -269,7 +269,7 @@ public class RoomBookSynchronizerTests
         await synchronizer.SynchronizeAsync(room, dtoList, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(room.RoomBooks, Has.Count.EqualTo(1));
             Assert.That(room.RoomBooks.First().Id.Value, Is.EqualTo(rb1.Id.Value));
@@ -288,7 +288,7 @@ public class RoomBookSynchronizerTests
         var dtoList = new List<RoomBookDTO>();
 
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentNullException>(() =>
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
             synchronizer.SynchronizeAsync(null!, dtoList, CancellationToken.None));
     }
 }

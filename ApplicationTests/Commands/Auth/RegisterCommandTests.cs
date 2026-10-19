@@ -50,7 +50,7 @@ public class RegisterCommandTests
         var response = await registerCommand.Execute(registerRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Регистрация успешна"));
@@ -123,9 +123,9 @@ public class RegisterCommandTests
         };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        Assert.Multiple(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(async () =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(async () =>
                 await registerCommand.Execute(registerRequest, CancellationToken.None));
             Assert.That(ex.ExceptionDetails, Contains.Item("Email уже зарегистрирован"));
         });
@@ -168,7 +168,7 @@ public class RegisterCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await registerCommand.Execute(registerRequest, CancellationToken.None));
     }
     [Test]
@@ -194,7 +194,7 @@ public class RegisterCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await registerCommand.Execute(registerRequest, CancellationToken.None));
     }
 }

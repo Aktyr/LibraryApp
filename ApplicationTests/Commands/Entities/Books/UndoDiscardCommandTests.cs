@@ -55,7 +55,7 @@ public class UndoDiscardCommandTests
         var response = await command.Execute(request, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Does.Contain("Отменено списание 3 экз."));
@@ -81,9 +81,9 @@ public class UndoDiscardCommandTests
         };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        Assert.Multiple(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 command.Execute(request, CancellationToken.None));
             Assert.That(ex.ExceptionDetails, Has.Member("Запись о списании не найдена"));
         });
@@ -126,9 +126,9 @@ public class UndoDiscardCommandTests
         };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        Assert.Multiple(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 command.Execute(request, CancellationToken.None));
             Assert.That(ex.ExceptionDetails, Has.Member("Книга не найдена в комнате"));
         });
@@ -195,9 +195,9 @@ public class UndoDiscardCommandTests
         var request = new UndoDiscardRequest { DiscardId = discardedId, UndoReason = "Test" };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        Assert.Multiple(async () =>
         {
-            Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+            await Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
 
             unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);

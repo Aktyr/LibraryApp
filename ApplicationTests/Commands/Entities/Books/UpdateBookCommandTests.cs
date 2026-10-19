@@ -39,7 +39,7 @@ public class UpdateBookCommandTests
         var response = await updateBookCommand.Execute(updateBookRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Book updated successfully."));
@@ -84,7 +84,7 @@ public class UpdateBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+        await Assert.ThrowsAsync<BookNotFoundException>(async () =>
             await updateBookCommand.Execute(updateBookRequest, CancellationToken.None));
     }
 
@@ -107,7 +107,7 @@ public class UpdateBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+        await Assert.ThrowsAsync<BookNotFoundException>(async () =>
             await updateBookCommand.Execute(updateBookRequest, CancellationToken.None));
     }
 
@@ -142,7 +142,7 @@ public class UpdateBookCommandTests
         var response = await updateBookCommand.Execute(updateBookRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Book updated successfully."));
@@ -180,7 +180,7 @@ public class UpdateBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await updateBookCommand.Execute(updateBookRequest, CancellationToken.None));
     }
 
@@ -212,7 +212,7 @@ public class UpdateBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await updateBookCommand.Execute(updateBookRequest, CancellationToken.None));
     }
     [Test]
@@ -245,7 +245,7 @@ public class UpdateBookCommandTests
         var response = await updateBookCommand.Execute(updateBookRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 

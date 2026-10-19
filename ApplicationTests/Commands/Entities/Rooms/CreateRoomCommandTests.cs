@@ -32,7 +32,7 @@ public class CreateRoomCommandTests
         var response = await createRoomCommand.Execute(createRoomRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That((await roomRepo.GetAsync(x => x.Name == roomName)).Any(), Is.True);
             Assert.That(response.Status, Is.EqualTo("Ok"));
@@ -62,7 +62,7 @@ public class CreateRoomCommandTests
         var createRoomRequest = new CreateRoomRequest(roomName, []);
 
         // Act & Assert
-        Assert.ThrowsAsync<RoomExistsException>(() =>
+        await Assert.ThrowsAsync<RoomExistsException>(() =>
             createRoomCommand.Execute(createRoomRequest, CancellationToken.None));
     }
     [Test]
@@ -79,7 +79,7 @@ public class CreateRoomCommandTests
         var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
         var createRoomRequest = new CreateRoomRequest(new string('A', 101), []);
 
-        Assert.ThrowsAsync<LibValidationException>(() =>
+        await Assert.ThrowsAsync<LibValidationException>(() =>
             createRoomCommand.Execute(createRoomRequest, CancellationToken.None));
     }
 }

@@ -62,7 +62,7 @@ public class GetBookQueryTests
         var getBookRequest = new GetBookRequest { Id = nonExistingId };
 
         // Act & Assert
-        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+        await Assert.ThrowsAsync<BookNotFoundException>(async () =>
             await getBookQuery.Execute(getBookRequest, CancellationToken.None));
     }
 
@@ -76,7 +76,7 @@ public class GetBookQueryTests
         var getBookRequest = new GetBookRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
-        Assert.ThrowsAsync<BookNotFoundException>(async () =>
+        await Assert.ThrowsAsync<BookNotFoundException>(async () =>
             await getBookQuery.Execute(getBookRequest, CancellationToken.None));
     }
 }

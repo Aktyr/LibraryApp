@@ -98,8 +98,8 @@ public class LoginCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<UnauthorizedException>(() =>
-            loginCommand.Execute(request, CancellationToken.None));
+        await Assert.ThrowsAsync<UnauthorizedException>(async () =>
+            await loginCommand.Execute(request, CancellationToken.None));
     }
 
     [Test]
@@ -128,8 +128,8 @@ public class LoginCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<UnauthorizedException>(() =>
-            loginCommand.Execute(request, CancellationToken.None));
+        await Assert.ThrowsAsync<UnauthorizedException>(async () =>
+            await loginCommand.Execute(request, CancellationToken.None));
     }
 
     [TestCase("")]
@@ -159,8 +159,8 @@ public class LoginCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<UnauthorizedException>(() =>
-            loginCommand.Execute(request, CancellationToken.None));
+        await Assert.ThrowsAsync<UnauthorizedException>(async () =>
+            await loginCommand.Execute(request, CancellationToken.None));
     }
 
     [Test]
@@ -189,8 +189,8 @@ public class LoginCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<UnauthorizedException>(() =>
-            loginCommand.Execute(request, CancellationToken.None));
+        await Assert.ThrowsAsync<UnauthorizedException>(async () =>
+            await loginCommand.Execute(request, CancellationToken.None));
     }
 
 
@@ -224,8 +224,8 @@ public class LoginCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<UnauthorizedException>(() =>
-            loginCommand.Execute(request, CancellationToken.None));
+        await Assert.ThrowsAsync<UnauthorizedException>(async () =>
+            await loginCommand.Execute(request, CancellationToken.None));
     }
 
     [Test]
@@ -258,7 +258,7 @@ public class LoginCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentNullException>(() =>
-            loginCommand.Execute(request, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await loginCommand.Execute(request, CancellationToken.None));
     }
 }

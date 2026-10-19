@@ -39,7 +39,7 @@ public class BorrowBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<UserNotFoundException>(() =>
+        await Assert.ThrowsAsync<UserNotFoundException>(() =>
             command.Execute(request, CancellationToken.None));
     }
 
@@ -71,7 +71,7 @@ public class BorrowBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<UserRoomBookNotFoundException>(() =>
+        await Assert.ThrowsAsync<UserRoomBookNotFoundException>(() =>
             command.Execute(request, CancellationToken.None));
     }
 
@@ -113,7 +113,7 @@ public class BorrowBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(() =>
+        await Assert.ThrowsAsync<LibValidationException>(() =>
             command.Execute(request, CancellationToken.None));
     }
 
@@ -155,7 +155,7 @@ public class BorrowBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(() =>
+        await Assert.ThrowsAsync<LibValidationException>(() =>
             command.Execute(request, CancellationToken.None));
     }
 
@@ -214,7 +214,7 @@ public class BorrowBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(() =>
+        await Assert.ThrowsAsync<LibValidationException>(() =>
             command.Execute(request, CancellationToken.None));
     }
 
@@ -265,7 +265,7 @@ public class BorrowBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(() =>
+        await Assert.ThrowsAsync<LibValidationException>(() =>
             command.Execute(request, CancellationToken.None));
     }
 
@@ -307,7 +307,7 @@ public class BorrowBookCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(() =>
+        await Assert.ThrowsAsync<LibValidationException>(() =>
             command.Execute(request, CancellationToken.None));
     }
 
@@ -355,7 +355,7 @@ public class BorrowBookCommandTests
         var response = await command.Execute(request, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Does.Contain("Книга выдана"));
@@ -433,7 +433,7 @@ public class BorrowBookCommandTests
         var response = await command.Execute(request, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
@@ -470,9 +470,9 @@ public class BorrowBookCommandTests
         var request = new BorrowBookRequest { UserId = user.Id.Value, RoomBookId = roomBook.Id.Value, BorrowDays = 7 };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 command.Execute(request, CancellationToken.None));
             Assert.That(ex.ExceptionDetails, Has.Member(
                 "Пользователь уже взял эту книгу и ещё не вернул её"));
@@ -512,9 +512,9 @@ public class BorrowBookCommandTests
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+            await Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
 
             unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);

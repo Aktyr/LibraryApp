@@ -29,7 +29,7 @@ public class UserServiceTests
         // Assert
         var repo = unitOfWork.GetRepository<User>();
         var saved = await repo.FirstOrDefaultAsync(u => u.Email == email);
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(saved, Is.Not.Null);
             Assert.That(saved!.LastName, Is.EqualTo(lastName));
@@ -54,10 +54,10 @@ public class UserServiceTests
         var service = CreateService(unitOfWork);
 
         // Act & Assert
-        Assert.Multiple(() =>
+        Assert.Multiple(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-                service.CreateUserAsync("test@test.com", "Password123!", "Иванов", "Иван", "", "info", UserRole.Reader));
+            var ex = await Assert.ThrowsAsync<LibValidationException>(async () =>
+                await service.CreateUserAsync("test@test.com", "Password123!", "Иванов", "Иван", "", "info", UserRole.Reader));
             Assert.That(ex.ExceptionDetails, Contains.Item("Email уже зарегистрирован"));
         });
     }
@@ -70,10 +70,10 @@ public class UserServiceTests
         var service = CreateService(unitOfWork);
 
         // Act & Assert
-        Assert.Multiple(() =>
+        Assert.Multiple(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
-                service.CreateUserAsync("invalid-email", "123", "", "Иван", "", "info", UserRole.Reader));
+            var ex = await Assert.ThrowsAsync<LibValidationException>(async () =>
+                await service.CreateUserAsync("invalid-email", "123", "", "Иван", "", "info", UserRole.Reader));
             Assert.That(ex.ExceptionDetails, Has.Count.GreaterThan(0));
         });
     }
@@ -92,10 +92,10 @@ public class UserServiceTests
         var service = new UserService(mockUnitOfWork.Object, validator);
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            Assert.ThrowsAsync<Exception>(() =>
-                service.CreateUserAsync("test@test.com", "Password123!", "Иванов", "Иван", "", "info", UserRole.Reader));
+            await Assert.ThrowsAsync<Exception>(async () =>
+                await service.CreateUserAsync("test@test.com", "Password123!", "Иванов", "Иван", "", "info", UserRole.Reader));
 
             mockUnitOfWork.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             mockUnitOfWork.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);

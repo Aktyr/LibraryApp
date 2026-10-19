@@ -41,7 +41,6 @@ global using System.Net;
 global using LibApp.Core.DTO.Reports;
 global using LibApp.Core.Requests.Reports;
 global using LibApp.Core.Responses.Reports;
-global using Microsoft.AspNetCore.Authorization;
 global using LibApp.Application.Helpers;
 global using System.Text.RegularExpressions;
 global using LibApp.Application.Validation;

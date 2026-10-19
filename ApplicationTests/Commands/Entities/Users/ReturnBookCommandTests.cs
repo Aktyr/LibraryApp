@@ -35,7 +35,7 @@ public class ReturnBookCommandTests
         var request = new ReturnBookRequest { UserRoomBookId = Guid.NewGuid() };
 
         // Act & Assert
-        Assert.ThrowsAsync<UserRoomBookNotFoundException>(() =>
+        await Assert.ThrowsAsync<UserRoomBookNotFoundException>(() =>
             command.Execute(request, CancellationToken.None));
     }
     [Test]
@@ -61,7 +61,7 @@ public class ReturnBookCommandTests
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(() =>
+        await Assert.ThrowsAsync<LibValidationException>(() =>
             command.Execute(request, CancellationToken.None));
 
     }
@@ -349,9 +349,7 @@ public class ReturnBookCommandTests
             BorrowDate = deadline.AddDays(-14),
             Deadline = deadline,
             ReturnDate = null,
-            Penalty = 50m, // DeadlineCheckService когда-то уже насчитала 50 руб
-            User = user,
-            RoomBook = roomBook
+            Penalty = 50m // DeadlineCheckService когда-то уже насчитала 50 руб
         };
 
         await userRoomBookRepo.AddRangeAsync([userRoomBook], CancellationToken.None);
@@ -535,9 +533,9 @@ public class ReturnBookCommandTests
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 0 };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(() =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 command.Execute(request, CancellationToken.None));
             Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
         });
@@ -635,9 +633,9 @@ public class ReturnBookCommandTests
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+            await Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
 
             unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);

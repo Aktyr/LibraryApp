@@ -34,7 +34,7 @@ public class EmailNotificationServiceTests
         var body = "Test Body";
 
         // Act & Assert — не должно выбрасывать исключений
-        Assert.DoesNotThrowAsync(async () =>
+        await Assert.DoesNotThrowAsync(async () =>
             await service.SendEmailAsync(email, subject, body));
     }
 
@@ -48,7 +48,7 @@ public class EmailNotificationServiceTests
         var body = "Test";
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await service.SendEmailAsync(email, subject, body));
     }
 
@@ -62,7 +62,7 @@ public class EmailNotificationServiceTests
         var body = "Test";
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await service.SendEmailAsync(email, subject, body));
     }
 
@@ -90,7 +90,7 @@ public class EmailNotificationServiceTests
         };
 
         // Act & Assert — не должно выбрасывать исключений
-        Assert.DoesNotThrowAsync(async () =>
+        await Assert.DoesNotThrowAsync(async () =>
             await service.SendBorrowConfirmationAsync(user, userRoomBook, CancellationToken.None));
     }
 
@@ -118,7 +118,7 @@ public class EmailNotificationServiceTests
         };
 
         // Act & Assert — не должно выбрасывать исключений
-        Assert.DoesNotThrowAsync(async () =>
+        await Assert.DoesNotThrowAsync(async () =>
             await service.SendReturnReminderAsync(user, userRoomBook, CancellationToken.None));
     }
 
@@ -147,7 +147,7 @@ public class EmailNotificationServiceTests
         var penalty = 50m;
 
         // Act & Assert — не должно выбрасывать исключений
-        Assert.DoesNotThrowAsync(async () =>
+        await Assert.DoesNotThrowAsync(async () =>
             await service.SendOverdueNotificationAsync(user, userRoomBook, penalty, CancellationToken.None));
     }
     [Test]
@@ -176,7 +176,7 @@ public class EmailNotificationServiceTests
         };
 
         // Act & Assert — не должно выбрасывать исключений
-        Assert.DoesNotThrowAsync(async () =>
+        await Assert.DoesNotThrowAsync(async () =>
             await service.SendBorrowConfirmationAsync(user, userRoomBook, CancellationToken.None));
     }
 
@@ -206,7 +206,7 @@ public class EmailNotificationServiceTests
         };
 
         // Act & Assert
-        Assert.DoesNotThrowAsync(async () =>
+        await Assert.DoesNotThrowAsync(async () =>
             await service.SendReturnReminderAsync(user, userRoomBook, CancellationToken.None));
     }
 
@@ -237,7 +237,7 @@ public class EmailNotificationServiceTests
         var penalty = 150.50m;
 
         // Act & Assert
-        Assert.DoesNotThrowAsync(async () =>
+        await Assert.DoesNotThrowAsync(async () =>
             await service.SendOverdueNotificationAsync(user, userRoomBook, penalty, CancellationToken.None));
     }
     [Test]
@@ -251,9 +251,9 @@ public class EmailNotificationServiceTests
 
         // Act & Assert
         // Валидатор EmailValidatorAsync выбрасывает LibValidationException для null
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            var ex = Assert.ThrowsAsync<LibValidationException>(async () =>
+            var ex = await Assert.ThrowsAsync<LibValidationException>(async () =>
                 await service.SendEmailAsync(email!, subject, body));
             Assert.That(ex.ExceptionDetails, Contains.Item("Email обязателен"));
         });
@@ -270,7 +270,7 @@ public class EmailNotificationServiceTests
         var body = "Test";
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await service.SendEmailAsync(email, subject, body));
     }
 
@@ -431,7 +431,7 @@ public class EmailNotificationServiceTests
         await service.SendEmailAsync("test@example.com", "Subject", "Body", CancellationToken.None);
 
         // Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
             smtpMock.Verify(x => x.SendMailAsync(It.IsAny<MailMessage>(), It.IsAny<CancellationToken>()), Times.Once);
             loggerMock.Verify(x => x.Log(
@@ -465,9 +465,9 @@ public class EmailNotificationServiceTests
         var service = CreateService(settings, smtpMock: smtpMock);
 
         // Act & Assert
-        Assert.Multiple(() =>
+        await Assert.MultipleAsync(async () =>
         {
-            var ex = Assert.ThrowsAsync<SmtpException>(() =>
+            var ex = await Assert.ThrowsAsync<SmtpException>(() =>
                 service.SendEmailAsync("test@example.com", "Subject", "Body", CancellationToken.None));
             Assert.That(ex.Message, Is.EqualTo("Simulated failure"));
 

@@ -25,7 +25,7 @@ public class DeleteRoomCommandTests
         var response = await deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("Room deleted successfully."));
@@ -53,8 +53,8 @@ public class DeleteRoomCommandTests
         var deleteRoomRequest = new DeleteRoomRequest { Id = nonExistingId };
 
         // Act & Assert
-        Assert.ThrowsAsync<RoomNotFoundException>(() =>
-            deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None));
+        await Assert.ThrowsAsync<RoomNotFoundException>(async () =>
+            await deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None));
     }
 
     [Test]
@@ -67,8 +67,8 @@ public class DeleteRoomCommandTests
         var deleteRoomRequest = new DeleteRoomRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
-        Assert.ThrowsAsync<RoomNotFoundException>(() =>
-            deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None));
+        await Assert.ThrowsAsync<RoomNotFoundException>(async () =>
+            await deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None));
     }
 
     [Test]
@@ -91,7 +91,7 @@ public class DeleteRoomCommandTests
         var response = await deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(roomRepo.Entities, Has.Count.EqualTo(0));
@@ -126,8 +126,8 @@ public class DeleteRoomCommandTests
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };
 
         // Act & Assert
-        Assert.ThrowsAsync<RoomDeletionException>(() =>
-            deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None));
+        await Assert.ThrowsAsync<RoomDeletionException>(async () =>
+            await deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None));
     }
 
     [Test]
@@ -152,7 +152,7 @@ public class DeleteRoomCommandTests
         var response = await deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That((await roomRepo.GetAsync(x => x.Name == "Target Room")).Any(), Is.False);
@@ -179,7 +179,7 @@ public class DeleteRoomCommandTests
 
         // Act & Assert
         var response = await deleteRoomCommand.Execute(deleteRoomRequest, CancellationToken.None);
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(roomRepo.Entities, Is.Empty);

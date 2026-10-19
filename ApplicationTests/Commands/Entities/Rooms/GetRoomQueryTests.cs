@@ -54,7 +54,7 @@ public class GetRoomQueryTests
         var getRoomRequest = new GetRoomRequest { Id = nonExistingId };
 
         // Act & Assert
-        Assert.ThrowsAsync<RoomNotFoundException>(() =>
+        await Assert.ThrowsAsync<RoomNotFoundException>(() =>
             getRoomQuery.Execute(getRoomRequest, CancellationToken.None));
     }
 
@@ -68,7 +68,7 @@ public class GetRoomQueryTests
         var getRoomRequest = new GetRoomRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
-        Assert.ThrowsAsync<RoomNotFoundException>(() =>
+        await Assert.ThrowsAsync<RoomNotFoundException>(() =>
             getRoomQuery.Execute(getRoomRequest, CancellationToken.None));
     }
 

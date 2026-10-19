@@ -65,7 +65,7 @@ public class DeleteUserCommandTests
         var deleteUserRequest = new DeleteUserRequest { Id = nonExistingId };
 
         // Act & Assert
-        Assert.ThrowsAsync<UserNotFoundException>(() =>
+        await Assert.ThrowsAsync<UserNotFoundException>(() =>
             deleteUserCommand.Execute(deleteUserRequest, CancellationToken.None));
     }
 
@@ -79,7 +79,7 @@ public class DeleteUserCommandTests
         var deleteUserRequest = new DeleteUserRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
-        Assert.ThrowsAsync<UserNotFoundException>(() =>
+        await Assert.ThrowsAsync<UserNotFoundException>(() =>
             deleteUserCommand.Execute(deleteUserRequest, CancellationToken.None));
     }
 
@@ -106,7 +106,7 @@ public class DeleteUserCommandTests
                     BorrowDate = DateTime.Now.AddDays(-5),
                     Deadline = DateTime.Now.AddDays(5),
                     User = null, // Это не важно для теста
-                    RoomBook = null // Это не важно для теста
+                    RoomBook = null // Это неважно для теста
                 }
             ]
         };
@@ -150,7 +150,7 @@ public class DeleteUserCommandTests
         var initialCount = userRepo.Entities.Count;
 
         // Act & Assert - удаляем всех пользователей по одному
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             foreach (var user in users.ToList())
             {

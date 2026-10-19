@@ -44,7 +44,7 @@ public class CreateUserCommandTests
         var response = await createUserCommand.Execute(createUserRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             // Проверяем, что пользователь был создан
             var users = await userRepo.GetAsync(x =>
@@ -92,7 +92,7 @@ public class CreateUserCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await createUserCommand.Execute(createUserRequest, CancellationToken.None));
     }
 
@@ -114,7 +114,7 @@ public class CreateUserCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await createUserCommand.Execute(createUserRequest, CancellationToken.None));
     }
 
@@ -150,7 +150,7 @@ public class CreateUserCommandTests
         var response = await createUserCommand.Execute(createUserRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             var users = await userRepo.GetAsync(x => x.LastName == "Иванов");
@@ -177,7 +177,7 @@ public class CreateUserCommandTests
         var response = await createUserCommand.Execute(createUserRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
@@ -209,7 +209,7 @@ public class CreateUserCommandTests
             ContactInfo = "test@test.com"
         };
 
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await createUserCommand.Execute(createUserRequest, CancellationToken.None));
     }
     [Test]

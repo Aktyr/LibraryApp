@@ -39,7 +39,7 @@ public class UpdateUserCommandTests
         var response = await updateUserCommand.Execute(updateUserRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Is.EqualTo("User updated successfully."));
@@ -80,7 +80,7 @@ public class UpdateUserCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<UserNotFoundException>(async () =>
+        await Assert.ThrowsAsync<UserNotFoundException>(async () =>
             await updateUserCommand.Execute(updateUserRequest, CancellationToken.None));
     }
 
@@ -116,7 +116,7 @@ public class UpdateUserCommandTests
         };
 
         // Act & Assert
-        Assert.ThrowsAsync<LibValidationException>(async () =>
+        await Assert.ThrowsAsync<LibValidationException>(async () =>
             await updateUserCommand.Execute(updateUserRequest, CancellationToken.None));
     }
 
@@ -153,7 +153,7 @@ public class UpdateUserCommandTests
         var response = await updateUserCommand.Execute(updateUserRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
@@ -203,7 +203,7 @@ public class UpdateUserCommandTests
         var response = await updateUserCommand.Execute(updateUserRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
@@ -247,7 +247,7 @@ public class UpdateUserCommandTests
         var response = await updateUserCommand.Execute(updateUserRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
@@ -335,7 +335,7 @@ public class UpdateUserCommandTests
         // Act & Assert
         Assert.Multiple(async () =>
         {
-            Assert.ThrowsAsync<LibValidationException>(async () =>
+            await Assert.ThrowsAsync<LibValidationException>(async () =>
                 await updateUserCommand.Execute(updateUserRequest, CancellationToken.None));
 
             var userAfterFailedUpdate = (await userRepo.GetAsync(x => x.Id.Value == userId.Value)).First();
@@ -381,7 +381,7 @@ public class UpdateUserCommandTests
         var response = await updateUserCommand.Execute(updateUserRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
@@ -425,7 +425,7 @@ public class UpdateUserCommandTests
         var response = await updateUserCommand.Execute(updateUserRequest, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
