@@ -133,7 +133,7 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         {
             selfRef = DotNetObjectReference.Create(this);
             resizeModule = await JS.InvokeAsync<IJSObjectReference>(
-                "import", "./Components/Shared/DataGrid/DataGrid.razor.js");
+                "import", "./Shared/DataGrid/DataGrid.razor.js");
 
             var minWidths = Columns.Select(c => c.MinWidth).ToArray();
             await resizeModule.InvokeVoidAsync("initColumnResize", tableRef, selfRef, minWidths);
