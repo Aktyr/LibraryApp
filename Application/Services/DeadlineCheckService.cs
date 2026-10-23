@@ -58,7 +58,7 @@ public class DeadlineCheckService : BackgroundService, IService
 
         // Книги, которые нужно вернуть через N дня
         var soonDue = await userRoomBookRepo.GetAsync(
-            urb => !urb.IsReturned
+            urb => urb.ReturnDate == null
                 && urb.Deadline.HasValue
                 && urb.Deadline.Value.Date == now.AddDays(settings.ReturnReminderInDays).Date,
             cancellationToken);
@@ -72,7 +72,7 @@ public class DeadlineCheckService : BackgroundService, IService
 
         // Просроченные книги
         var overdue = await userRoomBookRepo.GetAsync(
-            urb => !urb.IsReturned
+            urb => urb.ReturnDate == null
                 && urb.Deadline.HasValue
                 && urb.Deadline.Value < now,
             cancellationToken);

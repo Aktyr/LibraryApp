@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: libapp-postgres
+    restart: unless-stopped
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: libapp
+    volumes:
+      - libapp-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d libapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  libapp-pgdata:
+    name: libapp-pgdata

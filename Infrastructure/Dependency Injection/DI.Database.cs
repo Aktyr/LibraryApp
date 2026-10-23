@@ -17,8 +17,9 @@ public static partial class DI
             switch (provider.ToLower())
             {
                 case "postgres":
-                    options.UseNpgsql(connectionString);
-                    break;
+                    options.UseNpgsql(connectionString, npgsql =>
+                        npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "library"));
+                    break;                
                 /*case "sqlserver":
                     options.UseSqlServer(connectionString);
                     break;

@@ -17,9 +17,9 @@ public class BorrowBookCommand(
         var roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Id.Value == request.RoomBookId, cancellationToken);
         if (roomBook == null) throw new UserRoomBookNotFoundException();
 
-        if (await userRoomBookRepo.AnyAsync(urb => urb.User.Id.Value == request.UserId 
-                                                && urb.RoomBook.Id.Value == request.RoomBookId 
-                                                && !urb.IsReturned, cancellationToken))
+        if (await userRoomBookRepo.AnyAsync(urb => urb.User.Id.Value == request.UserId
+                                                && urb.RoomBook.Id.Value == request.RoomBookId
+                                                && urb.ReturnDate == null, cancellationToken))
             throw new LibValidationException { ExceptionDetails = ["Пользователь уже взял эту книгу и ещё не вернул её"] };
 
         var validationResult = await validator.ValidateBorrowAsync(user, roomBook, request.BorrowDays, cancellationToken);

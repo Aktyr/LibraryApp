@@ -20,7 +20,7 @@ public class GetPopularBooksReportCommand(IUnitOfWork unitOfWork)
                     g.First().RoomBook.Book.Title,
                     g.First().RoomBook.Book.Author,
                     g.Count(),
-                    g.Count(urb => !urb.IsReturned)))
+                    g.Count(urb => urb.ReturnDate == null)))
                 .OrderByDescending(x => x.TotalBorrowedCount)
                 .Take(request.TopCount ?? 10);
         }, ct);

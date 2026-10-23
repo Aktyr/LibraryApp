@@ -1,28 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>aspnet-BlazorWeb-af15810b-d75d-431e-9631-68fcf477130c</UserSecretsId>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>aspnet-BlazorWeb-af15810b-d75d-431e-9631-68fcf477130c</UserSecretsId>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Application\Application.csproj" />
-    <ProjectReference Include="..\..\Core\Core.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\Infrastructure.csproj" />
-    <ProjectReference Include="..\..\WebAPI\WebAPI.csproj" />
-    <ProjectReference Include="..\BlazorWeb.Client\BlazorWeb.Client.csproj" />
-	  
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13" />
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.13" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.13">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Application\Application.csproj" />
+		<ProjectReference Include="..\..\Core\Core.csproj" />
+		<ProjectReference Include="..\..\Infrastructure\Infrastructure.csproj" />
+		<ProjectReference Include="..\BlazorWeb.Client\BlazorWeb.Client.csproj" />
+
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.13">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Data\Migrations\" />
+	</ItemGroup>
 
 </Project>
