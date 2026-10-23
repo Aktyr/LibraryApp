@@ -40,6 +40,13 @@ public class Program
         builder.Services.AddScoped<UserValidatorAsync>();
         builder.Services.AddScoped<EmailValidatorAsync>();
 
+        builder.Services.AddOptions<JwtSettings>()
+            .Bind(builder.Configuration.GetSection("ApplicationSettings:Jwt"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder.Services.AddScoped<JwtService>();
+
+
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
         builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
