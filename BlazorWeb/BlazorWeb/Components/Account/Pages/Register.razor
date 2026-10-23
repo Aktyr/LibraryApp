@@ -6,6 +6,8 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using BlazorWeb.Data
+@using LibApp.Application.Interfaces
+@using LibApp.Core.Enums
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
@@ -14,6 +16,7 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject IUserService UserProfileService
 
 <PageTitle>Register</PageTitle>
 
@@ -31,6 +34,26 @@
                 <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
                 <label for="email">Email</label>
                 <ValidationMessage For="() => Input.Email" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.LastName" class="form-control" aria-required="true" placeholder="Иванов" />
+                <label for="lastName">Фамилия</label>
+                <ValidationMessage For="() => Input.LastName" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.FirstName" class="form-control" aria-required="true" placeholder="Иван" />
+                <label for="firstName">Имя</label>
+                <ValidationMessage For="() => Input.FirstName" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.MiddleName" class="form-control" placeholder="Иванович" />
+                <label for="middleName">Отчество (необязательно)</label>
+                <ValidationMessage For="() => Input.MiddleName" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.ContactInfo" class="form-control" aria-required="true" placeholder="+7-999-123-45-67 или email" />
+                <label for="contactInfo">Контактная информация</label>
+                <ValidationMessage For="() => Input.ContactInfo" class="text-danger" />
             </div>
             <div class="form-floating mb-3">
                 <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
@@ -77,6 +100,37 @@
         if (!result.Succeeded)
         {
             identityErrors = result.Errors;
+            return;
+        }
+
+        // Заполняем профильные поля Identity-пользователя
+        user.FirstName = Input.FirstName;
+        user.LastName = Input.LastName;
+        user.MiddleName = Input.MiddleName ?? string.Empty;
+        user.ContactInfo = Input.ContactInfo;
+
+        try
+        {
+            // Создаём Library-пользователя (library."User") и связываем через LibraryUserId
+            var libraryUser = await UserProfileService.CreateUserAsync(
+                Input.Email,
+                Input.Password,
+                Input.LastName,
+                Input.FirstName,
+                Input.MiddleName ?? string.Empty,
+                Input.ContactInfo,
+                UserRole.Reader,
+                CancellationToken.None);
+
+            user.LibraryUserId = libraryUser.Id.Value;
+            await UserManager.UpdateAsync(user);
+        }
+        catch (Exception ex)
+        {
+            // Компенсация: если Library-user не создался — откатываем Identity-user
+            Logger.LogError(ex, "Failed to create library user for {Email}", Input.Email);
+            await UserManager.DeleteAsync(user);
+            identityErrors = [new IdentityError { Description = "Не удалось завершить регистрацию, попробуйте позже" }];
             return;
         }
 
@@ -141,5 +195,20 @@
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "Фамилия обязательна")]
+        [StringLength(100, ErrorMessage = "Фамилия не может превышать 100 символов")]
+        public string LastName { get; set; } = "";
+
+        [Required(ErrorMessage = "Имя обязательно")]
+        [StringLength(100, ErrorMessage = "Имя не может превышать 100 символов")]
+        public string FirstName { get; set; } = "";
+
+        [StringLength(100, ErrorMessage = "Отчество не может превышать 100 символов")]
+        public string? MiddleName { get; set; }
+
+        [Required(ErrorMessage = "Контактная информация обязательна")]
+        [StringLength(200, ErrorMessage = "Контактная информация не может превышать 200 символов")]
+        public string ContactInfo { get; set; } = "";
     }
 }
