@@ -26,7 +26,21 @@ public class Program
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(connectionString, npgsql =>
-                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "identity"))); builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "identity")));
+
+        builder.Services.AddDbContext<LibraryContext>(options =>
+            options.UseNpgsql(connectionString, npgsql =>
+                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "library")).UseLazyLoadingProxies());
+
+        builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<LibraryContext>());
+
+        // Сервисы создания Library-пользователя
+        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+        builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<UserValidatorAsync>();
+        builder.Services.AddScoped<EmailValidatorAsync>();
+
+        builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
         builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
             .AddEntityFrameworkStores<ApplicationDbContext>()
