@@ -11,14 +11,17 @@ public class BorrowBookCommand(
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
         // Валидация
-        var user = await userRepo.FirstOrDefaultAsync(u => u.Id.Value == request.UserId, cancellationToken);
+        var userId = new Id(request.UserId);
+        var roomBookId = new Id(request.RoomBookId);
+
+        var user = await userRepo.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
         if (user == null) throw new UserNotFoundException();
 
-        var roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Id.Value == request.RoomBookId, cancellationToken);
+        var roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Id == roomBookId, cancellationToken);
         if (roomBook == null) throw new UserRoomBookNotFoundException();
 
-        if (await userRoomBookRepo.AnyAsync(urb => urb.User.Id.Value == request.UserId
-                                                && urb.RoomBook.Id.Value == request.RoomBookId
+        if (await userRoomBookRepo.AnyAsync(urb => urb.User.Id == userId
+                                                && urb.RoomBook.Id == roomBookId
                                                 && urb.ReturnDate == null, cancellationToken))
             throw new LibValidationException { ExceptionDetails = ["Пользователь уже взял эту книгу и ещё не вернул её"] };
 

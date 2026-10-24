@@ -13,11 +13,13 @@ public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
 
         // Валидация
         // Находим книгу
-        var book = await bookRepo.FirstOrDefaultAsync(b => b.Id.Value == request.BookId, ct);
+        var bookId = new Id(request.BookId);
+
+        var book = await bookRepo.FirstOrDefaultAsync(b => b.Id == bookId, ct);
         if (book == null) throw new BookNotFoundException();
 
         // Находим RoomBook
-        var roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Book.Id.Value == request.BookId, ct);
+        var roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Book.Id == bookId, ct);
         if (roomBook == null)
             throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнатах"] };
 

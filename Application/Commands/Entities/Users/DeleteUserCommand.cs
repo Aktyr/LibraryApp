@@ -6,7 +6,7 @@ public class DeleteUserCommand(IUnitOfWork unitOfWork)
     public async Task<BasicCreateDeleteResponse> Execute(DeleteUserRequest request, CancellationToken cancellationToken)
     {
         var userRepo = unitOfWork.GetRepository<User>();
-        var user = await userRepo.FirstOrDefaultAsync(u => u.Id.Value == request.Id.Value, cancellationToken);
+        var user = await userRepo.FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
         if (user == null) throw new UserNotFoundException();
 
         await userRepo.RemoveAsync(user, cancellationToken);

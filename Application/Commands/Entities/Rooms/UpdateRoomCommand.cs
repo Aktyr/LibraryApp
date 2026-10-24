@@ -12,7 +12,7 @@ public class UpdateRoomCommand(
         var roomRepo = unitOfWork.GetRepository<Room>();
 
         var room = (await roomRepo.GetAsync(
-            r => r.Id.Value == request.Id.Value,
+            r => r.Id == request.Id,
             includePaths: IncludePaths.Room.RoomBooksBook)).FirstOrDefault()
             ?? throw new RoomNotFoundException();
 

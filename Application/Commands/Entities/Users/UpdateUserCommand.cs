@@ -7,7 +7,7 @@ public class UpdateUserCommand(
     public async Task<BasicCreateDeleteResponse> Execute(UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var userRepo = unitOfWork.GetRepository<User>();
-        var user = await userRepo.FirstOrDefaultAsync(u => u.Id.Value == request.Id.Value, cancellationToken);
+        var user = await userRepo.FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
         if (user == null) throw new UserNotFoundException();
 
         // Валидация

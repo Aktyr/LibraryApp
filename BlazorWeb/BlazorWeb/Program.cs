@@ -16,6 +16,8 @@ public class Program
         builder.Services.AddScoped<IdentityRedirectManager>();
         builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
 
+        builder.Services.AddHttpContextAccessor();
+
         builder.Services.AddAuthentication(options =>
             {
                 options.DefaultScheme = IdentityConstants.ApplicationScheme;
@@ -58,7 +60,14 @@ public class Program
 
 
         var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7271/";
-        builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
+
+        // HttpClient для форварда к WebAPI — с JWT через handler
+        builder.Services.AddTransient<AuthenticatedWebApiHandler>();
+        builder.Services.AddHttpClient("webapi", client => { client.BaseAddress = new Uri(apiBaseUrl); })
+            .AddHttpMessageHandler<AuthenticatedWebApiHandler>();
+
+        // HttpClient для WASM-клиента
+        builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("/") });
         builder.Services.AddScoped<IBookApiClient, BookApiClient>();
 
         var app = builder.Build();
@@ -87,6 +96,8 @@ public class Program
             .AddInteractiveServerRenderMode()
             .AddInteractiveWebAssemblyRenderMode()
             .AddAdditionalAssemblies(typeof(Client._Imports).Assembly);
+
+        app.MapBooksProxy();
 
         // Add additional endpoints required by the Identity /Account Razor components.
         app.MapAdditionalIdentityEndpoints();

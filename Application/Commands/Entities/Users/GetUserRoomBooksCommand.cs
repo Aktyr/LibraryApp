@@ -9,8 +9,9 @@ public class GetUserRoomBooksCommand(
     {
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         // Получение списка книг
+        var userId = new Id(request.UserId);
         var userBooks = await userRoomBookRepo.GetAsync(
-            urb => urb.User.Id.Value == request.UserId,
+            urb => urb.User.Id == userId,
             cancellationToken);
 
         var bookDTOs = userBooks

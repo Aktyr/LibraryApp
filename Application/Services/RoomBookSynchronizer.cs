@@ -32,7 +32,7 @@ public class RoomBookSynchronizer : IRoomBookSynchronizer, IService
         if (room.RoomBooks == null)
         {
             var loaded = await roomBookRepo.GetAsync(
-                filter: rb => rb.Room.Id.Value == room.Id.Value,
+                filter: rb => rb.Room.Id == room.Id,
                 includePaths: IncludePaths.RoomBook.Book);
             room.RoomBooks = loaded.ToList();
         }

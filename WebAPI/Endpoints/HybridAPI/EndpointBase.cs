@@ -147,7 +147,7 @@ public abstract class EndpointBase
         var options = new RequestDelegateFactoryOptions
         {
             ServiceProvider = services,
-            ThrowOnBadRequest = false
+            ThrowOnBadRequest = true // todo false
         };
 
         var result = RequestDelegateFactory.Create(
