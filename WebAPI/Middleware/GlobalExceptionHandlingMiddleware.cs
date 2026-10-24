@@ -1,6 +1,7 @@
 ﻿namespace WebAPI.Middleware;
 
-// todo сделать обработчик для всех исключений
+
+// todo решить дублирование кода
 public class GlobalExceptionHandlingMiddleware : IMiddleware
 {
     private readonly ILogger<GlobalExceptionHandlingMiddleware> _logger;
@@ -14,21 +15,51 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            context.Response.ContentType = "application/json";
-
-            ProblemDetails problem = new()
-            {
-                Status = context.Response.StatusCode,
-                Type = "Server Error",
-                Title = "Server Error",
-                Detail = "An internal server error occurred"
-            };
-
-            string json = JsonSerializer.Serialize(problem);
-
-            await context.Response.WriteAsync(json);
+            await HandleAsync(context, ex);
         }
+    }
+
+    private async Task HandleAsync(HttpContext context, Exception ex)
+    {
+        _logger.LogError(ex, ex.Message);
+
+        var (statusCode, title, detail) = ex switch
+        {
+            LibValidationException lve =>
+                (400, "Validation Error", string.Join("; ", lve.ExceptionDetails)),
+
+            BadHttpRequestException bad =>
+                (400, "Bad Request", bad.Message),
+
+            UnauthorizedException =>
+                (401, "Unauthorized", ex.Message),
+
+            BookNotFoundException
+                or RoomNotFoundException
+                or UserNotFoundException
+                or RoomBookNotFoundException
+                or UserRoomBookNotFoundException
+                => (404, "Not Found", ex.Message),
+
+            RoomExistsException
+                or RoomDeletionException
+                => (409, "Conflict", ex.Message),
+
+            _ => (500, "Server Error", "An internal server error occurred")
+        };
+
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+
+        var problem = new ProblemDetails
+        {
+            Status = statusCode,
+            Type = title.Replace(' ', '-'),
+            Title = title,
+            Detail = detail
+        };
+
+        var json = JsonSerializer.Serialize(problem);
+        await context.Response.WriteAsync(json);
     }
 }

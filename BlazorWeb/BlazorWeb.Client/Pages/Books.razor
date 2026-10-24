@@ -3,45 +3,166 @@
 @using BlazorWeb.Client.Services
 @using BlazorWeb.Components.Shared.DataGrid
 @using LibApp.Core.DTO.Entities
+@using LibApp.Core.Records
+@using LibApp.Core.Requests.Entities.Book
 @inject IBookApiClient ApiClient
+@inject IJSRuntime JS
 
 <PageTitle>Книги</PageTitle>
 
 <h1>Библиотечный фонд</h1>
 
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mb-3">@errorMessage</div>
+}
+
 @if (isLoading)
 {
     <p>Загрузка данных...</p>
 }
-else if (errorMessage != null)
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
 else if (books != null)
 {
-    <DataGrid TItem="BookDTO" Items="books" PageSize="10" Columns="columns" />
+    <DataGrid TItem="BookDTO"
+              Items="books"
+              PageSize="10"
+              Columns="columns"
+              Actions="actions"
+              StatusMessage="@statusMessage" />
 }
+
+@if (dialogMode != DialogMode.None)
+{
+    <div class="modal-backdrop" @onclick="CloseDialog"></div>
+    <div class="modal-dialog">
+        <h3>@(dialogMode == DialogMode.Create ? "Новая книга" : "Редактирование книги")</h3>
+        <EditForm Model="draft" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger mb-3" />
+            <div class="mb-3">
+                <label class="form-label">Название</label>
+                <InputText @bind-Value="draft.Title" class="form-control" />
+                <ValidationMessage For="() => draft.Title" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Автор</label>
+                <InputText @bind-Value="draft.Author" class="form-control" />
+                <ValidationMessage For="() => draft.Author" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Год</label>
+                <InputNumber @bind-Value="draft.Year" class="form-control" />
+                <ValidationMessage For="() => draft.Year" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Издательство</label>
+                <InputText @bind-Value="draft.Publisher" class="form-control" />
+                <ValidationMessage For="() => draft.Publisher" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Жанр</label>
+                <InputText @bind-Value="draft.Genre" class="form-control" />
+                <ValidationMessage For="() => draft.Genre" class="text-danger" />
+            </div>
+            @if (!string.IsNullOrEmpty(dialogError))
+            {
+                <div class="alert alert-danger">@dialogError</div>
+            }
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <button type="button" class="btn btn-secondary ms-2" @onclick="CloseDialog">Отмена</button>
+        </EditForm>
+    </div>
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1000;
+    }
+
+    .modal-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1001;
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px 24px;
+        min-width: 420px;
+        max-width: 90vw;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+</style>
 
 @code {
     private List<BookDTO>? books;
     private bool isLoading = true;
     private string? errorMessage;
+    private string? statusMessage;
 
-    // Создаем список колонок здесь
-    private List<DataGridColumn<BookDTO>> columns = new()
+    private enum DialogMode { None, Create, Edit }
+    private DialogMode dialogMode = DialogMode.None;
+    private Guid? editingId;
+    private BookDraft draft = new();
+    private string? dialogError;
+
+    private readonly List<DataGridColumn<BookDTO>> columns = new()
     {
-        new() { Title = "Название", Value = b => b.Title },
-        new() { Title = "Автор", Value = b => b.Author },
-        new() { Title = "Год", Value = b => b.Year, FilterKind = FilterKind.Number },
-        new() { Title = "Жанр", Value = b => b.Genre }
+        new() { Title = "Название", Value = b => b.Title, Width = 300 },
+        new() { Title = "Автор", Value = b => b.Author, Width = 250 },
+        new() { Title = "Год", Value = b => b.Year, FilterKind = FilterKind.Number, Width = 100 },
+        new() { Title = "Жанр", Value = b => b.Genre, Width = 200 }
     };
+
+    private List<DataGridAction<BookDTO>> actions = new();
 
     protected override async Task OnInitializedAsync()
     {
+        ConfigureActions();
+        await LoadAsync();
+    }
+
+    private void ConfigureActions()
+    {
+        actions = new()
+    {
+        new()
+        {
+            Label = "Добавить",
+            Icon = "➕",
+            MinSelection = 0,
+            ShowInContextMenu = false,
+            Handler = _ => { OpenCreateDialog(); return Task.CompletedTask; }
+        },
+        new()
+        {
+            Label = "Редактировать",
+            Icon = "✏️",
+            CanExecute = s => s.Count == 1,
+            Handler = s => { OpenEditDialog(s[0]); return Task.CompletedTask; }
+        },
+        new()
+        {
+            Label = "Удалить",
+            Icon = "🗑️",
+            SeparatorBefore = true,
+            CanExecute = s => s.Count == 1,
+            Handler = s => DeleteAsync(s[0])
+        }
+    };
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
         try
         {
-            var response = await ApiClient.GetAllBooksAsync();
-            books = response.Book.ToList();
+            var resp = await ApiClient.GetAllBooksAsync();
+            books = resp.Book.ToList();
         }
         catch (Exception ex)
         {
@@ -51,5 +172,113 @@ else if (books != null)
         {
             isLoading = false;
         }
+    }
+
+    private void OpenCreateDialog()
+    {
+        dialogMode = DialogMode.Create;
+        editingId = null;
+        draft = new BookDraft { Year = DateTime.UtcNow.Year };
+        dialogError = null;
+    }
+
+    private void OpenEditDialog(BookDTO book)
+    {
+        dialogMode = DialogMode.Edit;
+        editingId = book.Id;
+        draft = new BookDraft
+        {
+            Title = book.Title,
+            Author = book.Author,
+            Year = book.Year,
+            Publisher = book.Publisher,
+            Genre = book.Genre
+        };
+        dialogError = null;
+    }
+
+    private void CloseDialog()
+    {
+        dialogMode = DialogMode.None;
+        editingId = null;
+        dialogError = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        dialogError = null;
+        try
+        {
+            if (dialogMode == DialogMode.Create)
+            {
+                await ApiClient.CreateBookAsync(new CreateBookRequest
+                {
+                    Title = draft.Title,
+                    Author = draft.Author,
+                    Year = draft.Year,
+                    Publisher = draft.Publisher,
+                    Genre = draft.Genre
+                });
+                statusMessage = $"Книга «{draft.Title}» добавлена";
+            }
+            else if (dialogMode == DialogMode.Edit && editingId.HasValue)
+            {
+                await ApiClient.UpdateBookAsync(new UpdateBookRequest
+                {
+                    Id = new Id(editingId.Value),
+                    Title = draft.Title,
+                    Author = draft.Author,
+                    Year = draft.Year,
+                    Publisher = draft.Publisher,
+                    Genre = draft.Genre
+                });
+                statusMessage = $"Книга «{draft.Title}» обновлена";
+            }
+            CloseDialog();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            dialogError = ex.Message;
+        }
+    }
+
+    private async Task DeleteAsync(BookDTO book)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            $"Удалить книгу «{book.Title}»?");
+        if (!confirmed) return;
+
+        try
+        {
+            await ApiClient.DeleteBookAsync(book.Id);
+            statusMessage = $"Книга «{book.Title}» удалена";
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка удаления: {ex.Message}";
+        }
+    }
+
+    private class BookDraft
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Название обязательно")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        public string Title { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Автор обязателен")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        public string Author { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Range(0, 2100, ErrorMessage = "Год должен быть от 0 до 2100")]
+        public int Year { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Издательство обязательно")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        public string Publisher { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        public string Genre { get; set; } = "";
     }
 }
