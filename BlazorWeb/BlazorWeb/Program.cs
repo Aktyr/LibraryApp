@@ -76,7 +76,10 @@ public class Program
                 : new Uri("https://localhost:7198/");
             return new HttpClient { BaseAddress = baseUri };
         });
+        
+        // API-клиенты для компонентов Blazor.Server (через прокси-эндпоинты)
         builder.Services.AddScoped<IBookApiClient, BookApiClient>();
+        builder.Services.AddScoped<IRoomApiClient, RoomApiClient>();
 
         var app = builder.Build();
 
@@ -105,7 +108,9 @@ public class Program
             .AddInteractiveWebAssemblyRenderMode()
             .AddAdditionalAssemblies(typeof(Client._Imports).Assembly);
 
+        // API-прокси для компонентов Blazor.Server (через HttpClient с base URI текущего запроса)
         app.MapBooksProxy();
+        app.MapRoomsProxy();
 
         // Add additional endpoints required by the Identity /Account Razor components.
         app.MapAdditionalIdentityEndpoints();

@@ -10,12 +10,14 @@ internal class Program
         builder.Services.AddCascadingAuthenticationState();
         builder.Services.AddSingleton<AuthenticationStateProvider, PersistentAuthenticationStateProvider>();
 
-
+        #region API-клиенты для компонентов Blazor.WebAssembly (через прокси-эндпоинты)
         builder.Services.AddScoped(sp => new HttpClient
         {
             BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
         });
         builder.Services.AddScoped<IBookApiClient, BookApiClient>();
+        builder.Services.AddScoped<IRoomApiClient, RoomApiClient>();
+        #endregion
 
         await builder.Build().RunAsync();
     }

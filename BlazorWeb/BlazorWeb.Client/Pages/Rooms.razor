@@ -1,0 +1,251 @@
+﻿@page "/rooms"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Services
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Entities
+@using LibApp.Core.Records
+@using LibApp.Core.Requests.Entities.Room
+@inject IRoomApiClient ApiClient
+@inject IJSRuntime JS
+
+<PageTitle>Комнаты</PageTitle>
+
+<h1>Комнаты</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mb-3">@errorMessage</div>
+}
+
+@if (isLoading)
+{
+    <p>Загрузка данных...</p>
+}
+else if (rooms != null)
+{
+    <DataGrid TItem="RoomDTO"
+              Items="rooms"
+              PageSize="10"
+              Columns="columns"
+              Actions="actions"
+              StatusMessage="@statusMessage" />
+}
+
+@if (dialogMode != DialogMode.None)
+{
+    <div class="modal-backdrop" @onclick="CloseDialog"></div>
+    <div class="modal-dialog">
+        <h3>@(dialogMode == DialogMode.Create ? "Новая комната" : "Редактирование комнаты")</h3>
+        <EditForm Model="draft" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger mb-3" />
+            <div class="mb-3">
+                <label class="form-label">Название</label>
+                <InputText @bind-Value="draft.Name" class="form-control" />
+                <ValidationMessage For="() => draft.Name" class="text-danger" />
+            </div>
+            @if (dialogMode == DialogMode.Edit)
+            {
+                <p class="text-muted small">
+                    Книги в комнате: <b>@editingRoomBooks.Count</b>. Управление ими — на следующем шаге.
+                </p>
+            }
+            @if (!string.IsNullOrEmpty(dialogError))
+            {
+                <div class="alert alert-danger">@dialogError</div>
+            }
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <button type="button" class="btn btn-secondary ms-2" @onclick="CloseDialog">Отмена</button>
+        </EditForm>
+    </div>
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1000;
+    }
+
+    .modal-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1001;
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px 24px;
+        min-width: 420px;
+        max-width: 90vw;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+</style>
+
+@code {
+    private List<RoomDTO>? rooms;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? statusMessage;
+
+    private enum DialogMode { None, Create, Edit }
+    private DialogMode dialogMode = DialogMode.None;
+    private Guid? editingId;
+    private RoomDraft draft = new();
+    private List<RoomBookDTO> editingRoomBooks = [];
+    private string? dialogError;
+
+    private readonly List<DataGridColumn<RoomDTO>> columns = new()
+    {
+        new() { Title = "Название", Value = r => r.Name, Width = 300 },
+        new()
+        {
+            Title = "Книг",
+            Value = r => r.RoomBook.Sum(rb => rb.BookCount),
+            FilterKind = FilterKind.Number,
+            Width = 100
+        }
+    };
+
+    private List<DataGridAction<RoomDTO>> actions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        ConfigureActions();
+        await LoadAsync();
+    }
+
+    private void ConfigureActions()
+    {
+        actions = new()
+        {
+            new()
+            {
+                Label = "Добавить",
+                Icon = "➕",
+                MinSelection = 0,
+                ShowInContextMenu = false,
+                Handler = _ => { OpenCreateDialog(); return Task.CompletedTask; }
+            },
+            new()
+            {
+                Label = "Редактировать",
+                Icon = "✏️",
+                CanExecute = s => s.Count == 1,
+                Handler = s => OpenEditDialogAsync(s[0])
+            },
+            new()
+            {
+                Label = "Удалить",
+                Icon = "🗑️",
+                SeparatorBefore = true,
+                CanExecute = s => s.Count == 1,
+                Handler = s => DeleteAsync(s[0])
+            }
+        };
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var resp = await ApiClient.GetAllRoomsAsync();
+            rooms = resp.Room.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenCreateDialog()
+    {
+        dialogMode = DialogMode.Create;
+        editingId = null;
+        draft = new RoomDraft();
+        editingRoomBooks = [];
+        dialogError = null;
+    }
+
+    private async Task OpenEditDialogAsync(RoomDTO room)
+    {
+        dialogMode = DialogMode.Edit;
+        editingId = room.Id;
+        draft = new RoomDraft { Name = room.Name };
+
+        // Загружаем текущие RoomBook — они будут переданы обратно без изменений,
+        // чтобы сервер не удалил их (UpdateRoomCommand синхронизирует список).
+        editingRoomBooks = room.RoomBook.ToList();
+
+        dialogError = null;
+    }
+
+    private void CloseDialog()
+    {
+        dialogMode = DialogMode.None;
+        editingId = null;
+        editingRoomBooks = [];
+        dialogError = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        dialogError = null;
+        try
+        {
+            if (dialogMode == DialogMode.Create)
+            {
+                await ApiClient.CreateRoomAsync(new CreateRoomRequest(draft.Name, []));
+                statusMessage = $"Комната «{draft.Name}» добавлена";
+            }
+            else if (dialogMode == DialogMode.Edit && editingId.HasValue)
+            {
+                await ApiClient.UpdateRoomAsync(new UpdateRoomRequest
+                {
+                    Id = new Id(editingId.Value),
+                    Name = draft.Name,
+                    RoomBookDTO = editingRoomBooks
+                });
+                statusMessage = $"Комната «{draft.Name}» обновлена";
+            }
+            CloseDialog();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            dialogError = ex.Message;
+        }
+    }
+
+    private async Task DeleteAsync(RoomDTO room)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            $"Удалить комнату «{room.Name}»?");
+        if (!confirmed) return;
+
+        try
+        {
+            await ApiClient.DeleteRoomAsync(room.Id);
+            statusMessage = $"Комната «{room.Name}» удалена";
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка удаления: {ex.Message}";
+        }
+    }
+
+    private class RoomDraft
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Название обязательно")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        public string Name { get; set; } = "";
+    }
+}
