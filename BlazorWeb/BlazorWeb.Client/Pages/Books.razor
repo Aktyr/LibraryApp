@@ -1,5 +1,5 @@
 ﻿@page "/books"
-@rendermode InteractiveWebAssembly
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using BlazorWeb.Client.Services
 @using BlazorWeb.Components.Shared.DataGrid
 @using LibApp.Core.DTO.Entities

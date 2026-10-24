@@ -11,10 +11,11 @@ internal class Program
         builder.Services.AddSingleton<AuthenticationStateProvider, PersistentAuthenticationStateProvider>();
 
 
-        var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7271/";
-        builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
+        builder.Services.AddScoped(sp => new HttpClient
+        {
+            BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
+        });
         builder.Services.AddScoped<IBookApiClient, BookApiClient>();
-
 
         await builder.Build().RunAsync();
     }

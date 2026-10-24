@@ -2,18 +2,48 @@
 
 public class BookApiClient(HttpClient http) : IBookApiClient
 {
+    private const string BasePath = "/api/proxy/books";
+
     public async Task<BookResponse> GetAllBooksAsync(CancellationToken ct = default)
-    {
-        // Обратите внимание: WebAPI возвращает BookResponse
-        var response = await http.GetFromJsonAsync<BookResponse>("/api/books", ct);
-        return response ?? new BookResponse("Error", "Empty response", []);
-    }
+        => await http.GetFromJsonAsync<BookResponse>(BasePath, ct)
+           ?? new BookResponse("Error", "Empty response", []);
+
+    public async Task<BookResponse> GetBookByIdAsync(Guid id, CancellationToken ct = default)
+        => await http.GetFromJsonAsync<BookResponse>($"{BasePath}/{id}", ct)
+           ?? new BookResponse("Error", "Empty response", []);
 
     public async Task<BasicCreateDeleteResponse> CreateBookAsync(CreateBookRequest request, CancellationToken ct = default)
+        => await PostAsync<CreateBookRequest>(request, ct);
+
+    public async Task<BasicCreateDeleteResponse> UpdateBookAsync(UpdateBookRequest request, CancellationToken ct = default)
     {
-        var response = await http.PostAsJsonAsync("/api/books", request, ct);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<BasicCreateDeleteResponse>(ct)
+        var resp = await http.PutAsJsonAsync(BasePath, request, ct);
+        return await ReadAsync(resp, ct);
+    }
+
+    public async Task<BasicCreateDeleteResponse> DeleteBookAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.DeleteAsync($"{BasePath}/{id}", ct);
+        return await ReadAsync(resp, ct);
+    }
+
+    private async Task<BasicCreateDeleteResponse> PostAsync<TBody>(TBody body, CancellationToken ct)
+    {
+        var resp = await http.PostAsJsonAsync(BasePath, body, ct);
+        return await ReadAsync(resp, ct);
+    }
+
+    private static async Task<BasicCreateDeleteResponse> ReadAsync(
+        HttpResponseMessage resp, CancellationToken ct)
+    {
+        if (!resp.IsSuccessStatusCode)
+        {
+            // Прокси форвардит тело WebAPI как есть — читаем ProblemDetails или текст
+            var text = await resp.Content.ReadAsStringAsync(ct);
+            throw new HttpRequestException(
+                $"{(int)resp.StatusCode} {resp.ReasonPhrase}: {text}");
+        }
+        return await resp.Content.ReadFromJsonAsync<BasicCreateDeleteResponse>(ct)
                ?? new BasicCreateDeleteResponse("Error", "Empty response");
     }
 }

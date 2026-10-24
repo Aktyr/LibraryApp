@@ -59,15 +59,23 @@ public class Program
         builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 
-        var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7271/";
-
-        // HttpClient для форварда к WebAPI — с JWT через handler
+        //  HttpClient для форварда к WebAPI (с JWT-хендлером) 
         builder.Services.AddTransient<AuthenticatedWebApiHandler>();
-        builder.Services.AddHttpClient("webapi", client => { client.BaseAddress = new Uri(apiBaseUrl); })
-            .AddHttpMessageHandler<AuthenticatedWebApiHandler>();
+        builder.Services.AddHttpClient("webapi", client =>
+        {
+            client.BaseAddress = new Uri(
+                builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7271/");
+        }).AddHttpMessageHandler<AuthenticatedWebApiHandler>();
 
-        // HttpClient для WASM-клиента
-        builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("/") });
+        //  HttpClient для компонентов Blazor.Server (base URI текущего запроса) 
+        builder.Services.AddScoped(sp =>
+        {
+            var ctx = sp.GetRequiredService<IHttpContextAccessor>().HttpContext;
+            var baseUri = ctx is not null
+                ? new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/")
+                : new Uri("https://localhost:7198/");
+            return new HttpClient { BaseAddress = baseUri };
+        });
         builder.Services.AddScoped<IBookApiClient, BookApiClient>();
 
         var app = builder.Build();
