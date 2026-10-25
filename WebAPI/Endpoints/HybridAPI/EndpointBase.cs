@@ -81,51 +81,58 @@ public abstract class EndpointBase
         var methodAuthAttrs = method.GetCustomAttributes<AuthorizeAttribute>().ToList();
         var methodAllowAnonymous = method.GetCustomAttribute<AllowAnonymousAttribute>() != null;
 
-        // Если метод помечен [AllowAnonymous] – отключаем авторизацию
+        // Явный [AllowAnonymous] на методе — отключает всё
         if (methodAllowAnonymous)
         {
             builder.AllowAnonymous();
             return;
         }
 
-        // Если у метода есть свои [Authorize] – применяем только их
+        // Если у метода есть свои [Authorize] — объединяем роли с классовыми
+        // (при условии, что класс не помечен [AllowAnonymous]).
         if (methodAuthAttrs.Any())
         {
-            var roles = methodAuthAttrs
-                .SelectMany(a => a.Roles?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>())
-                .Select(r => r.Trim())
-                .Where(r => !string.IsNullOrEmpty(r))
-                .Distinct()
-                .ToArray();
+            var roles = CollectRoles(methodAuthAttrs);
+            if (!classAllowAnonymous)
+                roles.UnionWith(CollectRoles(classAuthAttrs));
 
-            if (roles.Any())
-                builder.RequireAuthorization(policy => policy.RequireRole(roles));
-            else
-                builder.RequireAuthorization(); // просто RequireAuthorization (любой аутентифицированный)
+            ApplyRoles(builder, roles);
             return;
         }
 
-        // Если у метода нет своих атрибутов – применяем классовые
+        // Нет методных — используем классовое поведение
         if (classAllowAnonymous)
         {
             builder.AllowAnonymous();
+            return;
         }
-        else if (classAuthAttrs.Any())
+        if (classAuthAttrs.Any())
         {
-            var roles = classAuthAttrs
-                .SelectMany(a => a.Roles?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>())
-                .Select(r => r.Trim())
-                .Where(r => !string.IsNullOrEmpty(r))
-                .Distinct()
-                .ToArray();
-
-            if (roles.Any())
-                builder.RequireAuthorization(policy => policy.RequireRole(roles));
-            else
-                builder.RequireAuthorization();
+            ApplyRoles(builder, CollectRoles(classAuthAttrs));
         }
-        // Если нет ни классовых, ни методных атрибутов – авторизация не добавляется (AllowAnonymous по умолчанию)
+        // Ничего не задано — эндпоинт без авторизации (текущее поведение)
     }
+
+    private static HashSet<string> CollectRoles(IEnumerable<AuthorizeAttribute> attrs)
+    {
+        var roles = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var attr in attrs)
+        {
+            if (string.IsNullOrEmpty(attr.Roles)) continue;
+            foreach (var r in attr.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                roles.Add(r.Trim());
+        }
+        return roles;
+    }
+
+    private static void ApplyRoles(IEndpointConventionBuilder builder, HashSet<string> roles)
+    {
+        if (roles.Count > 0)
+            builder.RequireAuthorization(p => p.RequireRole(roles.ToArray()));
+        else
+            builder.RequireAuthorization(); // любой аутентифицированный
+    }
+
 
     /// <summary>
     /// Создаёт делегат-обработчик для метода эндпоинта.
