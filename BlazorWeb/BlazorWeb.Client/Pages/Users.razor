@@ -1,0 +1,332 @@
+﻿@page "/users"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Services
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Entities
+@using LibApp.Core.Records
+@using LibApp.Core.Enums
+@using LibApp.Core.Requests.Entities.User
+@inject IUserApiClient ApiClient
+@inject IJSRuntime JS
+
+<PageTitle>Пользователи</PageTitle>
+
+<h1>Пользователи</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mb-3">@errorMessage</div>
+}
+
+@if (isLoading)
+{
+    <p>Загрузка данных...</p>
+}
+else if (users != null)
+{
+    <DataGrid TItem="UserDTO"
+              Items="users"
+              PageSize="10"
+              Columns="columns"
+              Actions="actions"
+              StatusMessage="@statusMessage" />
+}
+
+@if (dialogMode != DialogMode.None)
+{
+    <div class="modal-backdrop" @onclick="CloseDialog"></div>
+
+    <div class="modal-dialog" @onclick:stopPropagation="true">
+        <h3>@(dialogMode == DialogMode.Create ? "Новый пользователь" : "Редактирование пользователя")</h3>
+        <EditForm Model="draft" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger mb-3" />
+
+            @if (dialogMode == DialogMode.Create)
+            {
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <InputText @bind-Value="draft.Email" class="form-control" type="email" />
+                    <ValidationMessage For="() => draft.Email" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Пароль</label>
+                    <InputText @bind-Value="draft.Password" class="form-control" type="password" />
+                    <ValidationMessage For="() => draft.Password" class="text-danger" />
+                </div>
+            }
+
+            <div class="mb-3">
+                <label class="form-label">Фамилия</label>
+                <InputText @bind-Value="draft.LastName" class="form-control" />
+                <ValidationMessage For="() => draft.LastName" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Имя</label>
+                <InputText @bind-Value="draft.FirstName" class="form-control" />
+                <ValidationMessage For="() => draft.FirstName" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Отчество</label>
+                <InputText @bind-Value="draft.MiddleName" class="form-control" />
+                <ValidationMessage For="() => draft.MiddleName" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Контактная информация</label>
+                <InputText @bind-Value="draft.ContactInfo" class="form-control" />
+                <ValidationMessage For="() => draft.ContactInfo" class="text-danger" />
+            </div>
+
+            @if (dialogMode == DialogMode.Create)
+            {
+                <div class="mb-3">
+                    <label class="form-label">Роль</label>
+                    <select class="form-select" @bind="draft.Role">
+                        <option value="@UserRole.Reader">Читатель</option>
+                        <option value="@UserRole.Librarian">Библиотекарь</option>
+                        <option value="@UserRole.Admin">Администратор</option>
+                    </select>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(dialogError))
+            {
+                <div class="alert alert-danger">@dialogError</div>
+            }
+
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <button type="button" class="btn btn-secondary ms-2" @onclick="CloseDialog">Отмена</button>
+        </EditForm>
+    </div>
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1000;
+        cursor: default; /* Курсор не меняется на "руку" */
+    }
+
+    .modal-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1001;
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px 24px;
+        min-width: 480px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        /* ВАЖНО: переопределяем Bootstrap, чтобы клики не проходили на фон */
+        pointer-events: auto;
+    }
+</style>
+
+@code {
+    private List<UserDTO>? users;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? statusMessage;
+
+    private enum DialogMode { None, Create, Edit }
+    private DialogMode dialogMode = DialogMode.None;
+    private Guid? editingId;
+    private UserDraft draft = new();
+    private string? dialogError;
+
+    private readonly List<DataGridColumn<UserDTO>> columns = new()
+    {
+        new() { Title = "Фамилия", Value = u => u.LastName, Width = 180 },
+        new() { Title = "Имя", Value = u => u.FirstName, Width = 150 },
+        new() { Title = "Отчество", Value = u => u.MiddleName, Width = 150 },
+        new() { Title = "Контакт", Value = u => u.ContactInfo, Width = 220 },
+        new()
+        {
+            Title = "Ближайший возврат",
+            Value = u => u.NearestReturnTimeSpan.HasValue
+                ? $"{(int)u.NearestReturnTimeSpan.Value.TotalDays} дн."
+                : "—",
+            Width = 150
+        }
+    };
+
+    private List<DataGridAction<UserDTO>> actions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        ConfigureActions();
+        await LoadAsync();
+    }
+
+    private void ConfigureActions()
+    {
+        actions = new()
+        {
+            new()
+            {
+                Label = "Добавить",
+                Icon = "➕",
+                MinSelection = 0,
+                ShowInContextMenu = false,
+                Handler = _ => OpenCreateDialogAsync()
+            },
+            new()
+            {
+                Label = "Редактировать",
+                Icon = "✏️",
+                CanExecute = s => s.Count == 1,
+                Handler = s => OpenEditDialogAsync(s[0])
+            },
+            new()
+            {
+                Label = "Удалить",
+                Icon = "🗑️",
+                SeparatorBefore = true,
+                CanExecute = s => s.Count == 1,
+                Handler = s => DeleteAsync(s[0])
+            }
+        };
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var resp = await ApiClient.GetAllUsersAsync();
+            users = resp.Users.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OpenCreateDialogAsync()
+    {
+        dialogMode = DialogMode.Create;
+        editingId = null;
+        draft = new UserDraft { Role = UserRole.Reader };
+        dialogError = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenEditDialogAsync(UserDTO user)
+    {
+        dialogMode = DialogMode.Edit;
+        editingId = user.Id;
+        draft = new UserDraft
+        {
+            LastName = user.LastName,
+            FirstName = user.FirstName,
+            MiddleName = user.MiddleName,
+            ContactInfo = user.ContactInfo
+        };
+        dialogError = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseDialog()
+    {
+        dialogMode = DialogMode.None;
+        editingId = null;
+        dialogError = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        dialogError = null;
+        try
+        {
+            if (dialogMode == DialogMode.Create)
+            {
+                await ApiClient.CreateUserAsync(new CreateUserRequest
+                {
+                    Email = draft.Email,
+                    Password = draft.Password,
+                    LastName = draft.LastName,
+                    FirstName = draft.FirstName,
+                    MiddleName = draft.MiddleName,
+                    ContactInfo = draft.ContactInfo,
+                    Role = draft.Role
+                });
+                statusMessage = $"Пользователь «{draft.LastName} {draft.FirstName}» добавлен";
+            }
+            else if (dialogMode == DialogMode.Edit && editingId.HasValue)
+            {
+                await ApiClient.UpdateUserAsync(new UpdateUserRequest
+                {
+                    Id = new Id(editingId.Value),
+                    LastName = draft.LastName,
+                    FirstName = draft.FirstName,
+                    MiddleName = draft.MiddleName,
+                    ContactInfo = draft.ContactInfo
+                });
+                statusMessage = $"Пользователь «{draft.LastName} {draft.FirstName}» обновлён";
+            }
+            CloseDialog();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            dialogError = ex.Message;
+        }
+    }
+
+    private async Task DeleteAsync(UserDTO user)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            $"Удалить пользователя «{user.LastName} {user.FirstName}»?");
+        if (!confirmed) return;
+
+        try
+        {
+            await ApiClient.DeleteUserAsync(user.Id);
+            statusMessage = $"Пользователь «{user.LastName} {user.FirstName}» удалён";
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка удаления: {ex.Message}";
+        }
+    }
+
+    private class UserDraft
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Email обязателен")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Некорректный email")]
+        public string Email { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Пароль обязателен")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 8, ErrorMessage = "Пароль от 8 до 100 символов")]
+        public string Password { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Фамилия обязательна")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        public string LastName { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Имя обязательно")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        public string FirstName { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        public string MiddleName { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Контактная информация обязательна")]
+        [System.ComponentModel.DataAnnotations.StringLength(200, ErrorMessage = "Не более 200 символов")]
+        public string ContactInfo { get; set; } = "";
+
+        public UserRole? Role { get; set; } = UserRole.Reader;
+    }
+}

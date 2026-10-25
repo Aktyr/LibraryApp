@@ -111,6 +111,8 @@ public class Program
         // API-прокси для компонентов Blazor.Server (через HttpClient с base URI текущего запроса)
         app.MapBooksProxy();
         app.MapRoomsProxy();
+        app.MapUsersProxy();
+
 
         // Add additional endpoints required by the Identity /Account Razor components.
         app.MapAdditionalIdentityEndpoints();

@@ -17,6 +17,7 @@ internal class Program
         });
         builder.Services.AddScoped<IBookApiClient, BookApiClient>();
         builder.Services.AddScoped<IRoomApiClient, RoomApiClient>();
+        builder.Services.AddScoped<IUserApiClient, UserApiClient>();
         #endregion
 
         await builder.Build().RunAsync();
