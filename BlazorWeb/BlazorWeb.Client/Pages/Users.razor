@@ -40,7 +40,6 @@ else if (users != null)
         <h3>@(dialogMode == DialogMode.Create ? "Новый пользователь" : "Редактирование пользователя")</h3>
         <EditForm Model="draft" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger mb-3" />
 
             @if (dialogMode == DialogMode.Create)
             {
@@ -89,13 +88,13 @@ else if (users != null)
                 </div>
             }
 
-            @if (!string.IsNullOrEmpty(dialogError))
-            {
-                <div class="alert alert-danger">@dialogError</div>
-            }
-
             <button type="submit" class="btn btn-primary">Сохранить</button>
             <button type="button" class="btn btn-secondary ms-2" @onclick="CloseDialog">Отмена</button>
+
+            @if (!string.IsNullOrWhiteSpace(dialogError))
+            {
+                <div class="alert alert-danger mt-3" style="white-space: pre-line;">@dialogError</div>
+            }
         </EditForm>
     </div>
 }
@@ -302,7 +301,7 @@ else if (users != null)
         }
     }
 
-    private class UserDraft
+    private class UserDraft : System.ComponentModel.DataAnnotations.IValidatableObject
     {
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Email обязателен")]
         [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Некорректный email")]
@@ -328,5 +327,42 @@ else if (users != null)
         public string ContactInfo { get; set; } = "";
 
         public UserRole? Role { get; set; } = UserRole.Reader;
+
+        public IEnumerable<System.ComponentModel.DataAnnotations.ValidationResult> Validate(
+            System.ComponentModel.DataAnnotations.ValidationContext validationContext)
+        {
+            // Совпадает с UserValidatorAsync.ValidatePasswordAsync на сервере.
+            // Показываем первую непройденную проверку — как сервер.
+            if (string.IsNullOrEmpty(Password) || Password.Length < 8 || Password.Length > 100)
+                yield break; // базовые [Required]/[StringLength] уже показали ошибку
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[A-Z]"))
+            {
+                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
+                    "Пароль должен содержать хотя бы одну заглавную букву",
+                    new[] { nameof(Password) });
+                yield break;
+            }
+            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[a-z]"))
+            {
+                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
+                    "Пароль должен содержать хотя бы одну строчную букву",
+                    new[] { nameof(Password) });
+                yield break;
+            }
+            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[0-9]"))
+            {
+                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
+                    "Пароль должен содержать хотя бы одну цифру",
+                    new[] { nameof(Password) });
+                yield break;
+            }
+            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[!@#$%^&*(),.?"":{}|<>]"))
+            {
+                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
+                    "Пароль должен содержать хотя бы один спецсимвол",
+                    new[] { nameof(Password) });
+            }
+        }
     }
 }

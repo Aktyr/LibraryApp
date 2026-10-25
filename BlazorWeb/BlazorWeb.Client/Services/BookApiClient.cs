@@ -37,12 +37,8 @@ public class BookApiClient(HttpClient http) : IBookApiClient
         HttpResponseMessage resp, CancellationToken ct)
     {
         if (!resp.IsSuccessStatusCode)
-        {
-            // Прокси форвардит тело WebAPI как есть — читаем ProblemDetails или текст
-            var text = await resp.Content.ReadAsStringAsync(ct);
-            throw new HttpRequestException(
-                $"{(int)resp.StatusCode} {resp.ReasonPhrase}: {text}");
-        }
+            throw await ApiErrorParser.ParseAsync(resp, ct);
+
         return await resp.Content.ReadFromJsonAsync<BasicCreateDeleteResponse>(ct)
                ?? new BasicCreateDeleteResponse("Error", "Empty response");
     }

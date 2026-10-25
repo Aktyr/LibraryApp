@@ -26,7 +26,7 @@ public class GlobalExceptionHandlingMiddleware : IMiddleware
         var (statusCode, title, detail) = ex switch
         {
             LibValidationException lve =>
-                (400, "Validation Error", string.Join("; ", lve.ExceptionDetails)),
+                (400, "Validation Error", string.Join("\n", lve.ExceptionDetails)),
 
             BadHttpRequestException bad =>
                 (400, "Bad Request", bad.Message),

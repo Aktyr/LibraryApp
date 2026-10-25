@@ -41,15 +41,14 @@ else if (rooms != null)
         <h3>@(dialogMode == DialogMode.Create ? "Новая комната" : "Редактирование комнаты")</h3>
         <EditForm Model="draft" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger mb-3" />
             <div class="mb-3">
                 <label class="form-label">Название</label>
                 <InputText @bind-Value="draft.Name" class="form-control" />
                 <ValidationMessage For="() => draft.Name" class="text-danger" />
             </div>
-            @if (!string.IsNullOrEmpty(dialogError))
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
             {
-                <div class="alert alert-danger">@dialogError</div>
+                <div class="alert alert-danger mb-3" style="white-space: pre-line;">@errorMessage</div>
             }
             <button type="submit" class="btn btn-primary">Сохранить</button>
             <button type="button" class="btn btn-secondary ms-2" @onclick="CloseDialog">Отмена</button>

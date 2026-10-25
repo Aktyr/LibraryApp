@@ -38,10 +38,8 @@ public class UserApiClient(HttpClient http) : IUserApiClient
         HttpResponseMessage resp, CancellationToken ct)
     {
         if (!resp.IsSuccessStatusCode)
-        {
-            var text = await resp.Content.ReadAsStringAsync(ct);
-            throw new HttpRequestException($"{(int)resp.StatusCode} {resp.ReasonPhrase}: {text}");
-        }
+            throw await ApiErrorParser.ParseAsync(resp, ct);
+
         return await resp.Content.ReadFromJsonAsync<BasicCreateDeleteResponse>(ct)
                ?? new BasicCreateDeleteResponse("Error", "Empty response");
     }
