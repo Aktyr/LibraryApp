@@ -1,5 +1,6 @@
 ﻿namespace BlazorWeb.Api;
 
+
 /// <summary>
 /// DelegatingHandler, который подставляет JWT в каждый исходящий запрос к WebAPI.
 /// JWT выпускается из данных текущего Identity-пользователя + Library-пользователя.
@@ -7,9 +8,6 @@
 /// </summary>
 public class AuthenticatedWebApiHandler(
     IHttpContextAccessor httpContextAccessor,
-    UserManager<ApplicationUser> userManager,
-    IUnitOfWork unitOfWork,
-    JwtService jwtService,
     ILogger<AuthenticatedWebApiHandler> logger) : DelegatingHandler
 {
     protected override async Task<HttpResponseMessage> SendAsync(
@@ -29,6 +27,15 @@ public class AuthenticatedWebApiHandler(
             return await base.SendAsync(request, cancellationToken);
         }
 
+        // ВАЖНО: IHttpClientFactory кэширует цепочку handler'ов между запросами.
+        // Если инжектить scoped-сервисы в конструктор, они захватят DbContext
+        // первого запроса и будут конфликтовать при параллельных вызовах.
+        // Поэтому резолвим из RequestServices — там правильный scope текущего запроса.
+        var scopedServices = httpContext.RequestServices;
+        var userManager = scopedServices.GetRequiredService<UserManager<ApplicationUser>>();
+        var unitOfWork = scopedServices.GetRequiredService<IUnitOfWork>();
+        var jwtService = scopedServices.GetRequiredService<JwtService>();
+
         var appUser = await userManager.FindByIdAsync(userId);
         if (appUser is null)
         {
@@ -43,8 +50,7 @@ public class AuthenticatedWebApiHandler(
         }
 
         var libraryUserId = appUser.LibraryUserId.Value;
-
-        var id = new LibApp.Core.Records.Id(libraryUserId);
+        var id = new Id(libraryUserId);
         var libraryUser = await unitOfWork.GetRepository<LibApp.Core.Entities.User>()
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 

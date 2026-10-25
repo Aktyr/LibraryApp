@@ -18,3 +18,5 @@ global using Microsoft.EntityFrameworkCore;
 global using System.Net.Http.Headers;
 global using System.Security.Claims;
 global using LibApp.Core.Requests.Entities.Room;
+global using LibApp.Core.Records;
+
