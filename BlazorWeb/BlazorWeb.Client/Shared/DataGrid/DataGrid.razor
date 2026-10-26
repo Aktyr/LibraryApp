@@ -38,11 +38,14 @@
         @* --- Кнопка экспорта --- *@
         @if (ShowExport)
         {
-            <button class="dg-btn dg-btn-export" @onclick="ExportToCsv" title="Экспорт в CSV">
+            <button class="dg-btn dg-btn-export" @onclick="ExportToCsv"
+                    title="Экспорт в CSV. 
+Выгружает выделенные строки. 
+Если ничего не выделено — выгружает все данные. 
+Выгрузка идёт с применением фильтров и сортировки.">
                 📥 Экспорт
             </button>
         }
-
         @* --- Настройки таблицы (выпадающее меню) --- *@
         @if (HasUtilityActions)
         {
@@ -90,10 +93,11 @@
                 @if (hintOpen)
                 {
                     <div class="dg-help-popover">
+                        <div class="dg-help-title">Управление таблицей</div>
                         <ul class="dg-help-list">
                             @foreach (var line in HintLines())
                             {
-                                <li>@line</li>
+                                <li>@((MarkupString)line)</li>
                             }
                         </ul>
                     </div>

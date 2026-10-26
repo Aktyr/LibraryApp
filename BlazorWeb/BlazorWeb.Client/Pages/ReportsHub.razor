@@ -1,0 +1,32 @@
+﻿@page "/reports"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<PageTitle>Отчёты</PageTitle>
+
+<h1>Отчёты и аналитика</h1>
+
+<div class="row g-4 mt-2">
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center py-5">
+                <div style="font-size: 3rem;">📚</div>
+                <h4 class="card-title mt-3">Популярные книги</h4>
+                <p class="card-text text-muted">Рейтинг книг по количеству выдач. Позволяет выявить самые востребованные издания.</p>
+                <a href="/reports/popular-books" class="btn btn-primary mt-2">Перейти к отчёту</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center py-5">
+                <div style="font-size: 3rem;">👥</div>
+                <h4 class="card-title mt-3">Активность пользователей</h4>
+                <p class="card-text text-muted">Текущие книги на руках, сумма штрафов и наличие просрочек у читателей.</p>
+                <a href="/reports/user-activity" class="btn btn-primary mt-2">Перейти к отчёту</a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -7,7 +7,7 @@ public class GetPopularBooksReportCommand(IUnitOfWork unitOfWork)
     {
         var repo = unitOfWork.GetRepository<UserRoomBook>();
 
-        // Сначала формируем запрос, группируя по Id и собирая нужные данные в анонимный тип
+        // Формируем запрос, материализуем в анонимный тип
         var rawData = await repo.ExecuteQueryAsync(query =>
         {
             if (request.FromDate.HasValue)
@@ -25,11 +25,10 @@ public class GetPopularBooksReportCommand(IUnitOfWork unitOfWork)
                     TotalBorrowedCount = g.Count(),
                     CurrentBorrowedCount = g.Count(urb => urb.ReturnDate == null)
                 })
-                .OrderByDescending(x => x.TotalBorrowedCount)
-                .Take(request.TopCount ?? 10);
+                .OrderByDescending(x => x.TotalBorrowedCount);
         }, ct);
 
-        // Материализуем в DTO уже в памяти, где .Value безопасно
+        // Конвертируем в DTO в памяти
         var dtos = rawData.Select(x => new BookPopularityReportDTO(
             x.BookId.Value,
             x.Title,

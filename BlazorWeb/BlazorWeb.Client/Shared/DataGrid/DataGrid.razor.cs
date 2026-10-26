@@ -32,9 +32,14 @@ public partial class DataGrid<TItem> : IAsyncDisposable
 
     [Parameter]
     public string? Hint { get; set; } =
-        "Ctrl+клик или Shift+клик — добавить к выделению · Shift+клик по заголовку — выделить всё · " +
-        "клик по заголовку — сортировка · двойной клик — открыть · правый клик — меню";
-
+        "<b>Ctrl+клик</b> по строке — добавить/убрать выделение | " +
+        "<b>Shift+клик</b> по строке — выделить диапазон | " +
+        "<b>Shift+клик</b> по чекбоксу в шапке — выделить все | " +
+        "<b>Клик по заголовку</b> — сортировка | " +
+        "<b>Двойной клик</b> по записи — открыть (если доступно) | " +
+        "<b>Правый клик</b> по записи — контекстное меню | " +
+        "<b>📥 Экспорт</b> — скачать CSV (выделенные или все) | " +
+        "<b>⚙️ Настройки</b> — сброс сортировки и ширины колонок";
     [Parameter] public EventCallback<TItem> OnRowDoubleClick { get; set; }
     [Parameter] public EventCallback<TItem> OnRowClick { get; set; }
 
@@ -631,8 +636,7 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     private string[] HintLines()
     {
         if (string.IsNullOrWhiteSpace(Hint)) return Array.Empty<string>();
-        return Hint.Split('·', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).Where(s => s.Length > 0).ToArray();
+        return Hint.Split('|', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).Where(s => s.Length > 0).ToArray();
     }
-
     #endregion
 }

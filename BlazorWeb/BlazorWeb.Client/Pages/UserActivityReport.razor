@@ -1,0 +1,92 @@
+﻿@page "/reports/user-activity"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Services.Interfaces
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Reports
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IReportsApiClient ReportsClient
+
+<PageTitle>Активность пользователей</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-3">
+    <a href="/reports" class="btn btn-sm btn-outline-secondary">← к списку отчётов</a>
+</div>
+
+<h2>Активность пользователей</h2>
+
+<div class="d-flex align-items-center gap-3 mb-3">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="chkOverdue" @bind="onlyWithOverdue" @bind:after="LoadAsync" />
+        <label class="form-check-label" for="chkOverdue">Только должники</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="chkActive" @bind="onlyActive" @bind:after="LoadAsync" />
+        <label class="form-check-label" for="chkActive">Только с активными книгами</label>
+    </div>
+    <button class="btn btn-sm btn-primary ms-auto" @onclick="LoadAsync" disabled="@isLoading">🔄 Обновить</button>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mb-3">@errorMessage</div>
+}
+
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (userActivity != null)
+{
+    <DataGrid TItem="UserActivityReportDTO"
+              Items="userActivity"
+              PageSize="15"
+              Columns="columns"
+              SelectionMode="DataGridSelectionMode.Multiple"
+              ExportFileName="user_activity"
+              Hint="Активность читателей. Используйте фильтры выше, чтобы отобрать должников или активных." />
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private List<UserActivityReportDTO>? userActivity;
+
+    private bool onlyWithOverdue = false;
+    private bool onlyActive = false;
+
+    private readonly List<DataGridColumn<UserActivityReportDTO>> columns = new()
+    {
+        new() { Title = "Пользователь", Value = u => u.FullName, Width = 250 },
+        new() { Title = "Email", Value = u => u.Email, Width = 220 },
+        new() { Title = "Всего выдач", Value = u => u.TotalBorrowedCount, Width = 120, FilterKind = FilterKind.Number },
+        new() { Title = "Сейчас на руках", Value = u => u.CurrentBorrowedCount, Width = 150, FilterKind = FilterKind.Number },
+        new() { Title = "Штрафы", Value = u => u.TotalPenalty, Width = 100, FilterKind = FilterKind.Number },
+        new() { Title = "Есть просрочки", Value = u => u.HasOverdue, Width = 140, FilterKind = FilterKind.Bool }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var resp = await ReportsClient.GetUserActivityAsync(onlyWithOverdue, onlyActive);
+            userActivity = resp.Data.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+}

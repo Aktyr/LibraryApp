@@ -1,0 +1,67 @@
+﻿@page "/reports/popular-books"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Services.Interfaces
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Reports
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IReportsApiClient ReportsClient
+
+<PageTitle>Популярные книги</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-3">
+    <a href="/reports" class="btn btn-sm btn-outline-secondary">← к списку отчётов</a>
+</div>
+
+<h2>Популярные книги</h2>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mb-3">@errorMessage</div>
+}
+
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (popularBooks != null)
+{
+    <DataGrid TItem="BookPopularityReportDTO"
+              Items="popularBooks"
+              PageSize="15"
+              Columns="columns"
+              SelectionMode="DataGridSelectionMode.Multiple"
+              ExportFileName="popular_books"
+              Hint="Самые востребованные книги. Клик по заголовку — сортировка, выделение — для экспорта." />
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private List<BookPopularityReportDTO>? popularBooks;
+
+    private readonly List<DataGridColumn<BookPopularityReportDTO>> columns = new()
+    {
+        new() { Title = "Название", Value = b => b.Title, Width = 300 },
+        new() { Title = "Автор", Value = b => b.Author, Width = 220 },
+        new() { Title = "Всего выдач", Value = b => b.TotalBorrowedCount, Width = 120, FilterKind = FilterKind.Number },
+        new() { Title = "Сейчас на руках", Value = b => b.CurrentBorrowedCount, Width = 150, FilterKind = FilterKind.Number }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var resp = await ReportsClient.GetPopularBooksAsync();
+            popularBooks = resp.Data.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
