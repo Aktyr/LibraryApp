@@ -1,13 +1,13 @@
 ﻿@page "/users"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @attribute [Authorize]
-@using Microsoft.AspNetCore.Authorization
-@using BlazorWeb.Client.Services
+@using BlazorWeb.Client.Services.Interfaces
 @using BlazorWeb.Components.Shared.DataGrid
 @using LibApp.Core.DTO.Entities
-@using LibApp.Core.Records
 @using LibApp.Core.Enums
+@using LibApp.Core.Records
 @using LibApp.Core.Requests.Entities.User
+@using Microsoft.AspNetCore.Authorization
 @inject IUserApiClient ApiClient
 @inject IJSRuntime JS
 @inject NavigationManager Nav

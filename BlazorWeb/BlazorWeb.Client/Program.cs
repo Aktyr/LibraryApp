@@ -1,3 +1,6 @@
+using BlazorWeb.Client.Services.APIs;
+using BlazorWeb.Client.Services.Interfaces;
+
 namespace BlazorWeb.Client;
 
 internal class Program
@@ -19,6 +22,7 @@ internal class Program
         builder.Services.AddScoped<IRoomApiClient, RoomApiClient>();
         builder.Services.AddScoped<IUserApiClient, UserApiClient>();
         builder.Services.AddScoped<IBorrowingApiClient, BorrowingApiClient>();
+        builder.Services.AddScoped<IReportsApiClient, ReportsApiClient>();
         #endregion
 
         await builder.Build().RunAsync();

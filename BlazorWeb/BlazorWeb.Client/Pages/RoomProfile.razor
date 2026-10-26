@@ -1,0 +1,397 @@
+﻿@page "/rooms/{Id:guid}"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Services.Interfaces
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Entities
+@using LibApp.Core.Records
+@using LibApp.Core.Requests.Entities.Room
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IRoomApiClient RoomClient
+@inject IBookApiClient BookClient
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>Комната — @roomName</PageTitle>
+
+<div class="d-flex align-items-center mb-3 gap-2">
+    <a href="/rooms" class="btn btn-sm btn-outline-secondary">← к списку</a>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="ReloadAsync" disabled="@isLoading">🔄 Обновить</button>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="OpenRenameDialog" disabled="@isLoading">✏️ Переименовать</button>
+    <button class="btn btn-sm btn-outline-danger"
+            @onclick="DeleteRoomAsync"
+            disabled="@isLoading"
+            title="@(roomBooks.Count > 0 ? "Нельзя удалить комнату, в которой есть книги" : "Удалить комнату")">
+        🗑️ Удалить комнату
+    </button>    @if (isDirty)
+    {
+        <span class="badge bg-warning text-dark">Есть несохранённые изменения</span>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mb-3" style="white-space: pre-line;">@errorMessage</div>
+}
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert alert-success mb-3">@statusMessage</div>
+}
+
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (room == null)
+{
+    <div class="alert alert-warning">
+        Комната не найдена. <a href="/rooms">Вернуться к списку</a>
+    </div>
+}
+else
+{
+    @* ---------- Шапка + счётчики ---------- *@
+    <div class="mb-4 pb-3 border-bottom">
+        <h2 class="mb-2">@room.Name</h2>
+        <div class="d-flex gap-4 flex-wrap">
+            <div><small class="text-muted d-block">Книг в комнате</small><span class="fs-5 fw-semibold">@roomBooks.Count</span></div>
+            <div><small class="text-muted d-block">Всего экземпляров</small><span class="fs-5 fw-semibold">@TotalCount</span></div>
+            <div><small class="text-muted d-block">Выдано</small><span class="fs-5 fw-semibold @(TotalBorrowed > 0 ? "text-warning" : "")">@TotalBorrowed</span></div>
+            <div><small class="text-muted d-block">Доступно</small><span class="fs-5 fw-semibold @(TotalAvailable == 0 ? "text-danger" : "text-success")">@TotalAvailable</span></div>
+        </div>
+    </div>
+
+    @* ---------- Книги в комнате ---------- *@
+    <div class="mb-4">
+        <h4>Книги в комнате (@roomBooks.Count)</h4>
+        @if (roomBooks.Count == 0)
+        {
+            <p class="text-muted">В комнате пока нет книг.</p>
+        }
+        else
+        {
+            <DataGrid TItem="RoomBookDTO"
+                      Items="roomBooks"
+                      PageSize="15"
+                      Columns="InRoomColumns"
+                      Actions="InRoomActions"
+                      SelectionMode="DataGridSelectionMode.Multiple"
+                      OnRowDoubleClick="OpenEditCount"
+                      Hint="Двойной клик — изменить количество · выделите несколько строк для массового удаления" />
+        }
+    </div>
+
+    @* ---------- Каталог книг ---------- *@
+    <div class="mb-4">
+        <h4>Доступные книги для добавления (@AvailableBooks.Count)</h4>
+        @if (AvailableBooks.Count == 0)
+        {
+            <p class="text-muted">Все книги из каталога уже добавлены в комнату.</p>
+        }
+        else
+        {
+            <DataGrid TItem="BookDTO"
+                      Items="AvailableBooks"
+                      PageSize="10"
+                      Columns="CatalogColumns"
+                      Actions="CatalogActions"
+                      SelectionMode="DataGridSelectionMode.Multiple"
+                      OnRowDoubleClick="AddBookToRoom"
+                      Hint="Двойной клик — добавить книгу в комнату · выделите несколько для массового добавления" />
+        }
+    </div>
+
+    @* ---------- Панель сохранения ---------- *@
+    <div class="d-flex gap-2 mb-4">
+        <button class="btn btn-success" @onclick="SaveAsync" disabled="@(!isDirty || isSaving)">
+            @(isSaving ? "Сохранение..." : "💾 Сохранить изменения")
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="CancelChanges" disabled="@(!isDirty || isSaving)">
+            Отменить изменения
+        </button>
+    </div>
+}
+
+@* ---------- Модалки ---------- *@
+@if (renameDialogOpen)
+{
+    <div class="modal-backdrop" @onclick="CloseRenameDialog"></div>
+    <div class="modal-dialog" @onclick:stopPropagation="true">
+        <h3>Переименовать комнату</h3>
+        <div class="mb-3">
+            <label class="form-label">Название</label>
+            <input type="text" class="form-control" @bind="newRoomName" />
+        </div>
+        @if (!string.IsNullOrEmpty(renameDialogError))
+        {
+            <div class="alert alert-danger py-2 mb-3">@renameDialogError</div>
+        }
+        <div>
+            <button class="btn btn-primary" @onclick="SubmitRenameAsync">Сохранить</button>
+            <button class="btn btn-secondary ms-2" @onclick="CloseRenameDialog">Отмена</button>
+        </div>
+    </div>
+}
+
+@if (editingBook != null)
+{
+    <div class="modal-backdrop" @onclick="CloseEditCount"></div>
+    <div class="modal-dialog" @onclick:stopPropagation="true">
+        <h3>Изменить количество</h3>
+        <p class="mb-1"><strong>@GetBookTitle(editingBook.BookId)</strong></p>
+        <p class="mb-3 text-muted small">
+            Выдано: <strong>@editingBook.BorrowedCount</strong> · Доступно сейчас: <strong>@(editingBook.BookCount - editingBook.BorrowedCount)</strong>
+        </p>
+        <div class="mb-3">
+            <label class="form-label">Всего экземпляров</label>
+            <input type="number" class="form-control" style="max-width: 150px;" min="@editingBook.BorrowedCount" @bind="editCount" />
+            <small class="text-muted">Не может быть меньше выданного (@editingBook.BorrowedCount).</small>
+        </div>
+        <div>
+            <button class="btn btn-primary" disabled="@(!CanSubmitEditCount)" @onclick="SubmitEditCount">Применить</button>
+            <button class="btn btn-secondary ms-2" @onclick="CloseEditCount">Отмена</button>
+        </div>
+    </div>
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1000;
+        cursor: default;
+    }
+
+    .modal-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1001;
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px 24px;
+        min-width: 460px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        pointer-events: auto;
+    }
+</style>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool isDirty = false;
+    private string? errorMessage;
+    private string? statusMessage;
+
+    private RoomDTO? room;
+    private List<RoomBookDTO> roomBooks = new();
+    private List<BookDTO> catalog = new();
+    private Dictionary<Guid, BookDTO> bookById = new();
+
+    private string roomName => room?.Name ?? "—";
+    private int TotalCount => roomBooks.Sum(rb => rb.BookCount);
+    private int TotalBorrowed => roomBooks.Sum(rb => rb.BorrowedCount);
+    private int TotalAvailable => TotalCount - TotalBorrowed;
+
+    private List<BookDTO> AvailableBooks =>
+        catalog.Where(b => roomBooks.All(rb => rb.BookId != b.Id)).OrderBy(b => b.Title).ToList();
+
+    // Модалка переименования
+    private bool renameDialogOpen;
+    private string newRoomName = "";
+    private string? renameDialogError;
+
+    // Модалка изменения кол-ва
+    private RoomBookDTO? editingBook;
+    private int editCount;
+    private bool CanSubmitEditCount => editingBook != null && editCount >= editingBook.BorrowedCount;
+
+    #region Columns (ленивая инициализация)
+    private List<DataGridColumn<RoomBookDTO>>? _inRoomColumns;
+    private List<DataGridColumn<RoomBookDTO>> InRoomColumns => _inRoomColumns ??= new()
+    {
+        new() { Title = "Книга", Width = 300, Value = rb => GetBookTitle(rb.BookId), FilterText = rb => GetBookTitle(rb.BookId) },
+        new() { Title = "Автор", Width = 220, Value = rb => GetBookAuthor(rb.BookId), FilterText = rb => GetBookAuthor(rb.BookId) },
+        new() { Title = "Всего", Width = 100, FilterKind = FilterKind.Number, Value = rb => rb.BookCount },
+        new() { Title = "Выдано", Width = 100, FilterKind = FilterKind.Number, Value = rb => rb.BorrowedCount,
+            Template = item => b => { if (item.BorrowedCount > 0) { b.OpenElement(0, "span"); b.AddAttribute(1, "style", "color:#a85b00;font-weight:600;"); b.AddContent(2, item.BorrowedCount.ToString()); b.CloseElement(); } else { b.AddContent(0, "0"); } } },
+        new() { Title = "Доступно", Width = 120, FilterKind = FilterKind.Number, Value = rb => rb.BookCount - rb.BorrowedCount,
+            Template = item => b => { var available = item.BookCount - item.BorrowedCount; var color = available == 0 ? "#a30000" : available < item.BookCount ? "#a85b00" : "#0a7f2e"; b.OpenElement(0, "span"); b.AddAttribute(1, "style", $"color:{color};font-weight:600;"); b.AddContent(2, available.ToString()); b.CloseElement(); } }
+    };
+
+    private List<DataGridColumn<BookDTO>>? _catalogColumns;
+    private List<DataGridColumn<BookDTO>> CatalogColumns => _catalogColumns ??= new()
+    {
+        new() { Title = "Книга", Width = 300, Value = b => b.Title },
+        new() { Title = "Автор", Width = 220, Value = b => b.Author },
+        new() { Title = "Жанр", Width = 150, Value = b => b.Genre },
+        new() { Title = "Издательство", Width = 150, Value = b => b.Publisher }
+    };
+    #endregion
+
+    #region Actions
+    private List<DataGridAction<RoomBookDTO>>? _inRoomActions;
+    private List<DataGridAction<RoomBookDTO>> InRoomActions => _inRoomActions ??= new()
+    {
+        new() { Label = "Изменить кол-во", Icon = "✏️", MinSelection = 1, CanExecute = s => s.Count == 1, Handler = s => { OpenEditCount(s[0]); return Task.CompletedTask; } },
+        new() { Label = "Убрать", Icon = "🗑️", SeparatorBefore = true, MinSelection = 1, CanExecute = s => s.Count > 0 && s.All(rb => rb.BorrowedCount == 0), Handler = s => { RemoveBooks(s); return Task.CompletedTask; } }
+    };
+
+    private List<DataGridAction<BookDTO>>? _catalogActions;
+    private List<DataGridAction<BookDTO>> CatalogActions => _catalogActions ??= new()
+    {
+        new() { Label = "Добавить в комнату", Icon = "➕", MinSelection = 1, Handler = s => { foreach (var b in s) AddBookToRoom(b); return Task.CompletedTask; } }
+    };
+    #endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        isLoading = false;
+    }
+
+    private async Task LoadAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            var roomResp = await RoomClient.GetRoomByIdAsync(Id);
+            room = roomResp.Room.FirstOrDefault();
+            if (room == null) { errorMessage = "Комната не найдена."; return; }
+
+            roomBooks = room.RoomBook.ToList();
+            var booksResp = await BookClient.GetAllBooksAsync();
+            catalog = booksResp.Book.ToList();
+            bookById = catalog.ToDictionary(b => b.Id);
+        }
+        catch (Exception ex) { errorMessage = ex.Message; }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (isDirty && !await JS.InvokeAsync<bool>("confirm", "Отменить несохранённые изменения?")) return;
+        isLoading = true; isDirty = false;
+        await LoadAsync();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetBookTitle(Guid bookId) => bookById.TryGetValue(bookId, out var b) ? b.Title : $"[{bookId}]";
+    private string GetBookAuthor(Guid bookId) => bookById.TryGetValue(bookId, out var b) ? b.Author : "";
+
+    #region Действия с книгами
+    private void OpenEditCount(RoomBookDTO rb) { editingBook = rb; editCount = rb.BookCount; }
+    private void CloseEditCount() => editingBook = null;
+
+    private void SubmitEditCount()
+    {
+        if (!CanSubmitEditCount || editingBook == null) return;
+        var idx = roomBooks.FindIndex(x => x.Id == editingBook.Id && x.BookId == editingBook.BookId);
+        if (idx >= 0) { roomBooks[idx] = editingBook with { BookCount = editCount }; isDirty = true; }
+        CloseEditCount();
+    }
+
+    private void RemoveBooks(IReadOnlyList<RoomBookDTO> toRemove)
+    {
+        foreach (var rb in toRemove)
+        {
+            if (rb.BorrowedCount > 0) { errorMessage = $"Нельзя убрать «{GetBookTitle(rb.BookId)}»: выдано {rb.BorrowedCount} экз."; return; }
+        }
+        roomBooks.RemoveAll(rb => toRemove.Any(x => x.Id == rb.Id && x.BookId == rb.BookId));
+        isDirty = true;
+    }
+
+    private void AddBookToRoom(BookDTO book)
+    {
+        if (roomBooks.Any(rb => rb.BookId == book.Id)) return;
+        roomBooks.Add(new RoomBookDTO(Id: Guid.Empty, RoomId: Id, BookId: book.Id, BookCount: 1, BorrowedCount: 0));
+        isDirty = true;
+        StateHasChanged();
+    }
+    #endregion
+
+    #region Сохранение и управление комнатой
+    private void CancelChanges()
+    {
+        if (room == null) return;
+        roomBooks = room.RoomBook.ToList(); isDirty = false; statusMessage = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (room == null || !isDirty) return;
+        isSaving = true; errorMessage = null; statusMessage = null;
+        try
+        {
+            var resp = await RoomClient.UpdateRoomAsync(new UpdateRoomRequest { Id = new Id(Id), Name = room.Name, RoomBookDTO = roomBooks.ToList() });
+            statusMessage = resp.Message; isDirty = false;
+            await LoadAsync();
+        }
+        catch (Exception ex) { errorMessage = ex.Message; }
+        finally { isSaving = false; }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OpenRenameDialog()
+    {
+        if (room == null) return;
+        newRoomName = room.Name; renameDialogError = null; renameDialogOpen = true;
+    }
+
+    private void CloseRenameDialog() => renameDialogOpen = false;
+
+    private async Task SubmitRenameAsync()
+    {
+        if (room == null || string.IsNullOrWhiteSpace(newRoomName)) return;
+        renameDialogError = null;
+        try
+        {
+            var resp = await RoomClient.UpdateRoomAsync(new UpdateRoomRequest { Id = new Id(Id), Name = newRoomName, RoomBookDTO = roomBooks.ToList() });
+            room = room with { Name = newRoomName }; statusMessage = resp.Message;
+            CloseRenameDialog();
+        }
+        catch (Exception ex) { renameDialogError = ex.Message; }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DeleteRoomAsync()
+    {
+        if (room == null) return;
+
+        // Мгновенная проверка: если в комнате есть книги, показываем ошибку сразу
+        if (roomBooks.Count > 0)
+        {
+            errorMessage = "Нельзя удалить комнату, в которой есть книги. Сначала удалите все книги из комнаты.";
+            statusMessage = null;
+            await InvokeAsync(StateHasChanged);
+            return; // Выходим, не показывая confirm()
+        }
+
+        // Если книг нет, только тогда спрашиваем подтверждение
+        if (!await JS.InvokeAsync<bool>("confirm", $"Удалить комнату «{room.Name}»?"))
+            return;
+
+        errorMessage = null;
+        statusMessage = null;
+
+        try
+        {
+            await RoomClient.DeleteRoomAsync(Id);
+            Nav.NavigateTo("/rooms");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка удаления: {ex.Message}";
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    #endregion
+
+}

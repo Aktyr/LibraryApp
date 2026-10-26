@@ -1,4 +1,6 @@
-﻿namespace BlazorWeb.Client.Services;
+﻿using BlazorWeb.Client.Services.Interfaces;
+
+namespace BlazorWeb.Client.Services.APIs;
 
 public class RoomApiClient(HttpClient http) : IRoomApiClient
 {

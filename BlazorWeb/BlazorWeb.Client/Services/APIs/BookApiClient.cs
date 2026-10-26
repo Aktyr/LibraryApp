@@ -1,4 +1,6 @@
-﻿namespace BlazorWeb.Client.Services;
+﻿using BlazorWeb.Client.Services.Interfaces;
+
+namespace BlazorWeb.Client.Services.APIs;
 
 public class BookApiClient(HttpClient http) : IBookApiClient
 {

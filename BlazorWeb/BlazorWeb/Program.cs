@@ -1,3 +1,6 @@
+using BlazorWeb.Client.Services.APIs;
+using BlazorWeb.Client.Services.Interfaces;
+
 namespace BlazorWeb;
 
 public class Program
@@ -113,6 +116,7 @@ public class Program
         app.MapRoomsProxy();
         app.MapUsersProxy();
         app.MapBorrowingProxy();
+        app.MapReportsProxy();
 
 
         // Add additional endpoints required by the Identity /Account Razor components.

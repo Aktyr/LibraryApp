@@ -1,4 +1,4 @@
-﻿namespace BlazorWeb.Client.Services;
+﻿namespace BlazorWeb.Client.Services.Interfaces;
 
 public interface IBookApiClient
 {

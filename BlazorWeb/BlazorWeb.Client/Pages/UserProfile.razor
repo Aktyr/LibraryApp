@@ -1,12 +1,12 @@
 ﻿@page "/users/{Id:guid}"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
-@using Microsoft.AspNetCore.Authorization
-@using BlazorWeb.Client.Services
+@using BlazorWeb.Client.Services.Interfaces
 @using BlazorWeb.Components.Shared.DataGrid
-@using LibApp.Core.DTO.Entities
 @using LibApp.Core.DTO.Borrowing
+@using LibApp.Core.DTO.Entities
 @using LibApp.Core.Enums
 @using LibApp.Core.Requests.Borrowing
+@using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject IUserApiClient UserClient
 @inject IRoomApiClient RoomClient

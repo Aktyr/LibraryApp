@@ -1,0 +1,154 @@
+﻿@page "/reports"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Services
+@using BlazorWeb.Client.Services.Interfaces
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Reports
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IReportsApiClient ReportsClient
+
+<PageTitle>Отчёты</PageTitle>
+
+<h1>Отчёты</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mb-3">@errorMessage</div>
+}
+
+@* ---------- Популярные книги ---------- *@
+<div class="mb-5">
+    <div class="d-flex align-items-center gap-3 mb-2">
+        <h3>Популярные книги</h3>
+        <select class="form-select form-select-sm" style="width: auto;" @bind="topCount">
+            <option value="5">Топ 5</option>
+            <option value="10">Топ 10</option>
+            <option value="20">Топ 20</option>
+            <option value="50">Топ 50</option>
+        </select>
+        <button class="btn btn-sm btn-primary" @onclick="LoadPopularBooksAsync" disabled="@isLoadingPopular">🔄 Обновить</button>
+    </div>
+
+    @if (isLoadingPopular)
+    {
+        <p>Загрузка...</p>
+    }
+    else if (popularBooks != null)
+    {
+        <DataGrid TItem="BookPopularityReportDTO"
+                  Items="popularBooks"
+                  PageSize="10"
+                  Columns="popularColumns"
+                  SelectionMode="DataGridSelectionMode.None" />
+    }
+</div>
+
+<hr />
+
+@* ---------- Активность пользователей ---------- *@
+<div class="mb-5">
+    <div class="d-flex align-items-center gap-3 mb-2">
+        <h3>Активность пользователей</h3>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="chkOverdue" @bind="onlyWithOverdue" />
+            <label class="form-check-label" for="chkOverdue">Только должники</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="chkActive" @bind="onlyActive" />
+            <label class="form-check-label" for="chkActive">Только с активными книгами</label>
+        </div>
+        <button class="btn btn-sm btn-primary" @onclick="LoadUserActivityAsync" disabled="@isLoadingActivity">🔄 Обновить</button>
+    </div>
+
+    @if (isLoadingActivity)
+    {
+        <p>Загрузка...</p>
+    }
+    else if (userActivity != null)
+    {
+        <DataGrid TItem="UserActivityReportDTO"
+                  Items="userActivity"
+                  PageSize="10"
+                  Columns="activityColumns"
+                  SelectionMode="DataGridSelectionMode.None" />
+    }
+</div>
+
+@code {
+    private bool isLoadingPopular = true;
+    private bool isLoadingActivity = true;
+    private string? errorMessage;
+
+    // Настройки
+    private int topCount = 10;
+    private bool onlyWithOverdue = false;
+    private bool onlyActive = false;
+
+    // Данные
+    private List<BookPopularityReportDTO>? popularBooks;
+    private List<UserActivityReportDTO>? userActivity;
+
+    private readonly List<DataGridColumn<BookPopularityReportDTO>> popularColumns = new()
+    {
+        new() { Title = "Название", Value = b => b.Title, Width = 300 },
+        new() { Title = "Автор", Value = b => b.Author, Width = 220 },
+        new() { Title = "Всего выдач", Value = b => b.TotalBorrowedCount, Width = 120, FilterKind = FilterKind.Number },
+        new() { Title = "Сейчас на руках", Value = b => b.CurrentBorrowedCount, Width = 150, FilterKind = FilterKind.Number }
+    };
+
+    private readonly List<DataGridColumn<UserActivityReportDTO>> activityColumns = new()
+    {
+        new() { Title = "Пользователь", Value = u => u.FullName, Width = 250 },
+        new() { Title = "Email", Value = u => u.Email, Width = 220 },
+        new() { Title = "Всего выдач", Value = u => u.TotalBorrowedCount, Width = 120, FilterKind = FilterKind.Number },
+        new() { Title = "Сейчас на руках", Value = u => u.CurrentBorrowedCount, Width = 150, FilterKind = FilterKind.Number },
+        new() { Title = "Штрафы", Value = u => u.TotalPenalty, Width = 100, FilterKind = FilterKind.Number },
+        new() { Title = "Есть просрочки", Value = u => u.HasOverdue, Width = 140, FilterKind = FilterKind.Bool }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(LoadPopularBooksAsync(), LoadUserActivityAsync());
+    }
+
+    private async Task LoadPopularBooksAsync()
+    {
+        isLoadingPopular = true;
+        errorMessage = null;
+        try
+        {
+            var resp = await ReportsClient.GetPopularBooksAsync(topCount);
+            popularBooks = resp.Data.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки популярных книг: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingPopular = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadUserActivityAsync()
+    {
+        isLoadingActivity = true;
+        errorMessage = null;
+        try
+        {
+            var resp = await ReportsClient.GetUserActivityAsync(onlyWithOverdue, onlyActive);
+            userActivity = resp.Data.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки активности: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingActivity = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+}
