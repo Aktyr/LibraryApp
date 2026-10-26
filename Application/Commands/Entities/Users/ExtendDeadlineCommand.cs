@@ -18,6 +18,7 @@ public class ExtendDeadlineCommand(
 
         // Продлеваем срок
         userRoomBook.Deadline = userRoomBook.Deadline!.Value.AddDays(request.ExtraDays);
+        userRoomBook.TotalExtendedDays += request.ExtraDays;
 
         // Сохраняем
         await userRoomBookRepo.UpdateAsync(userRoomBook, cancellationToken);

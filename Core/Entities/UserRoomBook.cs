@@ -6,6 +6,7 @@ public class UserRoomBook : IEntity
     public DateTime BorrowDate { get; set; } = DateTime.UtcNow;
     public DateTime? Deadline { get; set; }
     public DateTime? ReturnDate { get; set; }    // Фактическая дата возврата (для закрытия Книговыдачи)
+    public int TotalExtendedDays { get; set; }
     public bool IsReturned => ReturnDate.HasValue;
     public decimal? Penalty { get; set; }
 

@@ -18,4 +18,8 @@ public static class IncludePaths
         public const string Book = nameof(Core.Entities.RoomBook.Book);
         public const string Room = nameof(Core.Entities.RoomBook.Room);
     }
+    public static class User
+    {
+        public const string RoomBooks = nameof(Core.Entities.User.RoomBooks);
+    }
 }

@@ -1,0 +1,785 @@
+﻿@page "/users/{Id:guid}"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using Microsoft.AspNetCore.Authorization
+@using BlazorWeb.Client.Services
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Entities
+@using LibApp.Core.DTO.Borrowing
+@using LibApp.Core.Enums
+@using LibApp.Core.Requests.Borrowing
+@attribute [Authorize]
+@inject IUserApiClient UserClient
+@inject IRoomApiClient RoomClient
+@inject IBookApiClient BookClient
+@inject IBorrowingApiClient BorrowingClient
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>Профиль — @FullName</PageTitle>
+
+<div class="d-flex align-items-center mb-3">
+    <a href="/users" class="btn btn-sm btn-outline-secondary">← к списку</a>
+    <button class="btn btn-sm btn-outline-secondary ms-2"
+            @onclick="ReloadAsync" disabled="@isLoading">
+        🔄 Обновить
+    </button>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mb-3" style="white-space: pre-line;">@errorMessage</div>
+}
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert alert-success mb-3">@statusMessage</div>
+}
+
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (user == null)
+{
+    <div class="alert alert-warning">
+        Пользователь не найден. <a href="/users">Вернуться к списку</a>
+    </div>
+}
+else
+{
+    @* ---------- Карточка: имя, email, роль ---------- *@
+    <div class="mb-3 pb-3 border-bottom">
+        <h2 class="mb-1">@FullName</h2>
+        <div class="text-muted">
+            <span>@user.Email</span>
+            <span class="mx-2">·</span>
+            @RoleBadge(user.Role)
+        </div>
+    </div>
+
+    @* ---------- Мини-дашборд ---------- *@
+    <div class="mb-3 d-flex gap-4 align-items-start flex-wrap">
+        <div>
+            <small class="text-muted d-block">Активных выдач</small>
+            <span class="fs-5 fw-semibold" style="color:@BorrowedColor">
+                @user.ActiveBorrowedCount / @MaxBooksPerUser
+            </span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Просрочено</small>
+            <span class="fs-5 fw-semibold @(overdueCount > 0 ? "text-danger" : "")">
+                @overdueCount
+            </span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Всего за всё время</small>
+            <span class="fs-5 fw-semibold">@allBorrows.Count</span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Штрафы</small>
+            <span class="fs-5 fw-semibold @(totalPenalty > 0 ? "text-danger" : "")">
+                @totalPenalty.ToString("0.##") ₽
+            </span>
+        </div>
+    </div>
+
+    <div class="mb-4 small text-muted">
+        <span>Контакт:</span> <strong>@user.ContactInfo</strong>
+    </div>
+
+    @* ---------- Активные выдачи ---------- *@
+    <div class="mb-4">
+        <h4>Активные выдачи (@activeBorrows.Count)</h4>
+        @if (activeBorrows.Count == 0)
+        {
+            <p class="text-muted mb-0">Нет активных выдач.</p>
+        }
+        else
+        {
+            <DataGrid TItem="BorrowedBookDTO"
+                      Items="activeBorrows"
+                      PageSize="10"
+                      Columns="activeColumns"
+                      Actions="activeActions"
+                      SelectionMode="DataGridSelectionMode.Multiple"
+                      OnRowDoubleClick="OnActiveRowDoubleClick"
+                      Hint="Двойной клик — продлить · правый клик — меню · выделите несколько строк для массового возврата" />
+        }
+    </div>
+
+    @* ---------- Доступные книги ---------- *@
+    <div class="mb-4">
+        <h4>Доступные книги для выдачи (@availableRoomBooks.Count)</h4>
+        @if (user.ActiveBorrowedCount >= MaxBooksPerUser)
+        {
+            <p class="text-danger mb-0">
+                Лимит книг на руках достигнут (@MaxBooksPerUser / @MaxBooksPerUser).
+                Верните одну из книг, чтобы выдать новую.
+            </p>
+        }
+        else if (overdueCount > 0)
+        {
+            <p class="text-danger mb-0">
+                У пользователя есть просроченные книги. Выдача заблокирована до их возврата.
+            </p>
+        }
+        else if (availableRoomBooks.Count == 0)
+        {
+            <p class="text-muted mb-0">Нет доступных книг в библиотеке.</p>
+        }
+        else
+        {
+            <DataGrid TItem="RoomBookOption"
+                      Items="availableRoomBooks"
+                      PageSize="10"
+                      Columns="availableColumns"
+                      Actions="availableActions"
+                      SelectionMode="DataGridSelectionMode.Single"
+                      OnRowDoubleClick="OpenBorrowDialog"
+                      Hint="Двойной клик по книге — открыть окно выдачи · выделите и нажмите «📖 Выдать»" />
+        }
+    </div>
+
+    @* ---------- История возвратов (сворачиваемая) ---------- *@
+    @if (returnedBorrows.Count > 0)
+    {
+        <details class="mb-4">
+            <summary class="h5" style="cursor: pointer;">
+                История возвратов (@returnedBorrows.Count)
+                @if (totalPenalty > 0)
+                {
+                    <small class="text-danger fs-6 ms-2">· Штрафы: @totalPenalty.ToString("0.##") ₽</small>
+                }
+            </summary>
+            <div class="mt-2">
+                <DataGrid TItem="BorrowedBookDTO"
+                          Items="returnedBorrows"
+                          PageSize="10"
+                          Columns="historyColumns"
+                          SelectionMode="DataGridSelectionMode.None" />
+            </div>
+        </details>
+    }
+}
+
+@* ---------- Модалка выдачи ---------- *@
+@if (borrowDialogOpen && borrowDialogBook != null)
+{
+    <div class="modal-backdrop" @onclick="CloseBorrowDialog"></div>
+    <div class="modal-dialog" @onclick:stopPropagation="true">
+        <h3>Выдать книгу</h3>
+        <p class="mb-3 text-muted small">
+            @FullName — на руках <strong>@user!.ActiveBorrowedCount / @MaxBooksPerUser</strong>,
+            после выдачи будет <strong>@(user.ActiveBorrowedCount + 1) / @MaxBooksPerUser</strong>
+        </p>
+
+        <div class="card mb-3">
+            <div class="card-body py-2">
+                <div><strong>@borrowDialogBook.BookTitle</strong></div>
+                @if (!string.IsNullOrEmpty(borrowDialogBook.BookAuthor))
+                {
+                    <div class="text-muted small">@borrowDialogBook.BookAuthor</div>
+                }
+                <div class="text-muted small mt-1">
+                    Комната: @borrowDialogBook.RoomName ·
+                    доступно: @borrowDialogBook.Available из @borrowDialogBook.Total
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Вернуть до</label>
+            <input type="date" class="form-control"
+                   style="max-width: 200px;"
+                   min="@MinBorrowDateIso" max="@MaxBorrowDateIso"
+                   @bind="borrowDueDate" />
+            <small class="text-muted">
+                Срок: <strong>@BorrowDaysComputed</strong> дн.
+                (от @MinBorrowDays до @MaxBorrowDays, сегодня @DateTime.Today.ToString("dd.MM.yyyy"))
+            </small>
+        </div>
+
+        @if (!string.IsNullOrEmpty(borrowDialogError))
+        {
+            <div class="alert alert-danger py-2 mb-3">@borrowDialogError</div>
+        }
+
+        <div>
+            <button class="btn btn-primary"
+                    disabled="@(!CanSubmitBorrow)"
+                    @onclick="SubmitBorrowAsync">
+                Выдать
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="CloseBorrowDialog">Отмена</button>
+        </div>
+    </div>
+}
+
+@* ---------- Модалка продления ---------- *@
+@if (extendingBorrow != null)
+{
+    <div class="modal-backdrop" @onclick="CloseExtend"></div>
+    <div class="modal-dialog" @onclick:stopPropagation="true">
+        <h3>Продлить выдачу</h3>
+        <p class="mb-1"><strong>@extendingBorrow.BookTitle</strong> — @extendingBorrow.RoomName</p>
+        <p class="mb-1">Текущий срок: <strong>@(extendingBorrow.Deadline?.ToString("dd.MM.yyyy") ?? "—")</strong></p>
+        <p class="mb-3">
+            Продлено: <strong>@extendingBorrow.TotalExtendedDays</strong> из @MaxExtendDeadlineDays дн.
+            (доступно ещё <strong>@MaxAvailableExtend</strong>)
+        </p>
+        @if (MaxAvailableExtend > 0)
+        {
+            <div class="mb-3">
+                <label class="form-label">Дополнительно дней</label>
+                <input type="number" class="form-control"
+                       min="1" max="@MaxAvailableExtend"
+                       style="width: 120px;"
+                       @bind="extendDays" />
+                <small class="text-muted">
+                    Новый срок: @(NewDeadline?.ToString("dd.MM.yyyy") ?? "—")
+                </small>
+            </div>
+        }
+        else
+        {
+            <p class="text-danger">Лимит продлений исчерпан.</p>
+        }
+        <div>
+            <button class="btn btn-primary"
+                    disabled="@(!CanExtend)"
+                    @onclick="ExtendAsync">
+                Продлить
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="CloseExtend">Отмена</button>
+        </div>
+    </div>
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1000;
+        cursor: default;
+    }
+
+    .modal-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1001;
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px 24px;
+        min-width: 460px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        pointer-events: auto;
+    }
+</style>
+
+@code {
+    // todo: вынести в клиентскую конфигурацию (сейчас дублирует WebAPI appsettings: Borrowing)
+    private const int MaxBooksPerUser = 5;
+    private const int MaxExtendDeadlineDays = 14;
+    private const int MinBorrowDays = 1;
+    private const int MaxBorrowDays = 30;
+
+    [Parameter] public Guid Id { get; set; }
+
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? statusMessage;
+
+    private UserDTO? user;
+    private List<BorrowedBookDTO> allBorrows = new();
+    private List<RoomDTO> rooms = new();
+    private Dictionary<Guid, string> bookTitles = new();
+    private Dictionary<Guid, string> bookAuthors = new();
+
+    // Модалка выдачи
+    private bool borrowDialogOpen;
+    private RoomBookOption? borrowDialogBook;
+    private DateTime borrowDueDate = DateTime.Today.AddDays(14);
+    private string? borrowDialogError;
+
+    // Модалка продления
+    private BorrowedBookDTO? extendingBorrow;
+    private int extendDays = 7;
+
+    #region Вычисляемые свойства
+
+    private List<BorrowedBookDTO> activeBorrows =>
+        allBorrows.Where(b => b.ReturnDate == null)
+                  .OrderBy(b => b.Deadline ?? DateTime.MaxValue)
+                  .ToList();
+
+    private List<BorrowedBookDTO> returnedBorrows =>
+        allBorrows.Where(b => b.ReturnDate != null)
+                  .OrderByDescending(b => b.ReturnDate)
+                  .ToList();
+
+    private int overdueCount =>
+        activeBorrows.Count(b => b.Deadline.HasValue && b.Deadline.Value < DateTime.UtcNow);
+
+    private decimal totalPenalty =>
+        allBorrows.Where(b => b.Penalty.HasValue).Sum(b => b.Penalty!.Value);
+
+    private string FullName =>
+        user == null ? "—" : $"{user.LastName} {user.FirstName} {user.MiddleName}".Trim();
+
+    private string BorrowedColor =>
+        user == null ? "#333"
+        : user.ActiveBorrowedCount >= MaxBooksPerUser ? "#a30000"
+        : user.ActiveBorrowedCount >= MaxBooksPerUser - 1 ? "#a85b00"
+        : "#333";
+
+    private List<RoomBookOption> availableRoomBooks
+    {
+        get
+        {
+            if (user == null) return new();
+            var takenTitles = activeBorrows.Select(b => b.BookTitle).ToHashSet();
+
+            return (from r in rooms
+                    from rb in r.RoomBook
+                    where rb.BookCount - rb.BorrowedCount > 0
+                    let title = bookTitles.GetValueOrDefault(rb.BookId, $"[{rb.BookId}]")
+                    let author = bookAuthors.GetValueOrDefault(rb.BookId, "")
+                    where !takenTitles.Contains(title)
+                    let available = rb.BookCount - rb.BorrowedCount
+                    select new RoomBookOption(rb.Id, title, author, r.Name, available, rb.BookCount))
+                .OrderBy(o => o.BookTitle)
+                .ThenBy(o => o.RoomName)
+                .ToList();
+        }
+    }
+
+    // ---- Выдача ----
+
+    private string MinBorrowDateIso => DateTime.Today.ToString("yyyy-MM-dd");
+    private string MaxBorrowDateIso => DateTime.Today.AddDays(MaxBorrowDays).ToString("yyyy-MM-dd");
+
+    private int BorrowDaysComputed => (borrowDueDate.Date - DateTime.Today).Days;
+
+    private bool CanSubmitBorrow =>
+        borrowDialogBook != null
+        && BorrowDaysComputed >= MinBorrowDays
+        && BorrowDaysComputed <= MaxBorrowDays;
+
+    // ---- Продление ----
+
+    private int MaxAvailableExtend =>
+        extendingBorrow == null ? 0
+        : Math.Max(0, MaxExtendDeadlineDays - extendingBorrow.TotalExtendedDays);
+
+    private bool CanExtend =>
+        extendingBorrow != null
+        && extendDays >= 1
+        && extendDays <= MaxAvailableExtend;
+
+    private DateTime? NewDeadline =>
+        extendingBorrow?.Deadline?.AddDays(extendDays);
+
+    #endregion
+
+    #region Колонки
+
+    private readonly List<DataGridColumn<BorrowedBookDTO>> activeColumns = new()
+    {
+        new() { Title = "Книга", Value = b => b.BookTitle, Width = 240 },
+        new() { Title = "Автор", Value = b => b.BookAuthor, Width = 180 },
+        new() { Title = "Комната", Value = b => b.RoomName, Width = 120 },
+        new()
+        {
+            Title = "Выдана",
+            Width = 100,
+            FilterKind = FilterKind.Date,
+            Value = b => b.Borrow,
+            FilterText = b => b.Borrow.ToString("yyyy-MM-dd"),
+            Template = item => b => b.AddContent(0, item.Borrow.ToString("dd.MM.yyyy"))
+        },
+        new()
+        {
+            Title = "Срок",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = b => b.Deadline,
+            FilterText = b => b.Deadline?.ToString("yyyy-MM-dd") ?? "",
+            Template = item => b =>
+            {
+                if (!item.Deadline.HasValue) { b.AddContent(0, "—"); return; }
+                var overdue = item.Deadline.Value < DateTime.UtcNow;
+                if (overdue)
+                {
+                    b.OpenElement(0, "span");
+                    b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
+                    b.AddContent(2, $"{item.Deadline.Value:dd.MM.yyyy} ⚠");
+                    b.CloseElement();
+                }
+                else
+                {
+                    b.AddContent(0, item.Deadline.Value.ToString("dd.MM.yyyy"));
+                }
+            }
+        },
+        new()
+        {
+            Title = "Продлено",
+            Width = 130,
+            FilterKind = FilterKind.Number,
+            Value = b => b.TotalExtendedDays,
+            FilterText = b => b.TotalExtendedDays.ToString(),
+            Template = item => b =>
+            {
+                var ext = item.TotalExtendedDays;
+                var color = ext >= MaxExtendDeadlineDays ? "#a30000"
+                          : ext > 0 ? "#a85b00"
+                          : "#555";
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style", $"color:{color};");
+                b.AddContent(2, $"{ext} / {MaxExtendDeadlineDays} дн.");
+                b.CloseElement();
+            }
+        }
+    };
+
+    private readonly List<DataGridColumn<RoomBookOption>> availableColumns = new()
+    {
+        new() { Title = "Книга", Value = o => o.BookTitle, Width = 300 },
+        new() { Title = "Автор", Value = o => o.BookAuthor, Width = 180 },
+        new() { Title = "Комната", Value = o => o.RoomName, Width = 160 },
+        new()
+        {
+            Title = "Доступно",
+            Width = 130,
+            FilterKind = FilterKind.Number,
+            Value = o => o.Available,
+            FilterText = o => o.Available.ToString(),
+            Template = item => b => b.AddContent(0, $"{item.Available} из {item.Total}")
+        }
+    };
+
+    private readonly List<DataGridColumn<BorrowedBookDTO>> historyColumns = new()
+    {
+        new() { Title = "Книга", Value = b => b.BookTitle, Width = 240 },
+        new() { Title = "Комната", Value = b => b.RoomName, Width = 130 },
+        new()
+        {
+            Title = "Выдана",
+            Width = 100,
+            FilterKind = FilterKind.Date,
+            Value = b => b.Borrow,
+            FilterText = b => b.Borrow.ToString("yyyy-MM-dd"),
+            Template = item => b => b.AddContent(0, item.Borrow.ToString("dd.MM.yyyy"))
+        },
+        new()
+        {
+            Title = "Срок",
+            Width = 110,
+            FilterKind = FilterKind.Date,
+            Value = b => b.Deadline,
+            FilterText = b => b.Deadline?.ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0, item.Deadline?.ToString("dd.MM.yyyy") ?? "—")
+        },
+        new()
+        {
+            Title = "Возвращена",
+            Width = 120,
+            FilterKind = FilterKind.Date,
+            Value = b => b.ReturnDate,
+            FilterText = b => b.ReturnDate?.ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0, item.ReturnDate?.ToString("dd.MM.yyyy") ?? "—")
+        },
+        new()
+        {
+            Title = "Штраф",
+            Width = 100,
+            FilterKind = FilterKind.Number,
+            Value = b => b.Penalty,
+            FilterText = b => b.Penalty?.ToString("0.##") ?? "",
+            Template = item => b =>
+            {
+                if (item.Penalty.HasValue && item.Penalty.Value > 0)
+                {
+                    b.OpenElement(0, "span");
+                    b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
+                    b.AddContent(2, $"{item.Penalty.Value:0.##} ₽");
+                    b.CloseElement();
+                }
+                else
+                {
+                    b.AddContent(0, "—");
+                }
+            }
+        }
+    };
+
+    #endregion
+
+    #region Actions
+
+    private List<DataGridAction<BorrowedBookDTO>> activeActions = new();
+    private List<DataGridAction<RoomBookOption>> availableActions = new();
+
+    private void ConfigureActions()
+    {
+        activeActions = new()
+        {
+            new()
+            {
+                Label = "Продлить",
+                Icon = "↻",
+                MinSelection = 1,
+                ShowInContextMenu = true,
+                ShowInToolbar = true,
+                CanExecute = s => s.Count == 1
+                                  && s[0].TotalExtendedDays < MaxExtendDeadlineDays,
+                Handler = s => { OpenExtend(s[0]); return Task.CompletedTask; }
+            },
+            new()
+            {
+                Label = "Вернуть",
+                Icon = "✓",
+                MinSelection = 1,
+                ShowInContextMenu = true,
+                ShowInToolbar = true,
+                SeparatorBefore = true,
+                Handler = s => BulkReturnAsync(s)
+            }
+        };
+
+        availableActions = new()
+        {
+            new()
+            {
+                Label = "Выдать",
+                Icon = "📖",
+                MinSelection = 1,
+                ShowInToolbar = true,
+                ShowInContextMenu = true,
+                CanExecute = s => s.Count == 1,
+                Handler = s => { OpenBorrowDialog(s[0]); return Task.CompletedTask; }
+            }
+        };
+    }
+
+    #endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        ConfigureActions();
+        await LoadAsync();
+        await LoadCatalogAsync();
+        isLoading = false;
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var resp = await UserClient.GetUserByIdAsync(Id);
+            user = resp.Users.FirstOrDefault();
+
+            if (user == null)
+            {
+                errorMessage = "Пользователь не найден.";
+                allBorrows = new();
+                return;
+            }
+
+            var booksResp = await UserClient.GetUserBooksAsync(Id);
+            allBorrows = booksResp.Books.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            user = null;
+            allBorrows = new();
+        }
+    }
+
+    private async Task LoadCatalogAsync()
+    {
+        try
+        {
+            var roomsResp = await RoomClient.GetAllRoomsAsync();
+            rooms = roomsResp.Room.ToList();
+
+            var booksResp = await BookClient.GetAllBooksAsync();
+            bookTitles = booksResp.Book.ToDictionary(b => b.Id, b => b.Title);
+            bookAuthors = booksResp.Book.ToDictionary(b => b.Id, b => b.Author);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки каталога: {ex.Message}";
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        statusMessage = null;
+        await LoadAsync();
+        await LoadCatalogAsync();
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnActiveRowDoubleClick(BorrowedBookDTO b)
+    {
+        if (b.TotalExtendedDays < MaxExtendDeadlineDays)
+            OpenExtend(b);
+    }
+
+    // ---- Модалка выдачи ----
+
+    private void OpenBorrowDialog(RoomBookOption book)
+    {
+        if (book == null) return;
+        if (user == null) return;
+        if (user.ActiveBorrowedCount >= MaxBooksPerUser) return;
+        if (overdueCount > 0) return;
+
+        borrowDialogOpen = true;
+        borrowDialogBook = book;
+        borrowDueDate = DateTime.Today.AddDays(14);
+        borrowDialogError = null;
+    }
+
+    private void CloseBorrowDialog()
+    {
+        borrowDialogOpen = false;
+        borrowDialogBook = null;
+        borrowDialogError = null;
+    }
+
+    private async Task SubmitBorrowAsync()
+    {
+        if (!CanSubmitBorrow || borrowDialogBook == null) return;
+        borrowDialogError = null;
+        try
+        {
+            var resp = await BorrowingClient.BorrowBookAsync(new BorrowBookRequest
+            {
+                UserId = Id,
+                RoomBookId = borrowDialogBook.RoomBookId,
+                BorrowDays = BorrowDaysComputed
+            });
+            statusMessage = resp.Message;
+            CloseBorrowDialog();
+
+            await LoadAsync();
+            await LoadCatalogAsync();
+        }
+        catch (Exception ex)
+        {
+            borrowDialogError = ex.Message;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // ---- Возврат ----
+
+    private async Task BulkReturnAsync(IReadOnlyList<BorrowedBookDTO> borrows)
+    {
+        if (borrows.Count == 0) return;
+
+        var msg = borrows.Count == 1
+            ? $"Вернуть книгу «{borrows[0].BookTitle}»?"
+            : $"Вернуть {borrows.Count} книг(и)?";
+        if (!await JS.InvokeAsync<bool>("confirm", msg)) return;
+
+        errorMessage = null;
+        statusMessage = null;
+        var success = 0;
+        var errors = new List<string>();
+
+        foreach (var b in borrows)
+        {
+            try
+            {
+                await BorrowingClient.ReturnBookAsync(new ReturnBookRequest
+                {
+                    UserRoomBookId = b.Id
+                });
+                success++;
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"«{b.BookTitle}»: {ex.Message}");
+            }
+        }
+
+        if (errors.Count > 0)
+            errorMessage = $"Возвращено: {success}, ошибок: {errors.Count}.\n{string.Join("\n", errors)}";
+        else if (success > 0)
+            statusMessage = borrows.Count == 1
+                ? "Книга возвращена"
+                : $"Возвращено книг: {success}";
+
+        await LoadAsync();
+        await LoadCatalogAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // ---- Продление ----
+
+    private void OpenExtend(BorrowedBookDTO b)
+    {
+        extendingBorrow = b;
+        extendDays = Math.Min(7, MaxAvailableExtend);
+        if (extendDays < 1) extendDays = 1;
+    }
+
+    private void CloseExtend() => extendingBorrow = null;
+
+    private async Task ExtendAsync()
+    {
+        if (!CanExtend || extendingBorrow == null) return;
+        errorMessage = null;
+        statusMessage = null;
+        try
+        {
+            var resp = await BorrowingClient.ExtendDeadlineAsync(new ExtendDeadlineRequest
+            {
+                UserRoomBookId = extendingBorrow.Id,
+                ExtraDays = extendDays
+            });
+            statusMessage = resp.Message;
+            CloseExtend();
+
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static RenderFragment RoleBadge(UserRole role) => b =>
+    {
+        var (bg, fg, text) = role switch
+        {
+            UserRole.Admin => ("#fde7e9", "#a30000", "Администратор"),
+            UserRole.Librarian => ("#e6f0fb", "#003a6b", "Библиотекарь"),
+            _ => ("#f3f3f3", "#555", "Читатель")
+        };
+        b.OpenElement(0, "span");
+        b.AddAttribute(1, "style",
+            $"background:{bg};color:{fg};padding:3px 12px;border-radius:12px;font-size:13px;");
+        b.AddContent(2, text);
+        b.CloseElement();
+    };
+
+    private record RoomBookOption(Guid RoomBookId, string BookTitle, string BookAuthor,
+                                  string RoomName, int Available, int Total)
+    {
+        public string Display => $"{RoomName} — {BookTitle} ({BookAuthor}), доступно {Available} из {Total}";
+    }
+}

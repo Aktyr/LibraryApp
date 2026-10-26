@@ -1,6 +1,4 @@
-﻿using LibApp.Application.Configuration;
-
-namespace LibApp.ApplicationTests.Validation;
+﻿namespace LibApp.ApplicationTests.Validation;
 
 [TestFixture]
 public class BorrowingValidatorAsyncTests
@@ -162,6 +160,7 @@ public class BorrowingValidatorAsyncTests
             Assert.That(result.Errors, Contains.Item("Запись о выдаче не найдена"));
         });
     }
+
     [Test]
     public async Task ValidateBorrowAsync_WhenUserIsNull_ReturnsError()
     {
@@ -213,25 +212,63 @@ public class BorrowingValidatorAsyncTests
     [Test]
     public async Task ValidateExtendAsync_WhenExtraDaysIsZero_ReturnsError()
     {
-        // Arrange
         var settings = new BorrowingSettings { MaxExtendDeadlineDays = 14 };
         var validator = CreateValidator(settings);
         var userRoomBook = new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             Deadline = new DateTime(2024, 1, 15),
-            ReturnDate = null
+            ReturnDate = null,
+            TotalExtendedDays = 0
         };
 
-        // Act
         var result = await validator.ValidateExtendAsync(userRoomBook, 0);
 
-        // Assert
         Assert.Multiple(() =>
         {
             Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
+            Assert.That(result.Errors, Contains.Item("Срок продления должен быть больше 0"));
         });
+    }
+
+    [Test]
+    public async Task ValidateExtendAsync_WhenTotalExtensionExceedsMaximum_ReturnsError()
+    {
+        var settings = new BorrowingSettings { MaxExtendDeadlineDays = 14 };
+        var validator = CreateValidator(settings);
+        var userRoomBook = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            Deadline = DateTime.Now.AddDays(20),
+            ReturnDate = null,
+            TotalExtendedDays = 10  // уже продлевал на 10
+        };
+
+        var result = await validator.ValidateExtendAsync(userRoomBook, 7); // 10+7 > 14
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Has.Some.Contains("Суммарное продление не может превышать 14 дней"));
+        });
+    }
+
+    [Test]
+    public async Task ValidateExtendAsync_WhenTotalExtensionWithinLimit_ReturnsValid()
+    {
+        var settings = new BorrowingSettings { MaxExtendDeadlineDays = 14 };
+        var validator = CreateValidator(settings);
+        var userRoomBook = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            Deadline = DateTime.Now.AddDays(20),
+            ReturnDate = null,
+            TotalExtendedDays = 10
+        };
+
+        var result = await validator.ValidateExtendAsync(userRoomBook, 4); // 10+4 = 14 = max
+
+        Assert.That(result.IsValid, Is.True);
     }
 
     [Test]
@@ -254,7 +291,7 @@ public class BorrowingValidatorAsyncTests
         Assert.Multiple(() =>
         {
             Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
+            Assert.That(result.Errors, Contains.Item("Срок продления должен быть больше 0"));
         });
     }
 
@@ -278,9 +315,11 @@ public class BorrowingValidatorAsyncTests
         Assert.Multiple(() =>
         {
             Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
+            Assert.That(result.Errors,
+                Contains.Item("Суммарное продление не может превышать 14 дней. Уже продлено: 0, доступно: 14."));
         });
     }
+
     [Test]
     public async Task ValidateBorrowAsync_WhenRoomBookIsNull_ReturnsError()
     {
@@ -339,6 +378,7 @@ public class BorrowingValidatorAsyncTests
             Assert.That(result.Errors, Contains.Item("Нет доступных экземпляров книги"));
         });
     }
+
     [Test]
     public async Task ValidateBorrowAsync_WhenUserHasMaxBooks_ReturnsError()
     {

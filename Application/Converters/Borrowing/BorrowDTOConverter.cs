@@ -12,7 +12,8 @@ public class BorrowDTOConverter : IConverter<UserRoomBook, BorrowedBookDTO>
             Borrow: entity.BorrowDate,
             Deadline: entity.Deadline,
             ReturnDate: entity.ReturnDate,
-            Penalty: entity.Penalty
+            Penalty: entity.Penalty,
+            TotalExtendedDays: entity.TotalExtendedDays
         );
     }
 
@@ -20,5 +21,4 @@ public class BorrowDTOConverter : IConverter<UserRoomBook, BorrowedBookDTO>
     {
         throw new NotSupportedException("Конвертация из DTO в сущность не поддерживается");
     }
-
 }

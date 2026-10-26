@@ -38,6 +38,7 @@ public class ReturnBookCommandTests
         await Assert.ThrowsAsync<UserRoomBookNotFoundException>(() =>
             command.Execute(request, CancellationToken.None));
     }
+
     [Test]
     public async Task Execute_WhenBookAlreadyReturned_ThrowsException()
     {
@@ -65,6 +66,7 @@ public class ReturnBookCommandTests
             command.Execute(request, CancellationToken.None));
 
     }
+
     [Test]
     public async Task Execute_WhenReturnedWithoutOverdue_NoPenaltyApplied()
     {
@@ -124,6 +126,7 @@ public class ReturnBookCommandTests
                 Times.Never);
         });
     }
+
     [Test]
     public async Task Execute_WhenReturnedWithOverdue_PenaltyAppliedAndNotificationSent()
     {
@@ -191,10 +194,11 @@ public class ReturnBookCommandTests
             Assert.That(roomBook.BorrowedCount, Is.EqualTo(1));
 
             // Проверяем, что уведомление было отправлено (не проверяем точную сумму)
-            notificationMock.Verify(x => x.SendOverdueNotificationAsync( 
+            notificationMock.Verify(x => x.SendOverdueNotificationAsync(
                 user, userRoomBook, It.IsAny<decimal>(), It.IsAny<CancellationToken>()), Times.Once);
         });
     }
+
     [Test]
     public async Task Execute_WhenPenaltyIsZero_NoNotificationSent()
     {
@@ -349,7 +353,9 @@ public class ReturnBookCommandTests
             BorrowDate = deadline.AddDays(-14),
             Deadline = deadline,
             ReturnDate = null,
-            Penalty = 50m // DeadlineCheckService когда-то уже насчитала 50 руб
+            Penalty = 50m,        // DeadlineCheckService когда-то уже насчитала 50 руб
+            User = user,
+            RoomBook = roomBook
         };
 
         await userRoomBookRepo.AddRangeAsync([userRoomBook], CancellationToken.None);
@@ -376,6 +382,7 @@ public class ReturnBookCommandTests
             Assert.That(updatedUrb.Penalty, Is.EqualTo(50m));
         });
     }
+
     [Test]
     public async Task Execute_WhenBookHasExistingPenalty_LowerThanCalculated_TakesCalculated()
     {
@@ -537,9 +544,10 @@ public class ReturnBookCommandTests
         {
             var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 command.Execute(request, CancellationToken.None));
-            Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
+            Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть больше 0"));
         });
     }
+
     [Test]
     public async Task Execute_WhenReturnedOnTime_MessageDoesNotContainPenalty()
     {
@@ -603,6 +611,7 @@ public class ReturnBookCommandTests
                 Times.Never);
         });
     }
+
     [Test]
     public async Task Execute_WhenSaveFails_RollsBackTransaction()
     {

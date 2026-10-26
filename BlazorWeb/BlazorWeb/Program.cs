@@ -19,10 +19,10 @@ public class Program
         builder.Services.AddHttpContextAccessor();
 
         builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-            })
+        {
+            options.DefaultScheme = IdentityConstants.ApplicationScheme;
+            options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+        })
             .AddIdentityCookies();
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -76,7 +76,7 @@ public class Program
                 : new Uri("https://localhost:7198/");
             return new HttpClient { BaseAddress = baseUri };
         });
-        
+
         // API-клиенты для компонентов Blazor.Server (через прокси-эндпоинты)
         builder.Services.AddScoped<IBookApiClient, BookApiClient>();
         builder.Services.AddScoped<IRoomApiClient, RoomApiClient>();
@@ -112,6 +112,7 @@ public class Program
         app.MapBooksProxy();
         app.MapRoomsProxy();
         app.MapUsersProxy();
+        app.MapBorrowingProxy();
 
 
         // Add additional endpoints required by the Identity /Account Razor components.

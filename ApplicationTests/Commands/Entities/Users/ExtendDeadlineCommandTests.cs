@@ -1,6 +1,4 @@
-﻿using LibApp.Application.Configuration;
-
-namespace LibApp.ApplicationTests.Commands.Entities.Users;
+﻿namespace LibApp.ApplicationTests.Commands.Entities.Users;
 
 [TestFixture]
 public class ExtendDeadlineCommandTests
@@ -53,7 +51,8 @@ public class ExtendDeadlineCommandTests
         {
             var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 command.Execute(request, CancellationToken.None));
-            Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
+            Assert.That(ex.ExceptionDetails,
+                Contains.Item("Суммарное продление не может превышать 14 дней. Уже продлено: 0, доступно: 14."));
         });
     }
 
@@ -90,6 +89,7 @@ public class ExtendDeadlineCommandTests
             Assert.That(updatedUrb.Deadline, Is.EqualTo(initialDeadline.AddDays(7)).Within(TimeSpan.FromSeconds(2)));
         });
     }
+
     [Test]
     public async Task Execute_WhenExtraDaysIsZero_ThrowsValidationException()
     {
@@ -115,7 +115,7 @@ public class ExtendDeadlineCommandTests
         {
             var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
                 command.Execute(request, CancellationToken.None));
-            Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть от 1 до 14 дней"));
+            Assert.That(ex.ExceptionDetails, Contains.Item("Срок продления должен быть больше 0"));
         });
     }
 

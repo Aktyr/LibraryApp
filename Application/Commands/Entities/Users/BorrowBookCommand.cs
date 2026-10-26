@@ -1,7 +1,7 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class BorrowBookCommand(
-    IUnitOfWork unitOfWork, 
+    IUnitOfWork unitOfWork,
     BorrowingValidatorAsync validator) : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(BorrowBookRequest request, CancellationToken cancellationToken)
@@ -31,6 +31,7 @@ public class BorrowBookCommand(
 
         var userRoomBook = new UserRoomBook
         {
+            Id = new Id(Guid.NewGuid()),
             User = user,
             RoomBook = roomBook,
             BorrowDate = DateTime.UtcNow,

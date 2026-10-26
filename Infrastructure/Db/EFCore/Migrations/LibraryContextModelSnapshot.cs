@@ -209,6 +209,9 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Property<Guid>("RoomBookId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("TotalExtendedDays")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 

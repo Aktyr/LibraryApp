@@ -36,6 +36,7 @@ public class BorrowingValidatorAsync : IValidator
         await Task.CompletedTask;
         return new ValidationResponse(!errors.Any(), errors);
     }
+
     public async Task<ValidationResponse> ValidateExtendAsync(UserRoomBook userRoomBook, int extraDays, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();
@@ -44,12 +45,19 @@ public class BorrowingValidatorAsync : IValidator
             errors.Add("Запись о выдаче не найдена");
         else if (userRoomBook.IsReturned)
             errors.Add("Нельзя продлить уже возвращенную книгу");
-        else if (extraDays <= 0 || extraDays > _settings.MaxExtendDeadlineDays)
-            errors.Add($"Срок продления должен быть от 1 до {_settings.MaxExtendDeadlineDays} дней");
+        else if (extraDays <= 0)
+            errors.Add("Срок продления должен быть больше 0");
+        else if (userRoomBook.TotalExtendedDays + extraDays > _settings.MaxExtendDeadlineDays)
+        {
+            var available = _settings.MaxExtendDeadlineDays - userRoomBook.TotalExtendedDays;
+            errors.Add($"Суммарное продление не может превышать {_settings.MaxExtendDeadlineDays} дней. " +
+                       $"Уже продлено: {userRoomBook.TotalExtendedDays}, доступно: {available}.");
+        }
 
         await Task.CompletedTask;
         return new ValidationResponse(!errors.Any(), errors);
     }
+
     public async Task<ValidationResponse> ValidateReturnAsync(UserRoomBook userRoomBook, CancellationToken cancellationToken = default)
     {
         var errors = new List<string>();

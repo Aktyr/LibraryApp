@@ -202,7 +202,7 @@ public class BaseConverterTests
         // Act — не должно быть исключений
         Assert.DoesNotThrow(() => method?.Invoke(new TestConverter(), [user, dto]));
     }
-    
+
 
 
     [Test]

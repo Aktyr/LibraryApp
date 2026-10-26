@@ -6,5 +6,8 @@ public record UserDTO(Guid Id,
                       string MiddleName,
                       string ContactInfo,
                       TimeSpan? NearestReturnTimeSpan,
-                      ICollection<UserRoomBookDTO> RoomBooks)
+                      ICollection<UserRoomBookDTO> RoomBooks,
+                      UserRole Role = UserRole.Reader,
+                      int ActiveBorrowedCount = 0,
+                      string Email = "")
 { public UserDTO() : this(default, default!, default!, default!, default!, default, default!) { } }

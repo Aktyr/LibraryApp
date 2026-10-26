@@ -20,4 +20,4 @@ global using System.Security.Claims;
 global using LibApp.Core.Requests.Entities.Room;
 global using LibApp.Core.Records;
 global using LibApp.Core.Requests.Entities.User;
-
+global using LibApp.Core.Requests.Borrowing;

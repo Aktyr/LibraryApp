@@ -24,7 +24,7 @@ public class User : IEntity
         get
         {
             var nearestDeadline = RoomBooks
-                .Where(x => x.Deadline.HasValue)
+                .Where(x => x.ReturnDate == null && x.Deadline.HasValue)
                 .Select(x => x.Deadline)
                 .OrderBy(x => x)
                 .FirstOrDefault();

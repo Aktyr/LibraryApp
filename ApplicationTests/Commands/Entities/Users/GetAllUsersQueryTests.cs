@@ -209,17 +209,22 @@ public class GetAllUsersQueryTests
     }
 
     [Test]
-    public async Task Execute_GetAllUsers_UsesGetWithoutTracking()
+    public async Task Execute_GetAllUsers_UsesGetAsyncWithIncludes()
     {
         // Arrange
         var mockUserRepo = new Mock<IRepository<User>>();
         var users = new List<User>
-        {
-            new() { Id = new Id(Guid.NewGuid()), LastName = "Test", FirstName = "User", ContactInfo = "test@test.ru" }
-        };
+    {
+        new() { Id = new Id(Guid.NewGuid()), LastName = "Test", FirstName = "User", ContactInfo = "test@test.ru", RoomBooks = [] }
+    };
 
-        mockUserRepo.Setup(repo => repo.GetWithoutTrackingAsync(It.IsAny<CancellationToken>()))
-                   .ReturnsAsync(users);
+        mockUserRepo.Setup(repo => repo.GetAsync(
+                It.IsAny<Expression<Func<User, bool>>?>(),
+                It.IsAny<Func<IQueryable<User>, IOrderedQueryable<User>>?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<string[]>()))
+            .ReturnsAsync(users);
 
         var mockUnitOfWork = new Mock<IUnitOfWork>();
         mockUnitOfWork.Setup(u => u.GetRepository<User>()).Returns(mockUserRepo.Object);
@@ -233,7 +238,13 @@ public class GetAllUsersQueryTests
         // Assert
         Assert.Multiple(() =>
         {
-            mockUserRepo.Verify(repo => repo.GetWithoutTrackingAsync(It.IsAny<CancellationToken>()), Times.Once);
+            mockUserRepo.Verify(repo => repo.GetAsync(
+                It.IsAny<Expression<Func<User, bool>>?>(),
+                It.IsAny<Func<IQueryable<User>, IOrderedQueryable<User>>?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.Is<string[]>(paths => paths.Contains("RoomBooks"))),
+                Times.Once);
             Assert.That(result.Users, Has.Length.EqualTo(1));
         });
     }

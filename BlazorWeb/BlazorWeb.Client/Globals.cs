@@ -8,3 +8,5 @@ global using LibApp.Core.Responses.Entities;
 global using Microsoft.AspNetCore.Components.Authorization;
 global using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 global using System.Net.Http.Json;
+global using LibApp.Core.Requests.Borrowing;
+
