@@ -78,3 +78,15 @@ export function initColumnResize(table, dotNetRef, minWidths = []) {
         document.body.style.userSelect = 'none';
     }, true); // capture: реагируем раньше возможных обработчиков заголовка
 }
+
+export function downloadFile(filename, content) {
+    const blob = new Blob(["\uFEFF" + content], { type: 'text/csv;charset=utf-8;' }); // \uFEFF = BOM для Excel
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}

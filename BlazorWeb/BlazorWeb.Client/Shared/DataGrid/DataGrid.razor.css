@@ -107,7 +107,6 @@
 }
 
 .dg-info {
-    margin-left: auto;
     color: #444;
     font-size: 13px;
     white-space: nowrap;
@@ -744,4 +743,103 @@
     color: #444;
     line-height: 1.5;
     white-space: normal;
+}
+/* --- Кнопка экспорта --- */
+.dg-btn-export {
+    background: #f0f7ff;
+    color: #005a9e;
+    border-color: #b8d4ee;
+}
+
+    .dg-btn-export:hover {
+        background: #e0efff;
+    }
+
+/* --- Крестик в счётчике --- */
+.dg-clear-inline {
+    border: none;
+    background: transparent;
+    color: #666;
+    cursor: pointer;
+    padding: 0 4px;
+    margin-left: 6px;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+    .dg-clear-inline:hover:not(:disabled) {
+        color: #d44;
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    .dg-clear-inline:disabled {
+        color: #ccc;
+        cursor: default;
+    }
+
+/* --- Меню настроек (Шестерёнка) --- */
+.dg-settings-wrap {
+    position: relative;
+}
+
+.dg-settings-btn {
+    font-size: 16px;
+    padding: 4px 8px;
+}
+
+.dg-settings-popover {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 50;
+    background: #fff;
+    border: 1px solid #c8c8c8;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+}
+
+    .dg-settings-popover button {
+        text-align: left;
+        border: none;
+        background: transparent;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+        .dg-settings-popover button:hover:not(:disabled) {
+            background: #eef4ff;
+        }
+
+        .dg-settings-popover button:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+/* --- Правая группа элементов (Экспорт, Шестерёнка, Инфо) --- */
+.dg-toolbar-right {
+    margin-left: auto; /* Прижимает всю группу вправо */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Настройки (Шестерёнка) */
+.dg-settings-wrap {
+    position: relative;
+    /* margin-left: auto; -- УДАЛИТЬ ЭТУ СТРОКУ */
+}
+
+/* Информация о выделении */
+.dg-info {
+    /* margin-left: auto; -- УДАЛИТЬ ЭТУ СТРОКУ */
+    color: #444;
+    font-size: 13px;
+    white-space: nowrap;
 }
