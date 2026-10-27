@@ -1,5 +1,6 @@
 ﻿@page "/users/{Id:guid}"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Services.APIs
 @using BlazorWeb.Client.Services.Interfaces
 @using BlazorWeb.Components.Shared.DataGrid
 @using LibApp.Core.DTO.Borrowing
@@ -14,6 +15,7 @@
 @inject IBorrowingApiClient BorrowingClient
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@inject IBorrowingSettingsService SettingsService
 
 <PageTitle>Профиль — @FullName</PageTitle>
 
@@ -98,7 +100,7 @@ else
             <DataGrid TItem="BorrowedBookDTO"
                       Items="activeBorrows"
                       PageSize="10"
-                      Columns="activeColumns"
+                      Columns="ActiveColumns"
                       Actions="activeActions"
                       SelectionMode="DataGridSelectionMode.Multiple"
                       OnRowDoubleClick="OnActiveRowDoubleClick"
@@ -282,11 +284,12 @@ else
 </style>
 
 @code {
-    // todo: вынести в клиентскую конфигурацию (сейчас дублирует WebAPI appsettings: Borrowing)
-    private const int MaxBooksPerUser = 5;
-    private const int MaxExtendDeadlineDays = 14;
-    private const int MinBorrowDays = 1;
-    private const int MaxBorrowDays = 30;
+    private BorrowingSettingsDTO? settings;
+    private int MaxBooksPerUser => settings?.MaxBooksPerUser ?? 5;
+    private int MaxExtendDeadlineDays => settings?.MaxExtendDeadlineDays ?? 14;
+    private int MinBorrowDays => settings?.MinBorrowDays ?? 1;
+    private int MaxBorrowDays => settings?.MaxBorrowDays ?? 30;
+
 
     [Parameter] public Guid Id { get; set; }
 
@@ -388,7 +391,8 @@ else
 
     #region Колонки
 
-    private readonly List<DataGridColumn<BorrowedBookDTO>> activeColumns = new()
+    private List<DataGridColumn<BorrowedBookDTO>>? _activeColumns;
+    private List<DataGridColumn<BorrowedBookDTO>> ActiveColumns => _activeColumns ??= new()
     {
         new() { Title = "Книга", Value = b => b.BookTitle, Width = 240 },
         new() { Title = "Автор", Value = b => b.BookAuthor, Width = 180 },
@@ -571,7 +575,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        ConfigureActions();
+        settings = await SettingsService.GetAsync();
         await LoadAsync();
         await LoadCatalogAsync();
         isLoading = false;

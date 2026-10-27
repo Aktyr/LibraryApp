@@ -23,6 +23,7 @@ internal class Program
         builder.Services.AddScoped<IUserApiClient, UserApiClient>();
         builder.Services.AddScoped<IBorrowingApiClient, BorrowingApiClient>();
         builder.Services.AddScoped<IReportsApiClient, ReportsApiClient>();
+        builder.Services.AddScoped<IBorrowingSettingsService, BorrowingSettingsService>();
         #endregion
 
         await builder.Build().RunAsync();

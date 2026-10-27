@@ -22,3 +22,6 @@ global using LibApp.Core.Records;
 global using LibApp.Core.Requests.Entities.User;
 global using LibApp.Core.Requests.Borrowing;
 global using LibApp.Core.Responses.Reports;
+global using LibApp.Core.Enums;
+global using LibApp.Core.Exceptions;
+global using LibApp.Core.Responses;

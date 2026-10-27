@@ -44,3 +44,5 @@ global using LibApp.Core.Responses.Reports;
 global using LibApp.Application.Helpers;
 global using System.Text.RegularExpressions;
 global using LibApp.Application.Validation;
+global using LibApp.Core.DTO.Settings;
+global using LibApp.Core.Responses.Settings;

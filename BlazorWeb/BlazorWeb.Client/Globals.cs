@@ -10,3 +10,5 @@ global using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 global using System.Net.Http.Json;
 global using LibApp.Core.Requests.Borrowing;
 global using LibApp.Core.Responses.Reports;
+global using LibApp.Core.DTO.Settings;
+global using LibApp.Core.Responses.Settings;

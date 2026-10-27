@@ -5,7 +5,7 @@ namespace BlazorWeb;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -117,10 +117,24 @@ public class Program
         app.MapUsersProxy();
         app.MapBorrowingProxy();
         app.MapReportsProxy();
+        app.MapSettingsProxy();
 
 
         // Add additional endpoints required by the Identity /Account Razor components.
         app.MapAdditionalIdentityEndpoints();
+
+        // Seed Admin (перед запуском приложения)
+        {
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            try
+            {
+                await AdminSeeder.SeedAsync(app.Services, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Admin seed failed. App will continue without seed.");
+            }
+        }
 
         app.Run();
     }
