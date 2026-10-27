@@ -27,9 +27,9 @@ public class UserValidatorAsync : IValidator
             errors.Add("Пароль должен быть не менее 8 символов");
         else if (password.Length > 100)
             errors.Add("Пароль слишком длинный");
-        else if (!Regex.IsMatch(password, @"[A-Z]"))
+        else if (!Regex.IsMatch(password, @"\p{Lu}"))
             errors.Add("Пароль должен содержать хотя бы одну заглавную букву");
-        else if (!Regex.IsMatch(password, @"[a-z]"))
+        else if (!Regex.IsMatch(password, @"\p{Ll}"))
             errors.Add("Пароль должен содержать хотя бы одну строчную букву");
         else if (!Regex.IsMatch(password, @"[0-9]"))
             errors.Add("Пароль должен содержать хотя бы одну цифру");
@@ -38,7 +38,6 @@ public class UserValidatorAsync : IValidator
 
         return Task.FromResult(new ValidationResponse(!errors.Any(), errors));
     }
-
     public Task<ValidationResponse> ValidateNameAndContactAsync(string lastName, string firstName, string middleName, string contactInfo)
     {
         var errors = new List<string>();

@@ -1,6 +1,3 @@
-using BlazorWeb.Client.Services.APIs;
-using BlazorWeb.Client.Services.Interfaces;
-
 namespace BlazorWeb;
 
 public class Program
@@ -54,10 +51,32 @@ public class Program
 
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-        builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+        builder.Services.AddIdentityCore<ApplicationUser>(options =>
+        {
+            options.SignIn.RequireConfirmedAccount = true;
+
+            // Синхронизируем правила Identity с UserValidatorAsync (library).
+            // Standard default RequiredLength = 6, а library требует 8 — приводим к 8.
+            options.Password.RequiredLength = 8;
+            options.Password.RequiredUniqueChars = 1;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireDigit = true;
+            options.Password.RequireNonAlphanumeric = true;
+        })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddSignInManager()
             .AddDefaultTokenProviders();
+
+        // Заменяем стандартный PasswordValidator на Unicode-aware.
+        // Стандартный (Microsoft.AspNetCore.Identity.PasswordValidator) на .NET 10
+        // ложно отклоняет кириллические пароли с "Passwords must have at least one lowercase ('a'-'z')".
+        // Влияет на ВСЕ password-флоу: /users (BFF), /Account/Register, ResetPassword, ChangePassword.
+        builder.Services.RemoveAll<IPasswordValidator<ApplicationUser>>();
+        builder.Services.AddScoped<IPasswordValidator<ApplicationUser>, UnicodePasswordValidator>();
+
+
+        builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AppUserClaimsPrincipalFactory>();
 
         builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 

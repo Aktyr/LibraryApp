@@ -18,7 +18,11 @@ public class SearchBooksCommand(
         var includePaths = request.AvailableOnly ? [IncludePaths.Book.RoomBook] : Array.Empty<string>();
 
         // Выполняем запрос
-        var books = await bookRepo.GetAsync(filter, orderBy, includePaths: includePaths);
+        var books = await bookRepo.GetWithoutTrackingAsync(
+            filter, 
+            orderBy, 
+            cancellationToken: ct, 
+            includePaths: includePaths);
 
         // Если AvailableOnly, фильтруем в памяти
         if (request.AvailableOnly)

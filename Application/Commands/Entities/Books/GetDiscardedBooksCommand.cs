@@ -35,7 +35,7 @@ public class GetDiscardedBooksCommand(IUnitOfWork unitOfWork) : IGetQuery<GetDis
 
         Func<IQueryable<DiscardedBook>, IOrderedQueryable<DiscardedBook>> orderBy = q => q.OrderByDescending(d => d.DiscardedDate);
 
-        var discarded = await discardedRepo.GetAsync(filter, orderBy);
+        var discarded = await discardedRepo.GetWithoutTrackingAsync(filter, orderBy, cancellationToken: ct);
 
         var dtos = discarded.Select(d => new DiscardedBookDTO(
             d.Id.Value,

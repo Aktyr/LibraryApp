@@ -9,6 +9,7 @@ public class DeleteRoomCommand(IUnitOfWork unitOfWork)
 
         var rooms = await roomRepo.GetAsync(
             r => r.Id == request.Id,
+            cancellationToken: cancellationToken,
             includePaths: IncludePaths.Room.RoomBooks);
         var room = rooms.FirstOrDefault() ?? throw new RoomNotFoundException();
 

@@ -1,6 +1,3 @@
-using BlazorWeb.Client.Services.APIs;
-using BlazorWeb.Client.Services.Interfaces;
-
 namespace BlazorWeb.Client;
 
 internal class Program
@@ -24,6 +21,7 @@ internal class Program
         builder.Services.AddScoped<IBorrowingApiClient, BorrowingApiClient>();
         builder.Services.AddScoped<IReportsApiClient, ReportsApiClient>();
         builder.Services.AddScoped<IBorrowingSettingsService, BorrowingSettingsService>();
+        builder.Services.AddScoped<IPenaltySettingsService, PenaltySettingsService>();
         #endregion
 
         await builder.Build().RunAsync();

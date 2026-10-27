@@ -1,5 +1,7 @@
 ﻿@page "/books"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using BlazorWeb.Client.Services.Interfaces
 @using BlazorWeb.Components.Shared.DataGrid
 @using LibApp.Core.DTO.Entities
@@ -7,6 +9,7 @@
 @using LibApp.Core.Requests.Entities.Book
 @inject IBookApiClient ApiClient
 @inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthProvider
 
 <PageTitle>Книги</PageTitle>
 
@@ -124,14 +127,25 @@ else if (books != null)
 
     private List<DataGridAction<BookDTO>> actions = new();
 
+    private bool isEditor;
+
     protected override async Task OnInitializedAsync()
     {
+        var auth = await AuthProvider.GetAuthenticationStateAsync();
+        isEditor = auth.User.IsInRole("Librarian") || auth.User.IsInRole("Admin");
+
         ConfigureActions();
         await LoadAsync();
     }
 
     private void ConfigureActions()
     {
+        if (!isEditor)
+        {
+            actions = new(); // пусто = нет кнопок
+            return;
+        }
+
         actions = new()
     {
         new()

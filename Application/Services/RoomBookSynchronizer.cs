@@ -33,6 +33,7 @@ public class RoomBookSynchronizer : IRoomBookSynchronizer, IService
         {
             var loaded = await roomBookRepo.GetAsync(
                 filter: rb => rb.Room.Id == room.Id,
+                cancellationToken: cancellationToken,
                 includePaths: IncludePaths.RoomBook.Book);
             room.RoomBooks = loaded.ToList();
         }

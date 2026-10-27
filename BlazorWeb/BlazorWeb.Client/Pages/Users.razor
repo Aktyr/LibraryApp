@@ -1,6 +1,6 @@
 ﻿@page "/users"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Librarian,Admin")]
 @using BlazorWeb.Client.Services.APIs
 @using BlazorWeb.Client.Services.Interfaces
 @using BlazorWeb.Components.Shared.DataGrid
@@ -437,14 +437,14 @@ else if (users != null)
             if (string.IsNullOrEmpty(Password) || Password.Length < 8 || Password.Length > 100)
                 yield break; // базовые [Required]/[StringLength] уже показали ошибку
 
-            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[A-Z]"))
+            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"\p{Lu}"))
             {
                 yield return new System.ComponentModel.DataAnnotations.ValidationResult(
                     "Пароль должен содержать хотя бы одну заглавную букву",
                     new[] { nameof(Password) });
                 yield break;
             }
-            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[a-z]"))
+            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"\p{Ll}"))
             {
                 yield return new System.ComponentModel.DataAnnotations.ValidationResult(
                     "Пароль должен содержать хотя бы одну строчную букву",

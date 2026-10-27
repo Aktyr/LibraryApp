@@ -46,11 +46,12 @@ public class UniversalRepository<TEntity> : IRepository<TEntity> where TEntity :
         => await _dbSet.AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
 
     public async Task<IEnumerable<TEntity>> GetAsync(
-        Expression<Func<TEntity, bool>>? filter = null,
-        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
-        int? skip = null,
-        int? take = null,
-        params string[] includePaths)
+    Expression<Func<TEntity, bool>>? filter = null,
+    Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+    int? skip = null,
+    int? take = null,
+    CancellationToken cancellationToken = default,
+    params string[] includePaths)
     {
         IQueryable<TEntity> query = _dbSet;
 
@@ -69,7 +70,35 @@ public class UniversalRepository<TEntity> : IRepository<TEntity> where TEntity :
         if (take.HasValue)
             query = query.Take(take.Value);
 
-        return await query.ToListAsync();
+        return await query.ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<TEntity>> GetWithoutTrackingAsync(
+        Expression<Func<TEntity, bool>>? filter = null,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+        int? skip = null,
+        int? take = null,
+        CancellationToken cancellationToken = default,
+        params string[] includePaths)
+    {
+        IQueryable<TEntity> query = _dbSet.AsNoTracking();
+
+        foreach (var path in includePaths)
+            query = query.Include(path);
+
+        if (filter != null)
+            query = query.Where(filter);
+
+        if (orderBy != null)
+            query = orderBy(query);
+
+        if (skip.HasValue)
+            query = query.Skip(skip.Value);
+
+        if (take.HasValue)
+            query = query.Take(take.Value);
+
+        return await query.ToListAsync(cancellationToken);
     }
     #endregion
 

@@ -21,14 +21,23 @@ public interface IRepository<TEntity> where TEntity : class, IEntity
     Task<IEnumerable<TEntity>> GetWithoutTrackingAsync(CancellationToken cancellationToken);
     Task<IEnumerable<TEntity>> GetWithoutTrackingAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken);
 
-    // Получить сущности с указанными Include    
+    // Получить сущности с указанными Include (С ТРЕКИНГОМ — для последующих апдейтов)
     Task<IEnumerable<TEntity>> GetAsync(
         Expression<Func<TEntity, bool>>? filter = null,
         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
         int? skip = null,
         int? take = null,
+        CancellationToken cancellationToken = default,
         params string[] includePaths);
 
+    // Получить сущности с указанными Include (БЕЗ ТРЕКИНГА — только для чтения)
+    Task<IEnumerable<TEntity>> GetWithoutTrackingAsync(
+        Expression<Func<TEntity, bool>>? filter = null,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+        int? skip = null,
+        int? take = null,
+        CancellationToken cancellationToken = default,
+        params string[] includePaths);
     #endregion
 
     #region Оптимизация запросов

@@ -10,6 +10,7 @@ public class DeleteBookCommand(IUnitOfWork unitOfWork)
         // Загружаем книгу вместе со связанными RoomBook
         var books = await bookRepo.GetAsync(
             b => b.Id == request.Id,
+            cancellationToken: cancellationToken,
             includePaths: IncludePaths.Book.RoomBook);
         var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
 

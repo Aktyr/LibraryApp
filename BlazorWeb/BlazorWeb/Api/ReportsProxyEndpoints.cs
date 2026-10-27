@@ -2,8 +2,6 @@
 
 public static class ReportsProxyEndpoints
 {
-    private const string WebApiClientName = "webapi";
-
     public static void MapReportsProxy(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/proxy/reports")
@@ -22,7 +20,8 @@ public static class ReportsProxyEndpoints
         if (fromDate.HasValue) query += $"&fromDate={fromDate.Value:yyyy-MM-dd}";
         if (toDate.HasValue) query += $"&toDate={toDate.Value:yyyy-MM-dd}";
 
-        return ForwardAsync(httpFactory, HttpMethod.Get, $"/api/reports/popular-books{query}", null, ct);
+        return ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get,
+            $"/api/reports/popular-books{query}", null, ct);
     }
 
     private static Task<IResult> GetUserActivityAsync(
@@ -30,19 +29,7 @@ public static class ReportsProxyEndpoints
         IHttpClientFactory httpFactory, CancellationToken ct)
     {
         var query = $"?onlyWithOverdue={onlyWithOverdue}&onlyActive={onlyActive}";
-        return ForwardAsync(httpFactory, HttpMethod.Get, $"/api/reports/user-activity{query}", null, ct);
-    }
-
-    private static async Task<IResult> ForwardAsync(
-        IHttpClientFactory httpFactory, HttpMethod method, string path, object? body, CancellationToken ct)
-    {
-        var http = httpFactory.CreateClient(WebApiClientName);
-        using var req = new HttpRequestMessage(method, path);
-        if (body is not null) req.Content = JsonContent.Create(body);
-
-        using var resp = await http.SendAsync(req, ct);
-        var content = await resp.Content.ReadAsStringAsync(ct);
-        var mediaType = resp.Content.Headers.ContentType?.MediaType ?? "application/json";
-        return Results.Content(content, mediaType, statusCode: (int)resp.StatusCode);
+        return ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get,
+            $"/api/reports/user-activity{query}", null, ct);
     }
 }

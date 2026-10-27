@@ -1,5 +1,6 @@
 ﻿@page "/users/{Id:guid}"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@attribute [Authorize(Roles = "Librarian,Admin")]
 @using BlazorWeb.Client.Services.APIs
 @using BlazorWeb.Client.Services.Interfaces
 @using BlazorWeb.Components.Shared.DataGrid
@@ -8,7 +9,6 @@
 @using LibApp.Core.Enums
 @using LibApp.Core.Requests.Borrowing
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
 @inject IUserApiClient UserClient
 @inject IRoomApiClient RoomClient
 @inject IBookApiClient BookClient
@@ -16,6 +16,7 @@
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject IBorrowingSettingsService SettingsService
+@inject IPenaltySettingsService PenaltySettingsService
 
 <PageTitle>Профиль — @FullName</PageTitle>
 
@@ -300,8 +301,7 @@ else
     private UserDTO? user;
     private List<BorrowedBookDTO> allBorrows = new();
     private List<RoomDTO> rooms = new();
-    private Dictionary<Guid, string> bookTitles = new();
-    private Dictionary<Guid, string> bookAuthors = new();
+    private Dictionary<Guid, BookDTO> bookById = new();
 
     // Модалка выдачи
     private bool borrowDialogOpen;
@@ -310,6 +310,7 @@ else
     private string? borrowDialogError;
 
     // Модалка продления
+    private PenaltySettingsDTO? penaltySettings;
     private BorrowedBookDTO? extendingBorrow;
     private int extendDays = 7;
 
@@ -350,8 +351,9 @@ else
             return (from r in rooms
                     from rb in r.RoomBook
                     where rb.BookCount - rb.BorrowedCount > 0
-                    let title = bookTitles.GetValueOrDefault(rb.BookId, $"[{rb.BookId}]")
-                    let author = bookAuthors.GetValueOrDefault(rb.BookId, "")
+                    let book = bookById.GetValueOrDefault(rb.BookId)
+                    let title = book?.Title ?? $"[{rb.BookId}]"
+                    let author = book?.Author ?? ""
                     where !takenTitles.Contains(title)
                     let available = rb.BookCount - rb.BorrowedCount
                     select new RoomBookOption(rb.Id, title, author, r.Name, available, rb.BookCount))
@@ -419,9 +421,20 @@ else
                 var overdue = item.Deadline.Value < DateTime.UtcNow;
                 if (overdue)
                 {
+                    var daysOverdue = (int)Math.Ceiling((DateTime.UtcNow - item.Deadline.Value).TotalDays);
+                    if (penaltySettings != null)
+                    {
+                        daysOverdue = Math.Max(0, daysOverdue - penaltySettings.GracePeriodDays);
+                    }
+                    var estimatedPenalty = penaltySettings != null
+                        ? Math.Min(daysOverdue * penaltySettings.DailyRate, penaltySettings.MaxPenalty ?? decimal.MaxValue)
+                        : 0;
+                    var penaltyText = estimatedPenalty > 0 ? $" (штраф ≈ {estimatedPenalty:0.##}₽)" : "";
+
                     b.OpenElement(0, "span");
                     b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
-                    b.AddContent(2, $"{item.Deadline.Value:dd.MM.yyyy} ⚠");
+                    b.AddAttribute(2, "title", $"Просрочено на {daysOverdue} дн. Ставка: {penaltySettings?.DailyRate}₽/день");
+                    b.AddContent(3, $"{item.Deadline.Value:dd.MM.yyyy} ⚠{penaltyText}");
                     b.CloseElement();
                 }
                 else
@@ -576,6 +589,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         settings = await SettingsService.GetAsync();
+        penaltySettings = await PenaltySettingsService.GetAsync();
         await LoadAsync();
         await LoadCatalogAsync();
         isLoading = false;
@@ -614,8 +628,7 @@ else
             rooms = roomsResp.Room.ToList();
 
             var booksResp = await BookClient.GetAllBooksAsync();
-            bookTitles = booksResp.Book.ToDictionary(b => b.Id, b => b.Title);
-            bookAuthors = booksResp.Book.ToDictionary(b => b.Id, b => b.Author);
+            bookById = booksResp.Book.ToDictionary(b => b.Id);
         }
         catch (Exception ex)
         {

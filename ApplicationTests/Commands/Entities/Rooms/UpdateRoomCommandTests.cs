@@ -407,8 +407,14 @@ public class UpdateRoomCommandTests
 
         var roomId = new Id(Guid.NewGuid());
         var room = new Room { Id = roomId, Name = "Room", RoomBooks = [] };
-        roomRepoMock.Setup(r => r.GetAsync(It.IsAny<Expression<Func<Room, bool>>>(), null, null, null, It.IsAny<string[]>()))
-                    .ReturnsAsync([room]);
+        roomRepoMock.Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<Room, bool>>>(),
+                It.IsAny<Func<IQueryable<Room>, IOrderedQueryable<Room>>?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<string[]>()))
+            .ReturnsAsync([room]);
 
         unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
                       .ThrowsAsync(new Exception("DB error"));

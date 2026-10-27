@@ -337,4 +337,23 @@ public class GetUserActivityReportCommandTests
             Assert.That(response.Data[1].TotalPenalty, Is.EqualTo(100));
         });
     }
+
+    [Test]
+    public async Task Execute_WithNoUsers_ReturnsEmptyArray()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork(); // пустой репозиторий
+        var command = new GetUserActivityReportCommand(unitOfWork);
+        var request = new GetUserActivityRequest();
+
+        // Act
+        var response = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+            Assert.That(response.Data, Is.Empty);
+        });
+    }
 }

@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
-using System.Security.Claims;
 
 namespace BlazorWeb.Client
 {
@@ -26,13 +23,21 @@ namespace BlazorWeb.Client
                 return;
             }
 
-            Claim[] claims = [
-                new Claim(ClaimTypes.NameIdentifier, userInfo.UserId),
-                new Claim(ClaimTypes.Name, userInfo.Email),
-                new Claim(ClaimTypes.Email, userInfo.Email) ];
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, userInfo.UserId),
+                new(ClaimTypes.Name, userInfo.Email),
+                new(ClaimTypes.Email, userInfo.Email)
+            };
+
+            if (!string.IsNullOrEmpty(userInfo.Role))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, userInfo.Role));
+            }
 
             authenticationStateTask = Task.FromResult(
-                new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(claims,
+                new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(
+                    claims,
                     authenticationType: nameof(PersistentAuthenticationStateProvider)))));
         }
 

@@ -81,6 +81,41 @@ public class UserValidatorAsyncTests
         });
     }
 
+    [TestCase("Пароль123!")]
+    [TestCase("ПАроль123!")]
+    [TestCase("ПарольPassword123!")]
+    public async Task ValidatePasswordAsync_WithCyrillicLetters_ReturnsValid(string password)
+    {
+        var validator = CreateValidator();
+        var result = await validator.ValidatePasswordAsync(password);
+        Assert.That(result.IsValid, Is.True,
+            $"Пароль '{password}' должен быть валиден. Ошибки: {string.Join("; ", result.Errors)}");
+    }
+
+    [TestCase("ПАРОЛЬ123!")]
+    public async Task ValidatePasswordAsync_WithOnlyCyrillicUppercase_ReturnsLowercaseError(string password)
+    {
+        var validator = CreateValidator();
+        var result = await validator.ValidatePasswordAsync(password);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Has.Member("Пароль должен содержать хотя бы одну строчную букву"));
+        });
+    }
+
+    [TestCase("пароль123!")]
+    public async Task ValidatePasswordAsync_WithOnlyCyrillicLowercase_ReturnsUppercaseError(string password)
+    {
+        var validator = CreateValidator();
+        var result = await validator.ValidatePasswordAsync(password);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Has.Member("Пароль должен содержать хотя бы одну заглавную букву"));
+        });
+    }
+
     #endregion
 
     #region ValidateNameAndContactAsync

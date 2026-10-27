@@ -2,8 +2,6 @@
 
 public static class UsersProxyEndpoints
 {
-    private const string WebApiClientName = "webapi";
-
     public static void MapUsersProxy(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/proxy/users")
@@ -14,7 +12,7 @@ public static class UsersProxyEndpoints
         group.MapGet("/{id:guid}", GetByIdAsync);
         group.MapGet("/{id:guid}/books", GetUserBooksAsync);
 
-        // Переопределяем Create и Delete
+        // Переопределяем Create и Delete (BFF: Identity + Library, с компенсацией)
         group.MapPost("/", CreateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
 
@@ -25,37 +23,19 @@ public static class UsersProxyEndpoints
 
     private static Task<IResult> GetAllAsync(
         IHttpClientFactory httpFactory, CancellationToken ct)
-        => ForwardAsync(httpFactory, HttpMethod.Get, "/api/users", null, ct);
+        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, "/api/users", null, ct);
 
     private static Task<IResult> GetByIdAsync(
         Guid id, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ForwardAsync(httpFactory, HttpMethod.Get, $"/api/users/{id}", null, ct);
+        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, $"/api/users/{id}", null, ct);
 
     private static Task<IResult> GetUserBooksAsync(
         Guid id, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ForwardAsync(httpFactory, HttpMethod.Get, $"/api/users/{id}/books", null, ct);
+        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, $"/api/users/{id}/books", null, ct);
 
     private static Task<IResult> UpdateAsync(
         UpdateUserRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ForwardAsync(httpFactory, HttpMethod.Put, "/api/users", request, ct);
-
-    private static async Task<IResult> ForwardAsync(
-        IHttpClientFactory httpFactory,
-        HttpMethod method,
-        string path,
-        object? body,
-        CancellationToken ct)
-    {
-        var http = httpFactory.CreateClient(WebApiClientName);
-        using var req = new HttpRequestMessage(method, path);
-        if (body is not null)
-            req.Content = JsonContent.Create(body);
-
-        using var resp = await http.SendAsync(req, ct);
-        var content = await resp.Content.ReadAsStringAsync(ct);
-        var mediaType = resp.Content.Headers.ContentType?.MediaType ?? "application/json";
-        return Results.Content(content, mediaType, statusCode: (int)resp.StatusCode);
-    }
+        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Put, "/api/users", request, ct);
 
     #endregion
 
@@ -70,12 +50,11 @@ public static class UsersProxyEndpoints
     {
         var logger = loggerFactory.CreateLogger("CreateUserBff");
 
-        // Создаём Identity-пользователя
         var appUser = new ApplicationUser
         {
             UserName = request.Email,
             Email = request.Email,
-            EmailConfirmed = true, // Админ создаёт пользователя, подтверждение не нужно
+            EmailConfirmed = true,
             FirstName = request.FirstName,
             LastName = request.LastName,
             MiddleName = request.MiddleName ?? "",
@@ -91,7 +70,6 @@ public static class UsersProxyEndpoints
 
         try
         {
-            // Создаём Library-пользователя (вызывает валидацию Email и пароля)
             var libUser = await userService.CreateUserAsync(
                 request.Email,
                 request.Password,
@@ -102,7 +80,6 @@ public static class UsersProxyEndpoints
                 request.Role ?? UserRole.Reader,
                 ct);
 
-            // Связываем их
             appUser.LibraryUserId = libUser.Id.Value;
             await userManager.UpdateAsync(appUser);
 
@@ -110,12 +87,12 @@ public static class UsersProxyEndpoints
         }
         catch (Exception ex)
         {
-            // Компенсация: если Library упал, откатываем Identity
             logger.LogError(ex, "Failed to create library user for {Email}. Rolling back Identity.", request.Email);
             await userManager.DeleteAsync(appUser);
 
-            // Извлекаем чистое сообщение, если это LibValidationException
-            var message = ex is LibValidationException lve ? string.Join("\n", lve.ExceptionDetails) : ex.Message;
+            var message = ex is LibValidationException lve
+                ? string.Join("\n", lve.ExceptionDetails)
+                : ex.Message;
             return Results.Problem(detail: message, statusCode: 400);
         }
     }
@@ -129,7 +106,6 @@ public static class UsersProxyEndpoints
     {
         var logger = loggerFactory.CreateLogger("DeleteUserBff");
 
-        // Ищем Identity-пользователя по LibraryUserId
         var appUser = userManager.Users.FirstOrDefault(u => u.LibraryUserId == id);
 
         if (appUser != null)
@@ -161,7 +137,9 @@ public static class UsersProxyEndpoints
             // Если удаление Library упало (например, FK constraint), 
             // мы уже удалили Identity. Пишем в лог, но возвращаем 200.
             logger.LogError(ex, "Failed to delete library user {Id} after Identity deletion.", id);
-            return Results.Problem(detail: $"Пользователь удалён из Identity, но не удалён из библиотеки: {ex.Message}", statusCode: 500);
+            return Results.Problem(
+                detail: $"Пользователь удалён из Identity, но не удалён из библиотеки: {ex.Message}",
+                statusCode: 500);
         }
 
         return Results.Ok(new BasicCreateDeleteResponse("Ok", "User deleted successfully."));

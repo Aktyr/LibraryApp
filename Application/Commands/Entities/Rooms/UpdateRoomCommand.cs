@@ -13,6 +13,7 @@ public class UpdateRoomCommand(
 
         var room = (await roomRepo.GetAsync(
             r => r.Id == request.Id,
+            cancellationToken: cancellationToken,
             includePaths: IncludePaths.Room.RoomBooksBook)).FirstOrDefault()
             ?? throw new RoomNotFoundException();
 

@@ -45,12 +45,14 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
     public Task<IEnumerable<TEntity>> GetWithoutTrackingAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         => GetAsync(predicate, cancellationToken);
     public Task<IEnumerable<TEntity>> GetAsync(
-        Expression<Func<TEntity, bool>>? filter = null,
-        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
-        int? skip = null,
-        int? take = null,
-        params string[] includePaths)
+    Expression<Func<TEntity, bool>>? filter = null,
+    Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+    int? skip = null,
+    int? take = null,
+    CancellationToken cancellationToken = default,
+    params string[] includePaths)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var query = Entities.AsQueryable();
         if (filter != null)
             query = query.Where(filter);
@@ -61,6 +63,18 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
         if (take.HasValue)
             query = query.Take(take.Value);
         return Task.FromResult(query.AsEnumerable());
+    }
+
+    public Task<IEnumerable<TEntity>> GetWithoutTrackingAsync(
+        Expression<Func<TEntity, bool>>? filter = null,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+        int? skip = null,
+        int? take = null,
+        CancellationToken cancellationToken = default,
+        params string[] includePaths)
+    {
+        // В фейке нет реального трекинга — делегируем в GetAsync.
+        return GetAsync(filter, orderBy, skip, take, cancellationToken, includePaths);
     }
 
     public Task<IEnumerable<TEntity>> GetWithIncludesAsync(Expression<Func<TEntity, bool>>? predicate = null, params string[] includePaths)

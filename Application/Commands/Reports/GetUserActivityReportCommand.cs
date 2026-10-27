@@ -1,40 +1,50 @@
 ﻿namespace LibApp.Application.Commands.Reports;
 
-// fixme требуется объединение User и UserRoomBook. С текущим репозиторием это невозможно сделать эффективно
-public class GetUserActivityReportCommand(
-    IUnitOfWork unitOfWork)
+public class GetUserActivityReportCommand(IUnitOfWork unitOfWork)
     : IGetQuery<GetUserActivityRequest, UserActivityReportResponse>, ICommand
 {
     public async Task<UserActivityReportResponse> Execute(GetUserActivityRequest request, CancellationToken ct)
     {
-        var userRepo = unitOfWork.GetRepository<User>();
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+        var repo = unitOfWork.GetRepository<User>();
 
-        // Получаем всех пользователей и все бронирования (без отслеживания внутри репозитория)
-        var users = await userRepo.GetAsync();
-        var borrows = await userRoomBookRepo.GetAsync();
+        // Всё в одном SQL-запросе: фильтры, сортировка, агрегация по навигации RoomBooks.
+        // Пользователи без выдач попадают через левое соединение (Count/Sum/Any по пустой = 0/false).
+        var rawData = await repo.ExecuteQueryAsync(query =>
+        {
+            if (request.OnlyWithOverdue)
+                query = query.Where(u => u.RoomBooks.Any(urb =>
+                    urb.ReturnDate == null && urb.Deadline.HasValue && urb.Deadline < DateTime.UtcNow));
 
-        var query = from user in users
-                    join borrow in borrows on user.Id equals borrow.User.Id into borrowsGroup
-                    select new UserActivityReportDTO(
-                        user.Id.Value,
-                        user.FullName,
-                        user.Email,
-                        borrowsGroup.Count(),
-                        borrowsGroup.Count(urb => !urb.IsReturned),
-                        borrowsGroup.Sum(urb => urb.Penalty ?? 0),
-                        borrowsGroup.Any(urb => !urb.IsReturned && urb.Deadline < DateTime.UtcNow)
-                    );
+            if (request.OnlyActive)
+                query = query.Where(u => u.RoomBooks.Any(urb => urb.ReturnDate == null));
 
-        if (request.OnlyWithOverdue)
-            query = query.Where(u => u.HasOverdue);
-        if (request.OnlyActive)
-            query = query.Where(u => u.CurrentBorrowedCount > 0);
+            return query
+                .OrderByDescending(u => u.RoomBooks.Sum(urb => (decimal?)urb.Penalty) ?? 0)
+                .Select(u => new
+                {
+                    Id = u.Id, // record Id, .Value берём в памяти
+                    u.LastName,
+                    u.FirstName,
+                    u.MiddleName,
+                    u.Email,
+                    TotalBorrowedCount = u.RoomBooks.Count(),
+                    CurrentBorrowedCount = u.RoomBooks.Count(urb => urb.ReturnDate == null),
+                    TotalPenalty = u.RoomBooks.Sum(urb => (decimal?)urb.Penalty) ?? 0,
+                    HasOverdue = u.RoomBooks.Any(urb =>
+                        urb.ReturnDate == null && urb.Deadline.HasValue && urb.Deadline < DateTime.UtcNow)
+                });
+        }, ct);
 
-        var result = query
-            .OrderByDescending(u => u.TotalPenalty)
-            .ToArray();
+        var dtos = rawData.Select(x => new UserActivityReportDTO(
+            x.Id.Value,
+            $"{x.LastName} {x.FirstName} {x.MiddleName}".Trim(),
+            x.Email,
+            x.TotalBorrowedCount,
+            x.CurrentBorrowedCount,
+            x.TotalPenalty,
+            x.HasOverdue
+        )).ToArray();
 
-        return ResponseFactory.Found<User, UserActivityReportDTO, UserActivityReportResponse>(result);
+        return ResponseFactory.Found<User, UserActivityReportDTO, UserActivityReportResponse>(dtos);
     }
 }

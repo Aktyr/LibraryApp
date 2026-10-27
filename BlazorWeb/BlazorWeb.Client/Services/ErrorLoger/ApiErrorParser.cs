@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-namespace BlazorWeb.Client.Services;
+﻿namespace BlazorWeb.Client.Services;
 
 internal static class ApiErrorParser
 {
@@ -37,6 +35,12 @@ internal static class ApiErrorParser
             }
         }
 
-        return new ApiException(status, $"HTTP {status} {resp.ReasonPhrase}");
+        // Локализованные сообщения для статусов, которые ASP.NET Core возвращает без тела
+        return status switch
+        {
+            401 => new ApiException(401, "Необходимо войти в систему"),
+            403 => new ApiException(403, "Недостаточно прав для выполнения этого действия"),
+            _ => new ApiException(status, $"HTTP {status} {resp.ReasonPhrase}")
+        };
     }
 }
