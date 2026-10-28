@@ -261,4 +261,40 @@ public class LoginCommandTests
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await loginCommand.Execute(request, CancellationToken.None));
     }
+    [Test]
+    public async Task Execute_WhenUserIsDeleted_ThrowsUnauthorizedException()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+
+        var email = "deleted@example.com";
+        var password = "Password";
+
+        var deletedUser = new User
+        {
+            Id = new Id(Guid.NewGuid()),
+            Email = email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+            LastName = "Удалён",
+            FirstName = "Пользователь",
+            ContactInfo = email,
+            Role = UserRole.Reader,
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow,
+            RoomBooks = []
+        };
+        await userRepo.AddRangeAsync([deletedUser], CancellationToken.None);
+
+        var loginCommand = new LoginCommand(unitOfWork, JwtService);
+        var request = new LoginRequest
+        {
+            Email = email,
+            Password = password  // правильный пароль
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedException>(async () =>
+            await loginCommand.Execute(request, CancellationToken.None));
+    }
 }

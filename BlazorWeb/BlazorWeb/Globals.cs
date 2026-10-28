@@ -42,3 +42,6 @@ global using System.Net.Http.Headers;
 global using System.Security.Claims;
 global using System.Text.Json;
 global using System.Text.RegularExpressions;
+global using LibApp.Application.Commands.Entities.Users;
+global using LibApp.Core.Entities;
+global using LibApp.Core.Exceptions.Entities;

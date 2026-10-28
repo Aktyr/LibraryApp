@@ -9,7 +9,7 @@ public class UserRoomBookConfiguration : IEntityTypeConfiguration<UserRoomBook>
         builder.HasOne(urb => urb.User)
                .WithMany(u => u.RoomBooks)
                .HasForeignKey("UserId")
-               .OnDelete(DeleteBehavior.Cascade);
+               .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(urb => urb.RoomBook)
                .WithMany()
@@ -26,6 +26,8 @@ public class UserRoomBookConfiguration : IEntityTypeConfiguration<UserRoomBook>
                .HasConversion<DateTimeToUtcConverter>();
 
         builder.Ignore(urb => urb.IsReturned);
+
+        builder.HasQueryFilter(urb => !urb.User.IsDeleted);
 
         builder.HasIndex(urb => urb.BorrowDate);
         builder.HasIndex(urb => urb.Deadline);

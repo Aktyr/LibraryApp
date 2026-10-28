@@ -41,6 +41,8 @@ public class Program
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<UserValidatorAsync>();
         builder.Services.AddScoped<EmailValidatorAsync>();
+        builder.Services.AddTransient<DeleteUserCommand>();
+
 
         builder.Services.AddOptions<JwtSettings>()
             .Bind(builder.Configuration.GetSection("ApplicationSettings:Jwt"))

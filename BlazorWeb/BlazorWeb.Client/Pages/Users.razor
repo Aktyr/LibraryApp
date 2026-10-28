@@ -290,6 +290,7 @@ else if (users != null)
     };
 
         // Удаление — только админ
+        // Пользователь пропадает из списка, история выдач и штрафов сохраняется.
         if (isAdmin)
         {
             actions.Add(new()
@@ -415,11 +416,11 @@ else if (users != null)
     }
 
     private async Task DeleteAsync(UserDTO user)
-    { 
+    {
         // Проверка до модалки. Если есть активные выдачи — удалить нельзя
         if (user.ActiveBorrowedCount > 0)
         {
-            errorMessage = $"Нельзя удалить пользователя «{user.LastName} {user.FirstName}»: " +
+            errorMessage = $"Нельзя деактивировать пользователя «{user.LastName} {user.FirstName}»: " +
                            $"у него {user.ActiveBorrowedCount} активных выдач. Сначала верните книги.";
             statusMessage = null;
             await InvokeAsync(StateHasChanged);
@@ -430,7 +431,8 @@ else if (users != null)
             $"Удалить пользователя «{user.LastName} {user.FirstName}»?\n" +
             $"Email: {user.Email}\n" +
             $"Активных выдач: {user.ActiveBorrowedCount}\n\n" +
-            "Вся история выдач и штрафов будет удалена. Это действие необратимо.",
+            "Пользователь пропадёт из списка и не сможет входить в систему, " +
+            "но история выдач и штрафов сохранится.",
             title: "Удаление пользователя",
             confirmText: "Удалить",
             requireConfirmationWord: true);
@@ -440,13 +442,14 @@ else if (users != null)
         try
         {
             await ApiClient.DeleteUserAsync(user.Id);
-            statusMessage = $"Пользователь «{user.LastName} {user.FirstName}» удалён";
+            statusMessage = $"Пользователь «{user.LastName} {user.FirstName}» деактивирован";
             errorMessage = null;
             await LoadAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка удаления: {ex.Message}";
+            errorMessage = $"Ошибка деактивации: {ex.Message}";
+            await InvokeAsync(StateHasChanged);
         }
     }
 

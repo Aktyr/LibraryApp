@@ -11,6 +11,9 @@ public class DeleteUserCommand(IUnitOfWork unitOfWork)
         var user = await userRepo.FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
         if (user == null) throw new UserNotFoundException();
 
+        if (user.IsDeleted)
+            return ResponseFactory.Success("Пользователь уже деактивирован");
+
         var activeBorrows = await userRoomBookRepo.CountAsync(
             urb => urb.User.Id == request.Id && urb.ReturnDate == null,
             cancellationToken);
@@ -21,14 +24,18 @@ public class DeleteUserCommand(IUnitOfWork unitOfWork)
             {
                 ExceptionDetails =
                 [
-                    $"Нельзя удалить пользователя: у него {activeBorrows} активных выдач. " +
+                    $"Нельзя деактивировать пользователя: у него {activeBorrows} активных выдач. " +
                     "Сначала верните все книги."
                 ]
             };
         }
 
-        await userRepo.RemoveAsync(user, cancellationToken);
+        // Soft-delete: не удаляем физически, чтобы сохранить историю
+        user.IsDeleted = true;
+        user.DeletedAt = DateTime.UtcNow;
+        await userRepo.UpdateAsync(user, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return ResponseFactory.Deleted<User>();
+
+        return ResponseFactory.Success("Пользователь деактивирован");
     }
 }

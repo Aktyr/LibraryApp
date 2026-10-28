@@ -35,12 +35,15 @@ public class DeleteUserCommandTests
         {
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Status, Is.EqualTo("Ok"));
-            Assert.That(result.Message, Is.EqualTo("User deleted successfully."));
-            Assert.That(userRepo.Entities, Has.Count.EqualTo(initialCount - 1));
+            Assert.That(result.Message, Is.EqualTo("Пользователь деактивирован"));
 
-            // Проверяем, что пользователь действительно удален
-            var deletedUserStillExists = userRepo.Entities.Any(u => u.Id.Value == userToDelete.Id.Value);
-            Assert.That(deletedUserStillExists, Is.False);
+            // Запись НЕ исчезла — soft-delete
+            Assert.That(userRepo.Entities, Has.Count.EqualTo(initialCount));
+
+            // Но помечена как удалённая
+            var deactivatedUser = userRepo.Entities.First(u => u.Id.Value == userToDelete.Id.Value);
+            Assert.That(deactivatedUser.IsDeleted, Is.True);
+            Assert.That(deactivatedUser.DeletedAt, Is.Not.Null);
         });
     }
 
@@ -124,7 +127,9 @@ public class DeleteUserCommandTests
         Assert.Multiple(() =>
         {
             Assert.That(result.Status, Is.EqualTo("Ok"));
-            Assert.That(userRepo.Entities, Is.Empty);
+            Assert.That(userRepo.Entities, Has.Count.EqualTo(1));
+            Assert.That(userRepo.Entities.First().IsDeleted, Is.True);
+            Assert.That(userRepo.Entities.First().DeletedAt, Is.Not.Null);
         });
     }
 
@@ -252,7 +257,8 @@ public class DeleteUserCommandTests
         Assert.Multiple(() =>
         {
             Assert.That(result.Status, Is.EqualTo("Ok"));
-            Assert.That(userRepo.Entities, Is.Empty);
+            Assert.That(userRepo.Entities, Has.Count.EqualTo(1));
+            Assert.That(userRepo.Entities.First().IsDeleted, Is.True);
         });
     }
 
@@ -287,7 +293,10 @@ public class DeleteUserCommandTests
                 Assert.That(result.Status, Is.EqualTo("Ok"));
             }
 
-            Assert.That(userRepo.Entities, Is.Empty);
+            // Записи остались, но все помечены как деактивированные
+            Assert.That(userRepo.Entities, Has.Count.EqualTo(5));
+            Assert.That(userRepo.Entities, Has.All.Matches<User>(u => u.IsDeleted));
+            Assert.That(userRepo.Entities, Has.All.Matches<User>(u => u.DeletedAt != null));
         });
     }
 
@@ -319,7 +328,7 @@ public class DeleteUserCommandTests
         Assert.Multiple(() =>
         {
             Assert.That(result.Status, Is.EqualTo("Ok"));
-            Assert.That(result.Message, Is.EqualTo("User deleted successfully."));
+            Assert.That(result.Message, Is.EqualTo("Пользователь деактивирован"));
             Assert.That(result, Is.InstanceOf<BasicCreateDeleteResponse>());
         });
     }

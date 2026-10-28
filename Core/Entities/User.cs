@@ -18,6 +18,8 @@ public class User : IEntity
     // todo добавить подтверждение почты IsEmailConfirmed 
     // todo добавить проверку сложности пароля 
     // todo тайм-аут после N неудачных вводов пароля? 
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 
     public TimeSpan? NearestReturnTimeSpan
     {

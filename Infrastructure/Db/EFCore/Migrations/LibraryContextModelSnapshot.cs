@@ -26,6 +26,49 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("DiscardedBook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Amount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("ApprovedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BookId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("CompensationAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("DiscardReason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("DiscardedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("BookId");
+
+                    b.HasIndex("RoomId");
+
+                    b.ToTable("DiscardedBooks", "library");
+                });
+
             modelBuilder.Entity("LibApp.Core.Entities.Book", b =>
                 {
                     b.Property<Guid>("Id")
@@ -67,44 +110,6 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.HasIndex("Title");
 
                     b.ToTable("Book", "library");
-                });
-
-            modelBuilder.Entity("LibApp.Core.Entities.DiscardedBook", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ApprovedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<Guid>("BookId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal?>("CompensationAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<string>("DiscardReason")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("DiscardedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BookId");
-
-                    b.HasIndex("RoomId");
-
-                    b.ToTable("DiscardedBooks", "library");
                 });
 
             modelBuilder.Entity("LibApp.Core.Entities.Room", b =>
@@ -161,6 +166,9 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -170,6 +178,11 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -191,7 +204,10 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("IsDeleted");
 
                     b.ToTable("User", "library");
                 });
@@ -235,8 +251,13 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.ToTable("UserRoomBook", "library");
                 });
 
-            modelBuilder.Entity("LibApp.Core.Entities.DiscardedBook", b =>
+            modelBuilder.Entity("DiscardedBook", b =>
                 {
+                    b.HasOne("LibApp.Core.Entities.User", "ApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("LibApp.Core.Entities.Book", "Book")
                         .WithMany()
                         .HasForeignKey("BookId")
@@ -248,6 +269,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ApprovedByUser");
 
                     b.Navigation("Book");
 
@@ -284,7 +307,7 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.HasOne("LibApp.Core.Entities.User", "User")
                         .WithMany("RoomBooks")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("RoomBook");

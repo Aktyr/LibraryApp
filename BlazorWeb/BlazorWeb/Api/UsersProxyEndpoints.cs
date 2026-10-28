@@ -109,26 +109,43 @@ public static class UsersProxyEndpoints
     }
 
     private static async Task<IResult> DeleteAsync(
-        Guid id,
-        ClaimsPrincipal user,
-        UserManager<ApplicationUser> userManager,
-        IUnitOfWork unitOfWork,
-        ILoggerFactory loggerFactory,
-        CancellationToken ct)
+    Guid id,
+    ClaimsPrincipal user,
+    UserManager<ApplicationUser> userManager,
+    DeleteUserCommand deleteUserCommand,
+    IUnitOfWork unitOfWork,
+    ILoggerFactory loggerFactory,
+    CancellationToken ct)
     {
-        // Только админ может удалять.
         var actorRole = user.FindFirst(ClaimTypes.Role)?.Value;
         if (actorRole != nameof(UserRole.Admin))
         {
             return Results.Problem(
-                detail: "Только администратор может удалять пользователей",
+                detail: "Только администратор может деактивировать пользователей",
                 statusCode: 403);
         }
 
         var logger = loggerFactory.CreateLogger("DeleteUserBff");
 
-        var appUser = userManager.Users.FirstOrDefault(u => u.LibraryUserId == id);
+        // 1) Валидация ДО удаления Identity.
+        //    Если есть активные выдачи — отказываем сразу, не трогая Identity,
+        //    чтобы не оставить «осиротевший» Identity-аккаунт.
+        var libUserId = new Id(id);
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+        var activeBorrows = await userRoomBookRepo.CountAsync(
+            urb => urb.User.Id == libUserId && urb.ReturnDate == null,
+            ct);
 
+        if (activeBorrows > 0)
+        {
+            return Results.Problem(
+                detail: $"Нельзя деактивировать пользователя: у него {activeBorrows} активных выдач. Сначала верните все книги.",
+                statusCode: 400);
+        }
+
+        // 2) Удаляем Identity-пользователя (жёстко — Identity-запись
+        //    не нужна, её историю не храним; library.User для истории остаётся).
+        var appUser = userManager.Users.FirstOrDefault(u => u.LibraryUserId == id);
         if (appUser != null)
         {
             var identityResult = await userManager.DeleteAsync(appUser);
@@ -139,27 +156,27 @@ public static class UsersProxyEndpoints
             }
         }
 
+        // 3) Soft-delete library.User через команду — единая точка правды
+        //    для правил деактивации. DeleteUserCommand ещё раз проверит
+        //    activeBorrows (защита от race), но это уже перестраховка.
         try
         {
-            var libUserId = new Id(id);
-            var userRepo = unitOfWork.GetRepository<LibApp.Core.Entities.User>();
-            var libUser = await userRepo.FirstOrDefaultAsync(u => u.Id == libUserId, ct);
-
-            if (libUser != null)
-            {
-                await userRepo.RemoveAsync(libUser, ct);
-                await unitOfWork.SaveChangesAsync(ct);
-            }
+            await deleteUserCommand.Execute(new DeleteUserRequest { Id = new Id(id) }, ct);
+        }
+        catch (UserNotFoundException)
+        {
+            // library.User нет — например, был удалён раньше.
+            // Identity-сироту мы уже удалили — считаем успехом (идемпотентно).
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to delete library user {Id} after Identity deletion.", id);
+            logger.LogError(ex, "Failed to soft-delete library user {Id} after Identity deletion.", id);
             return Results.Problem(
-                detail: $"Пользователь удалён из Identity, но не удалён из библиотеки: {ex.Message}",
+                detail: $"Пользователь удалён из Identity, но не деактивирован в библиотеке: {ex.Message}",
                 statusCode: 500);
         }
 
-        return Results.Ok(new BasicCreateDeleteResponse("Ok", "User deleted successfully."));
+        return Results.Ok(new BasicCreateDeleteResponse("Ok", "Пользователь деактивирован"));
     }
 
     #endregion

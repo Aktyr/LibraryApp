@@ -25,7 +25,19 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
                .IsRequired()
                .HasMaxLength(200);
 
-        builder.HasIndex(u => u.Email).IsUnique();
+        builder.Property(u => u.IsDeleted)
+               .IsRequired()
+               .HasDefaultValue(false);
+
+        builder.Property(u => u.DeletedAt);
+
+        builder.HasIndex(u => u.Email)
+               .IsUnique()
+               .HasFilter("\"IsDeleted\" = false");
+
+        builder.HasIndex(u => u.IsDeleted);
+
+        builder.HasQueryFilter(u => !u.IsDeleted);
 
         builder.Ignore(u => u.NearestReturnTimeSpan);
         builder.Ignore(u => u.FullName);

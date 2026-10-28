@@ -16,6 +16,11 @@ public class DiscardedBookConfiguration : IEntityTypeConfiguration<DiscardedBook
                .HasForeignKey(d => d.RoomId)
                .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(d => d.ApprovedByUser)
+               .WithMany()
+               .HasForeignKey(d => d.ApprovedById)
+               .OnDelete(DeleteBehavior.SetNull)
+               .IsRequired(false);
 
         builder.Property(d => d.Amount)
                .IsRequired();
@@ -29,5 +34,7 @@ public class DiscardedBookConfiguration : IEntityTypeConfiguration<DiscardedBook
 
         builder.Property(d => d.CompensationAmount)
                .HasPrecision(18, 2);
+
+        builder.HasIndex(d => d.ApprovedById);
     }
 }
