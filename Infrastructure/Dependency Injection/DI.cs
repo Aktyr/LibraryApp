@@ -19,6 +19,7 @@ public static partial class DI
                 .AddCommands()
                 .AddServices()
                 .AddJwtAuthentication()
+                .AddCurrentUser()
                 .AddBackgroundServices()
                 .AddUnitOfWork()
                 .AddSmtpClient();

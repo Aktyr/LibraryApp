@@ -71,3 +71,5 @@ global using WebAPI.Misc.Helpers;
 global using System.Net;
 global using WebAPI.Middleware;
 global using LibApp.Application.Commands.Settings;
+global using System.Security.Claims;
+

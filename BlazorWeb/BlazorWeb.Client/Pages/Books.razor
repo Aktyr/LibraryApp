@@ -8,7 +8,7 @@
 @using LibApp.Core.Records
 @using LibApp.Core.Requests.Entities.Book
 @inject IBookApiClient ApiClient
-@inject IJSRuntime JS
+@inject IConfirmService Confirm
 @inject AuthenticationStateProvider AuthProvider
 
 <PageTitle>Книги</PageTitle>
@@ -191,6 +191,8 @@ else if (books != null)
         {
             isLoading = false;
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OpenCreateDialogAsync()
@@ -266,14 +268,29 @@ else if (books != null)
 
     private async Task DeleteAsync(BookDTO book)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm",
-            $"Удалить книгу «{book.Title}»?");
+        // Проверка до модалки. Если удалить нельзя — не мучаем пользователя вводом слова
+        if (book.RoomBook is { Count: > 0 })
+        {
+            errorMessage = $"Нельзя удалить книгу «{book.Title}»: она есть в {book.RoomBook.Count} комнате(ах). " +
+                           "Сначала уберите её из всех комнат.";
+            statusMessage = null;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var confirmed = await Confirm.AskAsync(
+            $"Удалить книгу «{book.Title}»?\nАвтор: {book.Author}\n\nЭто действие необратимо.",
+            title: "Удаление книги",
+            confirmText: "Удалить",
+            requireConfirmationWord: true);
+
         if (!confirmed) return;
 
         try
         {
             await ApiClient.DeleteBookAsync(book.Id);
             statusMessage = $"Книга «{book.Title}» удалена";
+            errorMessage = null;
             await LoadAsync();
         }
         catch (Exception ex)

@@ -7,4 +7,5 @@ public interface IBookApiClient
     Task<BasicCreateDeleteResponse> CreateBookAsync(CreateBookRequest request, CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> UpdateBookAsync(UpdateBookRequest request, CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> DeleteBookAsync(Guid id, CancellationToken ct = default);
+    Task<BasicCreateDeleteResponse> DiscardBookAsync(DiscardBookRequest request, CancellationToken ct = default);
 }

@@ -13,6 +13,8 @@ public static class BooksProxyEndpoints
         group.MapPost("/", CreateAsync);
         group.MapPut("/", UpdateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
+        group.MapPost("/discard", DiscardAsync);
+
     }
 
     private static Task<IResult> GetAllAsync(
@@ -34,4 +36,8 @@ public static class BooksProxyEndpoints
     private static Task<IResult> DeleteAsync(
         Guid id, IHttpClientFactory httpFactory, CancellationToken ct)
         => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Delete, $"/api/books/{id}", null, ct);
+    private static Task<IResult> DiscardAsync(
+        DiscardBookRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
+        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post, "/api/books/discard", request, ct);
+
 }

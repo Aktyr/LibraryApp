@@ -15,7 +15,6 @@ public static class UsersProxyEndpoints
         // Переопределяем Create и Delete (BFF: Identity + Library, с компенсацией)
         group.MapPost("/", CreateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
-
         group.MapPut("/", UpdateAsync);
     }
 
@@ -43,11 +42,23 @@ public static class UsersProxyEndpoints
 
     private static async Task<IResult> CreateAsync(
         CreateUserRequest request,
+        ClaimsPrincipal user,
         UserManager<ApplicationUser> userManager,
         IUserService userService,
         ILoggerFactory loggerFactory,
         CancellationToken ct)
     {
+        // Только Admin может создавать Librarian/Admin.
+        var actorRole = user.FindFirst(ClaimTypes.Role)?.Value;
+        if (actorRole != nameof(UserRole.Admin)
+            && request.Role.HasValue
+            && request.Role.Value != UserRole.Reader)
+        {
+            return Results.Problem(
+                detail: "Только администратор может создавать пользователей с ролью Библиотекарь или Администратор",
+                statusCode: 403);
+        }
+
         var logger = loggerFactory.CreateLogger("CreateUserBff");
 
         var appUser = new ApplicationUser
@@ -99,11 +110,21 @@ public static class UsersProxyEndpoints
 
     private static async Task<IResult> DeleteAsync(
         Guid id,
+        ClaimsPrincipal user,
         UserManager<ApplicationUser> userManager,
         IUnitOfWork unitOfWork,
         ILoggerFactory loggerFactory,
         CancellationToken ct)
     {
+        // Только админ может удалять.
+        var actorRole = user.FindFirst(ClaimTypes.Role)?.Value;
+        if (actorRole != nameof(UserRole.Admin))
+        {
+            return Results.Problem(
+                detail: "Только администратор может удалять пользователей",
+                statusCode: 403);
+        }
+
         var logger = loggerFactory.CreateLogger("DeleteUserBff");
 
         var appUser = userManager.Users.FirstOrDefault(u => u.LibraryUserId == id);
@@ -118,8 +139,6 @@ public static class UsersProxyEndpoints
             }
         }
 
-        // Удаляем Library-пользователя напрямую через UnitOfWork
-        // (Чтобы не делать лишний запрос в WebAPI)
         try
         {
             var libUserId = new Id(id);
@@ -134,8 +153,6 @@ public static class UsersProxyEndpoints
         }
         catch (Exception ex)
         {
-            // Если удаление Library упало (например, FK constraint), 
-            // мы уже удалили Identity. Пишем в лог, но возвращаем 200.
             logger.LogError(ex, "Failed to delete library user {Id} after Identity deletion.", id);
             return Results.Problem(
                 detail: $"Пользователь удалён из Identity, но не удалён из библиотеки: {ex.Message}",

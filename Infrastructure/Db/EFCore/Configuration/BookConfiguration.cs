@@ -17,7 +17,12 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(b => b.Publisher)
                .HasMaxLength(100);
 
+        builder.Property(b => b.IsDiscarded)
+               .IsRequired()
+               .HasDefaultValue(false);
+
         builder.HasIndex(b => b.Title);
         builder.HasIndex(b => b.Author);
+        builder.HasIndex(b => b.IsDiscarded);
     }
 }

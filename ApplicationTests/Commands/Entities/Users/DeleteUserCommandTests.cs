@@ -84,13 +84,13 @@ public class DeleteUserCommandTests
     }
 
     [Test]
-    public async Task Execute_DeleteUserWithBorrowedBooks_DeletesSuccessfully()
+    public async Task Execute_DeleteUserWithReturnedBorrows_DeletesSuccessfully()
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
+        var urbRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
 
-        // Создаем пользователя с "взятыми книгами" (UserRoomBook)
         var userId = new Id(Guid.NewGuid());
         var user = new User
         {
@@ -99,32 +99,160 @@ public class DeleteUserCommandTests
             FirstName = "Иван",
             MiddleName = "Иванович",
             ContactInfo = "ivanov@example.com",
-            RoomBooks =
-            [
-                new() {
-                    Id = new Id(Guid.NewGuid()),
-                    BorrowDate = DateTime.Now.AddDays(-5),
-                    Deadline = DateTime.Now.AddDays(5),
-                    User = null, // Это не важно для теста
-                    RoomBook = null // Это неважно для теста
-                }
-            ]
+            RoomBooks = []
         };
-
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var deleteUserCommand = new DeleteUserCommand(unitOfWork);
-        var deleteUserRequest = new DeleteUserRequest { Id = userId };
+        // История: книга уже возвращена
+        var borrow = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = user,
+            BorrowDate = DateTime.UtcNow.AddDays(-10),
+            Deadline = DateTime.UtcNow.AddDays(-3),
+            ReturnDate = DateTime.UtcNow.AddDays(-2) // возвращена
+        };
+        await urbRepo.AddRangeAsync([borrow], CancellationToken.None);
+
+        var command = new DeleteUserCommand(unitOfWork);
+        var request = new DeleteUserRequest { Id = userId };
 
         // Act
-        var result = await deleteUserCommand.Execute(deleteUserRequest, CancellationToken.None);
+        var result = await command.Execute(request, CancellationToken.None);
 
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(result, Is.Not.Null);
             Assert.That(result.Status, Is.EqualTo("Ok"));
-            Assert.That(userRepo.Entities, Is.Empty); // Пользователь должен быть удален
+            Assert.That(userRepo.Entities, Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Execute_WhenUserHasActiveBorrows_ThrowsValidationException()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
+        var urbRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+
+        var userId = new Id(Guid.NewGuid());
+        var user = new User
+        {
+            Id = userId,
+            LastName = "Петров",
+            FirstName = "Пётр",
+            ContactInfo = "petrov@example.com",
+            RoomBooks = []
+        };
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+
+        // Одна активная выдача
+        var borrow = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = user,
+            BorrowDate = DateTime.UtcNow.AddDays(-5),
+            Deadline = DateTime.UtcNow.AddDays(5),
+            ReturnDate = null // НЕ возвращена
+        };
+        await urbRepo.AddRangeAsync([borrow], CancellationToken.None);
+
+        var command = new DeleteUserCommand(unitOfWork);
+        var request = new DeleteUserRequest { Id = userId };
+
+        // Act & Assert
+        await Assert.MultipleAsync(async () =>
+        {
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+
+            Assert.That(ex.ExceptionDetails, Has.Some.Contains("1 активных выдач"));
+            Assert.That(ex.ExceptionDetails, Has.Some.Contains("Сначала верните все книги"));
+
+            // Пользователь НЕ удалён
+            Assert.That(userRepo.Entities, Has.Count.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public async Task Execute_WhenUserHasMultipleActiveBorrows_ReportsCorrectCount()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
+        var urbRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+
+        var userId = new Id(Guid.NewGuid());
+        var user = new User
+        {
+            Id = userId,
+            LastName = "Сидоров",
+            FirstName = "Сидор",
+            ContactInfo = "sidorov@example.com",
+            RoomBooks = []
+        };
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+
+        // Две активные + одна возвращённая
+        await urbRepo.AddRangeAsync(
+        [
+            new() { Id = new Id(Guid.NewGuid()), User = user, BorrowDate = DateTime.UtcNow.AddDays(-5), Deadline = DateTime.UtcNow.AddDays(5), ReturnDate = null },
+        new() { Id = new Id(Guid.NewGuid()), User = user, BorrowDate = DateTime.UtcNow.AddDays(-3), Deadline = DateTime.UtcNow.AddDays(7), ReturnDate = null },
+        new() { Id = new Id(Guid.NewGuid()), User = user, BorrowDate = DateTime.UtcNow.AddDays(-20), Deadline = DateTime.UtcNow.AddDays(-10), ReturnDate = DateTime.UtcNow.AddDays(-9) }
+        ], CancellationToken.None);
+
+        var command = new DeleteUserCommand(unitOfWork);
+        var request = new DeleteUserRequest { Id = userId };
+
+        // Act & Assert
+        await Assert.MultipleAsync(async () =>
+        {
+            var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
+                command.Execute(request, CancellationToken.None));
+
+            // Считаем только активные, не возвращённые
+            Assert.That(ex.ExceptionDetails, Has.Some.Contains("2 активных выдач"));
+        });
+    }
+
+    [Test]
+    public async Task Execute_DeleteUserWithOnlyReturnedBorrows_DeletesSuccessfully()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
+        var urbRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+
+        var userId = new Id(Guid.NewGuid());
+        var user = new User
+        {
+            Id = userId,
+            LastName = "Кузнецов",
+            FirstName = "Кузьма",
+            ContactInfo = "kuznetsov@example.com",
+            RoomBooks = []
+        };
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+
+        // Только возвращённые
+        await urbRepo.AddRangeAsync(
+        [
+            new() { Id = new Id(Guid.NewGuid()), User = user, BorrowDate = DateTime.UtcNow.AddDays(-30), Deadline = DateTime.UtcNow.AddDays(-20), ReturnDate = DateTime.UtcNow.AddDays(-18) },
+        new() { Id = new Id(Guid.NewGuid()), User = user, BorrowDate = DateTime.UtcNow.AddDays(-15), Deadline = DateTime.UtcNow.AddDays(-5), ReturnDate = DateTime.UtcNow.AddDays(-4) }
+        ], CancellationToken.None);
+
+        var command = new DeleteUserCommand(unitOfWork);
+        var request = new DeleteUserRequest { Id = userId };
+
+        // Act
+        var result = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo("Ok"));
+            Assert.That(userRepo.Entities, Is.Empty);
         });
     }
 

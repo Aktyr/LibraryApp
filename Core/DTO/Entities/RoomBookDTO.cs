@@ -5,4 +5,7 @@ public record RoomBookDTO(Guid Id,
                           Guid BookId,
                           int BookCount,
                           int BorrowedCount = 0)
-{ public RoomBookDTO() : this(default, default, default, default, default) { } }
+{
+    public RoomBookDTO() : this(default, default, default, default, default) { }
+    public int AvailableCount => BookCount - BorrowedCount;
+}

@@ -1,15 +1,16 @@
 ﻿@page "/rooms/{Id:guid}"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
-@using Microsoft.AspNetCore.Authorization
-@using BlazorWeb.Client.Services
 @using BlazorWeb.Components.Shared.DataGrid
 @using LibApp.Core.DTO.Entities
+@using LibApp.Core.Enums
 @using LibApp.Core.Records
+@using LibApp.Core.Requests.Entities.Book
 @using LibApp.Core.Requests.Entities.Room
+@using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject IRoomApiClient RoomClient
 @inject IBookApiClient BookClient
-@inject IJSRuntime JS
+@inject IConfirmService Confirm
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthProvider
 
@@ -22,7 +23,7 @@
     @* --- Кнопки управления только для редакторов --- *@
     @if (isEditor)
     {
-        <button class="btn btn-sm btn-outline-secondary" @onclick="OpenRenameDialog" disabled="@isLoading">✏️ Переименовать</button>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="OpenRenameDialogAsync" disabled="@isLoading">✏️ Переименовать</button>
         <button class="btn btn-sm btn-outline-danger" @onclick="DeleteRoomAsync" disabled="@isLoading" title="@(roomBooks.Count > 0 ? "Нельзя удалить комнату, в которой есть книги" : "Удалить комнату")">🗑️ Удалить комнату</button>
     }
 
@@ -79,7 +80,7 @@ else
                       Columns="InRoomColumns"
                       Actions="InRoomActions"
                       SelectionMode="DataGridSelectionMode.Multiple"
-                      OnRowDoubleClick="@(isEditor ? OpenEditCount : null)"
+                      OnRowDoubleClick="@(isEditor ? OpenEditCountAsync : null)"
                       Hint="Двойной клик — изменить количество · выделите несколько строк для массового удаления" />
         }
     </div>
@@ -101,7 +102,7 @@ else
                           Columns="CatalogColumns"
                           Actions="CatalogActions"
                           SelectionMode="DataGridSelectionMode.Multiple"
-                          OnRowDoubleClick="AddBookToRoom"
+                          OnRowDoubleClick="AddBookToRoomAndRender"
                           Hint="Двойной клик — добавить книгу в комнату · выделите несколько для массового добавления" />
             }
         </div>
@@ -118,7 +119,7 @@ else
     }
 }
 
-@* ---------- Модалки ---------- *@
+@* ---------- Модалка переименования ---------- *@
 @if (renameDialogOpen)
 {
     <div class="modal-backdrop" @onclick="CloseRenameDialog"></div>
@@ -139,6 +140,7 @@ else
     </div>
 }
 
+@* ---------- Модалка изменения количества ---------- *@
 @if (editingBook != null)
 {
     <div class="modal-backdrop" @onclick="CloseEditCount"></div>
@@ -146,7 +148,7 @@ else
         <h3>Изменить количество</h3>
         <p class="mb-1"><strong>@GetBookTitle(editingBook.BookId)</strong></p>
         <p class="mb-3 text-muted small">
-            Выдано: <strong>@editingBook.BorrowedCount</strong> · Доступно сейчас: <strong>@(editingBook.BookCount - editingBook.BorrowedCount)</strong>
+            Выдано: <strong>@editingBook.BorrowedCount</strong> · Доступно сейчас: <strong>@editingBook.AvailableCount</strong>
         </p>
         <div class="mb-3">
             <label class="form-label">Всего экземпляров</label>
@@ -156,6 +158,74 @@ else
         <div>
             <button class="btn btn-primary" disabled="@(!CanSubmitEditCount)" @onclick="SubmitEditCount">Применить</button>
             <button class="btn btn-secondary ms-2" @onclick="CloseEditCount">Отмена</button>
+        </div>
+    </div>
+}
+
+@* ---------- Модалка списания ---------- *@
+@if (discardDialogOpen && discardSource != null)
+{
+    <div class="modal-backdrop" @onclick="CloseDiscardDialog"></div>
+    <div class="modal-dialog" @onclick:stopPropagation="true">
+        <h3>Списать экземпляры</h3>
+        <p class="mb-1"><strong>@GetBookTitle(discardSource.BookId)</strong></p>
+        <p class="mb-3 text-muted small">
+            Всего: <strong>@discardSource.BookCount</strong> ·
+            Выдано: <strong>@discardSource.BorrowedCount</strong> ·
+            Доступно к списанию: <strong>@discardSource.AvailableCount</strong>
+        </p>
+
+        <div class="mb-3">
+            <label class="form-label">Сколько списать</label>
+            <input type="number"
+                   class="form-control"
+                   style="max-width: 150px;"
+                   min="1"
+                   max="@discardSource.AvailableCount"
+                   @bind="discardAmount" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Причина</label>
+            <select class="form-select" @bind="discardReason">
+                <option value="@DiscardReason.Wear">Износ</option>
+                <option value="@DiscardReason.Damaged">Повреждение</option>
+                <option value="@DiscardReason.Loss">Утрата</option>
+                <option value="@DiscardReason.Obsolete">Устарела</option>
+                <option value="@DiscardReason.Other">Другое</option>
+            </select>
+        </div>
+
+        @if (discardReason == DiscardReason.Loss || discardReason == DiscardReason.Damaged)
+        {
+            <div class="mb-3">
+                <label class="form-label">Сумма компенсации (₽)</label>
+                <input type="number" class="form-control" style="max-width: 200px;"
+                       step="0.01" min="0" @bind="discardCompensation" />
+                <small class="text-muted">Оставьте пустым, если компенсация не взимается.</small>
+            </div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label">Кто утвердил (опционально)</label>
+            <input type="text" class="form-control" style="max-width: 300px;"
+                   maxlength="100" @bind="discardApprovedBy" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(discardError))
+        {
+            <div class="alert alert-danger py-2 mb-3" style="white-space: pre-line;">@discardError</div>
+        }
+
+        <div>
+            <button class="btn btn-danger"
+                    disabled="@(!CanSubmitDiscard || discardSaving)"
+                    @onclick="SubmitDiscardAsync">
+                @(discardSaving ? "Списание..." : "Списать")
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="CloseDiscardDialog" disabled="@discardSaving">
+                Отмена
+            </button>
         </div>
     </div>
 }
@@ -218,6 +288,21 @@ else
     private int editCount;
     private bool CanSubmitEditCount => editingBook != null && editCount >= editingBook.BorrowedCount;
 
+    // ---- Списание ----
+    private bool discardDialogOpen;
+    private RoomBookDTO? discardSource;
+    private int discardAmount = 1;
+    private DiscardReason discardReason = DiscardReason.Wear;
+    private string? discardApprovedBy;
+    private decimal? discardCompensation;
+    private string? discardError;
+    private bool discardSaving;
+
+    private bool CanSubmitDiscard =>
+        discardSource != null
+        && discardAmount > 0
+        && discardAmount <= discardSource.AvailableCount;
+
     #region Columns
     private List<DataGridColumn<RoomBookDTO>>? _inRoomColumns;
     private List<DataGridColumn<RoomBookDTO>> InRoomColumns => _inRoomColumns ??= new()
@@ -227,8 +312,8 @@ else
         new() { Title = "Всего", Width = 100, FilterKind = FilterKind.Number, Value = rb => rb.BookCount },
         new() { Title = "Выдано", Width = 100, FilterKind = FilterKind.Number, Value = rb => rb.BorrowedCount,
             Template = item => b => { if (item.BorrowedCount > 0) { b.OpenElement(0, "span"); b.AddAttribute(1, "style", "color:#a85b00;font-weight:600;"); b.AddContent(2, item.BorrowedCount.ToString()); b.CloseElement(); } else { b.AddContent(0, "0"); } } },
-        new() { Title = "Доступно", Width = 120, FilterKind = FilterKind.Number, Value = rb => rb.BookCount - rb.BorrowedCount,
-            Template = item => b => { var available = item.BookCount - item.BorrowedCount; var color = available == 0 ? "#a30000" : available < item.BookCount ? "#a85b00" : "#0a7f2e"; b.OpenElement(0, "span"); b.AddAttribute(1, "style", $"color:{color};font-weight:600;"); b.AddContent(2, available.ToString()); b.CloseElement(); } }
+        new() { Title = "Доступно", Width = 120, FilterKind = FilterKind.Number, Value = rb => rb.AvailableCount,
+            Template = item => b => { var available = item.AvailableCount; var color = available == 0 ? "#a30000" : available < item.BookCount ? "#a85b00" : "#0a7f2e"; b.OpenElement(0, "span"); b.AddAttribute(1, "style", $"color:{color};font-weight:600;"); b.AddContent(2, available.ToString()); b.CloseElement(); } }
     };
 
     private List<DataGridColumn<BookDTO>>? _catalogColumns;
@@ -245,14 +330,48 @@ else
     private List<DataGridAction<RoomBookDTO>>? _inRoomActions;
     private List<DataGridAction<RoomBookDTO>> InRoomActions => !isEditor ? new() : (_inRoomActions ??= new()
     {
-        new() { Label = "Изменить кол-во", Icon = "✏️", MinSelection = 1, CanExecute = s => s.Count == 1, Handler = s => { OpenEditCount(s[0]); return Task.CompletedTask; } },
-        new() { Label = "Убрать", Icon = "🗑️", SeparatorBefore = true, MinSelection = 1, CanExecute = s => s.Count > 0 && s.All(rb => rb.BorrowedCount == 0), Handler = s => { RemoveBooks(s); return Task.CompletedTask; } }
+        new()
+        {
+            Label = "Изменить кол-во",
+            Icon = "✏️",
+            MinSelection = 1,
+            CanExecute = s => s.Count == 1,
+            Handler = s => OpenEditCountAsync(s[0])
+        },
+        new()
+        {
+            Label = "Списать",
+            Icon = "📕",
+            MinSelection = 1,
+            SeparatorBefore = true,
+            CanExecute = s => s.Count >= 1 && s.Any(rb => rb.AvailableCount > 0),
+            Handler = s => OpenDiscardAsync(s)
+        },
+        new()
+        {
+            Label = "Убрать",
+            Icon = "🗑️",
+            SeparatorBefore = true,
+            MinSelection = 1,
+            CanExecute = s => s.Count > 0 && s.All(rb => rb.BorrowedCount == 0),
+            Handler = s => RemoveBooksAsync(s)
+        }
     });
 
     private List<DataGridAction<BookDTO>>? _catalogActions;
     private List<DataGridAction<BookDTO>> CatalogActions => !isEditor ? new() : (_catalogActions ??= new()
     {
-        new() { Label = "Добавить в комнату", Icon = "➕", MinSelection = 1, Handler = s => { foreach (var b in s) AddBookToRoom(b); return Task.CompletedTask; } }
+        new()
+        {
+            Label = "Добавить в комнату",
+            Icon = "➕",
+            MinSelection = 1,
+            Handler = async s =>
+            {
+                foreach (var b in s) AddBookToRoom(b);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
     });
     #endregion
 
@@ -280,12 +399,21 @@ else
             bookById = catalog.ToDictionary(b => b.Id);
         }
         catch (Exception ex) { errorMessage = ex.Message; }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ReloadAsync()
     {
-        if (isDirty && !await JS.InvokeAsync<bool>("confirm", "Отменить несохранённые изменения?")) return;
-        isLoading = true; isDirty = false;
+        if (isDirty && !await Confirm.AskAsync(
+                "В комнате есть несохранённые изменения. Сбросить их?",
+                title: "Несохранённые изменения",
+                confirmText: "Сбросить",
+                cancelText: "Вернуться к редактированию"))
+            return;
+
+        isLoading = true;
+        isDirty = false;
         await LoadAsync();
         isLoading = false;
         await InvokeAsync(StateHasChanged);
@@ -295,7 +423,14 @@ else
     private string GetBookAuthor(Guid bookId) => bookById.TryGetValue(bookId, out var b) ? b.Author : "";
 
     #region Действия с книгами
-    private void OpenEditCount(RoomBookDTO rb) { if (!isEditor) return; editingBook = rb; editCount = rb.BookCount; }
+    private async Task OpenEditCountAsync(RoomBookDTO rb)
+    {
+        if (!isEditor) return;
+        editingBook = rb;
+        editCount = rb.BookCount;
+        await InvokeAsync(StateHasChanged);
+    }
+
     private void CloseEditCount() => editingBook = null;
 
     private void SubmitEditCount()
@@ -306,15 +441,21 @@ else
         CloseEditCount();
     }
 
-    private void RemoveBooks(IReadOnlyList<RoomBookDTO> toRemove)
+    private async Task RemoveBooksAsync(IReadOnlyList<RoomBookDTO> toRemove)
     {
         if (!isEditor) return;
         foreach (var rb in toRemove)
         {
-            if (rb.BorrowedCount > 0) { errorMessage = $"Нельзя убрать «{GetBookTitle(rb.BookId)}»: выдано {rb.BorrowedCount} экз."; return; }
+            if (rb.BorrowedCount > 0)
+            {
+                errorMessage = $"Нельзя убрать «{GetBookTitle(rb.BookId)}»: выдано {rb.BorrowedCount} экз.";
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
         }
         roomBooks.RemoveAll(rb => toRemove.Any(x => x.Id == rb.Id && x.BookId == rb.BookId));
         isDirty = true;
+        await InvokeAsync(StateHasChanged);
     }
 
     private void AddBookToRoom(BookDTO book)
@@ -323,7 +464,84 @@ else
         if (roomBooks.Any(rb => rb.BookId == book.Id)) return;
         roomBooks.Add(new RoomBookDTO(Id: Guid.Empty, RoomId: Id, BookId: book.Id, BookCount: 1, BorrowedCount: 0));
         isDirty = true;
-        StateHasChanged();
+        // StateHasChanged — в handler'е CatalogActions
+    }
+
+    private async Task AddBookToRoomAndRender(BookDTO book)
+    {
+        AddBookToRoom(book);
+        await InvokeAsync(StateHasChanged);
+    }
+    #endregion
+
+    #region Списание
+    private async Task OpenDiscardAsync(IReadOnlyList<RoomBookDTO> toDiscard)
+    {
+        if (!isEditor) return;
+
+        // Если выбрано несколько — списываем только из первой с доступными экземплярами.
+        // Мультисписание — отдельная фича, пока не поддерживается.
+        var rb = toDiscard.FirstOrDefault(x => x.AvailableCount > 0);
+        if (rb == null)
+        {
+            errorMessage = "Нет доступных экземпляров для списания";
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        discardSource = rb;
+        discardAmount = 1;
+        discardReason = DiscardReason.Wear;
+        discardApprovedBy = null;
+        discardCompensation = null;
+        discardError = null;
+        discardDialogOpen = true;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseDiscardDialog()
+    {
+        discardDialogOpen = false;
+        discardSource = null;
+        discardError = null;
+    }
+
+    private async Task SubmitDiscardAsync()
+    {
+        if (!CanSubmitDiscard || discardSource == null) return;
+
+        discardSaving = true;
+        discardError = null;
+
+        try
+        {
+            var resp = await BookClient.DiscardBookAsync(new DiscardBookRequest
+            {
+                BookId = discardSource.BookId,
+                RoomId = Id,
+                Amount = discardAmount,
+                DiscardReason = discardReason,
+                ApprovedBy = string.IsNullOrWhiteSpace(discardApprovedBy) ? null : discardApprovedBy,
+                CompensationAmount = discardCompensation
+            });
+
+            statusMessage = resp.Message;
+            errorMessage = null;
+            CloseDiscardDialog();
+
+            // BookCount изменился — перезагружаем комнату и каталог
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            discardError = ex.Message;
+        }
+        finally
+        {
+            discardSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
     #endregion
 
@@ -349,10 +567,13 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private void OpenRenameDialog()
+    private async Task OpenRenameDialogAsync()
     {
         if (!isEditor || room == null) return;
-        newRoomName = room.Name; renameDialogError = null; renameDialogOpen = true;
+        newRoomName = room.Name;
+        renameDialogError = null;
+        renameDialogOpen = true;
+        await InvokeAsync(StateHasChanged);
     }
 
     private void CloseRenameDialog() => renameDialogOpen = false;
@@ -375,6 +596,7 @@ else
     {
         if (!isEditor || room == null) return;
 
+        // Проверка ДО модалки
         if (roomBooks.Count > 0)
         {
             errorMessage = "Нельзя удалить комнату, в которой есть книги. Сначала удалите все книги из комнаты.";
@@ -383,10 +605,24 @@ else
             return;
         }
 
-        if (!await JS.InvokeAsync<bool>("confirm", $"Удалить комнату «{room.Name}»?")) return;
+        if (!await Confirm.AskAsync(
+                $"Удалить комнату «{room.Name}»?\n\nЭто действие необратимо.",
+                title: "Удаление комнаты",
+                confirmText: "Удалить",
+                requireConfirmationWord: true))
+            return;
+
         errorMessage = null;
-        try { await RoomClient.DeleteRoomAsync(Id); Nav.NavigateTo("/rooms"); }
-        catch (Exception ex) { errorMessage = $"Ошибка удаления: {ex.Message}"; await InvokeAsync(StateHasChanged); }
+        try
+        {
+            await RoomClient.DeleteRoomAsync(Id);
+            Nav.NavigateTo("/rooms");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка удаления: {ex.Message}";
+            await InvokeAsync(StateHasChanged);
+        }
     }
     #endregion
 

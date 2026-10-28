@@ -13,7 +13,7 @@
 @inject IRoomApiClient RoomClient
 @inject IBookApiClient BookClient
 @inject IBorrowingApiClient BorrowingClient
-@inject IJSRuntime JS
+@inject IConfirmService Confirm
 @inject NavigationManager Nav
 @inject IBorrowingSettingsService SettingsService
 @inject IPenaltySettingsService PenaltySettingsService
@@ -708,8 +708,11 @@ else
 
         var msg = borrows.Count == 1
             ? $"Вернуть книгу «{borrows[0].BookTitle}»?"
-            : $"Вернуть {borrows.Count} книг(и)?";
-        if (!await JS.InvokeAsync<bool>("confirm", msg)) return;
+            : $"Вернуть {borrows.Count} книг(и)?\n\n" +
+              string.Join("\n", borrows.Select(b => $"• {b.BookTitle}"));
+
+        if (!await Confirm.AskAsync(msg, title: "Возврат книг", confirmText: "Вернуть"))
+            return;
 
         errorMessage = null;
         statusMessage = null;
@@ -720,10 +723,7 @@ else
         {
             try
             {
-                await BorrowingClient.ReturnBookAsync(new ReturnBookRequest
-                {
-                    UserRoomBookId = b.Id
-                });
+                await BorrowingClient.ReturnBookAsync(new ReturnBookRequest { UserRoomBookId = b.Id });
                 success++;
             }
             catch (Exception ex)

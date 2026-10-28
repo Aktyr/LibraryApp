@@ -1,0 +1,82 @@
+﻿@using BlazorWeb.Client.Services.Interfaces
+@implements IDisposable
+@inject IConfirmService Confirm
+
+@if (Confirm.IsVisible)
+{
+    <div class="modal-backdrop" @onclick="Confirm.Cancel"></div>
+    <div class="modal-dialog" @onclick:stopPropagation="true">
+        <h3 class="mb-3">@Confirm.CurrentTitle</h3>
+        <p style="white-space: pre-line;">@Confirm.CurrentMessage</p>
+
+        @if (Confirm.CurrentRequiresWord)
+        {
+            <div class="mb-3">
+                <label class="form-label">
+                    Для подтверждения введите <code>@Confirm.CurrentWord</code>:
+                </label>
+                <input type="text"
+                       class="form-control"
+                       @bind="_input"
+                       @bind:event="oninput"
+                       placeholder="@Confirm.CurrentWord"
+                       autocomplete="off"
+                       spellcheck="false" />
+            </div>
+        }
+
+        <div class="mt-4">
+            <button class="btn btn-@Confirm.CurrentButtonClass"
+                    @onclick="Confirm.Confirm"
+                    disabled="@(!CanConfirm)">
+                @Confirm.CurrentConfirmText
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="Confirm.Cancel">
+                @Confirm.CurrentCancelText
+            </button>
+        </div>
+    </div>
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 2000;
+        cursor: default;
+    }
+
+    .modal-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2001;
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px 24px;
+        min-width: 400px;
+        max-width: 90vw;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        pointer-events: auto;
+    }
+</style>
+
+@code {
+    private string _input = "";
+
+    private bool CanConfirm =>
+        !Confirm.CurrentRequiresWord
+        || string.Equals(_input.Trim(), Confirm.CurrentWord, StringComparison.OrdinalIgnoreCase);
+
+    protected override void OnInitialized() => Confirm.OnChange += HandleChange;
+
+    public void Dispose() => Confirm.OnChange -= HandleChange;
+
+    private void HandleChange()
+    {
+        _input = "";
+        InvokeAsync(StateHasChanged);
+    }
+}

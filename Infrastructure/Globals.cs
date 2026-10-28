@@ -46,3 +46,6 @@ global using Microsoft.EntityFrameworkCore.Storage;
 global using LibApp.Application.Validation.Services;
 global using LibApp.Infrastructure.Db;
 global using LibApp.Application.Helpers;
+global using System.IdentityModel.Tokens.Jwt;
+global using System.Security.Claims;
+global using LibApp.Infrastructure.Services;

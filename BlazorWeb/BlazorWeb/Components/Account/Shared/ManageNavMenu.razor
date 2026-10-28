@@ -1,7 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using BlazorWeb.Data
-
 @inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager NavigationManager
 
 <ul class="nav nav-pills flex-column">
     <li class="nav-item">
@@ -25,13 +25,26 @@
     <li class="nav-item">
         <NavLink class="nav-link" href="Account/Manage/PersonalData">Personal data</NavLink>
     </li>
+
+    @* ---------- Logout ---------- *@
+    <li class="nav-item mt-3 pt-3 border-top">
+        <form action="Account/Logout" method="post">
+            <AntiforgeryToken />
+            <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+            <button type="submit" class="nav-link w-100 text-start border-0 bg-transparent">
+                <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+            </button>
+        </form>
+    </li>
 </ul>
 
 @code {
     private bool hasExternalLogins;
+    private string? currentUrl;
 
     protected override async Task OnInitializedAsync()
     {
         hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
     }
 }

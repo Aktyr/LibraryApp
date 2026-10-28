@@ -36,7 +36,7 @@ public class DiscardBookCommandTests
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new DiscardBookCommand(unitOfWork);
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
         var request = new DiscardBookRequest
         {
             BookId = bookId.Value,
@@ -72,7 +72,7 @@ public class DiscardBookCommandTests
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
-        var command = new DiscardBookCommand(unitOfWork);
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
         var request = new DiscardBookRequest
         {
             BookId = Guid.NewGuid(),
@@ -94,7 +94,7 @@ public class DiscardBookCommandTests
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
-        var command = new DiscardBookCommand(unitOfWork);
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
         var request = new DiscardBookRequest
         {
             BookId = Guid.NewGuid(),
@@ -132,7 +132,7 @@ public class DiscardBookCommandTests
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new DiscardBookCommand(unitOfWork);
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
         var request = new DiscardBookRequest
         {
             BookId = bookId.Value,
@@ -174,7 +174,7 @@ public class DiscardBookCommandTests
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new DiscardBookCommand(unitOfWork);
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
         var request = new DiscardBookRequest
         {
             BookId = bookId.Value,
@@ -216,7 +216,7 @@ public class DiscardBookCommandTests
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new DiscardBookCommand(unitOfWork);
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
         var request = new DiscardBookRequest
         {
             BookId = bookId.Value,
@@ -251,7 +251,7 @@ public class DiscardBookCommandTests
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new DiscardBookCommand(unitOfWork);
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
         var request = new DiscardBookRequest { BookId = bookId.Value, Amount = 3, DiscardReason = DiscardReason.Loss, ApprovedBy = "Admin", CompensationAmount = 150.50m };
 
         // Act

@@ -10,9 +10,14 @@
 @using LibApp.Core.Requests.Entities.User
 @using Microsoft.AspNetCore.Authorization
 @inject IUserApiClient ApiClient
-@inject IJSRuntime JS
+@inject IConfirmService Confirm
 @inject NavigationManager Nav
 @inject IBorrowingSettingsService SettingsService
+@inject IUserApiClient ApiClient
+@inject IConfirmService Confirm
+@inject NavigationManager Nav
+@inject IBorrowingSettingsService SettingsService
+@inject AuthenticationStateProvider AuthProvider
 
 <PageTitle>Пользователи</PageTitle>
 
@@ -84,14 +89,17 @@ else if (users != null)
 
             @if (dialogMode == DialogMode.Create)
             {
-                <div class="mb-3">
-                    <label class="form-label">Роль</label>
-                    <select class="form-select" @bind="draft.Role">
-                        <option value="@UserRole.Reader">Читатель</option>
-                        <option value="@UserRole.Librarian">Библиотекарь</option>
-                        <option value="@UserRole.Admin">Администратор</option>
-                    </select>
-                </div>
+                @if (dialogMode == DialogMode.Create && isAdmin)
+                {
+                    <div class="mb-3">
+                        <label class="form-label">Роль</label>
+                        <select class="form-select" @bind="draft.Role">
+                            <option value="@UserRole.Reader">Читатель</option>
+                            <option value="@UserRole.Librarian">Библиотекарь</option>
+                            <option value="@UserRole.Admin">Администратор</option>
+                        </select>
+                    </div>
+                }
             }
 
             <button type="submit" class="btn btn-primary">Сохранить</button>
@@ -241,48 +249,58 @@ else if (users != null)
 
     private List<DataGridAction<UserDTO>> actions = new();
 
+    private bool isAdmin;
+
     protected override async Task OnInitializedAsync()
     {
+        var auth = await AuthProvider.GetAuthenticationStateAsync();
+        isAdmin = auth.User.IsInRole("Admin");
+
         ConfigureActions();
         await LoadAsync();
         settings = await SettingsService.GetAsync();
     }
-
     private void ConfigureActions()
     {
         actions = new()
+    {
+        new()
         {
-            new()
-            {
-                Label = "Добавить",
-                Icon = "➕",
-                MinSelection = 0,
-                ShowInContextMenu = false,
-                Handler = _ => OpenCreateDialogAsync()
-            },
-            new()
-            {
-                Label = "Профиль",
-                Icon = "📖",
-                CanExecute = s => s.Count == 1,
-                Handler = s => { Nav.NavigateTo($"/users/{s[0].Id}"); return Task.CompletedTask; }
-            },
-            new()
-            {
-                Label = "Редактировать",
-                Icon = "✏️",
-                CanExecute = s => s.Count == 1,
-                Handler = s => OpenEditDialogAsync(s[0])
-            },
-            new()
+            Label = "Добавить",
+            Icon = "➕",
+            MinSelection = 0,
+            ShowInContextMenu = false,
+            Handler = _ => OpenCreateDialogAsync()
+        },
+        new()
+        {
+            Label = "Профиль",
+            Icon = "📖",
+            CanExecute = s => s.Count == 1,
+            Handler = s => { Nav.NavigateTo($"/users/{s[0].Id}"); return Task.CompletedTask; }
+        },
+        new()
+        {
+            Label = "Редактировать",
+            Icon = "✏️",
+            // Админ — кого угодно, Librarian — только Reader
+            CanExecute = s => s.Count == 1 && (isAdmin || s[0].Role == UserRole.Reader),
+            Handler = s => OpenEditDialogAsync(s[0])
+        }
+    };
+
+        // Удаление — только админ
+        if (isAdmin)
+        {
+            actions.Add(new()
             {
                 Label = "Удалить",
                 Icon = "🗑️",
                 SeparatorBefore = true,
                 CanExecute = s => s.Count == 1,
                 Handler = s => DeleteAsync(s[0])
-            }
-        };
+            });
+        }
     }
 
     private void OnUserDoubleClick(UserDTO user) => Nav.NavigateTo($"/users/{user.Id}");
@@ -311,6 +329,8 @@ else if (users != null)
         {
             isLoading = false;
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OpenCreateDialogAsync()
@@ -324,6 +344,13 @@ else if (users != null)
 
     private async Task OpenEditDialogAsync(UserDTO user)
     {
+        if (!isAdmin && user.Role != UserRole.Reader)
+        {
+            errorMessage = "Только администратор может редактировать Библиотекарей и Администраторов";
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
         dialogMode = DialogMode.Edit;
         editingId = user.Id;
         draft = new UserDraft
@@ -351,6 +378,9 @@ else if (users != null)
         {
             if (dialogMode == DialogMode.Create)
             {
+                // Librarian всегда создаёт Reader, даже если клиент как-то подсунет другое.
+                var role = isAdmin ? draft.Role : UserRole.Reader;
+
                 await ApiClient.CreateUserAsync(new CreateUserRequest
                 {
                     Email = draft.Email,
@@ -359,7 +389,7 @@ else if (users != null)
                     FirstName = draft.FirstName,
                     MiddleName = draft.MiddleName,
                     ContactInfo = draft.ContactInfo,
-                    Role = draft.Role
+                    Role = role
                 });
                 statusMessage = $"Пользователь «{draft.LastName} {draft.FirstName}» добавлен";
             }
@@ -385,15 +415,33 @@ else if (users != null)
     }
 
     private async Task DeleteAsync(UserDTO user)
-    {
-        var confirmed = await JS.InvokeAsync<bool>("confirm",
-            $"Удалить пользователя «{user.LastName} {user.FirstName}»?");
+    { 
+        // Проверка до модалки. Если есть активные выдачи — удалить нельзя
+        if (user.ActiveBorrowedCount > 0)
+        {
+            errorMessage = $"Нельзя удалить пользователя «{user.LastName} {user.FirstName}»: " +
+                           $"у него {user.ActiveBorrowedCount} активных выдач. Сначала верните книги.";
+            statusMessage = null;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var confirmed = await Confirm.AskAsync(
+            $"Удалить пользователя «{user.LastName} {user.FirstName}»?\n" +
+            $"Email: {user.Email}\n" +
+            $"Активных выдач: {user.ActiveBorrowedCount}\n\n" +
+            "Вся история выдач и штрафов будет удалена. Это действие необратимо.",
+            title: "Удаление пользователя",
+            confirmText: "Удалить",
+            requireConfirmationWord: true);
+
         if (!confirmed) return;
 
         try
         {
             await ApiClient.DeleteUserAsync(user.Id);
             statusMessage = $"Пользователь «{user.LastName} {user.FirstName}» удалён";
+            errorMessage = null;
             await LoadAsync();
         }
         catch (Exception ex)

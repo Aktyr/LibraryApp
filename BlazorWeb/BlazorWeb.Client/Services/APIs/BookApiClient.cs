@@ -44,4 +44,9 @@ public class BookApiClient(HttpClient http) : IBookApiClient
         return await resp.Content.ReadFromJsonAsync<BasicCreateDeleteResponse>(ct)
                ?? new BasicCreateDeleteResponse("Error", "Empty response");
     }
+    public async Task<BasicCreateDeleteResponse> DiscardBookAsync(DiscardBookRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync($"{BasePath}/discard", request, ct);
+        return await ReadAsync(resp, ct);
+    }
 }

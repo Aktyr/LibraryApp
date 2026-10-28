@@ -6,6 +6,7 @@ public class UndoDiscardCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
     {
         var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+        var bookRepo = unitOfWork.GetRepository<Book>();
 
         var discardId = new Id(request.DiscardId);
         var discarded = await discardedRepo.FirstOrDefaultAsync(d => d.Id == discardId, ct);
@@ -22,6 +23,14 @@ public class UndoDiscardCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
             roomBook.BookCount += discarded.Amount;
             await roomBookRepo.UpdateAsync(roomBook, ct);
             await discardedRepo.RemoveAsync(discarded, ct);
+
+            // Снимаем флаг «списана», если книга снова есть в наличии
+            if (roomBook.Book.IsDiscarded && roomBook.BookCount > 0)
+            {
+                roomBook.Book.IsDiscarded = false;
+                await bookRepo.UpdateAsync(roomBook.Book, ct);
+            }
+
             await unitOfWork.SaveChangesAsync(ct);
             await unitOfWork.CommitTransactionAsync(ct);
         }

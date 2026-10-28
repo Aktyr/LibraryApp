@@ -1,6 +1,9 @@
 ﻿namespace LibApp.Application.Commands.Entities.Books;
 
-public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand<DiscardBookRequest, BasicCreateDeleteResponse>, ICommand
+public class DiscardBookCommand(
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUser)
+    : ICreateOrUpdateCommand<DiscardBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(DiscardBookRequest request, CancellationToken ct)
     {
@@ -19,9 +22,21 @@ public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
         if (book == null) throw new BookNotFoundException();
 
         // Находим RoomBook
-        var roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Book.Id == bookId, ct);
-        if (roomBook == null)
-            throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнатах"] };
+        RoomBook? roomBook;
+        if (request.RoomId.HasValue)
+        {
+            var roomId = new Id(request.RoomId.Value);
+            roomBook = await roomBookRepo.FirstOrDefaultAsync(
+                rb => rb.Book.Id == bookId && rb.Room.Id == roomId, ct);
+            if (roomBook == null)
+                throw new LibValidationException { ExceptionDetails = ["Книга не найдена в указанной комнате"] };
+        }
+        else
+        {
+            roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Book.Id == bookId, ct);
+            if (roomBook == null)
+                throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнатах"] };
+        }
 
         // Проверяем, что списываем не больше, чем есть
         if (request.Amount > roomBook.BookCount)
@@ -31,11 +46,10 @@ public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
         if (request.Amount > roomBook.AvailableCount)
             throw new LibValidationException { ExceptionDetails = [$"Нельзя списать {request.Amount} экз. Выдано: {roomBook.BorrowedCount}, доступно: {roomBook.AvailableCount}"] };
 
-        //todo возможно заменить проверку на конкретных пользователей (библиотекарей)
         if (!string.IsNullOrEmpty(request.ApprovedBy) && request.ApprovedBy.Length > 100)
             throw new LibValidationException { ExceptionDetails = ["ApprovedBy не может превышать 100 символов"] };
 
-        //  Создаём запись о списании
+        // Создаём запись о списании
         var discarded = new DiscardedBook
         {
             Id = new Id(Guid.NewGuid()),
@@ -45,7 +59,8 @@ public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
             Amount = request.Amount,
             DiscardedDate = DateTime.UtcNow,
             DiscardReason = request.DiscardReason,
-            ApprovedBy = request.ApprovedBy,
+            ApprovedById = currentUser.LibraryUserId,
+            ApprovedBy = request.ApprovedBy ?? currentUser.FullName,
             CompensationAmount = request.CompensationAmount
         };
 
@@ -57,6 +72,18 @@ public class DiscardBookCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
             roomBook.BookCount -= request.Amount;
             await roomBookRepo.UpdateAsync(roomBook, ct);
             await unitOfWork.SaveChangesAsync(ct);
+
+            // Если после списания не осталось ни одного экземпляра ни в одной комнате — помечаем книгу списанной
+            var anyRemaining = await roomBookRepo.AnyAsync(
+                rb => rb.Book.Id == bookId && rb.BookCount > 0, ct);
+
+            if (!anyRemaining)
+            {
+                book.IsDiscarded = true;
+                await bookRepo.UpdateAsync(book, ct);
+                await unitOfWork.SaveChangesAsync(ct);
+            }
+
             await unitOfWork.CommitTransactionAsync(ct);
         }
         catch

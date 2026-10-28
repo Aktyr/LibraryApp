@@ -24,6 +24,8 @@ internal class Program
         builder.Services.AddScoped<IPenaltySettingsService, PenaltySettingsService>();
         #endregion
 
+        builder.Services.AddScoped<IConfirmService, ConfirmService>();
+
         await builder.Build().RunAsync();
     }
 }

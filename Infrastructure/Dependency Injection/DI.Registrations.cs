@@ -1,4 +1,4 @@
-﻿    namespace LibApp.Infrastructure.DependencyInjection;
+﻿namespace LibApp.Infrastructure.DependencyInjection;
 
 public static partial class DI
 {
@@ -52,6 +52,12 @@ public static partial class DI
                 services.Add(new ServiceDescriptor(type, type, ServiceLifetime.Scoped));
         }
 
+        return services;
+    }
+    public static IServiceCollection AddCurrentUser(this IServiceCollection services)
+    {
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
         return services;
     }
 }

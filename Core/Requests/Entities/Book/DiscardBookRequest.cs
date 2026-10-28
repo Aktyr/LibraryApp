@@ -3,6 +3,7 @@
 public class DiscardBookRequest : IAddOrUpdateRequest
 {
     public Guid BookId { get; set; }
+    public Guid? RoomId { get; set; }
     public int Amount { get; set; }
     public DiscardReason DiscardReason { get; set; }
     public string? ApprovedBy { get; set; }

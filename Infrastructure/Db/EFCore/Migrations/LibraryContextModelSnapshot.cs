@@ -40,6 +40,11 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsDiscarded")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Publisher")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -56,6 +61,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Author");
+
+                    b.HasIndex("IsDiscarded");
 
                     b.HasIndex("Title");
 
