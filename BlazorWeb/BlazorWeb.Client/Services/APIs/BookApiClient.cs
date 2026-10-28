@@ -49,4 +49,25 @@ public class BookApiClient(HttpClient http) : IBookApiClient
         var resp = await http.PostAsJsonAsync($"{BasePath}/discard", request, ct);
         return await ReadAsync(resp, ct);
     }
+    public async Task<DiscardedBookResponse> GetDiscardedBooksAsync(
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        LibApp.Core.Enums.DiscardReason? discardReason = null,
+        Guid? roomId = null,
+        Guid? approvedById = null,
+        Guid? bookId = null,
+        CancellationToken ct = default)
+    {
+        var q = new List<string>();
+        if (fromDate.HasValue) q.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+        if (toDate.HasValue) q.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+        if (discardReason.HasValue) q.Add($"discardReason={discardReason.Value}");
+        if (roomId.HasValue) q.Add($"roomId={roomId.Value}");
+        if (approvedById.HasValue) q.Add($"approvedById={approvedById.Value}");
+        if (bookId.HasValue) q.Add($"bookId={bookId.Value}");
+
+        var query = q.Count > 0 ? "?" + string.Join("&", q) : "";
+        return await http.GetFromJsonAsync<DiscardedBookResponse>($"{BasePath}/discarded{query}", ct)
+               ?? new DiscardedBookResponse("Error", "Empty response", []);
+    }
 }

@@ -8,4 +8,12 @@ public interface IBookApiClient
     Task<BasicCreateDeleteResponse> UpdateBookAsync(UpdateBookRequest request, CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> DeleteBookAsync(Guid id, CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> DiscardBookAsync(DiscardBookRequest request, CancellationToken ct = default);
+    Task<DiscardedBookResponse> GetDiscardedBooksAsync(
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        LibApp.Core.Enums.DiscardReason? discardReason = null,
+        Guid? roomId = null,
+        Guid? approvedById = null,
+        Guid? bookId = null,
+        CancellationToken ct = default);
 }

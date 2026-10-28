@@ -257,6 +257,76 @@ else
     </div>
 }
 
+@* ---------- Модалка возврата с осмотром ---------- *@
+@if (returnDialogBorrow != null)
+{
+    <div class="modal-backdrop" @onclick="CloseReturnDialog"></div>
+    <div class="modal-dialog" @onclick:stopPropagation="true">
+        <h3>Возврат книги</h3>
+        <p class="mb-1"><strong>@returnDialogBorrow.BookTitle</strong> — @returnDialogBorrow.RoomName</p>
+        <p class="mb-3 text-muted small">
+            Срок возврата: @(returnDialogBorrow.Deadline?.ToString("dd.MM.yyyy") ?? "—")
+        </p>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Состояние книги</label>
+            <select class="form-select"
+                    value="@(returnReason?.ToString() ?? "")"
+                    @onchange="OnReturnReasonChanged">
+                <option value="">Ок — вернуть в фонд (без списания)</option>
+                <option value="Wear">Износ — списать</option>
+                <option value="Damaged">Повреждена — списать</option>
+                <option value="Loss">Утрачена — списать, компенсация обязательна</option>
+                <option value="Obsolete">Устарела — списать</option>
+                <option value="Other">Другое — списать</option>
+            </select>
+        </div>
+
+        @* Блок компенсации рендерится всегда, если выбрана ЛЮБАЯ причина списания.
+           Это предотвращает прыжки высоты модалки. Поле просто становится disabled, если это не Утрата. *@
+        @if (returnReason != null)
+        {
+            <div class="mb-3">
+                <label class="form-label">
+                    Сумма компенсации, ₽
+                    @if (returnReason == DiscardReason.Loss)
+                    {
+                        <span class="text-danger">*</span>
+                    }
+                </label>
+                <input type="number" class="form-control" style="max-width: 200px;"
+                       step="0.01" min="0" @bind="returnCompensation" />
+                <small class="text-muted">
+                    @(returnReason == DiscardReason.Loss
+                        ? "При утрате необходимо указать сумму (> 0)."
+                        : "Опционально. Оставьте пустым, если компенсация не взимается.")
+                </small>
+            </div>
+
+            <div class="alert alert-warning py-2 mb-3">
+                ⚠️ Книга будет списана из фонда: экземпляр в комнате уменьшится на 1.
+                Если это последний экземпляр во всех комнатах — книга помечается как «Списана».
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(returnDialogError))
+        {
+            <div class="alert alert-danger py-2 mb-3">@returnDialogError</div>
+        }
+
+        <div class="mt-4">
+            <button class="btn btn-primary"
+                    disabled="@(!CanSubmitReturn || returnDialogSaving)"
+                    @onclick="SubmitReturnAsync">
+                @(returnDialogSaving ? "Возврат..." : "Подтвердить возврат")
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="CloseReturnDialog" disabled="@returnDialogSaving">
+                Отмена
+            </button>
+        </div>
+    </div>
+}
+
 <style>
     .modal-backdrop {
         position: fixed;
@@ -313,6 +383,13 @@ else
     private PenaltySettingsDTO? penaltySettings;
     private BorrowedBookDTO? extendingBorrow;
     private int extendDays = 7;
+
+    // Модалка возврата с осмотром
+    private BorrowedBookDTO? returnDialogBorrow;
+    private DiscardReason? returnReason;
+    private decimal? returnCompensation;
+    private string? returnDialogError;
+    private bool returnDialogSaving;
 
     #region Вычисляемые свойства
 
@@ -422,25 +499,70 @@ else
                 if (overdue)
                 {
                     var daysOverdue = (int)Math.Ceiling((DateTime.UtcNow - item.Deadline.Value).TotalDays);
-                    if (penaltySettings != null)
-                    {
-                        daysOverdue = Math.Max(0, daysOverdue - penaltySettings.GracePeriodDays);
-                    }
-                    var estimatedPenalty = penaltySettings != null
-                        ? Math.Min(daysOverdue * penaltySettings.DailyRate, penaltySettings.MaxPenalty ?? decimal.MaxValue)
-                        : 0;
-                    var penaltyText = estimatedPenalty > 0 ? $" (штраф ≈ {estimatedPenalty:0.##}₽)" : "";
-
                     b.OpenElement(0, "span");
                     b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
-                    b.AddAttribute(2, "title", $"Просрочено на {daysOverdue} дн. Ставка: {penaltySettings?.DailyRate}₽/день");
-                    b.AddContent(3, $"{item.Deadline.Value:dd.MM.yyyy} ⚠{penaltyText}");
+                    b.AddAttribute(2, "title", $"Просрочено на {daysOverdue} дн.");
+                    b.AddContent(3, $"{item.Deadline.Value:dd.MM.yyyy} ⚠");
                     b.CloseElement();
                 }
                 else
                 {
                     b.AddContent(0, item.Deadline.Value.ToString("dd.MM.yyyy"));
                 }
+            }
+        },
+        new()
+        {
+            Title = "Штраф",
+            Width = 120,
+            FilterKind = FilterKind.Number,
+            Value = b =>
+            {
+                if (!b.Deadline.HasValue || b.Deadline.Value >= DateTime.UtcNow) return 0m;
+                var days = (int)Math.Ceiling((DateTime.UtcNow - b.Deadline.Value).TotalDays);
+                if (penaltySettings != null)
+                    days = Math.Max(0, days - penaltySettings.GracePeriodDays);
+                if (days <= 0) return 0m;
+                var penalty = days * (penaltySettings?.DailyRate ?? 10m);
+                return penaltySettings?.MaxPenalty.HasValue == true
+                    ? Math.Min(penalty, penaltySettings.MaxPenalty.Value)
+                    : penalty;
+            },
+            FilterText = b =>
+            {
+                if (!b.Deadline.HasValue || b.Deadline.Value >= DateTime.UtcNow) return "0";
+                var days = (int)Math.Ceiling((DateTime.UtcNow - b.Deadline.Value).TotalDays);
+                if (penaltySettings != null)
+                    days = Math.Max(0, days - penaltySettings.GracePeriodDays);
+                if (days <= 0) return "0";
+                var penalty = days * (penaltySettings?.DailyRate ?? 10m);
+                return (penaltySettings?.MaxPenalty.HasValue == true
+                    ? Math.Min(penalty, penaltySettings.MaxPenalty.Value)
+                    : penalty).ToString("0.##");
+            },
+            Template = item => b =>
+            {
+                if (!item.Deadline.HasValue || item.Deadline.Value >= DateTime.UtcNow)
+                {
+                    b.AddContent(0, "—");
+                    return;
+                }
+                var days = (int)Math.Ceiling((DateTime.UtcNow - item.Deadline.Value).TotalDays);
+                if (penaltySettings != null)
+                    days = Math.Max(0, days - penaltySettings.GracePeriodDays);
+                if (days <= 0)
+                {
+                    b.AddContent(0, "—");
+                    return;
+                }
+                var penalty = days * (penaltySettings?.DailyRate ?? 10m);
+                var amount = penaltySettings?.MaxPenalty.HasValue == true
+                    ? Math.Min(penalty, penaltySettings.MaxPenalty.Value)
+                    : penalty;
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
+                b.AddContent(2, $"{amount:0.##} ₽");
+                b.CloseElement();
             }
         },
         new()
@@ -539,51 +661,46 @@ else
 
     #region Actions
 
-    private List<DataGridAction<BorrowedBookDTO>> activeActions = new();
-    private List<DataGridAction<RoomBookOption>> availableActions = new();
-
-    private void ConfigureActions()
+    private List<DataGridAction<BorrowedBookDTO>>? _activeActions;
+    private List<DataGridAction<BorrowedBookDTO>> activeActions => _activeActions ??= new()
     {
-        activeActions = new()
+        new()
         {
-            new()
-            {
-                Label = "Продлить",
-                Icon = "↻",
-                MinSelection = 1,
-                ShowInContextMenu = true,
-                ShowInToolbar = true,
-                CanExecute = s => s.Count == 1
-                                  && s[0].TotalExtendedDays < MaxExtendDeadlineDays,
-                Handler = s => { OpenExtend(s[0]); return Task.CompletedTask; }
-            },
-            new()
-            {
-                Label = "Вернуть",
-                Icon = "✓",
-                MinSelection = 1,
-                ShowInContextMenu = true,
-                ShowInToolbar = true,
-                SeparatorBefore = true,
-                Handler = s => BulkReturnAsync(s)
-            }
-
-        };
-
-        availableActions = new()
+            Label = "Продлить",
+            Icon = "↻",
+            MinSelection = 1,
+            ShowInContextMenu = true,
+            ShowInToolbar = true,
+            CanExecute = s => s.Count == 1
+                              && s[0].TotalExtendedDays < MaxExtendDeadlineDays,
+            Handler = s => OpenExtend(s[0]) // <-- Убрали { ... return Task.CompletedTask; }
+        },
+        new()
         {
-            new()
-            {
-                Label = "Выдать",
-                Icon = "📖",
-                MinSelection = 1,
-                ShowInToolbar = true,
-                ShowInContextMenu = true,
-                CanExecute = s => s.Count == 1,
-                Handler = s => { OpenBorrowDialog(s[0]); return Task.CompletedTask; }
-            }
-        };
-    }
+            Label = "Вернуть",
+            Icon = "✓",
+            MinSelection = 1,
+            ShowInContextMenu = true,
+            ShowInToolbar = true,
+            SeparatorBefore = true,
+            Handler = s => BulkReturnAsync(s)
+        }
+    };
+
+    private List<DataGridAction<RoomBookOption>>? _availableActions;
+    private List<DataGridAction<RoomBookOption>> availableActions => _availableActions ??= new()
+    {
+        new()
+        {
+            Label = "Выдать",
+            Icon = "📖",
+            MinSelection = 1,
+            ShowInToolbar = true,
+            ShowInContextMenu = true,
+            CanExecute = s => s.Count == 1,
+            Handler = s => OpenBorrowDialog(s[0])
+        }
+    };
 
     #endregion
 
@@ -591,9 +708,15 @@ else
     {
         settings = await SettingsService.GetAsync();
         penaltySettings = await PenaltySettingsService.GetAsync();
+
+        _activeActions = null;
+        _availableActions = null;
+
         await LoadAsync();
         await LoadCatalogAsync();
         isLoading = false;
+
+        StateHasChanged();
     }
 
     private async Task LoadAsync()
@@ -648,15 +771,15 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private void OnActiveRowDoubleClick(BorrowedBookDTO b)
+    private async Task OnActiveRowDoubleClick(BorrowedBookDTO b)
     {
         if (b.TotalExtendedDays < MaxExtendDeadlineDays)
-            OpenExtend(b);
+            await OpenExtend(b);
     }
 
     // ---- Модалка выдачи ----
 
-    private void OpenBorrowDialog(RoomBookOption book)
+    private async Task OpenBorrowDialog(RoomBookOption book)
     {
         if (book == null) return;
         if (user == null) return;
@@ -667,6 +790,7 @@ else
         borrowDialogBook = book;
         borrowDueDate = DateTime.Today.AddDays(14);
         borrowDialogError = null;
+        await InvokeAsync(StateHasChanged);
     }
 
     private void CloseBorrowDialog()
@@ -707,12 +831,19 @@ else
     {
         if (borrows.Count == 0) return;
 
-        var msg = borrows.Count == 1
-            ? $"Вернуть книгу «{borrows[0].BookTitle}»?"
-            : $"Вернуть {borrows.Count} книг(и)?\n\n" +
-              string.Join("\n", borrows.Select(b => $"• {b.BookTitle}"));
+        // Одиночный возврат — через модалку с осмотром.
+        if (borrows.Count == 1)
+        {
+            await OpenReturnDialog(borrows[0]);
+            return;
+        }
 
-        if (!await Confirm.AskAsync(msg, title: "Возврат книг", confirmText: "Вернуть"))
+        // Массовый возврат — все «Ок», без осмотра.
+        var msg = $"Вернуть {borrows.Count} книг(и) без осмотра?\n\n" +
+                  string.Join("\n", borrows.Select(b => $"• {b.BookTitle}")) +
+                  "\n\nКниги будут приняты как «Ок». " +
+                  "Для возврата с указанием причины списания верните книги по одной.";
+        if (!await Confirm.AskAsync(msg, title: "Массовый возврат", confirmText: "Вернуть все"))
             return;
 
         errorMessage = null;
@@ -736,22 +867,97 @@ else
         if (errors.Count > 0)
             errorMessage = $"Возвращено: {success}, ошибок: {errors.Count}.\n{string.Join("\n", errors)}";
         else if (success > 0)
-            statusMessage = borrows.Count == 1
-                ? "Книга возвращена"
-                : $"Возвращено книг: {success}";
+            statusMessage = $"Возвращено книг: {success}";
 
         await LoadAsync();
         await LoadCatalogAsync();
         await InvokeAsync(StateHasChanged);
     }
 
+    private async Task OpenReturnDialog(BorrowedBookDTO borrow)
+    {
+        returnDialogBorrow = borrow;
+        returnReason = null;
+        returnCompensation = null;
+        returnDialogError = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseReturnDialog()
+    {
+        returnDialogBorrow = null;
+        returnDialogError = null;
+    }
+
+    private void SetReturnReason(DiscardReason? reason)
+    {
+        returnReason = reason;
+        // Если переключились на "Ок", сбрасываем компенсацию.
+        // Если переключаемся между причинами списания (например, Wear -> Damaged),
+        // значение сохраняем, чтобы пользователь его не вводил заново.
+        if (reason == null)
+            returnCompensation = null;
+    }
+
+    private void OnReturnReasonChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (string.IsNullOrEmpty(val))
+        {
+            SetReturnReason(null);
+        }
+        else if (Enum.TryParse<DiscardReason>(val, out var reason))
+        {
+            SetReturnReason(reason);
+        }
+    }
+
+    private bool CanSubmitReturn =>
+        returnDialogBorrow != null
+        && !returnDialogSaving
+        && (returnReason != DiscardReason.Loss
+            || (returnCompensation.HasValue && returnCompensation.Value > 0));
+
+    private async Task SubmitReturnAsync()
+    {
+        if (!CanSubmitReturn || returnDialogBorrow == null) return;
+
+        returnDialogSaving = true;
+        returnDialogError = null;
+        try
+        {
+            var resp = await BorrowingClient.ReturnBookAsync(new ReturnBookRequest
+            {
+                UserRoomBookId = returnDialogBorrow.Id,
+                DiscardReason = returnReason,
+                // Передаём компенсацию, если она введена, для любой причины списания
+                CompensationAmount = returnCompensation
+            });
+            statusMessage = resp.Message;
+            CloseReturnDialog();
+            await LoadAsync();
+            await LoadCatalogAsync();
+        }
+        catch (Exception ex)
+        {
+            returnDialogError = ex.Message;
+        }
+        finally
+        {
+            returnDialogSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    
+
     // ---- Продление ----
 
-    private void OpenExtend(BorrowedBookDTO b)
+    private async Task OpenExtend(BorrowedBookDTO b)
     {
         extendingBorrow = b;
         extendDays = Math.Min(7, MaxAvailableExtend);
         if (extendDays < 1) extendDays = 1;
+        await InvokeAsync(StateHasChanged);
     }
 
     private void CloseExtend() => extendingBorrow = null;

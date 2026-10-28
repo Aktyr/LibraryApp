@@ -30,6 +30,9 @@ public class BookEndpoints : EndpointBase
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
         [FromQuery] DiscardReason? discardReason,
+        [FromQuery] Guid? roomId,
+        [FromQuery] Guid? approvedById,
+        [FromQuery] Guid? bookId,
         GetDiscardedBooksCommand command,
         CancellationToken ct)
     {
@@ -37,7 +40,10 @@ public class BookEndpoints : EndpointBase
         {
             FromDate = fromDate,
             ToDate = toDate,
-            DiscardReason = discardReason
+            DiscardReason = discardReason,
+            RoomId = roomId,
+            ApprovedById = approvedById,
+            BookId = bookId
         };
         return Results.Ok(await command.Execute(request, ct));
     }

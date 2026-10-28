@@ -1,0 +1,181 @@
+﻿@page "/reports/discards"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Entities
+@using LibApp.Core.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Librarian,Admin")]
+@inject IBookApiClient BookClient
+
+<PageTitle>Отчёт по списаниям</PageTitle>
+
+<div class="d-flex align-items-center gap-3 mb-3">
+    <a href="/reports" class="btn btn-sm btn-outline-secondary">← к списку отчётов</a>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync" disabled="@isLoading">🔄 Обновить</button>
+</div>
+
+<h2>Списания</h2>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mb-3">@errorMessage</div>
+}
+
+@* ---------- Счётчики (по всем загруженным записям, не по фильтру DataGrid) ---------- *@
+@if (records != null && !isLoading)
+{
+    <div class="d-flex gap-4 mb-3">
+        <div>
+            <small class="text-muted d-block">Всего списаний</small>
+            <span class="fs-5 fw-semibold">@records.Count</span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Всего экземпляров</small>
+            <span class="fs-5 fw-semibold">@records.Sum(r => r.Amount)</span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Сумма компенсаций</small>
+            <span class="fs-5 fw-semibold @(totalCompensation > 0 ? "text-danger" : "")">
+                @totalCompensation.ToString("0.##") ₽
+            </span>
+        </div>
+    </div>
+}
+
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (records != null)
+{
+    @if (records.Count == 0)
+    {
+        <p class="text-muted">Списаний пока нет.</p>
+    }
+    else
+    {
+        <DataGrid TItem="DiscardedBookDTO"
+                  Items="records"
+                  PageSize="20"
+                  Columns="columns"
+                  SelectionMode="DataGridSelectionMode.Multiple"
+                  ExportFileName="discards"
+                  Hint="Отчёт по списанным экземплярам. Сортировка — клик по заголовку, фильтры — через «➕ Фильтр», выделение — для экспорта в CSV." />
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private List<DiscardedBookDTO>? records;
+
+    private decimal totalCompensation =>
+        records?.Where(r => r.CompensationAmount.HasValue).Sum(r => r.CompensationAmount!.Value) ?? 0;
+
+    private readonly List<DataGridColumn<DiscardedBookDTO>> columns = new()
+    {
+        new()
+        {
+            Title = "Дата",
+            Width = 120,
+            FilterKind = FilterKind.Date,
+            Value = r => r.DiscardedDate,
+            FilterText = r => r.DiscardedDate.ToString("yyyy-MM-dd"),
+            Template = item => b => b.AddContent(0, item.DiscardedDate.ToLocalTime().ToString("dd.MM.yyyy"))
+        },
+        new() { Title = "Книга", Width = 240, Value = r => r.BookTitle },
+        new() { Title = "Комната", Width = 160, Value = r => r.RoomName },
+        new()
+        {
+            Title = "Кол-во",
+            Width = 80,
+            FilterKind = FilterKind.Number,
+            Value = r => r.Amount
+        },
+        new()
+        {
+            Title = "Причина",
+            Width = 140,
+            Value = r => ReasonName(r.DiscardReason),
+            FilterText = r => ReasonName(r.DiscardReason),
+            Template = item => b =>
+            {
+                var (bg, fg, text) = item.DiscardReason switch
+                {
+                    DiscardReason.Wear     => ("#fff3d9", "#8a4b00", "Износ"),
+                    DiscardReason.Damaged  => ("#fde7e9", "#a30000", "Повреждение"),
+                    DiscardReason.Loss     => ("#fde7e9", "#a30000", "Утрата"),
+                    DiscardReason.Obsolete => ("#f3f3f3", "#555",    "Устарела"),
+                    _                       => ("#f3f3f3", "#555",    "Другое")
+                };
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style",
+                    $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
+                b.AddContent(2, text);
+                b.CloseElement();
+            }
+        },
+        new()
+        {
+            Title = "Списал",
+            Width = 200,
+            Value = r => r.ApprovedBy,
+            FilterText = r => r.ApprovedBy ?? ""
+        },
+        new()
+        {
+            Title = "Компенсация, ₽",
+            Width = 140,
+            FilterKind = FilterKind.Number,
+            Value = r => r.CompensationAmount,
+            FilterText = r => r.CompensationAmount?.ToString("0.##") ?? "",
+            Template = item => b =>
+            {
+                if (item.CompensationAmount.HasValue && item.CompensationAmount.Value > 0)
+                {
+                    b.OpenElement(0, "span");
+                    b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
+                    b.AddContent(2, $"{item.CompensationAmount.Value:0.##}");
+                    b.CloseElement();
+                }
+                else
+                {
+                    b.AddContent(0, "—");
+                }
+            }
+        }
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            // Фильтрация идёт на клиенте через DataGrid.
+            // Если данных станет много — переключимся на серверную фильтрацию.
+            var resp = await BookClient.GetDiscardedBooksAsync();
+            records = resp.Discarded.ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string ReasonName(DiscardReason r) => r switch
+    {
+        DiscardReason.Wear => "Износ",
+        DiscardReason.Damaged => "Повреждение",
+        DiscardReason.Loss => "Утрата",
+        DiscardReason.Obsolete => "Устарела",
+        _ => "Другое"
+    };
+}

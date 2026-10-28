@@ -256,9 +256,9 @@ else if (users != null)
         var auth = await AuthProvider.GetAuthenticationStateAsync();
         isAdmin = auth.User.IsInRole("Admin");
 
+        settings = await SettingsService.GetAsync();
         ConfigureActions();
         await LoadAsync();
-        settings = await SettingsService.GetAsync();
     }
     private void ConfigureActions()
     {

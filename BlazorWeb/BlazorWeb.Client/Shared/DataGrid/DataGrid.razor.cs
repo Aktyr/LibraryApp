@@ -9,7 +9,7 @@ namespace BlazorWeb.Components.Shared.DataGrid;
 public partial class DataGrid<TItem> : IAsyncDisposable
 {
     #region Параметры
-
+    [Inject] public NavigationManager NavManager { get; set; } = default!;
     [Parameter, EditorRequired] public IReadOnlyList<TItem> Items { get; set; } = Array.Empty<TItem>();
     [Parameter, EditorRequired] public IReadOnlyList<DataGridColumn<TItem>> Columns { get; set; } = Array.Empty<DataGridColumn<TItem>>();
     [Parameter] public IReadOnlyList<DataGridAction<TItem>> Actions { get; set; } = Array.Empty<DataGridAction<TItem>>();
@@ -423,7 +423,6 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         if (itemsToExport.Count == 0) return;
 
         var sb = new StringBuilder();
-
         var headers = Columns.Select(c => $"\"{c.Title.Replace("\"", "\"\"")}\"");
         sb.AppendLine(string.Join(";", headers));
 
@@ -437,7 +436,31 @@ public partial class DataGrid<TItem> : IAsyncDisposable
             sb.AppendLine(string.Join(";", cells));
         }
 
-        var filename = $"{ExportFileName}_{DateTime.Now:yyyyMMdd_HHmm}.csv";
+        // Если явно задан ExportFileName (и это не дефолтный "export"), используем его.
+        // Иначе берём из URL: /reports/user-activity -> user_activity
+        var baseName = ExportFileName;
+        if (string.IsNullOrWhiteSpace(baseName) || baseName == "export")
+        {
+            var path = NavManager.ToBaseRelativePath(NavManager.Uri).Split('?')[0].TrimEnd('/');
+            if (string.IsNullOrWhiteSpace(path))
+                path = "home";
+
+            // Меняем слеши и дефисы на подчёркивания, убираем недопустимые символы
+            baseName = path.Replace('/', '_').Replace('-', '_');
+            // Убираем GUID из URL (например, /users/123e4567-e89b... -> users_id)
+            if (Guid.TryParse(baseName.Split('_').Last(), out _))
+            {
+                var parts = baseName.Split('_');
+                parts[^1] = "id";
+                baseName = string.Join("_", parts);
+            }
+        }
+
+        var safeName = baseName.StartsWith("export_", StringComparison.OrdinalIgnoreCase)
+            ? baseName
+            : "export_" + baseName;
+
+        var filename = $"{safeName}_{DateTime.Now:yyyyMMdd_HHmm}.csv";
 
         if (resizeModule != null)
         {

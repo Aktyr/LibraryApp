@@ -508,7 +508,9 @@ public class BorrowBookCommandTests
 
         var penaltyService = new PenaltyCalculatorService(Mock.Of<IOptionsSnapshot<PenaltySettings>>());
         var notificationMock = new Mock<INotificationService>();
-        var command = new ReturnBookCommand(unitOfWorkMock.Object, validator, penaltyService, notificationMock.Object);
+        var command = new ReturnBookCommand(
+            unitOfWorkMock.Object, validator, penaltyService, notificationMock.Object,
+            new FakeCurrentUserService());
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
         // Act & Assert

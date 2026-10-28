@@ -27,10 +27,11 @@ public class ReturnBookCommandTests
         var notificationMock = new Mock<INotificationService>();
 
         var command = new ReturnBookCommand(
-            unitOfWork,
-            CreateValidator(),
-            CreatePenaltyService(),
-            notificationMock.Object);
+            unitOfWork, 
+            CreateValidator(), 
+            CreatePenaltyService(), 
+            notificationMock.Object,
+            new FakeCurrentUserService());
 
         var request = new ReturnBookRequest { UserRoomBookId = Guid.NewGuid() };
 
@@ -57,7 +58,11 @@ public class ReturnBookCommandTests
         await userRoomBookRepo.AddRangeAsync([userRoomBook], CancellationToken.None);
 
         var command = new ReturnBookCommand(
-            unitOfWork, CreateValidator(), CreatePenaltyService(), notificationMock.Object);
+            unitOfWork,
+            CreateValidator(),
+            CreatePenaltyService(),
+            notificationMock.Object,
+            new FakeCurrentUserService());
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -99,7 +104,12 @@ public class ReturnBookCommandTests
         await userRoomBookRepo.AddRangeAsync([userRoomBook], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new ReturnBookCommand(unitOfWork, CreateValidator(), CreatePenaltyService(), notificationMock.Object);
+        var command = new ReturnBookCommand(
+            unitOfWork,
+            CreateValidator(),
+            CreatePenaltyService(),
+            notificationMock.Object,
+            new FakeCurrentUserService());
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -169,8 +179,9 @@ public class ReturnBookCommandTests
         var command = new ReturnBookCommand(
             unitOfWork,
             CreateValidator(),
-            CreatePenaltyService(penaltySettings),
-            notificationMock.Object);
+            CreatePenaltyService(),
+            notificationMock.Object,
+            new FakeCurrentUserService());
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -237,7 +248,8 @@ public class ReturnBookCommandTests
             unitOfWork,
             CreateValidator(),
             CreatePenaltyService(),
-            notificationMock.Object);
+            notificationMock.Object,
+            new FakeCurrentUserService());
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -303,8 +315,9 @@ public class ReturnBookCommandTests
         var command = new ReturnBookCommand(
             unitOfWork,
             CreateValidator(),
-            CreatePenaltyService(penaltySettings),
-            notificationMock.Object);
+            CreatePenaltyService(),
+            notificationMock.Object,
+            new FakeCurrentUserService());
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -364,8 +377,9 @@ public class ReturnBookCommandTests
         var command = new ReturnBookCommand(
             unitOfWork,
             CreateValidator(),
-            CreatePenaltyService(penaltySettings),
-            notificationMock.Object);
+            CreatePenaltyService(),
+            notificationMock.Object,
+            new FakeCurrentUserService());
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -430,8 +444,9 @@ public class ReturnBookCommandTests
         var command = new ReturnBookCommand(
             unitOfWork,
             CreateValidator(),
-            CreatePenaltyService(penaltySettings),
-            notificationMock.Object);
+            CreatePenaltyService(),
+            notificationMock.Object,
+            new FakeCurrentUserService());
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -455,9 +470,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenBookHasExistingPenalty_HigherThanCalculated_TakesExisting()
     {
         // Arrange
-        var unitOfWork2 = new FakeUnitOfWork();
-        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork2.GetRepository<UserRoomBook>();
-        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork2.GetRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var penaltySettings = new PenaltySettings
@@ -496,10 +511,11 @@ public class ReturnBookCommandTests
         await roomBookRepo.AddRangeAsync([roomBook]);
 
         var command = new ReturnBookCommand(
-            unitOfWork2,
+            unitOfWork,
             CreateValidator(),
-            CreatePenaltyService(penaltySettings),
-            notificationMock.Object);
+            CreatePenaltyService(),
+            notificationMock.Object,
+            new FakeCurrentUserService());
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -523,8 +539,8 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenExtraDaysIsZero_ThrowsValidationException()
     {
         // Arrange
-        var unitOfWork3 = new FakeUnitOfWork();
-        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork3.GetRepository<UserRoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var settings = new BorrowingSettings { MaxExtendDeadlineDays = 14 };
 
         var userRoomBook = new UserRoomBook
@@ -536,7 +552,7 @@ public class ReturnBookCommandTests
         };
         await userRoomBookRepo.AddRangeAsync([userRoomBook]);
 
-        var command = new ExtendDeadlineCommand(unitOfWork3, CreateValidator(settings));
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(settings));
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 0 };
 
         // Act & Assert
@@ -552,9 +568,9 @@ public class ReturnBookCommandTests
     public async Task Execute_WhenReturnedOnTime_MessageDoesNotContainPenalty()
     {
         // Arrange
-        var unitOfWork4 = new FakeUnitOfWork();
-        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork4.GetRepository<UserRoomBook>();
-        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork4.GetRepository<RoomBook>();
+        var unitOfWork = new FakeUnitOfWork();
+        var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
 
         var roomBook = new RoomBook
@@ -583,10 +599,11 @@ public class ReturnBookCommandTests
         await roomBookRepo.AddRangeAsync([roomBook]);
 
         var command = new ReturnBookCommand(
-            unitOfWork4,
+            unitOfWork,
             CreateValidator(),
             CreatePenaltyService(),
-            notificationMock.Object);
+            notificationMock.Object,
+            new FakeCurrentUserService());
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -638,7 +655,9 @@ public class ReturnBookCommandTests
         var validator = new BorrowingValidatorAsync(Mock.Of<IOptionsSnapshot<BorrowingSettings>>());
         var penaltyService = new PenaltyCalculatorService(Mock.Of<IOptionsSnapshot<PenaltySettings>>());
         var notificationMock = new Mock<INotificationService>();
-        var command = new ReturnBookCommand(unitOfWorkMock.Object, validator, penaltyService, notificationMock.Object);
+        var command = new ReturnBookCommand(
+            unitOfWorkMock.Object, validator, penaltyService, notificationMock.Object,
+            new FakeCurrentUserService());
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
         // Act & Assert
@@ -651,4 +670,277 @@ public class ReturnBookCommandTests
             unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         });
     }
+
+    #region Discard on return
+
+    // Общий хелпер: создаёт минимальный граф (Book → RoomBook → UserRoomBook) и репозитории.
+    // Возвращает всё нужное, чтобы каждый тест был самостоятельным и без «... (аналогично)».
+    private static (
+        FakeUnitOfWork uow,
+        FakeRepository<UserRoomBook> urbRepo,
+        FakeRepository<RoomBook> rbRepo,
+        FakeRepository<Book> bookRepo,
+        FakeRepository<DiscardedBook> discardedRepo,
+        Book book,
+        Room room,
+        RoomBook roomBook,
+        UserRoomBook userRoomBook,
+        User user)
+        CreateReturnScenario(int bookCount = 5, int borrowedCount = 1)
+    {
+        var uow = new FakeUnitOfWork();
+        var urbRepo = (FakeRepository<UserRoomBook>)uow.GetRepository<UserRoomBook>();
+        var rbRepo = (FakeRepository<RoomBook>)uow.GetRepository<RoomBook>();
+        var bookRepo = (FakeRepository<Book>)uow.GetRepository<Book>();
+        var discardedRepo = (FakeRepository<DiscardedBook>)uow.GetRepository<DiscardedBook>();
+
+        var book = new Book { Id = new Id(Guid.NewGuid()), Title = "Test Book", IsDiscarded = false };
+        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" };
+        var user = new User { Id = new Id(Guid.NewGuid()), Email = "user@test.com", LastName = "Test", FirstName = "User" };
+
+        var roomBook = new RoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            Book = book,
+            Room = room,
+            BookCount = bookCount,
+            BorrowedCount = borrowedCount
+        };
+
+        var userRoomBook = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = user,
+            RoomBook = roomBook,
+            BorrowDate = DateTime.UtcNow.AddDays(-3),
+            Deadline = DateTime.UtcNow.AddDays(5),
+            ReturnDate = null
+        };
+
+        book.RoomBook.Add(roomBook);
+        user.RoomBooks.Add(userRoomBook);
+
+        bookRepo.AddRangeAsync([book], CancellationToken.None).GetAwaiter().GetResult();
+        rbRepo.AddRangeAsync([roomBook], CancellationToken.None).GetAwaiter().GetResult();
+        urbRepo.AddRangeAsync([userRoomBook], CancellationToken.None).GetAwaiter().GetResult();
+
+        return (uow, urbRepo, rbRepo, bookRepo, discardedRepo, book, room, roomBook, userRoomBook, user);
+    }
+
+    [Test]
+    public async Task Execute_WithDiscardReasonWear_CreatesDiscardedBookWithoutCompensation()
+    {
+        // Arrange
+        var (uow, _, _, _, discardedRepo, book, _, roomBook, userRoomBook, _) = CreateReturnScenario();
+        var command = new ReturnBookCommand(
+            uow, CreateValidator(), CreatePenaltyService(),
+            new Mock<INotificationService>().Object, new FakeCurrentUserService());
+
+        var request = new ReturnBookRequest
+        {
+            UserRoomBookId = userRoomBook.Id.Value,
+            DiscardReason = DiscardReason.Wear,
+            CompensationAmount = null
+        };
+
+        // Act
+        var response = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+            Assert.That(response.Message, Does.Contain("Списана (износ)"));
+
+            Assert.That(roomBook.BookCount, Is.EqualTo(4));         // 5 => 4
+            Assert.That(roomBook.BorrowedCount, Is.EqualTo(0));     // 1 => 0
+            Assert.That(book.IsDiscarded, Is.False);                // 4 > 0, не списана
+
+            Assert.That(discardedRepo.Entities, Has.Count.EqualTo(1));
+            var d = discardedRepo.Entities.First();
+            Assert.That(d.Amount, Is.EqualTo(1));
+            Assert.That(d.DiscardReason, Is.EqualTo(DiscardReason.Wear));
+            Assert.That(d.CompensationAmount, Is.Null);
+            Assert.That(d.ApprovedById, Is.Not.Null);
+            Assert.That(d.ApprovedBy, Is.Not.Null.And.Not.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Execute_WithDiscardReasonLoss_WithCompensation_CreatesDiscardedBook()
+    {
+        // Arrange
+        var (uow, _, _, _, discardedRepo, _, _, roomBook, userRoomBook, _) = CreateReturnScenario();
+        var command = new ReturnBookCommand(
+            uow, CreateValidator(), CreatePenaltyService(),
+            new Mock<INotificationService>().Object, new FakeCurrentUserService());
+
+        var request = new ReturnBookRequest
+        {
+            UserRoomBookId = userRoomBook.Id.Value,
+            DiscardReason = DiscardReason.Loss,
+            CompensationAmount = 500m
+        };
+
+        // Act
+        var response = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+            Assert.That(response.Message, Does.Contain("Списана (утрата)"));
+            Assert.That(response.Message, Does.Contain("Компенсация: 500"));
+
+            Assert.That(roomBook.BookCount, Is.EqualTo(4));
+            Assert.That(roomBook.BorrowedCount, Is.EqualTo(0));
+
+            Assert.That(discardedRepo.Entities, Has.Count.EqualTo(1));
+            var d = discardedRepo.Entities.First();
+            Assert.That(d.DiscardReason, Is.EqualTo(DiscardReason.Loss));
+            Assert.That(d.CompensationAmount, Is.EqualTo(500m));
+        });
+    }
+
+    [Test]
+    public async Task Execute_WithDiscardReasonLoss_WithoutCompensation_Throws()
+    {
+        // Arrange
+        var (uow, _, _, _, _, _, _, _, userRoomBook, _) = CreateReturnScenario();
+        var command = new ReturnBookCommand(
+            uow, CreateValidator(), CreatePenaltyService(),
+            new Mock<INotificationService>().Object, new FakeCurrentUserService());
+
+        var request = new ReturnBookRequest
+        {
+            UserRoomBookId = userRoomBook.Id.Value,
+            DiscardReason = DiscardReason.Loss,
+            CompensationAmount = null
+        };
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
+            command.Execute(request, CancellationToken.None));
+        Assert.That(ex.ExceptionDetails,
+            Has.Some.Contains("При утрате книги необходимо указать сумму компенсации"));
+    }
+
+    [Test]
+    public async Task Execute_WithDiscardReasonLastCopy_SetsBookIsDiscarded()
+    {
+        // Arrange: BookCount = 1, BorrowedCount = 1 → после списания 0
+        var (uow, _, _, _, _, book, _, roomBook, userRoomBook, _) =
+            CreateReturnScenario(bookCount: 1, borrowedCount: 1);
+        var command = new ReturnBookCommand(
+            uow, CreateValidator(), CreatePenaltyService(),
+            new Mock<INotificationService>().Object, new FakeCurrentUserService());
+
+        var request = new ReturnBookRequest
+        {
+            UserRoomBookId = userRoomBook.Id.Value,
+            DiscardReason = DiscardReason.Wear
+        };
+
+        // Act
+        var response = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+            Assert.That(roomBook.BookCount, Is.EqualTo(0));
+            Assert.That(roomBook.BorrowedCount, Is.EqualTo(0));
+            Assert.That(book.IsDiscarded, Is.True);
+        });
+    }
+
+    [Test]
+    public async Task Execute_WithNullDiscardReason_DoesNotCreateDiscardedBook()
+    {
+        // Arrange
+        var (uow, _, _, _, discardedRepo, _, _, roomBook, userRoomBook, _) = CreateReturnScenario();
+        var command = new ReturnBookCommand(
+            uow, CreateValidator(), CreatePenaltyService(),
+            new Mock<INotificationService>().Object, new FakeCurrentUserService());
+
+        var request = new ReturnBookRequest
+        {
+            UserRoomBookId = userRoomBook.Id.Value,
+            DiscardReason = null
+        };
+
+        // Act
+        var response = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+            Assert.That(response.Message, Is.EqualTo("Книга возвращена"));
+            Assert.That(discardedRepo.Entities, Is.Empty);
+            Assert.That(roomBook.BookCount, Is.EqualTo(5));         // не изменилось
+            Assert.That(roomBook.BorrowedCount, Is.EqualTo(0));     // 1 => 0
+        });
+    }
+
+    [Test]
+    public async Task Execute_WithNegativeCompensation_Throws()
+    {
+        // Arrange
+        var (uow, _, _, _, _, _, _, _, userRoomBook, _) = CreateReturnScenario();
+        var command = new ReturnBookCommand(
+            uow, CreateValidator(), CreatePenaltyService(),
+            new Mock<INotificationService>().Object, new FakeCurrentUserService());
+
+        var request = new ReturnBookRequest
+        {
+            UserRoomBookId = userRoomBook.Id.Value,
+            DiscardReason = DiscardReason.Damaged,
+            CompensationAmount = -10m
+        };
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
+            command.Execute(request, CancellationToken.None));
+        Assert.That(ex.ExceptionDetails,
+            Has.Some.Contains("Сумма компенсации не может быть отрицательной"));
+    }
+
+    [Test]
+    public async Task Execute_WithDiscardAndPenalty_MessageContainsBoth()
+    {
+        // Arrange: Deadline в прошлом → штраф начислится
+        var (uow, _, _, _, _, _, _, roomBook, userRoomBook, _) =
+            CreateReturnScenario(bookCount: 1, borrowedCount: 1);
+        userRoomBook.Deadline = DateTime.UtcNow.AddDays(-5);   // просрочка 5 дней
+
+        var command = new ReturnBookCommand(
+            uow, CreateValidator(), CreatePenaltyService(),
+            new Mock<INotificationService>().Object, new FakeCurrentUserService());
+
+        var request = new ReturnBookRequest
+        {
+            UserRoomBookId = userRoomBook.Id.Value,
+            DiscardReason = DiscardReason.Loss,
+            CompensationAmount = 300m
+        };
+
+        // Act
+        var response = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+            Assert.That(response.Message, Does.Contain("Штраф"));
+            Assert.That(response.Message, Does.Contain("Списана (утрата)"));
+            Assert.That(response.Message, Does.Contain("Компенсация: 300"));
+            Assert.That(userRoomBook.Penalty, Is.GreaterThan(0));
+            Assert.That(roomBook.BookCount, Is.EqualTo(0));
+        });
+    }
+
+    #endregion
+
+
 }

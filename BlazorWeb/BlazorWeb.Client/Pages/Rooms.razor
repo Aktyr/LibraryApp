@@ -148,6 +148,8 @@ else if (rooms != null)
         {
             isLoading = false;
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OpenCreateDialogAsync()

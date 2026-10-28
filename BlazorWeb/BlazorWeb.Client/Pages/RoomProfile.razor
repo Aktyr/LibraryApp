@@ -207,9 +207,13 @@ else
         }
 
         <div class="mb-3">
-            <label class="form-label">Кто утвердил (опционально)</label>
-            <input type="text" class="form-control" style="max-width: 300px;"
-                   maxlength="100" @bind="discardApprovedBy" />
+            <label class="form-label">Кто утвердил</label>
+            <div class="form-control-plaintext" style="max-width: 400px; background:#f6f6f6; padding: 6px 12px; border-radius: 4px;">
+                <strong>@currentUserLabel</strong>
+                <div class="small text-muted mt-1">
+                    Списание будет автоматически подписано текущим пользователем.
+                </div>
+            </div>
         </div>
 
         @if (!string.IsNullOrEmpty(discardError))
@@ -293,7 +297,7 @@ else
     private RoomBookDTO? discardSource;
     private int discardAmount = 1;
     private DiscardReason discardReason = DiscardReason.Wear;
-    private string? discardApprovedBy;
+    private string currentUserLabel = "—";
     private decimal? discardCompensation;
     private string? discardError;
     private bool discardSaving;
@@ -328,7 +332,7 @@ else
 
     #region Actions
     private List<DataGridAction<RoomBookDTO>>? _inRoomActions;
-    private List<DataGridAction<RoomBookDTO>> InRoomActions => !isEditor ? new() : (_inRoomActions ??= new()
+    private List<DataGridAction<RoomBookDTO>> InRoomActions => !isEditor ? [] : (_inRoomActions ??= new()
     {
         new()
         {
@@ -359,7 +363,7 @@ else
     });
 
     private List<DataGridAction<BookDTO>>? _catalogActions;
-    private List<DataGridAction<BookDTO>> CatalogActions => !isEditor ? new() : (_catalogActions ??= new()
+    private List<DataGridAction<BookDTO>> CatalogActions => !isEditor ? [] : (_catalogActions ??= new()
     {
         new()
         {
@@ -379,6 +383,12 @@ else
     {
         var auth = await AuthProvider.GetAuthenticationStateAsync();
         isEditor = auth.User.IsInRole("Librarian") || auth.User.IsInRole("Admin");
+
+        // В WASM доступен только Email. Сервер подставит ФИО из JWT автоматически.
+        currentUserLabel = auth.User.FindFirst(
+            ClaimTypes.Email)?.Value 
+            ?? auth.User.Identity?.Name 
+            ?? "—";
 
         await LoadAsync();
         isLoading = false;
@@ -492,7 +502,6 @@ else
         discardSource = rb;
         discardAmount = 1;
         discardReason = DiscardReason.Wear;
-        discardApprovedBy = null;
         discardCompensation = null;
         discardError = null;
         discardDialogOpen = true;
@@ -522,7 +531,7 @@ else
                 RoomId = Id,
                 Amount = discardAmount,
                 DiscardReason = discardReason,
-                ApprovedBy = string.IsNullOrWhiteSpace(discardApprovedBy) ? null : discardApprovedBy,
+                ApprovedBy = null,   // сервер подставит FullName из JWT
                 CompensationAmount = discardCompensation
             });
 
