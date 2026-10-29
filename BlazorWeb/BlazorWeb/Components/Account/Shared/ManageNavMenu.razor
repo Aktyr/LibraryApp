@@ -3,40 +3,39 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject NavigationManager NavigationManager
 
-<ul class="nav nav-pills flex-column">
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">Profile</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Email">Email</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/ChangePassword">Password</NavLink>
-    </li>
+<div class="list-group list-group-flush">
+    <NavLink class="list-group-item list-group-item-action border-0 rounded mb-1" href="Account/Manage" Match="NavLinkMatch.All">
+        👤 Профиль (Имя/Телефон)
+    </NavLink>
+    <NavLink class="list-group-item list-group-item-action border-0 rounded mb-1" href="Account/Manage/Email">
+        📧 Email
+    </NavLink>
+    <NavLink class="list-group-item list-group-item-action border-0 rounded mb-1" href="Account/Manage/ChangePassword">
+        🔑 Сменить пароль
+    </NavLink>
     @if (hasExternalLogins)
     {
-        <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage/ExternalLogins">External logins</NavLink>
-        </li>
+        <NavLink class="list-group-item list-group-item-action border-0 rounded mb-1" href="Account/Manage/ExternalLogins">
+            🔗 Внешние входы
+        </NavLink>
     }
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">Two-factor authentication</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/PersonalData">Personal data</NavLink>
-    </li>
+    <NavLink class="list-group-item list-group-item-action border-0 rounded mb-1" href="Account/Manage/TwoFactorAuthentication">
+        🛡️ Двухфакторная аутентификация
+    </NavLink>
+    <NavLink class="list-group-item list-group-item-action border-0 rounded mb-1" href="Account/Manage/PersonalData">
+        📦 Личные данные
+    </NavLink>
 
-    @* ---------- Logout ---------- *@
-    <li class="nav-item mt-3 pt-3 border-top">
+    <div class="mt-3 pt-3 border-top">
         <form action="Account/Logout" method="post">
             <AntiforgeryToken />
             <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-            <button type="submit" class="nav-link w-100 text-start border-0 bg-transparent">
-                <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+            <button type="submit" class="btn btn-outline-danger w-100">
+                🚪 Выйти из аккаунта
             </button>
         </form>
-    </li>
-</ul>
+    </div>
+</div>
 
 @code {
     private bool hasExternalLogins;

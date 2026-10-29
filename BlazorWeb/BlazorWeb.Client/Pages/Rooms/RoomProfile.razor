@@ -80,8 +80,7 @@ else
                       Columns="InRoomColumns"
                       Actions="InRoomActions"
                       SelectionMode="DataGridSelectionMode.Multiple"
-                      OnRowDoubleClick="@(isEditor ? OpenEditCountAsync : null)"
-                      Hint="Двойной клик — изменить количество · выделите несколько строк для массового удаления" />
+                      OnRowDoubleClick="@(isEditor ? OpenEditCountAsync : null)"/>
         }
     </div>
 
@@ -102,8 +101,7 @@ else
                           Columns="CatalogColumns"
                           Actions="CatalogActions"
                           SelectionMode="DataGridSelectionMode.Multiple"
-                          OnRowDoubleClick="AddBookToRoomAndRender"
-                          Hint="Двойной клик — добавить книгу в комнату · выделите несколько для массового добавления" />
+                          OnRowDoubleClick="AddBookToRoomAndRender"/>
             }
         </div>
 

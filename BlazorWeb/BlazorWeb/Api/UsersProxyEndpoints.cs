@@ -11,6 +11,8 @@ public static class UsersProxyEndpoints
         group.MapGet("/", GetAllAsync);
         group.MapGet("/{id:guid}", GetByIdAsync);
         group.MapGet("/{id:guid}/books", GetUserBooksAsync);
+        group.MapGet("/my-profile", GetMeAsync);
+        group.MapGet("/my-profile/books", GetMyBooksAsync);
         group.MapPut("/{id:guid}/status", ChangeStatusAsync);
 
         // Переопределяем Create и Delete (BFF: Identity + Library, с компенсацией)
@@ -182,6 +184,13 @@ public static class UsersProxyEndpoints
     private static Task<IResult> ChangeStatusAsync(
         Guid id, ChangeSubscriptionStatusRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
             => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Put, $"/api/users/{id}/status", request, ct);
+    private static Task<IResult> GetMeAsync(
+        IHttpClientFactory httpFactory, CancellationToken ct)
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, "/api/users/my-profile", null, ct);
+
+    private static Task<IResult> GetMyBooksAsync(
+        IHttpClientFactory httpFactory, CancellationToken ct)
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, "/api/users/my-profile/books", null, ct);
 
     #endregion
 }

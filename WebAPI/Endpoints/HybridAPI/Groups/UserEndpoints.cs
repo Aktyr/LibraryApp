@@ -94,4 +94,20 @@ public class UserEndpoints : EndpointBase
         request.UserId = new Id(id); // защита от подмены ID в body
         return Results.Ok(await command.Execute(request, ct));
     }
+
+    [HttpGet("my-profile")]
+    [EnumAuthorize(UserRole.Reader, UserRole.Librarian, UserRole.Admin)]
+    public async Task<IResult> GetMe(GetUserCommand command, ICurrentUserService currentUser, CancellationToken ct)
+    {
+        if (currentUser.LibraryUserId == null) return Results.Unauthorized();
+        return Results.Ok(await command.Execute(new GetUserRequest { Id = currentUser.LibraryUserId }, ct));
+    }
+
+    [HttpGet("my-profile/books")]
+    [EnumAuthorize(UserRole.Reader, UserRole.Librarian, UserRole.Admin)]
+    public async Task<IResult> GetMyBooks(GetUserRoomBooksCommand command, ICurrentUserService currentUser, CancellationToken ct)
+    {
+        if (currentUser.LibraryUserId == null) return Results.Unauthorized();
+        return Results.Ok(await command.Execute(new GetUserBooksRequest { UserId = currentUser.LibraryUserId.Value }, ct));
+    }
 }

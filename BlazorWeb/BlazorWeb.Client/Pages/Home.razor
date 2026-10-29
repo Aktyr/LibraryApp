@@ -1,0 +1,65 @@
+﻿@page "/"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize] 
+@* Теперь главная доступна только после входа *@
+
+<PageTitle>LibApp</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="text-center py-5 mb-4" style="background: #f8f9fa; border-radius: 12px;">
+            <h1 class="display-5 fw-bold text-primary">Добро пожаловать в LibraryApp!</h1>
+            <p class="lead text-muted">Ваш надежный помощник для управления библиотечным фондом.</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            @if (context.User.IsInRole("Librarian") || context.User.IsInRole("Admin"))
+            {
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm text-center py-4">
+                        <div class="card-body">
+                            <div style="font-size: 3rem;">📚</div>
+                            <h4 class="card-title mt-3">Каталог книг</h4>
+                            <p class="card-text text-muted">Управление фондом, добавление и списание.</p>
+                            <a href="/books" class="btn btn-primary mt-2">Перейти</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm text-center py-4">
+                        <div class="card-body">
+                            <div style="font-size: 3rem;">👥</div>
+                            <h4 class="card-title mt-3">Пользователи</h4>
+                            <p class="card-text text-muted">Управление читателями и абонементами.</p>
+                            <a href="/users" class="btn btn-primary mt-2">Перейти</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm text-center py-4">
+                        <div class="card-body">
+                            <div style="font-size: 3rem;">📊</div>
+                            <h4 class="card-title mt-3">Отчёты</h4>
+                            <p class="card-text text-muted">Аналитика выдач, должников и списаний.</p>
+                            <a href="/reports" class="btn btn-primary mt-2">Перейти</a>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm text-center py-5">
+                        <div class="card-body">
+                            <div style="font-size: 4rem;">📖</div>
+                            <h3 class="card-title mt-3">Мои книги</h3>
+                            <p class="card-text text-muted">Посмотреть, что у вас на руках, сроки возврата и задолженности.</p>
+                            <a href="/my-profile" class="btn btn-lg btn-primary mt-3 px-5">Перейти в профиль</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </Authorized>
+</AuthorizeView>

@@ -98,8 +98,51 @@ else if (rooms != null)
 
     private readonly List<DataGridColumn<RoomDTO>> columns = new()
     {
-        new() { Title = "Название", Value = r => r.Name, Width = 300 },
-        new() { Title = "Книг", Value = r => r.RoomBook?.Sum(rb => rb.BookCount) ?? 0, FilterKind = FilterKind.Number, Width = 100 }
+        new() { Title = "Название комнаты", Value = r => r.Name, Width = 300 },
+        new()
+        {
+            Title = "Всего книг",
+            Value = r => r.RoomBook?.Sum(rb => rb.BookCount) ?? 0,
+            FilterKind = FilterKind.Number,
+            Width = 120
+        },
+        new()
+        {
+            Title = "Выдано",
+            Value = r => r.RoomBook?.Sum(rb => rb.BorrowedCount) ?? 0,
+            FilterKind = FilterKind.Number,
+            Width = 100,
+            Template = item => b =>
+            {
+                var borrowed = item.RoomBook?.Sum(rb => rb.BorrowedCount) ?? 0;
+                if (borrowed > 0) {
+                    b.OpenElement(0, "span");
+                    b.AddAttribute(1, "style", "color:#a85b00;font-weight:600;");
+                    b.AddContent(2, borrowed.ToString());
+                    b.CloseElement();
+                } else {
+                    b.AddContent(0, "0");
+                }
+            }
+        },
+        new()
+        {
+            Title = "Доступно",
+            Value = r => (r.RoomBook?.Sum(rb => rb.BookCount) ?? 0) - (r.RoomBook?.Sum(rb => rb.BorrowedCount) ?? 0),
+            FilterKind = FilterKind.Number,
+            Width = 120,
+            Template = item => b =>
+            {
+                var total = item.RoomBook?.Sum(rb => rb.BookCount) ?? 0;
+                var borrowed = item.RoomBook?.Sum(rb => rb.BorrowedCount) ?? 0;
+                var available = total - borrowed;
+                var color = available == 0 ? "#a30000" : available < total ? "#a85b00" : "#0a7f2e";
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style", $"color:{color};font-weight:600;");
+                b.AddContent(2, available.ToString());
+                b.CloseElement();
+            }
+        }
     };
 
     private List<DataGridAction<RoomDTO>> actions = new();

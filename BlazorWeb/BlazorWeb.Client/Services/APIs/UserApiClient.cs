@@ -49,5 +49,11 @@ public class UserApiClient(HttpClient http) : IUserApiClient
         var resp = await http.PutAsJsonAsync($"{BasePath}/{id}/status", req, ct);
         return await ReadAsync(resp, ct);
     }
+    public async Task<UserResponse> GetMeAsync(CancellationToken ct = default)
+    => await http.GetFromJsonAsync<UserResponse>($"{BasePath}/my-profile", ct)
+       ?? new UserResponse("Error", "Empty response", []);
 
+    public async Task<BorrowResponse> GetMyBooksAsync(CancellationToken ct = default)
+        => await http.GetFromJsonAsync<BorrowResponse>($"{BasePath}/my-profile/books", ct)
+           ?? new BorrowResponse("Error", "Empty response", []);
 }

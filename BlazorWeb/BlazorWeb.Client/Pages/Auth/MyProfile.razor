@@ -1,0 +1,174 @@
+﻿@page "/my-profile"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@attribute [Authorize]
+@using BlazorWeb.Client.Services.Interfaces
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Borrowing
+@using LibApp.Core.DTO.Entities
+@using LibApp.Core.Enums
+@using Microsoft.AspNetCore.Authorization
+@inject IUserApiClient UserClient
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Nav
+
+<PageTitle>Мой профиль</PageTitle>
+
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (user == null)
+{
+    <div class="alert alert-warning">Не удалось загрузить данные профиля. Возможно, ваша учетная запись удалена.</div>
+}
+else
+{
+    <div class="mb-3 pb-3 border-bottom">
+        <h2 class="mb-1">@FullName</h2>
+        <div class="text-muted">
+            <span>@user.Email</span>
+            <span class="mx-2">·</span>
+            <span>@StatusBadge(user.SubscriptionStatus)</span>
+        </div>
+    </div>
+
+    @if (user.SubscriptionStatus != SubscriptionStatus.Active)
+    {
+        <div class="alert alert-warning py-2 mb-4">
+            ⚠️ Ваш абонемент <strong>@(user.SubscriptionStatus == SubscriptionStatus.Unconfirmed ? "не подтверждён" : "заморожен")</strong>.
+            Выдача новых книг временно приостановлена.
+        </div>
+    }
+
+    <div class="mb-3 d-flex gap-4 align-items-start flex-wrap">
+        <div>
+            <small class="text-muted d-block">Активных выдач</small>
+            <span class="fs-5 fw-semibold">@user.ActiveBorrowedCount / @MaxBooksPerUser</span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Просрочено</small>
+            <span class="fs-5 fw-semibold @(overdueCount > 0 ? "text-danger" : "")">@overdueCount</span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Штрафы</small>
+            <span class="fs-5 fw-semibold @(totalPenalty > 0 ? "text-danger" : "")">@totalPenalty.ToString("0.##") ₽</span>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <h4>Мои активные книги (@activeBorrows.Count)</h4>
+        @if (activeBorrows.Count == 0)
+        {
+            <p class="text-muted">У вас нет активных выдач.</p>
+        }
+        else
+        {
+            <DataGrid TItem="BorrowedBookDTO"
+                      Items="activeBorrows"
+                      PageSize="10"
+                      Columns="Columns"
+                      SelectionMode="DataGridSelectionMode.None"/>
+        }
+    </div>
+
+    @if (returnedBorrows.Count > 0)
+    {
+        <details class="mb-4">
+            <summary class="h5" style="cursor: pointer;">История возвратов (@returnedBorrows.Count)</summary>
+            <div class="mt-2">
+                <DataGrid TItem="BorrowedBookDTO"
+                          Items="returnedBorrows"
+                          PageSize="10"
+                          Columns="Columns"
+                          SelectionMode="DataGridSelectionMode.None" />
+            </div>
+        </details>
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private UserDTO? user;
+    private List<BorrowedBookDTO> allBorrows = new();
+
+    private int MaxBooksPerUser = 5; // В идеале подтянуть из настроек, но пока хардкод
+
+    private string FullName => user == null ? "—" : $"{user.LastName} {user.FirstName} {user.MiddleName}".Trim();
+
+    private List<BorrowedBookDTO> activeBorrows =>
+        allBorrows.Where(b => b.ReturnDate == null).OrderBy(b => b.Deadline ?? DateTime.MaxValue).ToList();
+
+    private List<BorrowedBookDTO> returnedBorrows =>
+        allBorrows.Where(b => b.ReturnDate != null).OrderByDescending(b => b.ReturnDate).ToList();
+
+    private int overdueCount => activeBorrows.Count(b => b.Deadline.HasValue && b.Deadline.Value < DateTime.UtcNow);
+    private decimal totalPenalty => allBorrows.Where(b => b.Penalty.HasValue).Sum(b => b.Penalty!.Value);
+
+    private readonly List<DataGridColumn<BorrowedBookDTO>> Columns = new()
+    {
+        new() { Title = "Книга", Value = b => b.BookTitle, Width = 250 },
+        new() { Title = "Автор", Value = b => b.BookAuthor, Width = 180 },
+        new() { Title = "Комната", Value = b => b.RoomName, Width = 130 },
+        new()
+        {
+            Title = "Срок",
+            Width = 120,
+            FilterKind = FilterKind.Date,
+            Value = b => b.Deadline,
+            Template = item => b =>
+            {
+                if (!item.Deadline.HasValue) { b.AddContent(0, "—"); return; }
+                var overdue = item.Deadline.Value < DateTime.UtcNow;
+                if (overdue)
+                {
+                    b.OpenElement(0, "span");
+                    b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
+                    b.AddContent(2, $"{item.Deadline.Value:dd.MM.yyyy} ⚠");
+                    b.CloseElement();
+                }
+                else
+                {
+                    b.AddContent(0, item.Deadline.Value.ToString("dd.MM.yyyy"));
+                }
+            }
+        }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var resp = await UserClient.GetMeAsync();
+            user = resp.Users.FirstOrDefault();
+
+            if (user != null)
+            {
+                var booksResp = await UserClient.GetMyBooksAsync();
+                allBorrows = booksResp.Books.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            // errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private static RenderFragment StatusBadge(SubscriptionStatus status) => b =>
+    {
+        var (bg, fg, text) = status switch
+        {
+            SubscriptionStatus.Active => ("#e6f7eb", "#0a7f2e", "Абонемент активен"),
+            SubscriptionStatus.Frozen => ("#fde7e9", "#a30000", "Абонемент заморожен"),
+            _ => ("#fff3d9", "#8a4b00", "Абонемент не подтверждён")
+        };
+        b.OpenElement(0, "span");
+        b.AddAttribute(1, "style", $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:13px;");
+        b.AddContent(2, text);
+        b.CloseElement();
+    };
+}
