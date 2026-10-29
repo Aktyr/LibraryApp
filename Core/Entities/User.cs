@@ -13,6 +13,8 @@ public class User : IEntity
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public UserRole Role { get; set; } = UserRole.Reader;
+    public SubscriptionStatus SubscriptionStatus { get; set; } = SubscriptionStatus.Unconfirmed;
+
     #endregion
 
     // todo добавить подтверждение почты IsEmailConfirmed 

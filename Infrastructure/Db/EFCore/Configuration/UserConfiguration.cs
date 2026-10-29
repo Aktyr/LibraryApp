@@ -35,6 +35,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
                .IsUnique()
                .HasFilter("\"IsDeleted\" = false");
 
+        builder.Property(u => u.SubscriptionStatus)
+               .IsRequired()
+               .HasConversion<string>()
+               .HasDefaultValue(SubscriptionStatus.Unconfirmed);
+
         builder.HasIndex(u => u.IsDeleted);
 
         builder.HasQueryFilter(u => !u.IsDeleted);

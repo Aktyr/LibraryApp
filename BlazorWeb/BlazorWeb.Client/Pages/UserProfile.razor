@@ -50,12 +50,33 @@ else if (user == null)
 else
 {
     @* ---------- Карточка: имя, email, роль ---------- *@
-    <div class="mb-3 pb-3 border-bottom">
-        <h2 class="mb-1">@FullName</h2>
-        <div class="text-muted">
-            <span>@user.Email</span>
-            <span class="mx-2">·</span>
-            @RoleBadge(user.Role)
+    <div class="mb-3 pb-3 border-bottom d-flex justify-content-between align-items-start">
+        <div>
+            <h2 class="mb-1">@FullName</h2>
+            <div class="text-muted">
+                <span>@user.Email</span>
+                <span class="mx-2">·</span>
+                @RoleBadge(user.Role)
+            </div>
+        </div>
+
+        @* Выпадающий список для управления статусом *@
+        <div class="d-flex align-items-center gap-2">
+            <label class="form-label mb-0 small text-muted">Абонемент:</label>
+            <select class="form-select form-select-sm"
+                    style="width: auto;"
+                    @onchange="OnStatusChanged"
+                    disabled="@isLoading">
+                <option value="@SubscriptionStatus.Unconfirmed" selected="@(user.SubscriptionStatus == SubscriptionStatus.Unconfirmed)">
+                    Не подтверждён
+                </option>
+                <option value="@SubscriptionStatus.Active" selected="@(user.SubscriptionStatus == SubscriptionStatus.Active)">
+                    Активен
+                </option>
+                <option value="@SubscriptionStatus.Frozen" selected="@(user.SubscriptionStatus == SubscriptionStatus.Frozen)">
+                    Заморожен
+                </option>
+            </select>
         </div>
     </div>
 
@@ -88,6 +109,14 @@ else
     <div class="mb-4 small text-muted">
         <span>Контакт:</span> <strong>@user.ContactInfo</strong>
     </div>
+
+    @if (user.SubscriptionStatus != SubscriptionStatus.Active)
+    {
+        <div class="alert alert-danger py-2 mb-4">
+            ⚠️ Абонемент пользователя <strong>@(user.SubscriptionStatus == SubscriptionStatus.Unconfirmed ? "не подтверждён" : "заморожен")</strong>.
+            Выдача новых книг заблокирована. Разблокируйте абонемент, чтобы продолжить выдачу.
+        </div>
+    }
 
     @* ---------- Активные выдачи ---------- *@
     <div class="mb-4">
@@ -770,6 +799,47 @@ else
         isLoading = false;
         await InvokeAsync(StateHasChanged);
     }
+    private async Task OnStatusChanged(ChangeEventArgs e)
+    {
+        if (user == null || isLoading) return;
+
+        var val = e.Value?.ToString();
+        if (!Enum.TryParse<SubscriptionStatus>(val, out var newStatus)) return;
+
+        // Если статус не изменился, ничего не делаем
+        if (newStatus == user.SubscriptionStatus) return;
+
+        // Для заморозки/разморозки можно добавить подтверждение,
+        // но для простоты меняем сразу.
+        await ChangeStatusAsync(newStatus);
+    }
+
+    private async Task ChangeStatusAsync(SubscriptionStatus newStatus)
+    {
+        isLoading = true;
+        errorMessage = null;
+        statusMessage = null;
+
+        try
+        {
+            var resp = await UserClient.ChangeStatusAsync(Id, newStatus);
+            statusMessage = resp.Message;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка изменения статуса: {ex.Message}";
+            // При ошибке нужно принудительно перерисовать UI,
+            // чтобы <select> вернулся к старому значению (из user)
+            await InvokeAsync(StateHasChanged);
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
 
     private async Task OnActiveRowDoubleClick(BorrowedBookDTO b)
     {
@@ -948,7 +1018,7 @@ else
             await InvokeAsync(StateHasChanged);
         }
     }
-    
+
 
     // ---- Продление ----
 
@@ -985,7 +1055,7 @@ else
         }
         await InvokeAsync(StateHasChanged);
     }
-
+    
     private static RenderFragment RoleBadge(UserRole role) => b =>
     {
         var (bg, fg, text) = role switch

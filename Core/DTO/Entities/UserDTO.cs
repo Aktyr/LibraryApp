@@ -9,5 +9,6 @@ public record UserDTO(Guid Id,
                       ICollection<UserRoomBookDTO> RoomBooks,
                       UserRole Role = UserRole.Reader,
                       int ActiveBorrowedCount = 0,
-                      string Email = "")
+                      string Email = "",
+                      SubscriptionStatus SubscriptionStatus = SubscriptionStatus.Active)
 { public UserDTO() : this(default, default!, default!, default!, default!, default, default!) { } }

@@ -16,6 +16,13 @@ public class BorrowingValidatorAsync : IValidator
             errors.Add("Пользователь не найден");
         else
         {
+            if (user.SubscriptionStatus != SubscriptionStatus.Active)
+            {
+                var statusName = user.SubscriptionStatus == SubscriptionStatus.Unconfirmed
+                    ? "не подтверждён" : "заморожен";
+                errors.Add($"Абонемент пользователя {statusName}. Выдача книг запрещена.");
+            }
+
             var activeBooksCount = user.RoomBooks?.Count(urb => !urb.IsReturned) ?? 0;
             if (activeBooksCount >= _settings.MaxBooksPerUser)
                 errors.Add($"Пользователь уже взял максимальное количество книг ({_settings.MaxBooksPerUser})");

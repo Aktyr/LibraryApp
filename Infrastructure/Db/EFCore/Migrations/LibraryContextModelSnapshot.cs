@@ -201,6 +201,12 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
+                    b.Property<string>("SubscriptionStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Unconfirmed");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")

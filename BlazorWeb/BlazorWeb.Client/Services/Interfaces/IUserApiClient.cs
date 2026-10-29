@@ -1,4 +1,6 @@
-﻿namespace BlazorWeb.Client.Services.Interfaces;
+﻿using LibApp.Core.Enums;
+
+namespace BlazorWeb.Client.Services.Interfaces;
 
 public interface IUserApiClient
 {
@@ -8,4 +10,6 @@ public interface IUserApiClient
     Task<BasicCreateDeleteResponse> CreateUserAsync(CreateUserRequest request, CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> UpdateUserAsync(UpdateUserRequest request, CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> DeleteUserAsync(Guid id, CancellationToken ct = default);
+    Task<BasicCreateDeleteResponse> ChangeStatusAsync(Guid id, SubscriptionStatus newStatus, CancellationToken ct = default);
+
 }

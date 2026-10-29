@@ -11,6 +11,7 @@ public static class UsersProxyEndpoints
         group.MapGet("/", GetAllAsync);
         group.MapGet("/{id:guid}", GetByIdAsync);
         group.MapGet("/{id:guid}/books", GetUserBooksAsync);
+        group.MapPut("/{id:guid}/status", ChangeStatusAsync);
 
         // Переопределяем Create и Delete (BFF: Identity + Library, с компенсацией)
         group.MapPost("/", CreateAsync);
@@ -109,13 +110,13 @@ public static class UsersProxyEndpoints
     }
 
     private static async Task<IResult> DeleteAsync(
-    Guid id,
-    ClaimsPrincipal user,
-    UserManager<ApplicationUser> userManager,
-    DeleteUserCommand deleteUserCommand,
-    IUnitOfWork unitOfWork,
-    ILoggerFactory loggerFactory,
-    CancellationToken ct)
+        Guid id,
+        ClaimsPrincipal user,
+        UserManager<ApplicationUser> userManager,
+        DeleteUserCommand deleteUserCommand,
+        IUnitOfWork unitOfWork,
+        ILoggerFactory loggerFactory,
+        CancellationToken ct)
     {
         var actorRole = user.FindFirst(ClaimTypes.Role)?.Value;
         if (actorRole != nameof(UserRole.Admin))
@@ -127,9 +128,9 @@ public static class UsersProxyEndpoints
 
         var logger = loggerFactory.CreateLogger("DeleteUserBff");
 
-        // 1) Валидация ДО удаления Identity.
-        //    Если есть активные выдачи — отказываем сразу, не трогая Identity,
-        //    чтобы не оставить «осиротевший» Identity-аккаунт.
+        // Валидация ДО удаления Identity.
+        // Если есть активные выдачи — отказываем сразу, не трогая Identity,
+        // чтобы не оставить «осиротевший» Identity-аккаунт.
         var libUserId = new Id(id);
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         var activeBorrows = await userRoomBookRepo.CountAsync(
@@ -143,8 +144,8 @@ public static class UsersProxyEndpoints
                 statusCode: 400);
         }
 
-        // 2) Удаляем Identity-пользователя (жёстко — Identity-запись
-        //    не нужна, её историю не храним; library.User для истории остаётся).
+        // Удаляем Identity-пользователя (жёстко — Identity-запись
+        // не нужна, её историю не храним; library.User для истории остаётся).
         var appUser = userManager.Users.FirstOrDefault(u => u.LibraryUserId == id);
         if (appUser != null)
         {
@@ -156,9 +157,9 @@ public static class UsersProxyEndpoints
             }
         }
 
-        // 3) Soft-delete library.User через команду — единая точка правды
-        //    для правил деактивации. DeleteUserCommand ещё раз проверит
-        //    activeBorrows (защита от race), но это уже перестраховка.
+        // Soft-delete library.User через команду — единая точка правды
+        // для правил деактивации. DeleteUserCommand ещё раз проверит
+        // activeBorrows (защита от race), но это уже перестраховка.
         try
         {
             await deleteUserCommand.Execute(new DeleteUserRequest { Id = new Id(id) }, ct);
@@ -178,6 +179,9 @@ public static class UsersProxyEndpoints
 
         return Results.Ok(new BasicCreateDeleteResponse("Ok", "Пользователь деактивирован"));
     }
+    private static Task<IResult> ChangeStatusAsync(
+        Guid id, ChangeSubscriptionStatusRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Put, $"/api/users/{id}/status", request, ct);
 
     #endregion
 }

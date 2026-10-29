@@ -1,6 +1,4 @@
-﻿using BlazorWeb.Client.Services.Interfaces;
-
-namespace BlazorWeb.Client.Services.APIs;
+﻿namespace BlazorWeb.Client.Services.APIs;
 
 public class UserApiClient(HttpClient http) : IUserApiClient
 {
@@ -45,4 +43,11 @@ public class UserApiClient(HttpClient http) : IUserApiClient
         return await resp.Content.ReadFromJsonAsync<BasicCreateDeleteResponse>(ct)
                ?? new BasicCreateDeleteResponse("Error", "Empty response");
     }
+    public async Task<BasicCreateDeleteResponse> ChangeStatusAsync(Guid id, LibApp.Core.Enums.SubscriptionStatus newStatus, CancellationToken ct = default)
+    {
+        var req = new ChangeSubscriptionStatusRequest { NewStatus = newStatus };
+        var resp = await http.PutAsJsonAsync($"{BasePath}/{id}/status", req, ct);
+        return await ReadAsync(resp, ct);
+    }
+
 }

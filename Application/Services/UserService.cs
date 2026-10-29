@@ -52,6 +52,7 @@ public class UserService : IUserService, IService
             MiddleName = middleName ?? string.Empty,
             ContactInfo = contactInfo,
             Role = role,
+            SubscriptionStatus = SubscriptionStatus.Active,
             RoomBooks = []
         };
 

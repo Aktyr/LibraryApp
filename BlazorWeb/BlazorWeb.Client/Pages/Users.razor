@@ -209,9 +209,29 @@ else if (users != null)
         },
         new()
         {
-            Title = "Контакт",
+            Title = "Email",
             Width = 220,
-            Value = u => u.ContactInfo
+            Value = u => u.Email
+        },
+        new()
+        {
+            Title = "Статус",
+            Width = 140,
+            Value = u => u.SubscriptionStatus,
+            FilterText = u => u.SubscriptionStatus.ToString(),
+            Template = u => b =>
+            {
+                var (bg, fg, text) = u.SubscriptionStatus switch
+                {
+                    SubscriptionStatus.Active => ("#e6f7eb", "#0a7f2e", "Активен"),
+                    SubscriptionStatus.Frozen => ("#fde7e9", "#a30000", "Заморожен"),
+                    _ => ("#fff3d9", "#8a4b00", "Не подтверждён")
+                };
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style", $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
+                b.AddContent(2, text);
+                b.CloseElement();
+            }
         },
         new()
         {

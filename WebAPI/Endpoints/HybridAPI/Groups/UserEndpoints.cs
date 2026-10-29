@@ -83,4 +83,15 @@ public class UserEndpoints : EndpointBase
 
         return Results.Ok(await command.Execute(new DeleteUserRequest { Id = new Id(id) }, ct));
     }
+
+    [HttpPut("{id:guid}/status")]
+    public async Task<IResult> ChangeStatus(
+    Guid id,
+    ChangeSubscriptionStatusRequest request,
+    ChangeSubscriptionStatusCommand command,
+    CancellationToken ct)
+    {
+        request.UserId = new Id(id); // защита от подмены ID в body
+        return Results.Ok(await command.Execute(request, ct));
+    }
 }
