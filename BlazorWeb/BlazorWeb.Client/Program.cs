@@ -1,3 +1,7 @@
+using LibApp.Core.Interfaces;
+using LibApp.Core.Authorization;
+using LibApp.Core.Interfaces;
+
 namespace BlazorWeb.Client;
 
 internal class Program
@@ -9,6 +13,7 @@ internal class Program
         builder.Services.AddAuthorizationCore();
         builder.Services.AddCascadingAuthenticationState();
         builder.Services.AddSingleton<AuthenticationStateProvider, PersistentAuthenticationStateProvider>();
+        builder.Services.AddScoped<IUserManagementPolicy, UserManagementPolicy>();
 
         #region API-клиенты для компонентов Blazor.WebAssembly (через прокси-эндпоинты)
         builder.Services.AddScoped(sp => new HttpClient

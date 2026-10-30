@@ -82,7 +82,7 @@ public class DeadlineCheckService : BackgroundService, IService
         foreach (var urb in overdueList)
         {
             var daysOverdue = (now - urb.Deadline!.Value).Days;
-            var penalty = CalculatePenalty(daysOverdue, penaltySettings);
+            var penalty = PenaltyCalculatorService.CalculateFromDays(daysOverdue, penaltySettings);
 
             // Обновляем штраф в БД
             urb.Penalty = penalty;
@@ -93,11 +93,10 @@ public class DeadlineCheckService : BackgroundService, IService
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    private decimal CalculatePenalty(int daysOverdue, PenaltySettings settings)
-    {
-        var penalty = daysOverdue * settings.DailyRate;
-        return settings.MaxPenalty.HasValue
-            ? Math.Min(penalty, settings.MaxPenalty.Value)
-            : penalty;
-    }
+    /// <remarks>
+    /// Оставлен для юнит-тестов (проверяют формулу через рефлексию).
+    /// В рабочем коде используем <see cref="PenaltyCalculatorService.CalculateFromDays"/>.
+    /// </remarks>
+    private static decimal CalculatePenalty(int daysOverdue, PenaltySettings settings)
+        => PenaltyCalculatorService.CalculateFromDays(daysOverdue, settings);
 }

@@ -18,15 +18,14 @@ public class UserEndpoints : EndpointBase
     public async Task<IResult> Create(
         CreateUserCommand command,
         CreateUserRequest request,
+        IUserManagementPolicy policy,
         HttpContext context,
         CancellationToken ct)
     {
-        var actorRole = context.User.FindFirst(ClaimTypes.Role)?.Value;
+        var actor = ParseActorRole(context);
+        var target = request.Role ?? UserRole.Reader;
 
-        // Только Admin может создавать Librarian/Admin.
-        if (actorRole != nameof(UserRole.Admin)
-            && request.Role.HasValue
-            && request.Role.Value != UserRole.Reader)
+        if (!policy.CanCreate(actor, target))
         {
             return Results.Problem(
                 detail: "Только администратор может создавать пользователей с ролью Библиотекарь или Администратор",
@@ -41,19 +40,19 @@ public class UserEndpoints : EndpointBase
         UpdateUserCommand command,
         UpdateUserRequest request,
         GetUserCommand getUser,
+        IUserManagementPolicy policy,
         HttpContext context,
         CancellationToken ct)
     {
-        var actorRole = context.User.FindFirst(ClaimTypes.Role)?.Value;
+        var actor = ParseActorRole(context);
 
-        // Не админ редактирует только Reader.
-        if (actorRole != nameof(UserRole.Admin))
+        if (actor != UserRole.Admin)
         {
             var existing = await getUser.Execute(new GetUserRequest { Id = request.Id }, ct);
-            var target = existing?.Users.FirstOrDefault();
-            if (target is null) throw new UserNotFoundException();
+            var target = existing?.Users.FirstOrDefault()
+                ?? throw new UserNotFoundException();
 
-            if (target.Role != UserRole.Reader)
+            if (!policy.CanEdit(actor, target.Role))
             {
                 return Results.Problem(
                     detail: "Только администратор может редактировать Библиотекарей и Администраторов",
@@ -68,13 +67,11 @@ public class UserEndpoints : EndpointBase
     public async Task<IResult> Delete(
         Guid id,
         DeleteUserCommand command,
+        IUserManagementPolicy policy,
         HttpContext context,
         CancellationToken ct)
     {
-        var actorRole = context.User.FindFirst(ClaimTypes.Role)?.Value;
-
-        // Только админ может удалять пользователей.
-        if (actorRole != nameof(UserRole.Admin))
+        if (!policy.CanDelete(ParseActorRole(context)))
         {
             return Results.Problem(
                 detail: "Только администратор может удалять пользователей",
@@ -84,12 +81,18 @@ public class UserEndpoints : EndpointBase
         return Results.Ok(await command.Execute(new DeleteUserRequest { Id = new Id(id) }, ct));
     }
 
+    private static UserRole ParseActorRole(HttpContext ctx)
+    {
+        var raw = ctx.User.FindFirst(ClaimTypes.Role)?.Value;
+        return Enum.TryParse<UserRole>(raw, ignoreCase: false, out var r) ? r : UserRole.Reader;
+    }
+
     [HttpPut("{id:guid}/status")]
     public async Task<IResult> ChangeStatus(
-    Guid id,
-    ChangeSubscriptionStatusRequest request,
-    ChangeSubscriptionStatusCommand command,
-    CancellationToken ct)
+        Guid id,
+        ChangeSubscriptionStatusRequest request,
+        ChangeSubscriptionStatusCommand command,
+        CancellationToken ct)
     {
         request.UserId = new Id(id); // защита от подмены ID в body
         return Results.Ok(await command.Execute(request, ct));

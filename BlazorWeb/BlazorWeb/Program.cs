@@ -1,3 +1,6 @@
+using LibApp.Core.Authorization;
+using LibApp.Core.Interfaces;
+
 namespace BlazorWeb;
 
 public class Program
@@ -42,7 +45,8 @@ public class Program
         builder.Services.AddScoped<UserValidatorAsync>();
         builder.Services.AddScoped<EmailValidatorAsync>();
         builder.Services.AddTransient<DeleteUserCommand>();
-
+        builder.Services.AddScoped<IUserManagementPolicy, UserManagementPolicy>();
+        builder.Services.AddScoped<IUserProvisioningService, UserProvisioningService>();
 
         builder.Services.AddOptions<JwtSettings>()
             .Bind(builder.Configuration.GetSection("ApplicationSettings:Jwt"))

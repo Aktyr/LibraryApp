@@ -127,12 +127,7 @@ public class ReturnBookCommand(
         return ResponseFactory.Success(string.Join(". ", parts));
     }
 
-    private static string ReasonName(DiscardReason r) => r switch
-    {
-        DiscardReason.Wear => "износ",
-        DiscardReason.Damaged => "повреждение",
-        DiscardReason.Loss => "утрата",
-        DiscardReason.Obsolete => "устарела",
-        _ => "другое"
-    };
+    // В тексте ответа причина идёт строчными (как часть фразы «Списана (износ)»),
+    // а в бейджах/select — с заглавной. Поэтому здесь явно to lower.
+    private static string ReasonName(DiscardReason r) => r.DisplayName().ToLowerInvariant();
 }

@@ -20,10 +20,10 @@ public class UserRoomBookDTOConverter : BaseConverter<UserRoomBook, UserRoomBook
         var entity = base.ToEntity(dto);
 
         if (dto.UserId != Guid.Empty && entity.User == null)
-            entity.User = new User { Id = new Id(dto.UserId) };
+            entity.User = StubById<User>(dto.UserId);
 
         if (dto.RoomBookId != Guid.Empty && entity.RoomBook == null)
-            entity.RoomBook = new RoomBook { Id = new Id(dto.RoomBookId) };
+            entity.RoomBook = StubById<RoomBook>(dto.RoomBookId);
 
         return entity;
     }

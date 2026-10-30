@@ -16,7 +16,7 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
-@inject IUserService UserProfileService
+@inject BlazorWeb.Services.IUserProvisioningService ProvisioningService
 
 <PageTitle>Register</PageTitle>
 
@@ -90,59 +90,24 @@
 
     public async Task RegisterUser(EditContext editContext)
     {
-        var user = CreateUser();
-
-        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-        var emailStore = GetEmailStore();
-        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-        var result = await UserManager.CreateAsync(user, Input.Password);
-
-        if (!result.Succeeded)
-        {
-            identityErrors = result.Errors;
-            return;
-        }
-
-        // Заполняем профильные поля Identity-пользователя
-        user.FirstName = Input.FirstName;
-        user.LastName = Input.LastName;
-        user.MiddleName = Input.MiddleName ?? string.Empty;
-        user.ContactInfo = Input.ContactInfo;
-
+        ApplicationUser user;
         try
         {
-            // Создаём Library-пользователя (library."User") и связываем через LibraryUserId
-            var libraryUser = await UserProfileService.CreateUserAsync(
+            user = await ProvisioningService.CreateAsync(
                 Input.Email,
                 Input.Password,
                 Input.LastName,
                 Input.FirstName,
-                Input.MiddleName ?? string.Empty,
+                Input.MiddleName ?? "",
                 Input.ContactInfo,
                 UserRole.Reader,
-                CancellationToken.None);
-
-            user.LibraryUserId = libraryUser.Id.Value;
-            await UserManager.UpdateAsync(user);
+                emailConfirmed: false);
         }
-        catch (LibValidationException lve)
+        catch (ProvisioningException pex)
         {
-            // Library-валидатор строже Identity (8 символов, заглавная, спецсимвол и т.д.).
-            // Показываем пользователю реальные причины, а не generic-заглушку.
-            Logger.LogWarning("Library user validation failed for {Email}: {Errors}",
-                Input.Email, string.Join("; ", lve.ExceptionDetails));
-            await UserManager.DeleteAsync(user);
-            identityErrors = lve.ExceptionDetails
+            identityErrors = pex.Errors
                 .Select(d => new IdentityError { Description = d })
                 .ToList();
-            return;
-        }
-        catch (Exception ex)
-        {
-            // Компенсация: если Library-user не создался по другой причине — откатываем Identity-user
-            Logger.LogError(ex, "Failed to create library user for {Email}", Input.Email);
-            await UserManager.DeleteAsync(user);
-            identityErrors = [new IdentityError { Description = "Не удалось завершить регистрацию, попробуйте позже" }];
             return;
         }
 
@@ -168,43 +133,18 @@
         RedirectManager.RedirectTo(ReturnUrl);
     }
 
-    private ApplicationUser CreateUser()
-    {
-        try
-        {
-            return Activator.CreateInstance<ApplicationUser>();
-        }
-        catch
-        {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
-        }
-    }
-
-    private IUserEmailStore<ApplicationUser> GetEmailStore()
-    {
-        if (!UserManager.SupportsUserEmail)
-        {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
-        }
-        return (IUserEmailStore<ApplicationUser>)UserStore;
-    }
-
     private sealed class InputModel : System.ComponentModel.DataAnnotations.IValidatableObject
     {
         [Required]
         [EmailAddress]
-        [Display(Name = "Email")]
         public string Email { get; set; } = "";
 
         [Required(ErrorMessage = "Пароль обязателен")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Пароль от 8 до 100 символов")]
         [DataType(DataType.Password)]
-        [Display(Name = "Password")]
         public string Password { get; set; } = "";
 
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "Пароли не совпадают")]
         public string ConfirmPassword { get; set; } = "";
 
@@ -226,36 +166,27 @@
         public IEnumerable<System.ComponentModel.DataAnnotations.ValidationResult> Validate(
             System.ComponentModel.DataAnnotations.ValidationContext validationContext)
         {
-            // Синхронизировано с UserValidatorAsync (library) + UnicodePasswordValidator (Identity).
             if (string.IsNullOrEmpty(Password) || Password.Length < 8 || Password.Length > 100)
-                yield break; // базовые [Required]/[StringLength] уже показали
+                yield break;
 
             if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"\p{Lu}"))
             {
-                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
-                    "Пароль должен содержать хотя бы одну заглавную букву",
-                    new[] { nameof(Password) });
+                yield return new("Пароль должен содержать хотя бы одну заглавную букву", [nameof(Password)]);
                 yield break;
             }
             if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"\p{Ll}"))
             {
-                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
-                    "Пароль должен содержать хотя бы одну строчную букву",
-                    new[] { nameof(Password) });
+                yield return new("Пароль должен содержать хотя бы одну строчную букву", [nameof(Password)]);
                 yield break;
             }
             if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[0-9]"))
             {
-                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
-                    "Пароль должен содержать хотя бы одну цифру",
-                    new[] { nameof(Password) });
+                yield return new("Пароль должен содержать хотя бы одну цифру", [nameof(Password)]);
                 yield break;
             }
             if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[!@#$%^&*(),.?"":{}|<>]"))
             {
-                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
-                    "Пароль должен содержать хотя бы один спецсимвол",
-                    new[] { nameof(Password) });
+                yield return new("Пароль должен содержать хотя бы один спецсимвол", [nameof(Password)]);
             }
         }
     }

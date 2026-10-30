@@ -13,11 +13,21 @@ public class PenaltyCalculatorService : IService
     }
 
     /// <summary>
-    /// Рассчитывает штраф на основе срока возврата
+    /// Базовая формула штрафа: ставка × дни, округление до копеек, применение cap.
+    /// Льготный период сюда не входит — вызывающая сторона уже вычла его из <paramref name="daysOverdue"/>.
     /// </summary>
-    /// <param name="deadline">Срок возврата</param>
-    /// <param name="currentDate">Текущая дата (для тестирования)</param>
-    /// <returns>Сумма штрафа</returns>
+    public static decimal CalculateFromDays(int daysOverdue, PenaltySettings settings)
+    {
+        if (daysOverdue <= 0) return 0m;
+
+        var penalty = daysOverdue * settings.DailyRate;
+        penalty = Math.Round(penalty, 2, MidpointRounding.AwayFromZero);
+
+        return settings.MaxPenalty.HasValue && penalty > settings.MaxPenalty.Value
+            ? settings.MaxPenalty.Value
+            : penalty;
+    }
+
     public decimal? CalculatePenalty(DateTime? deadline, DateTime? currentDate = null)
     {
         var config = _settings.Value;
@@ -30,38 +40,23 @@ public class PenaltyCalculatorService : IService
 
         var now = currentDate ?? DateTime.UtcNow;
 
-        // Добавляем льготный период
         var gracePeriodEnd = deadline.Value.AddDays(config.GracePeriodDays);
         if (now <= gracePeriodEnd)
         {
-            _logger?.LogDebug($"Within grace period. Penalty = 0");
+            _logger?.LogDebug("Within grace period. Penalty = 0");
             return 0;
         }
 
-        // Рассчитываем дни просрочки с округлением вверх (учитывая часы)
         var totalDaysOverdue = (now - deadline.Value).TotalDays;
         var actualDaysOverdue = (int)Math.Ceiling(totalDaysOverdue) - config.GracePeriodDays;
 
-        // Защита от отрицательных значений
         if (actualDaysOverdue <= 0)
         {
-            _logger?.LogWarning($"Unexpected negative overdue days: {actualDaysOverdue}");
+            _logger?.LogWarning("Unexpected negative overdue days: {Days}", actualDaysOverdue);
             return 0;
         }
 
-        var penalty = actualDaysOverdue * config.DailyRate;
-        // Округляем до копеек
-        penalty = Math.Round(penalty, 2, MidpointRounding.AwayFromZero);
-
-        // Применяем ограничение максимального штрафа
-        if (config.MaxPenalty.HasValue && penalty > config.MaxPenalty.Value)
-        {
-            _logger?.LogInformation($"Penalty {penalty} exceeds max penalty {config.MaxPenalty.Value}. Applying cap.");
-            return config.MaxPenalty.Value;
-        }
-
-        _logger?.LogDebug($"Penalty calculated: DaysOverdue={actualDaysOverdue}, Penalty={penalty}");
-        return penalty;
+        return CalculateFromDays(actualDaysOverdue, config);
     }
 
     /// <summary>

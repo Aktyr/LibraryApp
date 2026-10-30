@@ -1,4 +1,6 @@
-﻿namespace LibApp.Application.Services;
+﻿using LibApp.Application.Validation.Services;
+
+namespace LibApp.Application.Services;
 
 public class RoomBookSynchronizer : IRoomBookSynchronizer, IService
 {
@@ -84,9 +86,9 @@ public class RoomBookSynchronizer : IRoomBookSynchronizer, IService
                 // Обновление существующей записи
                 // Дублирующая проверка (для безопасности)
                 if (dto.BookCount < existing.BorrowedCount)
-                    throw new LibValidationException
+                    throw new LibValidationException 
                     {
-                        ExceptionDetails = [$"Нельзя установить общее количество ({dto.BookCount}) меньше уже выданных ({existing.BorrowedCount}) для RoomBook Id {dto.Id}"]
+                        ExceptionDetails = [RoomBookErrors.BookCountLessThanBorrowed(dto.BookCount, existing.BorrowedCount, dto.Id)]
                     };
 
                 existing.BookCount = dto.BookCount;

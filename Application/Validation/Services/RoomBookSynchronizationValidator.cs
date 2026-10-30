@@ -39,7 +39,8 @@ public class RoomBookSynchronizationValidator : IRoomBookSynchronizationValidato
                     errors.Add($"Нельзя изменить книгу для существующей записи RoomBook (Id: {dto.Id})");
 
                 if (dto.BookCount < existing.BorrowedCount)
-                    errors.Add($"Нельзя установить общее количество ({dto.BookCount}) меньше уже выданных ({existing.BorrowedCount}) для RoomBook Id {dto.Id}");
+                    errors.Add(RoomBookErrors.BookCountLessThanBorrowed(
+                        dto.BookCount, existing.BorrowedCount, dto.Id));
             }
         }
 

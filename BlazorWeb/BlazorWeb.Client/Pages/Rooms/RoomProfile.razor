@@ -121,7 +121,7 @@ else
 @if (renameDialogOpen)
 {
     <div class="modal-backdrop" @onclick="CloseRenameDialog"></div>
-    <div class="modal-dialog" @onclick:stopPropagation="true">
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>Переименовать комнату</h3>
         <div class="mb-3">
             <label class="form-label">Название</label>
@@ -142,7 +142,7 @@ else
 @if (editingBook != null)
 {
     <div class="modal-backdrop" @onclick="CloseEditCount"></div>
-    <div class="modal-dialog" @onclick:stopPropagation="true">
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>Изменить количество</h3>
         <p class="mb-1"><strong>@GetBookTitle(editingBook.BookId)</strong></p>
         <p class="mb-3 text-muted small">
@@ -164,7 +164,7 @@ else
 @if (discardDialogOpen && discardSource != null)
 {
     <div class="modal-backdrop" @onclick="CloseDiscardDialog"></div>
-    <div class="modal-dialog" @onclick:stopPropagation="true">
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>Списать экземпляры</h3>
         <p class="mb-1"><strong>@GetBookTitle(discardSource.BookId)</strong></p>
         <p class="mb-3 text-muted small">
@@ -186,11 +186,14 @@ else
         <div class="mb-3">
             <label class="form-label">Причина</label>
             <select class="form-select" @bind="discardReason">
-                <option value="@DiscardReason.Wear">Износ</option>
-                <option value="@DiscardReason.Damaged">Повреждение</option>
-                <option value="@DiscardReason.Loss">Утрата</option>
-                <option value="@DiscardReason.Obsolete">Устарела</option>
-                <option value="@DiscardReason.Other">Другое</option>
+                @foreach (var r in new[]
+                {
+                    DiscardReason.Wear, DiscardReason.Damaged, DiscardReason.Loss,
+                    DiscardReason.Obsolete, DiscardReason.Other
+                })
+                {
+                    <option value="@r">@r.DisplayName()</option>
+                }
             </select>
         </div>
 
@@ -231,33 +234,6 @@ else
         </div>
     </div>
 }
-
-<style>
-    .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.4);
-        z-index: 1000;
-        cursor: default;
-    }
-
-    .modal-dialog {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 1001;
-        background: #fff;
-        border-radius: 8px;
-        padding: 20px 24px;
-        min-width: 460px;
-        max-width: 90vw;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        pointer-events: auto;
-    }
-</style>
 
 @code {
     [Parameter] public Guid Id { get; set; }

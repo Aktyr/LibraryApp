@@ -28,7 +28,7 @@ else
         <div class="text-muted">
             <span>@user.Email</span>
             <span class="mx-2">·</span>
-            <span>@StatusBadge(user.SubscriptionStatus)</span>
+            <span>@Badges.Status(user.SubscriptionStatus)</span>
         </div>
     </div>
 
@@ -66,7 +66,7 @@ else
             <DataGrid TItem="BorrowedBookDTO"
                       Items="activeBorrows"
                       PageSize="10"
-                      Columns="Columns"
+                      Columns="ActiveColumns"
                       SelectionMode="DataGridSelectionMode.None"/>
         }
     </div>
@@ -79,7 +79,7 @@ else
                 <DataGrid TItem="BorrowedBookDTO"
                           Items="returnedBorrows"
                           PageSize="10"
-                          Columns="Columns"
+                          Columns="ActiveColumns"
                           SelectionMode="DataGridSelectionMode.None" />
             </div>
         </details>
@@ -87,52 +87,23 @@ else
 }
 
 @code {
+    private string FullName => user.FullName();
+    private List<BorrowedBookDTO> activeBorrows => allBorrows.ActiveBorrows();
+    private List<BorrowedBookDTO> returnedBorrows => allBorrows.ReturnedBorrows();
+    private int overdueCount => activeBorrows.OverdueCount();
+    private decimal totalPenalty => allBorrows.TotalPenalty();
+
+    private readonly List<DataGridColumn<BorrowedBookDTO>> ActiveColumns =
+        UserBorrowsColumns.CreateActive();
+    private readonly List<DataGridColumn<BorrowedBookDTO>> HistoryColumns =
+        UserBorrowsColumns.CreateHistory();
+
+
     private bool isLoading = true;
     private UserDTO? user;
     private List<BorrowedBookDTO> allBorrows = new();
 
-    private int MaxBooksPerUser = 5; // В идеале подтянуть из настроек, но пока хардкод
-
-    private string FullName => user == null ? "—" : $"{user.LastName} {user.FirstName} {user.MiddleName}".Trim();
-
-    private List<BorrowedBookDTO> activeBorrows =>
-        allBorrows.Where(b => b.ReturnDate == null).OrderBy(b => b.Deadline ?? DateTime.MaxValue).ToList();
-
-    private List<BorrowedBookDTO> returnedBorrows =>
-        allBorrows.Where(b => b.ReturnDate != null).OrderByDescending(b => b.ReturnDate).ToList();
-
-    private int overdueCount => activeBorrows.Count(b => b.Deadline.HasValue && b.Deadline.Value < DateTime.UtcNow);
-    private decimal totalPenalty => allBorrows.Where(b => b.Penalty.HasValue).Sum(b => b.Penalty!.Value);
-
-    private readonly List<DataGridColumn<BorrowedBookDTO>> Columns = new()
-    {
-        new() { Title = "Книга", Value = b => b.BookTitle, Width = 250 },
-        new() { Title = "Автор", Value = b => b.BookAuthor, Width = 180 },
-        new() { Title = "Комната", Value = b => b.RoomName, Width = 130 },
-        new()
-        {
-            Title = "Срок",
-            Width = 120,
-            FilterKind = FilterKind.Date,
-            Value = b => b.Deadline,
-            Template = item => b =>
-            {
-                if (!item.Deadline.HasValue) { b.AddContent(0, "—"); return; }
-                var overdue = item.Deadline.Value < DateTime.UtcNow;
-                if (overdue)
-                {
-                    b.OpenElement(0, "span");
-                    b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
-                    b.AddContent(2, $"{item.Deadline.Value:dd.MM.yyyy} ⚠");
-                    b.CloseElement();
-                }
-                else
-                {
-                    b.AddContent(0, item.Deadline.Value.ToString("dd.MM.yyyy"));
-                }
-            }
-        }
-    };
+    private int MaxBooksPerUser = 5; // fixme В идеале подтянуть из настроек, но пока хардкод
 
     protected override async Task OnInitializedAsync()
     {
@@ -157,18 +128,4 @@ else
             await InvokeAsync(StateHasChanged);
         }
     }
-
-    private static RenderFragment StatusBadge(SubscriptionStatus status) => b =>
-    {
-        var (bg, fg, text) = status switch
-        {
-            SubscriptionStatus.Active => ("#e6f7eb", "#0a7f2e", "Абонемент активен"),
-            SubscriptionStatus.Frozen => ("#fde7e9", "#a30000", "Абонемент заморожен"),
-            _ => ("#fff3d9", "#8a4b00", "Абонемент не подтверждён")
-        };
-        b.OpenElement(0, "span");
-        b.AddAttribute(1, "style", $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:13px;");
-        b.AddContent(2, text);
-        b.CloseElement();
-    };
 }

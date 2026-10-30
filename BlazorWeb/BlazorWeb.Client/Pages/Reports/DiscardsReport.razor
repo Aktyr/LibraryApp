@@ -94,22 +94,22 @@ else if (records != null)
         {
             Title = "Причина",
             Width = 140,
-            Value = r => ReasonName(r.DiscardReason),
-            FilterText = r => ReasonName(r.DiscardReason),
+            Value = r => r.DiscardReason.DisplayName(),
+            FilterText = r => r.DiscardReason.DisplayName(),
             Template = item => b =>
             {
-                var (bg, fg, text) = item.DiscardReason switch
+                var (bg, fg) = item.DiscardReason switch
                 {
-                    DiscardReason.Wear     => ("#fff3d9", "#8a4b00", "Износ"),
-                    DiscardReason.Damaged  => ("#fde7e9", "#a30000", "Повреждение"),
-                    DiscardReason.Loss     => ("#fde7e9", "#a30000", "Утрата"),
-                    DiscardReason.Obsolete => ("#f3f3f3", "#555",    "Устарела"),
-                    _                       => ("#f3f3f3", "#555",    "Другое")
+                    DiscardReason.Wear     => ("#fff3d9", "#8a4b00"),
+                    DiscardReason.Damaged  => ("#fde7e9", "#a30000"),
+                    DiscardReason.Loss     => ("#fde7e9", "#a30000"),
+                    DiscardReason.Obsolete => ("#f3f3f3", "#555"),
+                    _                       => ("#f3f3f3", "#555")
                 };
                 b.OpenElement(0, "span");
                 b.AddAttribute(1, "style",
                     $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
-                b.AddContent(2, text);
+                b.AddContent(2, item.DiscardReason.DisplayName());
                 b.CloseElement();
             }
         },
@@ -167,13 +167,4 @@ else if (records != null)
         }
         await InvokeAsync(StateHasChanged);
     }
-
-    private static string ReasonName(DiscardReason r) => r switch
-    {
-        DiscardReason.Wear => "Износ",
-        DiscardReason.Damaged => "Повреждение",
-        DiscardReason.Loss => "Утрата",
-        DiscardReason.Obsolete => "Устарела",
-        _ => "Другое"
-    };
 }

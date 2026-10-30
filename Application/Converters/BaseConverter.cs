@@ -92,4 +92,16 @@ public abstract class BaseConverter<TEntity, TDto> : IConverter<TEntity, TDto>
             // Не-generic ICollection не инициализируем
         }
     }
+
+    /// <summary>
+    /// Создаёт «заглушку» сущности с заданным Id.
+    /// Остальные поля — значения по умолчанию. Нужно, чтобы EF Core
+    /// знал FK без загрузки навигации.
+    /// </summary>
+    protected static T StubById<T>(Guid id) where T : class, IEntity, new()
+    {
+        var stub = new T();
+        typeof(T).GetProperty(nameof(IEntity.Id))!.SetValue(stub, new Id(id));
+        return stub;
+    }
 }

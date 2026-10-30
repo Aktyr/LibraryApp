@@ -22,7 +22,8 @@ public static partial class DI
                 .AddCurrentUser()
                 .AddBackgroundServices()
                 .AddUnitOfWork()
-                .AddSmtpClient();
+                .AddSmtpClient()
+                .AddUserManagementPolicy();
         return services;
     }
 

@@ -1,4 +1,6 @@
-﻿namespace BlazorWeb.Api;
+﻿using LibApp.Core.Requests.Reports;
+
+namespace BlazorWeb.Api;
 
 public static class BooksProxyEndpoints
 {
@@ -51,16 +53,18 @@ public static class BooksProxyEndpoints
         IHttpClientFactory httpFactory,
         CancellationToken ct)
     {
-        var q = new List<string>();
-        if (fromDate.HasValue) q.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
-        if (toDate.HasValue) q.Add($"toDate={toDate.Value:yyyy-MM-dd}");
-        if (discardReason.HasValue) q.Add($"discardReason={discardReason.Value}");
-        if (roomId.HasValue) q.Add($"roomId={roomId.Value}");
-        if (approvedById.HasValue) q.Add($"approvedById={approvedById.Value}");
-        if (bookId.HasValue) q.Add($"bookId={bookId.Value}");
-
-        var query = q.Count > 0 ? "?" + string.Join("&", q) : "";
-        return ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, $"/api/books/discarded{query}", null, ct);
+        var request = new GetDiscardedBooksRequest
+        {
+            FromDate = fromDate,
+            ToDate = toDate,
+            DiscardReason = discardReason,
+            RoomId = roomId,
+            ApprovedById = approvedById,
+            BookId = bookId
+        };
+        return ProxyForwarder.ForwardAsync(
+            httpFactory, HttpMethod.Get,
+            $"/api/books/discarded{request.BuildQueryString()}", null, ct);
     }
 
 }

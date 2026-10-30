@@ -56,7 +56,7 @@ else
             <div class="text-muted">
                 <span>@user.Email</span>
                 <span class="mx-2">·</span>
-                @RoleBadge(user.Role)
+                @Badges.Role(user.Role)
             </div>
         </div>
 
@@ -195,7 +195,7 @@ else
 @if (borrowDialogOpen && borrowDialogBook != null)
 {
     <div class="modal-backdrop" @onclick="CloseBorrowDialog"></div>
-    <div class="modal-dialog" @onclick:stopPropagation="true">
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>Выдать книгу</h3>
         <p class="mb-3 text-muted small">
             @FullName — на руках <strong>@user!.ActiveBorrowedCount / @MaxBooksPerUser</strong>,
@@ -248,7 +248,7 @@ else
 @if (extendingBorrow != null)
 {
     <div class="modal-backdrop" @onclick="CloseExtend"></div>
-    <div class="modal-dialog" @onclick:stopPropagation="true">
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>Продлить выдачу</h3>
         <p class="mb-1"><strong>@extendingBorrow.BookTitle</strong> — @extendingBorrow.RoomName</p>
         <p class="mb-1">Текущий срок: <strong>@(extendingBorrow.Deadline?.ToString("dd.MM.yyyy") ?? "—")</strong></p>
@@ -288,7 +288,7 @@ else
 @if (returnDialogBorrow != null)
 {
     <div class="modal-backdrop" @onclick="CloseReturnDialog"></div>
-    <div class="modal-dialog" @onclick:stopPropagation="true">
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>Возврат книги</h3>
         <p class="mb-1"><strong>@returnDialogBorrow.BookTitle</strong> — @returnDialogBorrow.RoomName</p>
         <p class="mb-3 text-muted small">
@@ -301,11 +301,17 @@ else
                     value="@(returnReason?.ToString() ?? "")"
                     @onchange="OnReturnReasonChanged">
                 <option value="">Ок — вернуть в фонд (без списания)</option>
-                <option value="Wear">Износ — списать</option>
-                <option value="Damaged">Повреждена — списать</option>
-                <option value="Loss">Утрачена — списать, компенсация обязательна</option>
-                <option value="Obsolete">Устарела — списать</option>
-                <option value="Other">Другое — списать</option>
+                @foreach (var r in new[]
+                {
+                    DiscardReason.Wear, DiscardReason.Damaged, DiscardReason.Loss,
+                    DiscardReason.Obsolete, DiscardReason.Other
+                })
+                {
+                    var suffix = r == DiscardReason.Loss
+                        ? " — списать, компенсация обязательна"
+                        : " — списать";
+                    <option value="@r">@r.DisplayName()@suffix</option>
+                }
             </select>
         </div>
 
@@ -354,33 +360,6 @@ else
     </div>
 }
 
-<style>
-    .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.4);
-        z-index: 1000;
-        cursor: default;
-    }
-
-    .modal-dialog {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 1001;
-        background: #fff;
-        border-radius: 8px;
-        padding: 20px 24px;
-        min-width: 460px;
-        max-width: 90vw;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        pointer-events: auto;
-    }
-</style>
-
 @code {
     private BorrowingSettingsDTO? settings;
     private int MaxBooksPerUser => settings?.MaxBooksPerUser ?? 5;
@@ -420,24 +399,18 @@ else
 
     #region Вычисляемые свойства
 
-    private List<BorrowedBookDTO> activeBorrows =>
-        allBorrows.Where(b => b.ReturnDate == null)
-                  .OrderBy(b => b.Deadline ?? DateTime.MaxValue)
-                  .ToList();
+    private List<BorrowedBookDTO> activeBorrows => allBorrows.ActiveBorrows();
+    private List<BorrowedBookDTO> returnedBorrows => allBorrows.ReturnedBorrows();
+    private int overdueCount => activeBorrows.OverdueCount();
+    private decimal totalPenalty => allBorrows.TotalPenalty();
+    private string FullName => user.FullName();
 
-    private List<BorrowedBookDTO> returnedBorrows =>
-        allBorrows.Where(b => b.ReturnDate != null)
-                  .OrderByDescending(b => b.ReturnDate)
-                  .ToList();
-
-    private int overdueCount =>
-        activeBorrows.Count(b => b.Deadline.HasValue && b.Deadline.Value < DateTime.UtcNow);
-
-    private decimal totalPenalty =>
-        allBorrows.Where(b => b.Penalty.HasValue).Sum(b => b.Penalty!.Value);
-
-    private string FullName =>
-        user == null ? "—" : $"{user.LastName} {user.FirstName} {user.MiddleName}".Trim();
+    private List<DataGridColumn<BorrowedBookDTO>>? _activeColumns;
+    private List<DataGridColumn<BorrowedBookDTO>> ActiveColumns => _activeColumns ??= UserBorrowsColumns.CreateActive(
+        showBorrowDate: true,
+        showExtendedDays: true,
+        penaltyDisplay: CalculatePenaltyDisplay,
+        maxExtendDeadlineDays: MaxExtendDeadlineDays);
 
     private string BorrowedColor =>
         user == null ? "#333"
@@ -497,122 +470,6 @@ else
 
     #region Колонки
 
-    private List<DataGridColumn<BorrowedBookDTO>>? _activeColumns;
-    private List<DataGridColumn<BorrowedBookDTO>> ActiveColumns => _activeColumns ??= new()
-    {
-        new() { Title = "Книга", Value = b => b.BookTitle, Width = 240 },
-        new() { Title = "Автор", Value = b => b.BookAuthor, Width = 180 },
-        new() { Title = "Комната", Value = b => b.RoomName, Width = 120 },
-        new()
-        {
-            Title = "Выдана",
-            Width = 100,
-            FilterKind = FilterKind.Date,
-            Value = b => b.Borrow,
-            FilterText = b => b.Borrow.ToString("yyyy-MM-dd"),
-            Template = item => b => b.AddContent(0, item.Borrow.ToString("dd.MM.yyyy"))
-        },
-        new()
-        {
-            Title = "Срок",
-            Width = 150,
-            FilterKind = FilterKind.Date,
-            Value = b => b.Deadline,
-            FilterText = b => b.Deadline?.ToString("yyyy-MM-dd") ?? "",
-            Template = item => b =>
-            {
-                if (!item.Deadline.HasValue) { b.AddContent(0, "—"); return; }
-                var overdue = item.Deadline.Value < DateTime.UtcNow;
-                if (overdue)
-                {
-                    var daysOverdue = (int)Math.Ceiling((DateTime.UtcNow - item.Deadline.Value).TotalDays);
-                    b.OpenElement(0, "span");
-                    b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
-                    b.AddAttribute(2, "title", $"Просрочено на {daysOverdue} дн.");
-                    b.AddContent(3, $"{item.Deadline.Value:dd.MM.yyyy} ⚠");
-                    b.CloseElement();
-                }
-                else
-                {
-                    b.AddContent(0, item.Deadline.Value.ToString("dd.MM.yyyy"));
-                }
-            }
-        },
-        new()
-        {
-            Title = "Штраф",
-            Width = 120,
-            FilterKind = FilterKind.Number,
-            Value = b =>
-            {
-                if (!b.Deadline.HasValue || b.Deadline.Value >= DateTime.UtcNow) return 0m;
-                var days = (int)Math.Ceiling((DateTime.UtcNow - b.Deadline.Value).TotalDays);
-                if (penaltySettings != null)
-                    days = Math.Max(0, days - penaltySettings.GracePeriodDays);
-                if (days <= 0) return 0m;
-                var penalty = days * (penaltySettings?.DailyRate ?? 10m);
-                return penaltySettings?.MaxPenalty.HasValue == true
-                    ? Math.Min(penalty, penaltySettings.MaxPenalty.Value)
-                    : penalty;
-            },
-            FilterText = b =>
-            {
-                if (!b.Deadline.HasValue || b.Deadline.Value >= DateTime.UtcNow) return "0";
-                var days = (int)Math.Ceiling((DateTime.UtcNow - b.Deadline.Value).TotalDays);
-                if (penaltySettings != null)
-                    days = Math.Max(0, days - penaltySettings.GracePeriodDays);
-                if (days <= 0) return "0";
-                var penalty = days * (penaltySettings?.DailyRate ?? 10m);
-                return (penaltySettings?.MaxPenalty.HasValue == true
-                    ? Math.Min(penalty, penaltySettings.MaxPenalty.Value)
-                    : penalty).ToString("0.##");
-            },
-            Template = item => b =>
-            {
-                if (!item.Deadline.HasValue || item.Deadline.Value >= DateTime.UtcNow)
-                {
-                    b.AddContent(0, "—");
-                    return;
-                }
-                var days = (int)Math.Ceiling((DateTime.UtcNow - item.Deadline.Value).TotalDays);
-                if (penaltySettings != null)
-                    days = Math.Max(0, days - penaltySettings.GracePeriodDays);
-                if (days <= 0)
-                {
-                    b.AddContent(0, "—");
-                    return;
-                }
-                var penalty = days * (penaltySettings?.DailyRate ?? 10m);
-                var amount = penaltySettings?.MaxPenalty.HasValue == true
-                    ? Math.Min(penalty, penaltySettings.MaxPenalty.Value)
-                    : penalty;
-                b.OpenElement(0, "span");
-                b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
-                b.AddContent(2, $"{amount:0.##} ₽");
-                b.CloseElement();
-            }
-        },
-        new()
-        {
-            Title = "Продлено",
-            Width = 130,
-            FilterKind = FilterKind.Number,
-            Value = b => b.TotalExtendedDays,
-            FilterText = b => b.TotalExtendedDays.ToString(),
-            Template = item => b =>
-            {
-                var ext = item.TotalExtendedDays;
-                var color = ext >= MaxExtendDeadlineDays ? "#a30000"
-                          : ext > 0 ? "#a85b00"
-                          : "#555";
-                b.OpenElement(0, "span");
-                b.AddAttribute(1, "style", $"color:{color};");
-                b.AddContent(2, $"{ext} / {MaxExtendDeadlineDays} дн.");
-                b.CloseElement();
-            }
-        }
-    };
-
     private readonly List<DataGridColumn<RoomBookOption>> availableColumns = new()
     {
         new() { Title = "Книга", Value = o => o.BookTitle, Width = 300 },
@@ -629,60 +486,22 @@ else
         }
     };
 
-    private readonly List<DataGridColumn<BorrowedBookDTO>> historyColumns = new()
+    private List<DataGridColumn<BorrowedBookDTO>> historyColumns = new();
+
+    private decimal CalculatePenaltyDisplay(BorrowedBookDTO b)
     {
-        new() { Title = "Книга", Value = b => b.BookTitle, Width = 240 },
-        new() { Title = "Комната", Value = b => b.RoomName, Width = 130 },
-        new()
-        {
-            Title = "Выдана",
-            Width = 100,
-            FilterKind = FilterKind.Date,
-            Value = b => b.Borrow,
-            FilterText = b => b.Borrow.ToString("yyyy-MM-dd"),
-            Template = item => b => b.AddContent(0, item.Borrow.ToString("dd.MM.yyyy"))
-        },
-        new()
-        {
-            Title = "Срок",
-            Width = 110,
-            FilterKind = FilterKind.Date,
-            Value = b => b.Deadline,
-            FilterText = b => b.Deadline?.ToString("yyyy-MM-dd") ?? "",
-            Template = item => b => b.AddContent(0, item.Deadline?.ToString("dd.MM.yyyy") ?? "—")
-        },
-        new()
-        {
-            Title = "Возвращена",
-            Width = 120,
-            FilterKind = FilterKind.Date,
-            Value = b => b.ReturnDate,
-            FilterText = b => b.ReturnDate?.ToString("yyyy-MM-dd") ?? "",
-            Template = item => b => b.AddContent(0, item.ReturnDate?.ToString("dd.MM.yyyy") ?? "—")
-        },
-        new()
-        {
-            Title = "Штраф",
-            Width = 100,
-            FilterKind = FilterKind.Number,
-            Value = b => b.Penalty,
-            FilterText = b => b.Penalty?.ToString("0.##") ?? "",
-            Template = item => b =>
-            {
-                if (item.Penalty.HasValue && item.Penalty.Value > 0)
-                {
-                    b.OpenElement(0, "span");
-                    b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
-                    b.AddContent(2, $"{item.Penalty.Value:0.##} ₽");
-                    b.CloseElement();
-                }
-                else
-                {
-                    b.AddContent(0, "—");
-                }
-            }
-        }
-    };
+        if (!b.Deadline.HasValue || b.Deadline.Value >= DateTime.UtcNow) return 0m;
+
+        var days = (int)Math.Ceiling((DateTime.UtcNow - b.Deadline.Value).TotalDays);
+        if (penaltySettings != null)
+            days = Math.Max(0, days - penaltySettings.GracePeriodDays);
+        if (days <= 0) return 0m;
+
+        var penalty = days * (penaltySettings?.DailyRate ?? 10m);
+        return penaltySettings?.MaxPenalty.HasValue == true
+            ? Math.Min(penalty, penaltySettings.MaxPenalty.Value)
+            : penalty;
+    }
 
     #endregion
 
@@ -735,6 +554,8 @@ else
     {
         settings = await SettingsService.GetAsync();
         penaltySettings = await PenaltySettingsService.GetAsync();
+
+        historyColumns = UserBorrowsColumns.CreateHistory();
 
         _activeActions = null;
         _availableActions = null;
@@ -1053,21 +874,6 @@ else
         }
         await InvokeAsync(StateHasChanged);
     }
-    
-    private static RenderFragment RoleBadge(UserRole role) => b =>
-    {
-        var (bg, fg, text) = role switch
-        {
-            UserRole.Admin => ("#fde7e9", "#a30000", "Администратор"),
-            UserRole.Librarian => ("#e6f0fb", "#003a6b", "Библиотекарь"),
-            _ => ("#f3f3f3", "#555", "Читатель")
-        };
-        b.OpenElement(0, "span");
-        b.AddAttribute(1, "style",
-            $"background:{bg};color:{fg};padding:3px 12px;border-radius:12px;font-size:13px;");
-        b.AddContent(2, text);
-        b.CloseElement();
-    };
 
     private record RoomBookOption(Guid RoomBookId, string BookTitle, string BookAuthor,
                                   string RoomName, int Available, int Total)

@@ -1,4 +1,5 @@
-﻿global using BlazorWeb.Client.Services.APIs;
+﻿global using BlazorWeb.Client.Services;
+global using BlazorWeb.Client.Services.APIs;
 global using BlazorWeb.Client.Services.Interfaces;
 global using LibApp.Core.DTO.Settings;
 global using LibApp.Core.Requests.Borrowing;
@@ -16,4 +17,3 @@ global using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 global using System.Net.Http.Json;
 global using System.Security.Claims;
 global using System.Text.Json;
-global using BlazorWeb.Client.Services;

@@ -60,4 +60,9 @@ public static partial class DI
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         return services;
     }
+    public static IServiceCollection AddUserManagementPolicy(this IServiceCollection services)
+    {
+        services.AddScoped<IUserManagementPolicy, UserManagementPolicy>();
+        return services;
+    }
 }

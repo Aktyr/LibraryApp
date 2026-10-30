@@ -92,6 +92,6 @@ public class DiscardBookCommand(
             throw;
         }
 
-        return ResponseFactory.Success($"Списано {request.Amount} экз. книги '{book.Title}'. Причина: {request.DiscardReason}");
+        return ResponseFactory.Success($"Списано {request.Amount} экз. книги '{book.Title}'. Причина: {request.DiscardReason.DisplayName()}");
     }
 }

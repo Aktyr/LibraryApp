@@ -1,4 +1,5 @@
 ﻿using BlazorWeb.Client.Services.Interfaces;
+using LibApp.Core.Requests.Reports;
 
 namespace BlazorWeb.Client.Services.APIs;
 
@@ -58,16 +59,18 @@ public class BookApiClient(HttpClient http) : IBookApiClient
         Guid? bookId = null,
         CancellationToken ct = default)
     {
-        var q = new List<string>();
-        if (fromDate.HasValue) q.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
-        if (toDate.HasValue) q.Add($"toDate={toDate.Value:yyyy-MM-dd}");
-        if (discardReason.HasValue) q.Add($"discardReason={discardReason.Value}");
-        if (roomId.HasValue) q.Add($"roomId={roomId.Value}");
-        if (approvedById.HasValue) q.Add($"approvedById={approvedById.Value}");
-        if (bookId.HasValue) q.Add($"bookId={bookId.Value}");
+        var request = new GetDiscardedBooksRequest
+        {
+            FromDate = fromDate,
+            ToDate = toDate,
+            DiscardReason = discardReason,
+            RoomId = roomId,
+            ApprovedById = approvedById,
+            BookId = bookId
+        };
 
-        var query = q.Count > 0 ? "?" + string.Join("&", q) : "";
-        return await http.GetFromJsonAsync<DiscardedBookResponse>($"{BasePath}/discarded{query}", ct)
+        return await http.GetFromJsonAsync<DiscardedBookResponse>(
+                   $"{BasePath}/discarded{request.BuildQueryString()}", ct)
                ?? new DiscardedBookResponse("Error", "Empty response", []);
     }
 }

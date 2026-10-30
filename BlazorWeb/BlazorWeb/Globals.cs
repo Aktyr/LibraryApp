@@ -45,3 +45,4 @@ global using System.Text.RegularExpressions;
 global using LibApp.Application.Commands.Entities.Users;
 global using LibApp.Core.Entities;
 global using LibApp.Core.Exceptions.Entities;
+global using BlazorWeb.Services;

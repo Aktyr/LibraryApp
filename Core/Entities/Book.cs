@@ -9,7 +9,6 @@ public class Book : IEntity
     public string Publisher { get; set; } = string.Empty;
     public string Genre { get; set; } = string.Empty;
     public bool IsDiscarded { get; set; }
-    //todo в ТЗ указано добавить статус подписки, какие виды подписок нужны? 
     public virtual ICollection<RoomBook> RoomBook { get; set; } = [];
 
     public override string ToString() =>
