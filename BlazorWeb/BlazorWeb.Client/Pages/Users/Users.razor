@@ -229,42 +229,25 @@ else if (users != null)
     private void ConfigureActions()
     {
         actions = new()
-    {
-        new()
         {
-            Label = "Добавить",
-            Icon = "➕",
-            MinSelection = 0,
-            ShowInContextMenu = false,
-            Handler = _ => OpenCreateDialogAsync()
-        },
-        new()
-        {
-            Label = "Профиль",
-            Icon = "📖",
-            CanExecute = s => s.Count == 1,
-            Handler = s => { Nav.NavigateTo($"/users/{s[0].Id}"); return Task.CompletedTask; }
-        },
-        new()
-        {
-            Label = "Редактировать",
-            Icon = "✏️",
-            CanExecute = s => s.Count == 1 && Policy.CanEdit(actorRole, s[0].Role),
-            Handler = s => OpenEditDialogAsync(s[0])
-        }
-    };
-
-        if (Policy.CanDelete(actorRole))
-        {
-            actions.Add(new()
+            new()
             {
-                Label = "Удалить",
-                Icon = "🗑️",
-                SeparatorBefore = true,
+                Label = "Добавить",
+                Icon = "➕",
+                MinSelection = 0,
+                ShowInContextMenu = false,
+                Handler = _ => OpenCreateDialogAsync()
+            },
+            new()
+            {
+                Label = "Профиль",
+                Icon = "📖",
                 CanExecute = s => s.Count == 1,
-                Handler = s => DeleteAsync(s[0])
-            });
-        }
+                Handler = s => { Nav.NavigateTo($"/users/{s[0].Id}"); return Task.CompletedTask; }
+            },
+
+        };
+
     }
 
     private void OnUserDoubleClick(UserDTO user) => Nav.NavigateTo($"/users/{user.Id}");
