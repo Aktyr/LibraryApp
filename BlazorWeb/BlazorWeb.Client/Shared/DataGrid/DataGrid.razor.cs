@@ -17,6 +17,7 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     [Parameter] public EventCallback<IReadOnlyList<TItem>> SelectionChanged { get; set; }
 
     [Parameter] public bool ShowFilter { get; set; } = true;
+    [Parameter] public bool NoWrap { get; set; } = true;
     [Parameter] public string FilterPlaceholder { get; set; } = "🔍 Поиск...";
     [Parameter] public Func<TItem, string, bool>? FilterPredicate { get; set; }
 
@@ -53,6 +54,7 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     #region Состояние
 
     private ElementReference tableRef;
+    private ElementReference _headerCheckbox;
     private IJSObjectReference? resizeModule;
     private DotNetObjectReference<DataGrid<TItem>>? selfRef;
 
@@ -104,15 +106,35 @@ public partial class DataGrid<TItem> : IAsyncDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (firstRender)
+        {
+            try
+            {
+                selfRef = DotNetObjectReference.Create(this);
+                resizeModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Shared/DataGrid/DataGrid.razor.js");
+                var minWidths = Columns.Select(c => c.MinWidth).ToArray();
+                await resizeModule.InvokeVoidAsync("initColumnResize", tableRef, selfRef, minWidths);
+
+                // Загрузка PageSize из localStorage
+                var savedSize = await JS.InvokeAsync<int?>("localStorage.getItem", "dataGrid_pageSize");
+                if (savedSize.HasValue && PageSizeOptions.Contains(savedSize.Value) && savedSize.Value != PageSize)
+                {
+                    PageSize = savedSize.Value;
+                    _lastPageSize = PageSize;
+                    RefreshFiltered();
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex) { Console.WriteLine($"[DataGrid] JS init failed: {ex.Message}"); }
+        }
+
+        // Обновление indeterminate состояния чекбокса
         try
         {
-            selfRef = DotNetObjectReference.Create(this);
-            resizeModule = await JS.InvokeAsync<IJSObjectReference>("import", "./Shared/DataGrid/DataGrid.razor.js");
-            var minWidths = Columns.Select(c => c.MinWidth).ToArray();
-            await resizeModule.InvokeVoidAsync("initColumnResize", tableRef, selfRef, minWidths);
+            if (resizeModule != null)
+                await resizeModule.InvokeVoidAsync("setCheckboxIndeterminate", _headerCheckbox, IsAnySelected && !IsAllSelected);
         }
-        catch (Exception ex) { Console.WriteLine($"[DataGrid] JS init failed: {ex.Message}"); }
+        catch { }
     }
 
     public async ValueTask DisposeAsync()
@@ -285,7 +307,13 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     #region Выделение
 
     private bool IsSelected(TItem item) => _selected.Contains(item);
-    private bool IsAllSelected => filteredItems.Count > 0 && filteredItems.All(i => _selected.Contains(i));
+
+    // Галочка горит, только если выбраны все элементы на текущей странице
+    private bool IsAllSelected => pageItems.Count > 0 && pageItems.All(i => _selected.Contains(i));
+
+    // Неопределенное состояние (если выбрана хотя бы часть на текущей странице)
+    private bool IsAnySelected => pageItems.Any(i => _selected.Contains(i));
+
     private async Task NotifySelectionChangedAsync() => await SelectionChanged.InvokeAsync(_selected.ToList());
 
     private async Task OnHeaderCheckboxClick(MouseEventArgs e)
@@ -293,7 +321,8 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         if (e.ShiftKey)
         {
             // Shift+Click по заголовку = выбрать ВСЁ (даже то, что не на странице)
-            if (IsAllSelected) _selected.Clear();
+            if (IsAllSelected && _selected.Count == filteredItems.Count)
+                _selected.Clear();
             else
             {
                 _selected.Clear();
@@ -302,13 +331,18 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         }
         else
         {
-            // Обычный клик = выбрать только текущую страницу
-            if (pageItems.All(i => _selected.Contains(i)))
+            // Обычный клик = выбрать/снять только текущую страницу
+            if (IsAllSelected)
+            {
                 foreach (var p in pageItems) _selected.Remove(p);
+            }
             else
+            {
                 foreach (var p in pageItems) if (!_selected.Contains(p)) _selected.Add(p);
+            }
         }
         await NotifySelectionChangedAsync();
+        StateHasChanged(); // Принудительно обновляем UI
     }
 
     private async Task ToggleItemWithShift(TItem item, MouseEventArgs e)
@@ -527,11 +561,22 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     private void NextPage() => GoToPage(currentPage + 1);
     private void LastPage() => GoToPage(TotalPages);
 
-    private void OnPageSizeChanged(ChangeEventArgs e)
+    private async Task OnPageSizeChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var size) && size > 0)
         {
-            PageSize = size; currentPage = 1; RebuildPage(); StateHasChanged();
+            PageSize = size;
+            currentPage = 1;
+            RebuildPage();
+
+            try
+            {
+                if (resizeModule != null)
+                    await resizeModule.InvokeVoidAsync("setItem", "dataGrid_pageSize", size);
+            }
+            catch { }
+
+            StateHasChanged();
         }
     }
 

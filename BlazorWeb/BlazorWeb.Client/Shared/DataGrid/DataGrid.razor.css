@@ -14,6 +14,8 @@
      Поповер фильтра
      Кастомный дропдаун операторов
      Кнопка-справка
+     Строки и ячейки
+     Класс для обрезки текста в одну строку
 */
 
 /* Тулбар */
@@ -836,3 +838,19 @@
             opacity: 0.5;
             cursor: default;
         }
+
+/* Строки и ячейки */
+.dg-row td {
+    padding: 6px 10px;
+    border-top: 1px solid #f0f0f0;
+    border-bottom: none;
+    border-right: 1px solid #f6f6f6;
+    overflow: hidden;
+}
+
+/* Класс для обрезки текста в одну строку (включается через параметр NoWrap) */
+.dg-nowrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

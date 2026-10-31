@@ -150,10 +150,9 @@
 <div class="dg-wrapper" tabindex="0" @onkeydown="OnKeyDown">
     <table class="dg-table" @ref="tableRef">
         <colgroup>
-            @if (SelectionMode != DataGridSelectionMode.None)
-            {
-                <col data-col-type="check" style="width: 40px" />
-            }
+            @* Колонка с чекбоксом рисуется всегда *@
+            <col data-col-type="check" style="width: 40px" />
+
             @for (int i = 0; i < Columns.Count; i++)
             {
                 var col = Columns[i];
@@ -165,16 +164,14 @@
         <thead>
             <tr>
                 @* --- Колонка чекбоксов --- *@
-                @if (SelectionMode == DataGridSelectionMode.Multiple)
-                {
-                    <th class="dg-check">
-                        <input type="checkbox" checked="@IsAllSelected" @onclick="OnHeaderCheckboxClick" title="Обычный клик - текущая страница, Shift+клик - все" />
-                    </th>
-                }
-                else if (SelectionMode == DataGridSelectionMode.Single)
-                {
-                    <th class="dg-check"></th>
-                }
+                <th class="dg-check">
+                    <input type="checkbox"
+                           checked="@IsAllSelected"
+                           @onclick="OnHeaderCheckboxClick"
+                           title="Обычный клик - текущая страница, Shift+клик - все"
+                           disabled="@(SelectionMode == DataGridSelectionMode.None || pageItems.Count == 0)"
+                           @ref="_headerCheckbox" />
+                </th>
 
                 @* --- Колонки данных --- *@
                 @for (int i = 0; i < Columns.Count; i++)
@@ -215,24 +212,18 @@
                     @oncontextmenu="@(e => OnRowContextMenu(item, e))"
                     @oncontextmenu:preventDefault="true">
 
-                    @* --- Чекбокс / маркер выделения --- *@
-                    @if (SelectionMode == DataGridSelectionMode.Multiple)
-                    {
-                        <td class="dg-check" @onclick:stopPropagation="true">
-                            <input type="checkbox"
-                                   checked="@isSelected"
-                                   @onclick="@(e => ToggleItemWithShift(item, e))" />
-                        </td>
-                    }
-                    else if (SelectionMode == DataGridSelectionMode.Single)
-                    {
-                        <td class="dg-check"></td>
-                    }
+                    @* --- Чекбокс --- *@
+                    <td class="dg-check" @onclick:stopPropagation="true">
+                        <input type="checkbox"
+                               checked="@isSelected"
+                               disabled="@(SelectionMode == DataGridSelectionMode.None)"
+                               @onclick="@(e => ToggleItemWithShift(item, e))" />
+                    </td>
 
                     @* --- Ячейки данных --- *@
                     @foreach (var col in Columns)
                     {
-                        <td class="@col.CssClass">
+                        <td class="@col.CssClass @(NoWrap ? "dg-nowrap" : "")">
                             @if (col.Template is not null)
                             {
                                 @col.Template(item)

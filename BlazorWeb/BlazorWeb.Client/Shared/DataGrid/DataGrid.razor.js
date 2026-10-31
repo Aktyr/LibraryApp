@@ -90,3 +90,17 @@ export function downloadFile(filename, content) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
+
+export function setCheckboxIndeterminate(element, value) {
+    if (element) {
+        element.indeterminate = value;
+    }
+}
+
+export function setItem(key, value) {
+    localStorage.setItem(key, value);
+}
+
+export function getItem(key) {
+    return localStorage.getItem(key);
+}
