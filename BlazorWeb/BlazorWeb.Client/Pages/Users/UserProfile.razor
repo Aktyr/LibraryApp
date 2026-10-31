@@ -26,7 +26,8 @@
 
 <PageTitle>Профиль — @FullName</PageTitle>
 
-<PageHeader Title="@FullName" BackUrl="/users" OnRefresh="ReloadAsync" IsLoading="@isLoading">
+@* ---------- Шапка ---------- *@
+<PageHeader BackUrl="/users" OnRefresh="ReloadAsync" IsLoading="@isLoading">
     <ChildContent>
         @if (CanEdit)
         {
@@ -184,12 +185,10 @@ else
             </summary>
             <div class="mt-2">
                 <DataGrid TItem="BorrowedBookDTO"
-                          Items="activeBorrows"
+                          Items="returnedBorrows"
                           PageSize="10"
-                          Columns="ActiveColumns"
-                          Actions="activeActions"
-                          SelectionMode="DataGridSelectionMode.Multiple"
-                          OnRowDoubleClick="OnActiveRowDoubleClick" />
+                          Columns="historyColumns"
+                          SelectionMode="DataGridSelectionMode.None" />
             </div>
         </details>
     }

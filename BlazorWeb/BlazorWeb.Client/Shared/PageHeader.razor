@@ -1,6 +1,4 @@
-﻿@using Microsoft.AspNetCore.Components
-
-<div class="d-flex align-items-center mb-3 gap-2 flex-wrap">
+﻿<div class="d-flex align-items-center mb-3 gap-2 flex-wrap">
     @if (!string.IsNullOrEmpty(BackUrl))
     {
         <a href="@BackUrl" class="btn btn-sm btn-outline-secondary">← @BackText</a>
@@ -15,7 +13,6 @@
 </div>
 
 @code {
-    [Parameter] public string Title { get; set; } = "";
     [Parameter] public string? BackUrl { get; set; }
     [Parameter] public string BackText { get; set; } = "к списку";
     [Parameter] public EventCallback OnRefresh { get; set; }

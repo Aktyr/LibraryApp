@@ -10,8 +10,11 @@
 @inject IUserApiClient UserClient
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
+@inject IToastService Toast
 
 <PageTitle>Мой профиль</PageTitle>
+
+<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading" />
 
 @if (isLoading)
 {
@@ -27,6 +30,8 @@ else
         <h2 class="mb-1">@FullName</h2>
         <div class="text-muted">
             <span>@user.Email</span>
+            <span class="mx-2">·</span>
+            @Badges.Role(user.Role)
             <span class="mx-2">·</span>
             <span>@Badges.Status(user.SubscriptionStatus)</span>
         </div>
@@ -77,9 +82,9 @@ else
             <summary class="h5" style="cursor: pointer;">История возвратов (@returnedBorrows.Count)</summary>
             <div class="mt-2">
                 <DataGrid TItem="BorrowedBookDTO"
-                          Items="activeBorrows"
+                          Items="returnedBorrows"
                           PageSize="10"
-                          Columns="ActiveColumns"
+                          Columns="HistoryColumns"
                           SelectionMode="DataGridSelectionMode.None" />
             </div>
         </details>
@@ -98,7 +103,6 @@ else
     private readonly List<DataGridColumn<BorrowedBookDTO>> HistoryColumns =
         UserBorrowsColumns.CreateHistory();
 
-
     private bool isLoading = true;
     private UserDTO? user;
     private List<BorrowedBookDTO> allBorrows = new();
@@ -107,6 +111,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
         try
         {
             var resp = await UserClient.GetMeAsync();
@@ -120,7 +130,7 @@ else
         }
         catch (Exception ex)
         {
-            // errorMessage = ex.Message;
+            Toast.ShowError($"Ошибка загрузки профиля: {ex.Message}");
         }
         finally
         {
