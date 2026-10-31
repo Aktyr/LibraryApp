@@ -7,7 +7,12 @@ public class BorrowDTOConverterTests
     public void ToEntity_WithValidDto_ThrowsNotSupportedException()
     {
         // Arrange
-        var converter = new BorrowDTOConverter();
+        var optionsMock = new Mock<IOptionsSnapshot<PenaltySettings>>();
+        optionsMock.Setup(x => x.Value).Returns(new PenaltySettings());
+        var penaltyService = new PenaltyCalculatorService(optionsMock.Object);
+
+        var converter = new BorrowDTOConverter(penaltyService);
+
         var dto = new BorrowedBookDTO(
             Id: Guid.NewGuid(),
             BookTitle: "Test Book",

@@ -6,23 +6,31 @@
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize(Roles = "Librarian,Admin")]
 @inject IBookApiClient BookClient
+@inject IToastService Toast
 
 <PageTitle>Отчёт по списаниям</PageTitle>
 
-<div class="d-flex align-items-center gap-3 mb-3">
-    <a href="/reports" class="btn btn-sm btn-outline-secondary">← к списку отчётов</a>
-    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync" disabled="@isLoading">🔄 Обновить</button>
-</div>
+<PageHeader BackUrl="/reports" OnRefresh="LoadAsync" IsLoading="@isLoading">
+    <ChildContent>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            <label class="small text-muted mb-0">За период с:</label>
+            <input type="date" class="form-control form-control-sm" style="width: 140px;"
+                   @bind="FromDate" @bind:after="LoadAsync" />
+            <label class="small text-muted mb-0">по:</label>
+            <input type="date" class="form-control form-control-sm" style="width: 140px;"
+                   @bind="ToDate" @bind:after="LoadAsync" />
+        </div>
+    </ChildContent>
+</PageHeader>
 
 <h2>Списания</h2>
 
-@if (!string.IsNullOrEmpty(errorMessage))
+@if (isLoading)
 {
-    <div class="alert alert-danger mb-3">@errorMessage</div>
+    <p>Загрузка...</p>
 }
-
 @* ---------- Счётчики (по всем загруженным записям, не по фильтру DataGrid) ---------- *@
-@if (records != null && !isLoading)
+else if (records != null)
 {
     <div class="d-flex gap-4 mb-3">
         <div>
@@ -40,17 +48,10 @@
             </span>
         </div>
     </div>
-}
 
-@if (isLoading)
-{
-    <p>Загрузка...</p>
-}
-else if (records != null)
-{
     @if (records.Count == 0)
     {
-        <p class="text-muted">Списаний пока нет.</p>
+        <p class="text-muted">За указанный период списаний нет.</p>
     }
     else
     {
@@ -58,14 +59,16 @@ else if (records != null)
                   Items="records"
                   PageSize="20"
                   Columns="columns"
-                  SelectionMode="DataGridSelectionMode.Multiple"/>
+                  SelectionMode="DataGridSelectionMode.Multiple" />
     }
 }
 
 @code {
     private bool isLoading = true;
-    private string? errorMessage;
     private List<DiscardedBookDTO>? records;
+
+    private DateTime? FromDate { get; set; }
+    private DateTime? ToDate { get; set; }
 
     private decimal totalCompensation =>
         records?.Where(r => r.CompensationAmount.HasValue).Sum(r => r.CompensationAmount!.Value) ?? 0;
@@ -83,13 +86,7 @@ else if (records != null)
         },
         new() { Title = "Книга", Width = 240, Value = r => r.BookTitle },
         new() { Title = "Комната", Width = 160, Value = r => r.RoomName },
-        new()
-        {
-            Title = "Кол-во",
-            Width = 80,
-            FilterKind = FilterKind.Number,
-            Value = r => r.Amount
-        },
+        new() { Title = "Кол-во", Width = 80, FilterKind = FilterKind.Number, Value = r => r.Amount },
         new()
         {
             Title = "Причина",
@@ -104,22 +101,15 @@ else if (records != null)
                     DiscardReason.Damaged  => ("#fde7e9", "#a30000"),
                     DiscardReason.Loss     => ("#fde7e9", "#a30000"),
                     DiscardReason.Obsolete => ("#f3f3f3", "#555"),
-                    _                       => ("#f3f3f3", "#555")
+                    _                      => ("#f3f3f3", "#555")
                 };
                 b.OpenElement(0, "span");
-                b.AddAttribute(1, "style",
-                    $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
+                b.AddAttribute(1, "style", $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
                 b.AddContent(2, item.DiscardReason.DisplayName());
                 b.CloseElement();
             }
         },
-        new()
-        {
-            Title = "Списал",
-            Width = 200,
-            Value = r => r.ApprovedBy,
-            FilterText = r => r.ApprovedBy ?? ""
-        },
+        new() { Title = "Списал", Width = 200, Value = r => r.ApprovedBy, FilterText = r => r.ApprovedBy ?? "" },
         new()
         {
             Title = "Компенсация, ₽",
@@ -149,17 +139,16 @@ else if (records != null)
     private async Task LoadAsync()
     {
         isLoading = true;
-        errorMessage = null;
         try
         {
             // Фильтрация идёт на клиенте через DataGrid.
             // Если данных станет много — переключимся на серверную фильтрацию.
-            var resp = await BookClient.GetDiscardedBooksAsync();
+            var resp = await BookClient.GetDiscardedBooksAsync(fromDate: FromDate, toDate: ToDate);
             records = resp.Discarded.ToList();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка загрузки: {ex.Message}";
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
         }
         finally
         {

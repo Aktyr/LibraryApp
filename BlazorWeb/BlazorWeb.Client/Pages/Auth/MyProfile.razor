@@ -35,7 +35,7 @@ else
     @if (user.SubscriptionStatus != SubscriptionStatus.Active)
     {
         <div class="alert alert-warning py-2 mb-4">
-            ⚠️ Ваш абонемент <strong>@(user.SubscriptionStatus == SubscriptionStatus.Unconfirmed ? "не подтверждён" : "заморожен")</strong>.
+            ⚠️ Ваш Профиль <strong>@(user.SubscriptionStatus == SubscriptionStatus.Unconfirmed ? "не подтверждён" : "заморожен")</strong>.
             Выдача новых книг временно приостановлена.
         </div>
     }
@@ -67,7 +67,7 @@ else
                       Items="activeBorrows"
                       PageSize="10"
                       Columns="ActiveColumns"
-                      SelectionMode="DataGridSelectionMode.None"/>
+                      SelectionMode="DataGridSelectionMode.None" />
         }
     </div>
 
@@ -77,7 +77,7 @@ else
             <summary class="h5" style="cursor: pointer;">История возвратов (@returnedBorrows.Count)</summary>
             <div class="mt-2">
                 <DataGrid TItem="BorrowedBookDTO"
-                          Items="returnedBorrows"
+                          Items="activeBorrows"
                           PageSize="10"
                           Columns="ActiveColumns"
                           SelectionMode="DataGridSelectionMode.None" />
@@ -94,7 +94,7 @@ else
     private decimal totalPenalty => allBorrows.TotalPenalty();
 
     private readonly List<DataGridColumn<BorrowedBookDTO>> ActiveColumns =
-        UserBorrowsColumns.CreateActive();
+        UserBorrowsColumns.CreateActive(penaltyDisplay: b => b.Penalty ?? 0m);
     private readonly List<DataGridColumn<BorrowedBookDTO>> HistoryColumns =
         UserBorrowsColumns.CreateHistory();
 
@@ -103,7 +103,7 @@ else
     private UserDTO? user;
     private List<BorrowedBookDTO> allBorrows = new();
 
-    private int MaxBooksPerUser = 5; // fixme В идеале подтянуть из настроек, но пока хардкод
+    private int MaxBooksPerUser = 5; // fixme В идеале подтянуть из настроек, но пока хардкод (исправнено, потереть остатки)
 
     protected override async Task OnInitializedAsync()
     {

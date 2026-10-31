@@ -10,15 +10,13 @@
 @inject IBookApiClient ApiClient
 @inject IConfirmService Confirm
 @inject AuthenticationStateProvider AuthProvider
+@inject IToastService Toast
 
 <PageTitle>Книги</PageTitle>
 
-<h1>Библиотечный фонд</h1>
+<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading" />
 
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger mb-3">@errorMessage</div>
-}
+<h1>Библиотечный фонд</h1>
 
 @if (isLoading)
 {
@@ -30,8 +28,7 @@ else if (books != null)
               Items="books"
               PageSize="10"
               Columns="columns"
-              Actions="actions"
-              StatusMessage="@statusMessage" />
+              Actions="actions" />
 }
 
 @if (dialogMode != DialogMode.None)
@@ -42,23 +39,24 @@ else if (books != null)
         <h3>@(dialogMode == DialogMode.Create ? "Новая книга" : "Редактирование книги")</h3>
         <EditForm Model="draft" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
+
             <div class="mb-3">
-                <label class="form-label">Название</label>
+                <label class="form-label">Название <span class="text-danger">*</span></label>
                 <InputText @bind-Value="draft.Title" class="form-control" />
                 <ValidationMessage For="() => draft.Title" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Автор</label>
+                <label class="form-label">Автор <span class="text-danger">*</span></label>
                 <InputText @bind-Value="draft.Author" class="form-control" />
                 <ValidationMessage For="() => draft.Author" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Год</label>
+                <label class="form-label">Год <span class="text-danger">*</span></label>
                 <InputNumber @bind-Value="draft.Year" class="form-control" />
                 <ValidationMessage For="() => draft.Year" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Издательство</label>
+                <label class="form-label">Издательство <span class="text-danger">*</span></label>
                 <InputText @bind-Value="draft.Publisher" class="form-control" />
                 <ValidationMessage For="() => draft.Publisher" class="text-danger" />
             </div>
@@ -67,9 +65,10 @@ else if (books != null)
                 <InputText @bind-Value="draft.Genre" class="form-control" />
                 <ValidationMessage For="() => draft.Genre" class="text-danger" />
             </div>
-            @if (!string.IsNullOrWhiteSpace(errorMessage))
+
+            @if (!string.IsNullOrWhiteSpace(dialogError))
             {
-                <div class="alert alert-danger mb-3" style="white-space: pre-line;">@errorMessage</div>
+                <div class="alert alert-danger mb-3" style="white-space: pre-line;">@dialogError</div>
             }
             <button type="submit" class="btn btn-primary">Сохранить</button>
             <button type="button" class="btn btn-secondary ms-2" @onclick="CloseDialog">Отмена</button>
@@ -80,8 +79,6 @@ else if (books != null)
 @code {
     private List<BookDTO>? books;
     private bool isLoading = true;
-    private string? errorMessage;
-    private string? statusMessage;
 
     private enum DialogMode { None, Create, Edit }
     private DialogMode dialogMode = DialogMode.None;
@@ -98,7 +95,6 @@ else if (books != null)
     };
 
     private List<DataGridAction<BookDTO>> actions = new();
-
     private bool isEditor;
 
     protected override async Task OnInitializedAsync()
@@ -119,37 +115,36 @@ else if (books != null)
         }
 
         actions = new()
-    {
-        new()
         {
-            Label = "Добавить",
-            Icon = "➕",
-            MinSelection = 0,
-            ShowInContextMenu = false,
-            Handler = _ => OpenCreateDialogAsync()
-        },
-        new()
-        {
-            Label = "Редактировать",
-            Icon = "✏️",
-            CanExecute = s => s.Count == 1,
-            Handler = s => OpenEditDialogAsync(s[0])
-        },
-        new()
-        {
-            Label = "Удалить",
-            Icon = "🗑️",
-            SeparatorBefore = true,
-            CanExecute = s => s.Count == 1,
-            Handler = s => DeleteAsync(s[0])
-        }
-    };
+            new()
+            {
+                Label = "Добавить",
+                Icon = "➕",
+                MinSelection = 0,
+                ShowInContextMenu = false,
+                Handler = _ => OpenCreateDialogAsync()
+            },
+            new()
+            {
+                Label = "Редактировать",
+                Icon = "✏️",
+                CanExecute = s => s.Count == 1,
+                Handler = s => OpenEditDialogAsync(s[0])
+            },
+            new()
+            {
+                Label = "Удалить",
+                Icon = "🗑️",
+                SeparatorBefore = true,
+                CanExecute = s => s.Count == 1,
+                Handler = s => DeleteAsync(s[0])
+            }
+        };
     }
 
     private async Task LoadAsync()
     {
         isLoading = true;
-        errorMessage = null;
         try
         {
             var resp = await ApiClient.GetAllBooksAsync();
@@ -157,7 +152,7 @@ else if (books != null)
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка загрузки: {ex.Message}";
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
         }
         finally
         {
@@ -214,7 +209,7 @@ else if (books != null)
                     Publisher = draft.Publisher,
                     Genre = draft.Genre
                 });
-                statusMessage = $"Книга «{draft.Title}» добавлена";
+                Toast.ShowSuccess($"Книга «{draft.Title}» добавлена");
             }
             else if (dialogMode == DialogMode.Edit && editingId.HasValue)
             {
@@ -227,7 +222,7 @@ else if (books != null)
                     Publisher = draft.Publisher,
                     Genre = draft.Genre
                 });
-                statusMessage = $"Книга «{draft.Title}» обновлена";
+                Toast.ShowSuccess($"Книга «{draft.Title}» обновлена");
             }
             CloseDialog();
             await LoadAsync();
@@ -243,10 +238,8 @@ else if (books != null)
         // Проверка до модалки. Если удалить нельзя — не мучаем пользователя вводом слова
         if (book.RoomBook is { Count: > 0 })
         {
-            errorMessage = $"Нельзя удалить книгу «{book.Title}»: она есть в {book.RoomBook.Count} комнате(ах). " +
-                           "Сначала уберите её из всех комнат.";
-            statusMessage = null;
-            await InvokeAsync(StateHasChanged);
+            Toast.ShowError($"Нельзя удалить книгу «{book.Title}»: она есть в {book.RoomBook.Count} комнате(ах). " +
+                           "Сначала уберите её из всех комнат.");
             return;
         }
 
@@ -261,13 +254,12 @@ else if (books != null)
         try
         {
             await ApiClient.DeleteBookAsync(book.Id);
-            statusMessage = $"Книга «{book.Title}» удалена";
-            errorMessage = null;
+            Toast.ShowSuccess($"Книга «{book.Title}» удалена");
             await LoadAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка удаления: {ex.Message}";
+            Toast.ShowError($"Ошибка удаления: {ex.Message}");
         }
     }
 

@@ -20,9 +20,7 @@ public static class UserBorrowsQueries
                  .ToList();
 
     public static int OverdueCount(this IEnumerable<BorrowedBookDTO> source)
-        => source.Count(b => b.ReturnDate == null
-                             && b.Deadline.HasValue
-                             && b.Deadline.Value < DateTime.UtcNow);
+        => source.Count(b => b.ReturnDate == null && b.Penalty > 0);
 
     public static decimal TotalPenalty(this IEnumerable<BorrowedBookDTO> source)
         => source.Where(b => b.Penalty.HasValue).Sum(b => b.Penalty!.Value);

@@ -1,0 +1,24 @@
+﻿@using Microsoft.AspNetCore.Components
+
+<div class="d-flex align-items-center mb-3 gap-2 flex-wrap">
+    @if (!string.IsNullOrEmpty(BackUrl))
+    {
+        <a href="@BackUrl" class="btn btn-sm btn-outline-secondary">← @BackText</a>
+    }
+
+    @if (OnRefresh.HasDelegate)
+    {
+        <button class="btn btn-sm btn-outline-secondary" @onclick="OnRefresh" disabled="@IsLoading">🔄 Обновить</button>
+    }
+
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? BackUrl { get; set; }
+    [Parameter] public string BackText { get; set; } = "к списку";
+    [Parameter] public EventCallback OnRefresh { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; } // Для кастомных кнопок (Редактировать, Удалить)
+}

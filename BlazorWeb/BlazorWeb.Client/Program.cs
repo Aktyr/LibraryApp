@@ -30,6 +30,8 @@ internal class Program
         #endregion
 
         builder.Services.AddScoped<IConfirmService, ConfirmService>();
+        builder.Services.AddScoped<IToastService, ToastService>();
+
 
         await builder.Build().RunAsync();
     }

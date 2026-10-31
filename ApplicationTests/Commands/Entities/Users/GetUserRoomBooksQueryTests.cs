@@ -10,13 +10,21 @@ public class GetUserRoomBooksQueryTests
         return new BorrowingValidatorAsync(optionsMock.Object);
     }
 
+    private static BorrowDTOConverter CreateConverter()
+    {
+        var optionsMock = new Mock<IOptionsSnapshot<PenaltySettings>>();
+        optionsMock.Setup(x => x.Value).Returns(new PenaltySettings());
+        var penaltyService = new PenaltyCalculatorService(optionsMock.Object);
+        return new BorrowDTOConverter(penaltyService);
+    }
+
     [Test]
     public async Task Execute_WhenUserHasNoBooks_ReturnsEmptyList()
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
-        var converter = new BorrowDTOConverter(); // Используем реальный конвертер для поднятия его coverage
+        var converter = CreateConverter();
         var query = new GetUserRoomBooksCommand(unitOfWork, converter, CreateValidator());
 
         var request = new GetUserBooksRequest { UserId = Guid.NewGuid() };
@@ -38,7 +46,7 @@ public class GetUserRoomBooksQueryTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
-        var converter = new BorrowDTOConverter();
+        var converter = CreateConverter();
 
         var userId = Guid.NewGuid();
         var user = new User { Id = new Id(userId) };

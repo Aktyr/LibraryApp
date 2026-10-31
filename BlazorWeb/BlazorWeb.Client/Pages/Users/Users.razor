@@ -8,23 +8,19 @@
 @using LibApp.Core.DTO.Entities
 @using LibApp.Core.Enums
 @using LibApp.Core.Interfaces
-@using LibApp.Core.Records
 @using LibApp.Core.Requests.Entities.User
 @inject IUserApiClient ApiClient
-@inject IConfirmService Confirm
 @inject NavigationManager Nav
 @inject IBorrowingSettingsService SettingsService
 @inject AuthenticationStateProvider AuthProvider
 @inject IUserManagementPolicy Policy
+@inject IToastService Toast
 
 <PageTitle>Пользователи</PageTitle>
 
-<h1>Пользователи</h1>
+<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading" />
 
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger mb-3">@errorMessage</div>
-}
+<h1>Пользователи</h1>
 
 @if (isLoading)
 {
@@ -37,40 +33,35 @@ else if (users != null)
               PageSize="10"
               Columns="Columns"
               Actions="actions"
-              StatusMessage="@statusMessage"
               OnRowDoubleClick="OnUserDoubleClick" />
 }
 
-@if (dialogMode != DialogMode.None)
+@if (dialogMode == DialogMode.Create)
 {
     <div class="modal-backdrop" @onclick="CloseDialog"></div>
 
     <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
-        <h3>@(dialogMode == DialogMode.Create ? "Новый пользователь" : "Редактирование пользователя")</h3>
+        <h3>Новый пользователь</h3>
         <EditForm Model="draft" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
 
-            @if (dialogMode == DialogMode.Create)
-            {
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <InputText @bind-Value="draft.Email" class="form-control" type="email" />
-                    <ValidationMessage For="() => draft.Email" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Пароль</label>
-                    <InputText @bind-Value="draft.Password" class="form-control" type="password" />
-                    <ValidationMessage For="() => draft.Password" class="text-danger" />
-                </div>
-            }
-
             <div class="mb-3">
-                <label class="form-label">Фамилия</label>
+                <label class="form-label">Email <span class="text-danger">*</span></label>
+                <InputText @bind-Value="draft.Email" class="form-control" type="email" />
+                <ValidationMessage For="() => draft.Email" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Пароль <span class="text-danger">*</span></label>
+                <InputText @bind-Value="draft.Password" class="form-control" type="password" />
+                <ValidationMessage For="() => draft.Password" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Фамилия <span class="text-danger">*</span></label>
                 <InputText @bind-Value="draft.LastName" class="form-control" />
                 <ValidationMessage For="() => draft.LastName" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Имя</label>
+                <label class="form-label">Имя <span class="text-danger">*</span></label>
                 <InputText @bind-Value="draft.FirstName" class="form-control" />
                 <ValidationMessage For="() => draft.FirstName" class="text-danger" />
             </div>
@@ -80,12 +71,12 @@ else if (users != null)
                 <ValidationMessage For="() => draft.MiddleName" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Контактная информация</label>
+                <label class="form-label">Контактная информация <span class="text-danger">*</span></label>
                 <InputText @bind-Value="draft.ContactInfo" class="form-control" />
                 <ValidationMessage For="() => draft.ContactInfo" class="text-danger" />
             </div>
-         
-            @if (dialogMode == DialogMode.Create && Policy.CanCreate(actorRole, UserRole.Librarian))
+
+            @if (Policy.CanCreate(actorRole, UserRole.Librarian))
             {
                 <div class="mb-3">
                     <label class="form-label">Роль</label>
@@ -114,12 +105,9 @@ else if (users != null)
 
     private List<UserDTO>? users;
     private bool isLoading = true;
-    private string? errorMessage;
-    private string? statusMessage;
 
-    private enum DialogMode { None, Create, Edit }
+    private enum DialogMode { None, Create }
     private DialogMode dialogMode = DialogMode.None;
-    private Guid? editingId;
     private UserDraft draft = new();
     private string? dialogError;
 
@@ -140,7 +128,6 @@ else if (users != null)
             Value = u => u.Role,
             FilterText = u => Badges.RoleName(u.Role),
             Template = u => Badges.Role(u.Role)
-
         },
         new()
         {
@@ -170,12 +157,11 @@ else if (users != null)
         },
         new()
         {
-            Title = "Статус",
+            Title = "Профиль",
             Width = 140,
             Value = u => u.SubscriptionStatus,
             FilterText = u => Badges.StatusName(u.SubscriptionStatus),
             Template = u => Badges.Status(u.SubscriptionStatus)
-
         },
         new()
         {
@@ -212,7 +198,6 @@ else if (users != null)
     };
 
     private List<DataGridAction<UserDTO>> actions = new();
-
     private UserRole actorRole;
 
     protected override async Task OnInitializedAsync()
@@ -226,6 +211,7 @@ else if (users != null)
         ConfigureActions();
         await LoadAsync();
     }
+
     private void ConfigureActions()
     {
         actions = new()
@@ -244,10 +230,8 @@ else if (users != null)
                 Icon = "📖",
                 CanExecute = s => s.Count == 1,
                 Handler = s => { Nav.NavigateTo($"/users/{s[0].Id}"); return Task.CompletedTask; }
-            },
-
+            }
         };
-
     }
 
     private void OnUserDoubleClick(UserDTO user) => Nav.NavigateTo($"/users/{user.Id}");
@@ -255,7 +239,6 @@ else if (users != null)
     private async Task LoadAsync()
     {
         isLoading = true;
-        errorMessage = null;
         try
         {
             var resp = await ApiClient.GetAllUsersAsync();
@@ -263,7 +246,7 @@ else if (users != null)
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка загрузки: {ex.Message}";
+            Toast.ShowError($"Ошибка загрузки пользователей: {ex.Message}");
         }
         finally
         {
@@ -276,30 +259,7 @@ else if (users != null)
     private async Task OpenCreateDialogAsync()
     {
         dialogMode = DialogMode.Create;
-        editingId = null;
         draft = new UserDraft { Role = UserRole.Reader };
-        dialogError = null;
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OpenEditDialogAsync(UserDTO user)
-    {
-        if (!Policy.CanEdit(actorRole, user.Role))
-        {
-            errorMessage = "Недостаточно прав для редактирования этого пользователя";
-            await InvokeAsync(StateHasChanged);
-            return;
-        }
-
-        dialogMode = DialogMode.Edit;
-        editingId = user.Id;
-        draft = new UserDraft
-        {
-            LastName = user.LastName,
-            FirstName = user.FirstName,
-            MiddleName = user.MiddleName,
-            ContactInfo = user.ContactInfo
-        };
         dialogError = null;
         await InvokeAsync(StateHasChanged);
     }
@@ -307,7 +267,6 @@ else if (users != null)
     private void CloseDialog()
     {
         dialogMode = DialogMode.None;
-        editingId = null;
         dialogError = null;
     }
 
@@ -316,79 +275,26 @@ else if (users != null)
         dialogError = null;
         try
         {
-            if (dialogMode == DialogMode.Create)
-            {
-                var requested = draft.Role ?? UserRole.Reader;
-                var role = Policy.CanCreate(actorRole, requested) ? requested : UserRole.Reader;
+            var requested = draft.Role ?? UserRole.Reader;
+            var role = Policy.CanCreate(actorRole, requested) ? requested : UserRole.Reader;
 
-                await ApiClient.CreateUserAsync(new CreateUserRequest
-                {
-                    Email = draft.Email,
-                    Password = draft.Password,
-                    LastName = draft.LastName,
-                    FirstName = draft.FirstName,
-                    MiddleName = draft.MiddleName,
-                    ContactInfo = draft.ContactInfo,
-                    Role = role
-                });
-                statusMessage = $"Пользователь «{draft.LastName} {draft.FirstName}» добавлен";
-            }
-            else if (dialogMode == DialogMode.Edit && editingId.HasValue)
+            await ApiClient.CreateUserAsync(new CreateUserRequest
             {
-                await ApiClient.UpdateUserAsync(new UpdateUserRequest
-                {
-                    Id = new Id(editingId.Value),
-                    LastName = draft.LastName,
-                    FirstName = draft.FirstName,
-                    MiddleName = draft.MiddleName,
-                    ContactInfo = draft.ContactInfo
-                });
-                statusMessage = $"Пользователь «{draft.LastName} {draft.FirstName}» обновлён";
-            }
+                Email = draft.Email,
+                Password = draft.Password,
+                LastName = draft.LastName,
+                FirstName = draft.FirstName,
+                MiddleName = draft.MiddleName,
+                ContactInfo = draft.ContactInfo,
+                Role = role
+            });
+            Toast.ShowSuccess($"Пользователь «{draft.LastName} {draft.FirstName}» добавлен");
             CloseDialog();
             await LoadAsync();
         }
         catch (Exception ex)
         {
             dialogError = ex.Message;
-        }
-    }
-
-    private async Task DeleteAsync(UserDTO user)
-    {
-        // Проверка до модалки. Если есть активные выдачи — удалить нельзя
-        if (user.ActiveBorrowedCount > 0)
-        {
-            errorMessage = $"Нельзя деактивировать пользователя «{user.LastName} {user.FirstName}»: " +
-                           $"у него {user.ActiveBorrowedCount} активных выдач. Сначала верните книги.";
-            statusMessage = null;
-            await InvokeAsync(StateHasChanged);
-            return;
-        }
-
-        var confirmed = await Confirm.AskAsync(
-            $"Удалить пользователя «{user.LastName} {user.FirstName}»?\n" +
-            $"Email: {user.Email}\n" +
-            $"Активных выдач: {user.ActiveBorrowedCount}\n\n" +
-            "Пользователь пропадёт из списка и не сможет входить в систему, " +
-            "но история выдач и штрафов сохранится.",
-            title: "Удаление пользователя",
-            confirmText: "Удалить",
-            requireConfirmationWord: true);
-
-        if (!confirmed) return;
-
-        try
-        {
-            await ApiClient.DeleteUserAsync(user.Id);
-            statusMessage = $"Пользователь «{user.LastName} {user.FirstName}» деактивирован";
-            errorMessage = null;
-            await LoadAsync();
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Ошибка деактивации: {ex.Message}";
-            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -422,10 +328,8 @@ else if (users != null)
         public IEnumerable<System.ComponentModel.DataAnnotations.ValidationResult> Validate(
             System.ComponentModel.DataAnnotations.ValidationContext validationContext)
         {
-            // Совпадает с UserValidatorAsync.ValidatePasswordAsync на сервере.
-            // Показываем первую непройденную проверку — как сервер.
             if (string.IsNullOrEmpty(Password) || Password.Length < 8 || Password.Length > 100)
-                yield break; // базовые [Required]/[StringLength] уже показали ошибку
+                yield break;
 
             if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"\p{Lu}"))
             {

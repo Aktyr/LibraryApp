@@ -1,0 +1,64 @@
+﻿@using BlazorWeb.Client.Services.Interfaces
+@implements IDisposable
+@inject IToastService ToastService
+
+<div class="toast-container-custom">
+    @foreach (var msg in ToastService.Messages)
+    {
+        <div @key="msg.Id" class="toast show align-items-center text-white @(msg.IsError ? "bg-danger" : "bg-success") @(msg.IsClosing ? "toast-closing" : "") border-0 shadow" role="alert" style="border-radius: 8px;">
+            <div class="d-flex">
+                <div class="toast-body" style="font-size: 14px;">
+                    @msg.Message
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" @onclick="() => ToastService.Dismiss(msg)"></button>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .toast-container-custom {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1050;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        pointer-events: none;
+        gap: 8px;
+    }
+
+        .toast-container-custom .toast {
+            pointer-events: auto;
+            min-width: 300px;
+            max-width: 90vw;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            animation: toast-slide-down 0.3s ease-out;
+        }
+
+        /* Класс для плавного исчезновения */
+        .toast-container-custom .toast-closing {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+    @@keyframes toast-slide-down {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+@code {
+    protected override void OnInitialized() => ToastService.OnChange += HandleChange;
+    public void Dispose() => ToastService.OnChange -= HandleChange;
+    private void HandleChange() => InvokeAsync(StateHasChanged);
+}

@@ -6,19 +6,24 @@
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject IReportsApiClient ReportsClient
+@inject IToastService Toast
 
 <PageTitle>Популярные книги</PageTitle>
 
-<div class="d-flex align-items-center gap-3 mb-3">
-    <a href="/reports" class="btn btn-sm btn-outline-secondary">← к списку отчётов</a>
-</div>
+<PageHeader BackUrl="/reports" OnRefresh="LoadAsync" IsLoading="@isLoading">
+    <ChildContent>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            <label class="small text-muted mb-0">За период с:</label>
+            <input type="date" class="form-control form-control-sm" style="width: 140px;"
+                   @bind="FromDate" @bind:after="LoadAsync" />
+            <label class="small text-muted mb-0">по:</label>
+            <input type="date" class="form-control form-control-sm" style="width: 140px;"
+                   @bind="ToDate" @bind:after="LoadAsync" />
+        </div>
+    </ChildContent>
+</PageHeader>
 
 <h2>Популярные книги</h2>
-
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger mb-3">@errorMessage</div>
-}
 
 @if (isLoading)
 {
@@ -30,13 +35,15 @@ else if (popularBooks != null)
               Items="popularBooks"
               PageSize="15"
               Columns="columns"
-              SelectionMode="DataGridSelectionMode.Multiple"/>
+              SelectionMode="DataGridSelectionMode.Multiple" />
 }
 
 @code {
     private bool isLoading = true;
-    private string? errorMessage;
     private List<BookPopularityReportDTO>? popularBooks;
+
+    private DateTime? FromDate { get; set; }
+    private DateTime? ToDate { get; set; }
 
     private readonly List<DataGridColumn<BookPopularityReportDTO>> columns = new()
     {
@@ -48,18 +55,25 @@ else if (popularBooks != null)
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
         try
         {
-            var resp = await ReportsClient.GetPopularBooksAsync();
+            var resp = await ReportsClient.GetPopularBooksAsync(fromDate: FromDate, toDate: ToDate);
             popularBooks = resp.Data.ToList();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка загрузки: {ex.Message}";
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
         }
         finally
         {
             isLoading = false;
         }
+        await InvokeAsync(StateHasChanged);
     }
 }

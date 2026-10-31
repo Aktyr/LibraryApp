@@ -10,7 +10,7 @@ public static partial class DI
 
     public static IServiceCollection AddConverters(this IServiceCollection services)
     {
-        services.RegisterImplementationsOfOpenGeneric(typeof(IConverter<,>), ServiceLifetime.Singleton);
+        services.RegisterImplementationsOfOpenGeneric(typeof(IConverter<,>), ServiceLifetime.Scoped);
         return services;
     }
 

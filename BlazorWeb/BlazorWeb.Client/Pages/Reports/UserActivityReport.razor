@@ -6,31 +6,26 @@
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject IReportsApiClient ReportsClient
+@inject IToastService Toast
 
 <PageTitle>Активность пользователей</PageTitle>
 
-<div class="d-flex align-items-center gap-3 mb-3">
-    <a href="/reports" class="btn btn-sm btn-outline-secondary">← к списку отчётов</a>
-</div>
+<PageHeader BackUrl="/reports" OnRefresh="LoadAsync" IsLoading="@isLoading">
+    <ChildContent>
+        <div class="d-flex align-items-center gap-3 ms-auto">
+            <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" id="chkOverdue" @bind="onlyWithOverdue" @bind:after="LoadAsync" />
+                <label class="form-check-label" for="chkOverdue">Только должники</label>
+            </div>
+            <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" id="chkActive" @bind="onlyActive" @bind:after="LoadAsync" />
+                <label class="form-check-label" for="chkActive">Только с активными книгами</label>
+            </div>
+        </div>
+    </ChildContent>
+</PageHeader>
 
 <h2>Активность пользователей</h2>
-
-<div class="d-flex align-items-center gap-3 mb-3">
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="chkOverdue" @bind="onlyWithOverdue" @bind:after="LoadAsync" />
-        <label class="form-check-label" for="chkOverdue">Только должники</label>
-    </div>
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="chkActive" @bind="onlyActive" @bind:after="LoadAsync" />
-        <label class="form-check-label" for="chkActive">Только с активными книгами</label>
-    </div>
-    <button class="btn btn-sm btn-primary ms-auto" @onclick="LoadAsync" disabled="@isLoading">🔄 Обновить</button>
-</div>
-
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger mb-3">@errorMessage</div>
-}
 
 @if (isLoading)
 {
@@ -42,12 +37,11 @@ else if (userActivity != null)
               Items="userActivity"
               PageSize="15"
               Columns="columns"
-              SelectionMode="DataGridSelectionMode.Multiple"/>
+              SelectionMode="DataGridSelectionMode.Multiple" />
 }
 
 @code {
     private bool isLoading = true;
-    private string? errorMessage;
     private List<UserActivityReportDTO>? userActivity;
 
     private bool onlyWithOverdue = false;
@@ -71,7 +65,6 @@ else if (userActivity != null)
     private async Task LoadAsync()
     {
         isLoading = true;
-        errorMessage = null;
         try
         {
             var resp = await ReportsClient.GetUserActivityAsync(onlyWithOverdue, onlyActive);
@@ -79,7 +72,7 @@ else if (userActivity != null)
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка загрузки: {ex.Message}";
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
         }
         finally
         {

@@ -4,7 +4,6 @@
 @using LibApp.Core.DTO.Entities
 @using LibApp.Core.Enums
 @using LibApp.Core.Records
-@using LibApp.Core.Requests.Entities.Book
 @using LibApp.Core.Requests.Entities.Room
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
@@ -13,34 +12,24 @@
 @inject IConfirmService Confirm
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthProvider
+@inject IToastService Toast
 
 <PageTitle>Комната — @roomName</PageTitle>
 
-<div class="d-flex align-items-center mb-3 gap-2">
-    <a href="/rooms" class="btn btn-sm btn-outline-secondary">← к списку</a>
-    <button class="btn btn-sm btn-outline-secondary" @onclick="ReloadAsync" disabled="@isLoading">🔄 Обновить</button>
-
+<PageHeader BackUrl="/rooms" OnRefresh="ReloadAsync" IsLoading="@isLoading">
+    <ChildContent>
     @* --- Кнопки управления только для редакторов --- *@
-    @if (isEditor)
-    {
-        <button class="btn btn-sm btn-outline-secondary" @onclick="OpenRenameDialogAsync" disabled="@isLoading">✏️ Переименовать</button>
-        <button class="btn btn-sm btn-outline-danger" @onclick="DeleteRoomAsync" disabled="@isLoading" title="@(roomBooks.Count > 0 ? "Нельзя удалить комнату, в которой есть книги" : "Удалить комнату")">🗑️ Удалить комнату</button>
-    }
-
-    @if (isDirty)
-    {
-        <span class="badge bg-warning text-dark">Есть несохранённые изменения</span>
-    }
-</div>
-
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger mb-3" style="white-space: pre-line;">@errorMessage</div>
-}
-@if (!string.IsNullOrEmpty(statusMessage))
-{
-    <div class="alert alert-success mb-3">@statusMessage</div>
-}
+        @if (isEditor)
+        {
+            <button class="btn btn-sm btn-outline-secondary" @onclick="OpenRenameDialogAsync" disabled="@isLoading">✏️ Переименовать</button>
+            <button class="btn btn-sm btn-outline-danger" @onclick="DeleteRoomAsync" disabled="@isLoading" title="@(roomBooks.Count > 0 ? "Нельзя удалить комнату, в которой есть книги" : "Удалить комнату")">🗑️ Удалить комнату</button>
+        }
+        @if (isDirty)
+        {
+            <span class="badge bg-warning text-dark ms-2">Есть несохранённые изменения</span>
+        }
+    </ChildContent>
+</PageHeader>
 
 @if (isLoading)
 {
@@ -80,7 +69,7 @@ else
                       Columns="InRoomColumns"
                       Actions="InRoomActions"
                       SelectionMode="DataGridSelectionMode.Multiple"
-                      OnRowDoubleClick="@(isEditor ? OpenEditCountAsync : null)"/>
+                      OnRowDoubleClick="@(isEditor ? OpenEditCountAsync : null)" />
         }
     </div>
 
@@ -101,7 +90,7 @@ else
                           Columns="CatalogColumns"
                           Actions="CatalogActions"
                           SelectionMode="DataGridSelectionMode.Multiple"
-                          OnRowDoubleClick="AddBookToRoomAndRender"/>
+                          OnRowDoubleClick="AddBookToRoomAndRender" />
             }
         </div>
 
@@ -124,7 +113,7 @@ else
     <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>Переименовать комнату</h3>
         <div class="mb-3">
-            <label class="form-label">Название</label>
+            <label class="form-label">Название <span class="text-danger">*</span></label>
             <input type="text" class="form-control" @bind="newRoomName" />
         </div>
         @if (!string.IsNullOrEmpty(renameDialogError))
@@ -242,8 +231,6 @@ else
     private bool isLoading = true;
     private bool isSaving = false;
     private bool isDirty = false;
-    private string? errorMessage;
-    private string? statusMessage;
 
     private RoomDTO? room;
     private List<RoomBookDTO> roomBooks = new();
@@ -360,8 +347,8 @@ else
 
         // В WASM доступен только Email. Сервер подставит ФИО из JWT автоматически.
         currentUserLabel = auth.User.FindFirst(
-            ClaimTypes.Email)?.Value 
-            ?? auth.User.Identity?.Name 
+            System.Security.Claims.ClaimTypes.Email)?.Value
+            ?? auth.User.Identity?.Name
             ?? "—";
 
         await LoadAsync();
@@ -370,19 +357,18 @@ else
 
     private async Task LoadAsync()
     {
-        errorMessage = null;
         try
         {
             var roomResp = await RoomClient.GetRoomByIdAsync(Id);
             room = roomResp.Room.FirstOrDefault();
-            if (room == null) { errorMessage = "Комната не найдена."; return; }
+            if (room == null) { Toast.ShowError("Комната не найдена."); return; }
 
             roomBooks = room.RoomBook.ToList();
             var booksResp = await BookClient.GetAllBooksAsync();
             catalog = booksResp.Book.ToList();
             bookById = catalog.ToDictionary(b => b.Id);
         }
-        catch (Exception ex) { errorMessage = ex.Message; }
+        catch (Exception ex) { Toast.ShowError(ex.Message); }
 
         await InvokeAsync(StateHasChanged);
     }
@@ -432,8 +418,7 @@ else
         {
             if (rb.BorrowedCount > 0)
             {
-                errorMessage = $"Нельзя убрать «{GetBookTitle(rb.BookId)}»: выдано {rb.BorrowedCount} экз.";
-                await InvokeAsync(StateHasChanged);
+                Toast.ShowError($"Нельзя убрать «{GetBookTitle(rb.BookId)}»: выдано {rb.BorrowedCount} экз.");
                 return;
             }
         }
@@ -448,7 +433,6 @@ else
         if (roomBooks.Any(rb => rb.BookId == book.Id)) return;
         roomBooks.Add(new RoomBookDTO(Id: Guid.Empty, RoomId: Id, BookId: book.Id, BookCount: 1, BorrowedCount: 0));
         isDirty = true;
-        // StateHasChanged — в handler'е CatalogActions
     }
 
     private async Task AddBookToRoomAndRender(BookDTO book)
@@ -464,12 +448,11 @@ else
         if (!isEditor) return;
 
         // Если выбрано несколько — списываем только из первой с доступными экземплярами.
-        // Мультисписание — отдельная фича, пока не поддерживается.
+        // fixme Мультисписание — отдельная фича, пока не поддерживается.
         var rb = toDiscard.FirstOrDefault(x => x.AvailableCount > 0);
         if (rb == null)
         {
-            errorMessage = "Нет доступных экземпляров для списания";
-            await InvokeAsync(StateHasChanged);
+            Toast.ShowError("Нет доступных экземпляров для списания");
             return;
         }
 
@@ -509,8 +492,7 @@ else
                 CompensationAmount = discardCompensation
             });
 
-            statusMessage = resp.Message;
-            errorMessage = null;
+            Toast.ShowSuccess(resp.Message);
             CloseDiscardDialog();
 
             // BookCount изменился — перезагружаем комнату и каталог
@@ -532,20 +514,21 @@ else
     private void CancelChanges()
     {
         if (room == null) return;
-        roomBooks = room.RoomBook.ToList(); isDirty = false; statusMessage = null;
+        roomBooks = room.RoomBook.ToList(); isDirty = false;
     }
 
     private async Task SaveAsync()
     {
         if (!isEditor || room == null || !isDirty) return;
-        isSaving = true; errorMessage = null; statusMessage = null;
+        isSaving = true;
         try
         {
             var resp = await RoomClient.UpdateRoomAsync(new UpdateRoomRequest { Id = new Id(Id), Name = room.Name, RoomBookDTO = roomBooks.ToList() });
-            statusMessage = resp.Message; isDirty = false;
+            Toast.ShowSuccess(resp.Message);
+            isDirty = false;
             await LoadAsync();
         }
-        catch (Exception ex) { errorMessage = ex.Message; }
+        catch (Exception ex) { Toast.ShowError(ex.Message); }
         finally { isSaving = false; }
         await InvokeAsync(StateHasChanged);
     }
@@ -568,7 +551,8 @@ else
         try
         {
             var resp = await RoomClient.UpdateRoomAsync(new UpdateRoomRequest { Id = new Id(Id), Name = newRoomName, RoomBookDTO = roomBooks.ToList() });
-            room = room with { Name = newRoomName }; statusMessage = resp.Message;
+            room = room with { Name = newRoomName };
+            Toast.ShowSuccess(resp.Message);
             CloseRenameDialog();
         }
         catch (Exception ex) { renameDialogError = ex.Message; }
@@ -582,9 +566,7 @@ else
         // Проверка ДО модалки
         if (roomBooks.Count > 0)
         {
-            errorMessage = "Нельзя удалить комнату, в которой есть книги. Сначала удалите все книги из комнаты.";
-            statusMessage = null;
-            await InvokeAsync(StateHasChanged);
+            Toast.ShowError("Нельзя удалить комнату, в которой есть книги. Сначала удалите все книги из комнаты.");
             return;
         }
 
@@ -595,16 +577,15 @@ else
                 requireConfirmationWord: true))
             return;
 
-        errorMessage = null;
         try
         {
             await RoomClient.DeleteRoomAsync(Id);
+            Toast.ShowSuccess($"Комната «{room.Name}» удалена");
             Nav.NavigateTo("/rooms");
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка удаления: {ex.Message}";
-            await InvokeAsync(StateHasChanged);
+            Toast.ShowError($"Ошибка удаления: {ex.Message}");
         }
     }
     #endregion

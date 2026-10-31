@@ -20,7 +20,7 @@ public class BorrowingValidatorAsync : IValidator
             {
                 var statusName = user.SubscriptionStatus == SubscriptionStatus.Unconfirmed
                     ? "не подтверждён" : "заморожен";
-                errors.Add($"Абонемент пользователя {statusName}. Выдача книг запрещена.");
+                errors.Add($"Профиль пользователя {statusName}. Выдача книг запрещена.");
             }
 
             var activeBooksCount = user.RoomBooks?.Count(urb => !urb.IsReturned) ?? 0;

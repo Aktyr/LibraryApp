@@ -10,15 +10,13 @@
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthProvider
+@inject IToastService Toast
 
 <PageTitle>Комнаты</PageTitle>
 
-<h1>Комнаты</h1>
+<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading" />
 
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger mb-3">@errorMessage</div>
-}
+<h1>Комнаты</h1>
 
 @if (isLoading)
 {
@@ -31,7 +29,6 @@ else if (rooms != null)
               PageSize="10"
               Columns="columns"
               Actions="actions"
-              StatusMessage="@statusMessage"
               OnRowDoubleClick="OnRoomDoubleClick" />
 }
 
@@ -44,7 +41,7 @@ else if (rooms != null)
         <EditForm Model="draft" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
             <div class="mb-3">
-                <label class="form-label">Название</label>
+                <label class="form-label">Название <span class="text-danger">*</span></label>
                 <InputText @bind-Value="draft.Name" class="form-control" />
                 <ValidationMessage For="() => draft.Name" class="text-danger" />
             </div>
@@ -61,8 +58,6 @@ else if (rooms != null)
 @code {
     private List<RoomDTO>? rooms;
     private bool isLoading = true;
-    private string? errorMessage;
-    private string? statusMessage;
 
     private enum DialogMode { None, Create }
     private DialogMode dialogMode = DialogMode.None;
@@ -119,7 +114,6 @@ else if (rooms != null)
     };
 
     private List<DataGridAction<RoomDTO>> actions = new();
-
     private bool isEditor;
 
     protected override async Task OnInitializedAsync()
@@ -130,6 +124,7 @@ else if (rooms != null)
         ConfigureActions();
         await LoadAsync();
     }
+
     private void ConfigureActions()
     {
         if (!isEditor)
@@ -150,7 +145,6 @@ else if (rooms != null)
     private async Task LoadAsync()
     {
         isLoading = true;
-        errorMessage = null;
         try
         {
             var resp = await ApiClient.GetAllRoomsAsync();
@@ -158,7 +152,7 @@ else if (rooms != null)
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка загрузки: {ex.Message}";
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
         }
         finally
         {
@@ -188,7 +182,7 @@ else if (rooms != null)
         try
         {
             await ApiClient.CreateRoomAsync(new CreateRoomRequest(draft.Name, []));
-            statusMessage = $"Комната «{draft.Name}» добавлена";
+            Toast.ShowSuccess($"Комната «{draft.Name}» добавлена");
             CloseDialog();
             await LoadAsync();
         }

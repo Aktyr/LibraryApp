@@ -20,34 +20,24 @@
 @inject IConfirmService Confirm
 @inject NavigationManager Nav
 @inject IBorrowingSettingsService SettingsService
-@inject IPenaltySettingsService PenaltySettingsService
 @inject AuthenticationStateProvider AuthProvider
+@inject IToastService Toast
 @inject IUserManagementPolicy Policy
 
 <PageTitle>Профиль — @FullName</PageTitle>
 
-<div class="d-flex align-items-center mb-3 gap-2">
-    <a href="/users" class="btn btn-sm btn-outline-secondary">← к списку</a>
-    <button class="btn btn-sm btn-outline-secondary" @onclick="ReloadAsync" disabled="@isLoading">🔄 Обновить</button>
-
-    @if (CanEdit)
-    {
-        <button class="btn btn-sm btn-outline-secondary" @onclick="OpenEditDialogAsync" disabled="@isLoading">✏️ Редактировать</button>
-    }
-    @if (CanDelete)
-    {
-        <button class="btn btn-sm btn-outline-danger" @onclick="DeleteUserAsync" disabled="@isLoading">🗑️ Удалить</button>
-    }
-</div>
-
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger mb-3" style="white-space: pre-line;">@errorMessage</div>
-}
-@if (!string.IsNullOrEmpty(statusMessage))
-{
-    <div class="alert alert-success mb-3">@statusMessage</div>
-}
+<PageHeader Title="@FullName" BackUrl="/users" OnRefresh="ReloadAsync" IsLoading="@isLoading">
+    <ChildContent>
+        @if (CanEdit)
+        {
+            <button class="btn btn-sm btn-outline-secondary" @onclick="OpenEditDialogAsync" disabled="@isLoading">✏️ Редактировать</button>
+        }
+        @if (CanDelete)
+        {
+            <button class="btn btn-sm btn-outline-danger" @onclick="DeleteUserAsync" disabled="@isLoading">🗑️ Удалить</button>
+        }
+    </ChildContent>
+</PageHeader>
 
 @if (isLoading)
 {
@@ -74,7 +64,7 @@ else
 
         @* Выпадающий список для управления статусом *@
         <div class="d-flex align-items-center gap-2">
-            <label class="form-label mb-0 small text-muted">Абонемент:</label>
+            <label class="form-label mb-0 small text-muted">Профиль:</label>
             <select class="form-select form-select-sm"
                     style="width: auto;"
                     @onchange="OnStatusChanged"
@@ -125,8 +115,8 @@ else
     @if (user.SubscriptionStatus != SubscriptionStatus.Active)
     {
         <div class="alert alert-danger py-2 mb-4">
-            ⚠️ Абонемент пользователя <strong>@(user.SubscriptionStatus == SubscriptionStatus.Unconfirmed ? "не подтверждён" : "заморожен")</strong>.
-            Выдача новых книг заблокирована. Разблокируйте абонемент, чтобы продолжить выдачу.
+            ⚠️ Профиль пользователя <strong>@(user.SubscriptionStatus == SubscriptionStatus.Unconfirmed ? "не подтверждён" : "заморожен")</strong>.
+            Выдача новых книг заблокирована. Разблокируйте Профиль, чтобы продолжить выдачу.
         </div>
     }
 
@@ -194,10 +184,12 @@ else
             </summary>
             <div class="mt-2">
                 <DataGrid TItem="BorrowedBookDTO"
-                          Items="returnedBorrows"
+                          Items="activeBorrows"
                           PageSize="10"
-                          Columns="historyColumns"
-                          SelectionMode="DataGridSelectionMode.None" />
+                          Columns="ActiveColumns"
+                          Actions="activeActions"
+                          SelectionMode="DataGridSelectionMode.Multiple"
+                          OnRowDoubleClick="OnActiveRowDoubleClick" />
             </div>
         </details>
     }
@@ -214,12 +206,12 @@ else
             <DataAnnotationsValidator />
 
             <div class="mb-3">
-                <label class="form-label">Фамилия</label>
+                <label class="form-label">Фамилия <span class="text-danger">*</span></label>
                 <InputText @bind-Value="draft.LastName" class="form-control" />
                 <ValidationMessage For="() => draft.LastName" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Имя</label>
+                <label class="form-label">Имя <span class="text-danger">*</span></label>
                 <InputText @bind-Value="draft.FirstName" class="form-control" />
                 <ValidationMessage For="() => draft.FirstName" class="text-danger" />
             </div>
@@ -229,7 +221,7 @@ else
                 <ValidationMessage For="() => draft.MiddleName" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Контактная информация</label>
+                <label class="form-label">Контактная информация <span class="text-danger">*</span></label>
                 <InputText @bind-Value="draft.ContactInfo" class="form-control" />
                 <ValidationMessage For="() => draft.ContactInfo" class="text-danger" />
             </div>
@@ -237,10 +229,6 @@ else
             <button type="submit" class="btn btn-primary">Сохранить</button>
             <button type="button" class="btn btn-secondary ms-2" @onclick="CloseDialog">Отмена</button>
 
-            @if (!string.IsNullOrWhiteSpace(dialogError))
-            {
-                <div class="alert alert-danger mt-3" style="white-space: pre-line;">@dialogError</div>
-            }
         </EditForm>
     </div>
 }
@@ -281,11 +269,6 @@ else
                 (от @MinBorrowDays до @MaxBorrowDays, сегодня @DateTime.Today.ToString("dd.MM.yyyy"))
             </small>
         </div>
-
-        @if (!string.IsNullOrEmpty(borrowDialogError))
-        {
-            <div class="alert alert-danger py-2 mb-3">@borrowDialogError</div>
-        }
 
         <div>
             <button class="btn btn-primary"
@@ -395,11 +378,6 @@ else
             </div>
         }
 
-        @if (!string.IsNullOrEmpty(returnDialogError))
-        {
-            <div class="alert alert-danger py-2 mb-3">@returnDialogError</div>
-        }
-
         <div class="mt-4">
             <button class="btn btn-primary"
                     disabled="@(!CanSubmitReturn || returnDialogSaving)"
@@ -424,7 +402,6 @@ else
 
     private bool isLoading = true;
     private string? errorMessage;
-    private string? statusMessage;
 
     private UserDTO? user;
     private UserRole actorRole;
@@ -445,7 +422,6 @@ else
     private string? borrowDialogError;
 
     // Модалка продления
-    private PenaltySettingsDTO? penaltySettings;
     private BorrowedBookDTO? extendingBorrow;
     private int extendDays = 7;
 
@@ -471,7 +447,7 @@ else
     private List<DataGridColumn<BorrowedBookDTO>> ActiveColumns => _activeColumns ??= UserBorrowsColumns.CreateActive(
         showBorrowDate: true,
         showExtendedDays: true,
-        penaltyDisplay: CalculatePenaltyDisplay,
+        penaltyDisplay: b => b.Penalty ?? 0m,
         maxExtendDeadlineDays: MaxExtendDeadlineDays);
 
     private string BorrowedColor =>
@@ -547,21 +523,6 @@ else
 
     private List<DataGridColumn<BorrowedBookDTO>> historyColumns = new();
 
-    private decimal CalculatePenaltyDisplay(BorrowedBookDTO b)
-    {
-        if (!b.Deadline.HasValue || b.Deadline.Value >= DateTime.UtcNow) return 0m;
-
-        var days = (int)Math.Ceiling((DateTime.UtcNow - b.Deadline.Value).TotalDays);
-        if (penaltySettings != null)
-            days = Math.Max(0, days - penaltySettings.GracePeriodDays);
-        if (days <= 0) return 0m;
-
-        var penalty = days * (penaltySettings?.DailyRate ?? 10m);
-        return penaltySettings?.MaxPenalty.HasValue == true
-            ? Math.Min(penalty, penaltySettings.MaxPenalty.Value)
-            : penalty;
-    }
-
     #endregion
 
     #region Actions
@@ -617,7 +578,6 @@ else
                   : UserRole.Reader;
 
         settings = await SettingsService.GetAsync();
-        penaltySettings = await PenaltySettingsService.GetAsync();
 
         historyColumns = UserBorrowsColumns.CreateHistory();
 
@@ -676,7 +636,7 @@ else
     {
         isLoading = true;
         errorMessage = null;
-        statusMessage = null;
+        //statusMessage = null;
         await LoadAsync();
         await LoadCatalogAsync();
         isLoading = false;
@@ -698,19 +658,15 @@ else
     private async Task ChangeStatusAsync(SubscriptionStatus newStatus)
     {
         isLoading = true;
-        errorMessage = null;
-        statusMessage = null;
-
         try
         {
             var resp = await UserClient.ChangeStatusAsync(Id, newStatus);
-            statusMessage = resp.Message;
+            Toast.ShowSuccess(resp.Message);
             await LoadAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка изменения статуса: {ex.Message}";
-            await InvokeAsync(StateHasChanged);
+            Toast.ShowError($"Ошибка изменения статуса: {ex.Message}");
         }
         finally
         {
@@ -718,6 +674,7 @@ else
             await InvokeAsync(StateHasChanged);
         }
     }
+
 
     private async Task OnActiveRowDoubleClick(BorrowedBookDTO b)
     {
@@ -762,7 +719,7 @@ else
                 MiddleName = draft.MiddleName,
                 ContactInfo = draft.ContactInfo
             });
-            statusMessage = $"Пользователь «{draft.LastName} {draft.FirstName}» обновлён";
+            Toast.ShowSuccess($"Пользователь «{draft.LastName} {draft.FirstName}» обновлён");
             CloseDialog();
             await ReloadAsync();
         }
@@ -779,10 +736,7 @@ else
 
         if (user.ActiveBorrowedCount > 0)
         {
-            errorMessage = $"Нельзя деактивировать пользователя «{user.LastName} {user.FirstName}»: " +
-                           $"у него {user.ActiveBorrowedCount} активных выдач. Сначала верните книги.";
-            statusMessage = null;
-            await InvokeAsync(StateHasChanged);
+            Toast.ShowError($"Нельзя удалить: у пользователя {user.ActiveBorrowedCount} активных выдач.");
             return;
         }
 
@@ -800,12 +754,12 @@ else
         try
         {
             await UserClient.DeleteUserAsync(user.Id);
+            Toast.ShowSuccess($"Пользователь «{user.LastName} {user.FirstName}» деактивирован");
             Nav.NavigateTo("/users");
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка деактивации: {ex.Message}";
-            await InvokeAsync(StateHasChanged);
+            Toast.ShowError($"Ошибка деактивации: {ex.Message}");
         }
     }
 
@@ -843,9 +797,8 @@ else
                 RoomBookId = borrowDialogBook.RoomBookId,
                 BorrowDays = BorrowDaysComputed
             });
-            statusMessage = resp.Message;
+            Toast.ShowSuccess(resp.Message);
             CloseBorrowDialog();
-
             await LoadAsync();
             await LoadCatalogAsync();
         }
@@ -874,8 +827,6 @@ else
         if (!await Confirm.AskAsync(msg, title: "Массовый возврат", confirmText: "Вернуть все"))
             return;
 
-        errorMessage = null;
-        statusMessage = null;
         var success = 0;
         var errors = new List<string>();
 
@@ -893,9 +844,9 @@ else
         }
 
         if (errors.Count > 0)
-            errorMessage = $"Возвращено: {success}, ошибок: {errors.Count}.\n{string.Join("\n", errors)}";
+            Toast.ShowError($"Возвращено: {success}, ошибок: {errors.Count}.\n{string.Join("\n", errors)}");
         else if (success > 0)
-            statusMessage = $"Возвращено книг: {success}";
+            Toast.ShowSuccess($"Возвращено книг: {success}");
 
         await LoadAsync();
         await LoadCatalogAsync();
@@ -957,7 +908,7 @@ else
                 DiscardReason = returnReason,
                 CompensationAmount = returnCompensation
             });
-            statusMessage = resp.Message;
+            Toast.ShowSuccess(resp.Message);
             CloseReturnDialog();
             await LoadAsync();
             await LoadCatalogAsync();
@@ -987,8 +938,7 @@ else
     private async Task ExtendAsync()
     {
         if (!CanExtend || extendingBorrow == null) return;
-        errorMessage = null;
-        statusMessage = null;
+
         try
         {
             var resp = await BorrowingClient.ExtendDeadlineAsync(new ExtendDeadlineRequest
@@ -996,14 +946,14 @@ else
                 UserRoomBookId = extendingBorrow.Id,
                 ExtraDays = extendDays
             });
-            statusMessage = resp.Message;
+            Toast.ShowSuccess(resp.Message);
             CloseExtend();
 
             await LoadAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            Toast.ShowError($"Ошибка продления: {ex.Message}");
         }
         await InvokeAsync(StateHasChanged);
     }
