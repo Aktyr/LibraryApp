@@ -1,3 +1,6 @@
+/* NavMenu — стили компонента. */
+
+/* Кнопка-бургер (только для мобилок) */
 .navbar-toggler {
     appearance: none;
     cursor: pointer;
@@ -16,20 +19,21 @@
         background-color: rgba(255, 255, 255, 0.5);
     }
 
+/* Шапка с логотипом */
 .top-row {
     height: 3.5rem;
     display: flex;
     align-items: center;
-    justify-content: center; /* Центрируем логотип в свернутом виде */
+    justify-content: flex-start; /* Логотип всегда слева */
 }
 
-/* Убираем растягивание на всю ширину */
 .navbar-brand {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     width: auto;
-    margin: 0 auto; /* Центрируем в свернутом состоянии */
-    padding: 0;
+    margin: 0;
+    padding: 0 0 0 1rem; /* Иконка на фиксированной X = 24px */
     color: white !important;
     text-decoration: none;
 }
@@ -43,6 +47,7 @@
     font-weight: 600;
 }
 
+/* Выпадающая панель */
 .nav-scrollable {
     display: none;
 }
@@ -51,6 +56,7 @@
     display: block;
 }
 
+/* Пункты меню */
 .nav-item ::deep .nav-link {
     color: #a8b2c1;
     background: none;
@@ -59,10 +65,11 @@
     height: 44px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    /* Иконки строго по левому краю, padding = 12px (вместе с margin: 12px дает центр в 72px) */
+    justify-content: flex-start !important;
+    padding-left: 12px !important;
     width: calc(100% - 24px);
     margin: 2px 12px;
-    padding: 0;
     transition: background-color 0.2s, color 0.2s;
 }
 
@@ -77,6 +84,7 @@
     font-weight: 500;
 }
 
+/* Эмодзи */
 .nav-emoji {
     font-size: 1.3rem;
     width: 24px;
@@ -84,6 +92,7 @@
     flex-shrink: 0;
 }
 
+/* Заголовки секций */
 .nav-section-title {
     color: #6c7a9c;
     font-size: 0.75rem;
@@ -104,22 +113,12 @@
         height: calc(100vh - 3.5rem);
         background-color: #1a1b26;
         overflow-y: auto;
-        box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
         z-index: 999;
     }
 
-    .top-row {
-        justify-content: flex-start; /* Логотип слева, чтобы не мешал бургеру */
-    }
-
-    .navbar-brand {
-        margin: 0;
-        padding-left: 1rem; /* Отступ от края */
-    }
-
     .nav-item ::deep .nav-link {
-        justify-content: flex-start;
-        padding-left: 24px;
+        padding-left: 24px !important;
     }
 
     .nav-emoji {
@@ -142,12 +141,5 @@
 
     .navbar-toggler {
         display: none;
-    }
-
-    /* При наведении (развороте) логотип прижимается влево */
-    .sidebar:hover .navbar-brand {
-        margin: 0;
-        padding-left: 20px;
-        justify-content: flex-start;
     }
 }
