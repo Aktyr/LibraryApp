@@ -263,24 +263,31 @@ else if (books != null)
         }
     }
 
-    private class BookDraft
+    private class BookDraft : IValidatableObject
     {
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Название обязательно")]
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        [Required(ErrorMessage = "Название обязательно")]
         public string Title { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Автор обязателен")]
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        [Required(ErrorMessage = "Автор обязателен")]
         public string Author { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.Range(0, 2100, ErrorMessage = "Год должен быть от 0 до 2100")]
         public int Year { get; set; }
 
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Издательство обязательно")]
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        [Required(ErrorMessage = "Издательство обязательно")]
         public string Publisher { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
         public string Genre { get; set; } = "";
+
+        public IEnumerable<ValidationResult> Validate(
+            ValidationContext validationContext)
+        {
+            var errors = BookPolicy.Validate(Title, Author, Year, Publisher, Genre);
+            foreach (var error in errors)
+            {
+                // Отдаем ошибку в поле Year, если она про год
+                var memberNames = error.Contains("Год") ? new[] { nameof(Year) } : null;
+                yield return new ValidationResult(error, memberNames);
+            }
+        }
     }
 }

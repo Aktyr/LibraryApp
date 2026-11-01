@@ -3,7 +3,7 @@
 [TestFixture]
 public class UserValidatorAsyncTests
 {
-    private static UserValidatorAsync CreateValidator() => new(new EmailValidatorAsync());
+    private static UserValidatorAsync CreateValidator() => new();
 
     #region ValidateEmailAsync
 

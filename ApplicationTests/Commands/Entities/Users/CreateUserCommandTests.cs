@@ -6,7 +6,7 @@ public class CreateUserCommandTests
     private static CreateUserCommand CreateCommand(FakeUnitOfWork unitOfWork)
     {
         var emailValidator = new EmailValidatorAsync();
-        var userRegistrationValidator = new UserValidatorAsync(emailValidator);
+        var userRegistrationValidator = new UserValidatorAsync();
         var userService = new UserService(unitOfWork, userRegistrationValidator);
         return new CreateUserCommand(userService);
     }
@@ -216,7 +216,7 @@ public class CreateUserCommandTests
     public async Task ValidateAsync_WhenMiddleNameTooLong_ReturnsError()
     {
         // Arrange
-        var validator = new UserValidatorAsync(new EmailValidatorAsync());
+        var validator = new UserValidatorAsync();
 
         var user = new User
         {

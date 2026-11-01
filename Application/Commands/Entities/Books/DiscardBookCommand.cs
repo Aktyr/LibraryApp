@@ -7,27 +7,19 @@ public class DiscardBookCommand(
 {
     public async Task<BasicCreateDeleteResponse> Execute(DiscardBookRequest request, CancellationToken ct)
     {
-        if (request.Amount <= 0)
-            throw new LibValidationException { ExceptionDetails = ["Количество списываемых экземпляров должно быть больше нуля"] };
-
         var bookRepo = unitOfWork.GetRepository<Book>();
         var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
 
-        // Валидация
-        // Находим книгу
         var bookId = new Id(request.BookId);
-
         var book = await bookRepo.FirstOrDefaultAsync(b => b.Id == bookId, ct);
         if (book == null) throw new BookNotFoundException();
 
-        // Находим RoomBook
         RoomBook? roomBook;
         if (request.RoomId.HasValue)
         {
             var roomId = new Id(request.RoomId.Value);
-            roomBook = await roomBookRepo.FirstOrDefaultAsync(
-                rb => rb.Book.Id == bookId && rb.Room.Id == roomId, ct);
+            roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Book.Id == bookId && rb.Room.Id == roomId, ct);
             if (roomBook == null)
                 throw new LibValidationException { ExceptionDetails = ["Книга не найдена в указанной комнате"] };
         }
@@ -38,16 +30,19 @@ public class DiscardBookCommand(
                 throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнатах"] };
         }
 
-        // Проверяем, что списываем не больше, чем есть
-        if (request.Amount > roomBook.BookCount)
-            throw new LibValidationException { ExceptionDetails = [$"Нельзя списать {request.Amount} экз. Доступно: {roomBook.BookCount}"] };
+        // ВАЛИДАЦИЯ ЧЕРЕЗ ПОЛИТИКУ
+        var errors = DiscardPolicy.ValidateDiscard(
+            request.Amount,
+            roomBook.BookCount,
+            roomBook.AvailableCount,
+            request.CompensationAmount,
+            request.DiscardReason);
 
-        // Проверяем, что списываемые экземпляры не выданы
-        if (request.Amount > roomBook.AvailableCount)
-            throw new LibValidationException { ExceptionDetails = [$"Нельзя списать {request.Amount} экз. Выдано: {roomBook.BorrowedCount}, доступно: {roomBook.AvailableCount}"] };
+        if (!string.IsNullOrEmpty(request.ApprovedBy) && request.ApprovedBy.Length > DiscardPolicy.MaxApprovedByNameLength)
+            errors.Add($"ApprovedBy не может превышать {DiscardPolicy.MaxApprovedByNameLength} символов");
 
-        if (!string.IsNullOrEmpty(request.ApprovedBy) && request.ApprovedBy.Length > 100)
-            throw new LibValidationException { ExceptionDetails = ["ApprovedBy не может превышать 100 символов"] };
+        if (errors.Any())
+            throw new LibValidationException { ExceptionDetails = errors };
 
         // Создаём запись о списании
         var discarded = new DiscardedBook
@@ -94,4 +89,6 @@ public class DiscardBookCommand(
 
         return ResponseFactory.Success($"Списано {request.Amount} экз. книги '{book.Title}'. Причина: {request.DiscardReason.DisplayName()}");
     }
+
+
 }

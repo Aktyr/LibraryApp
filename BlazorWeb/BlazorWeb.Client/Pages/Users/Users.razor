@@ -136,13 +136,11 @@ else if (users != null)
             FilterKind = FilterKind.Number,
             Value = u => u.ActiveBorrowedCount,
             FilterText = u => u.ActiveBorrowedCount.ToString(),
-            Template = u => b =>
+                        Template = u => b =>
             {
                 var count = u.ActiveBorrowedCount;
-                var color = count >= MaxBooks ? "#a30000"
-                          : count >= MaxBooks - 1 ? "#a85b00"
-                          : "#333";
-                var weight = count >= MaxBooks ? "600" : "400";
+                var color = UserLimitStyle.GetColor(count, MaxBooks);
+                var weight = UserLimitStyle.GetFontWeight(count, MaxBooks);
                 b.OpenElement(0, "span");
                 b.AddAttribute(1, "style", $"color:{color};font-weight:{weight};");
                 b.AddContent(2, $"{count} / {MaxBooks}");
@@ -298,66 +296,44 @@ else if (users != null)
         }
     }
 
-    private class UserDraft : System.ComponentModel.DataAnnotations.IValidatableObject
+    private class UserDraft : IValidatableObject
     {
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Email обязателен")]
-        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Некорректный email")]
+        [Required(ErrorMessage = "Email обязателен")]
+        [EmailAddress(ErrorMessage = "Некорректный email")]
         public string Email { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Пароль обязателен")]
-        [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 8, ErrorMessage = "Пароль от 8 до 100 символов")]
+        [Required(ErrorMessage = "Пароль обязателен")]
         public string Password { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Фамилия обязательна")]
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        [Required(ErrorMessage = "Фамилия обязательна")]
+        [StringLength(UserPolicy.MaxNameLength, ErrorMessage = "Не более 100 символов")]
         public string LastName { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Имя обязательно")]
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        [Required(ErrorMessage = "Имя обязательно")]
+        [StringLength(UserPolicy.MaxNameLength, ErrorMessage = "Не более 100 символов")]
         public string FirstName { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        [StringLength(UserPolicy.MaxNameLength, ErrorMessage = "Не более 100 символов")]
         public string MiddleName { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Контактная информация обязательна")]
-        [System.ComponentModel.DataAnnotations.StringLength(200, ErrorMessage = "Не более 200 символов")]
+        [Required(ErrorMessage = "Контактная информация обязательна")]
+        [StringLength(UserPolicy.MaxContactInfoLength, ErrorMessage = "Не более 200 символов")]
         public string ContactInfo { get; set; } = "";
 
         public UserRole? Role { get; set; } = UserRole.Reader;
 
-        public IEnumerable<System.ComponentModel.DataAnnotations.ValidationResult> Validate(
-            System.ComponentModel.DataAnnotations.ValidationContext validationContext)
+        public IEnumerable<ValidationResult> Validate(
+            ValidationContext validationContext)
         {
-            if (string.IsNullOrEmpty(Password) || Password.Length < 8 || Password.Length > 100)
-                yield break;
+            var errors = PasswordPolicy.Validate(Password);
 
-            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"\p{Lu}"))
+            foreach (var error in errors)
             {
-                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
-                    "Пароль должен содержать хотя бы одну заглавную букву",
-                    new[] { nameof(Password) });
-                yield break;
-            }
-            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"\p{Ll}"))
-            {
-                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
-                    "Пароль должен содержать хотя бы одну строчную букву",
-                    new[] { nameof(Password) });
-                yield break;
-            }
-            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[0-9]"))
-            {
-                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
-                    "Пароль должен содержать хотя бы одну цифру",
-                    new[] { nameof(Password) });
-                yield break;
-            }
-            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[!@#$%^&*(),.?"":{}|<>]"))
-            {
-                yield return new System.ComponentModel.DataAnnotations.ValidationResult(
-                    "Пароль должен содержать хотя бы один спецсимвол",
+                yield return new ValidationResult(
+                    error,
                     new[] { nameof(Password) });
             }
         }
+    }
     }
 }

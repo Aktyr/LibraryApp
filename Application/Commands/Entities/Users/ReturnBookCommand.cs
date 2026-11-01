@@ -26,22 +26,15 @@ public class ReturnBookCommand(
         // Валидация списания — до транзакции, чтобы не начинать её впустую.
         if (request.DiscardReason.HasValue)
         {
-            if (request.DiscardReason == DiscardReason.Loss
-                && (!request.CompensationAmount.HasValue || request.CompensationAmount.Value <= 0))
-            {
-                throw new LibValidationException
-                {
-                    ExceptionDetails = ["При утрате книги необходимо указать сумму компенсации (> 0)"]
-                };
-            }
+            var discardErrors = DiscardPolicy.ValidateDiscard(
+                1, // Возвращаем всегда 1 экземпляр
+                userRoomBook.RoomBook.BookCount,
+                userRoomBook.RoomBook.AvailableCount,
+                request.CompensationAmount,
+                request.DiscardReason);
 
-            if (request.CompensationAmount.HasValue && request.CompensationAmount.Value < 0)
-            {
-                throw new LibValidationException
-                {
-                    ExceptionDetails = ["Сумма компенсации не может быть отрицательной"]
-                };
-            }
+            if (discardErrors.Any())
+                throw new LibValidationException { ExceptionDetails = discardErrors };
         }
 
         // Получаем книгу

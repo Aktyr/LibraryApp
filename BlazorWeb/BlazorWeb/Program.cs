@@ -1,5 +1,5 @@
-using LibApp.Core.Authorization;
 using LibApp.Core.Interfaces;
+using LibApp.Core.Policies;
 
 namespace BlazorWeb;
 

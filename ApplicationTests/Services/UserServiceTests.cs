@@ -5,7 +5,7 @@ public class UserServiceTests
 {
     private static UserService CreateService(FakeUnitOfWork unitOfWork, UserValidatorAsync? validator = null)
     {
-        validator ??= new UserValidatorAsync(new EmailValidatorAsync());
+        validator ??= new UserValidatorAsync();
         return new UserService(unitOfWork, validator);
     }
 
@@ -88,7 +88,7 @@ public class UserServiceTests
         mockUnitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("DB error"));
         // Rollback должен быть вызван
-        var validator = new UserValidatorAsync(new EmailValidatorAsync());
+        var validator = new UserValidatorAsync();
         var service = new UserService(mockUnitOfWork.Object, validator);
 
         // Act & Assert

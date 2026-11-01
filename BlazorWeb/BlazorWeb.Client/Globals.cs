@@ -17,3 +17,5 @@ global using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 global using System.Net.Http.Json;
 global using System.Security.Claims;
 global using System.Text.Json;
+global using LibApp.Core.Policies;
+global using System.ComponentModel.DataAnnotations;

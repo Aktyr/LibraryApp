@@ -3,7 +3,7 @@
 public class BorrowingValidatorAsync : IValidator
 {
     private readonly BorrowingSettings _settings;
-    public BorrowingValidatorAsync(IOptionsSnapshot<BorrowingSettings> settings) =>_settings = settings.Value;
+    public BorrowingValidatorAsync(IOptionsSnapshot<BorrowingSettings> settings) => _settings = settings.Value;
 
     /// <summary>
     /// Валидация выдачи книги
@@ -36,9 +36,8 @@ public class BorrowingValidatorAsync : IValidator
             errors.Add("Книга не найдена");
         else if (roomBook.AvailableCount <= 0)
             errors.Add("Нет доступных экземпляров книги");
-        // Проверка срока выдачи
-        if (borrowDays < _settings.MinBorrowDays || borrowDays > _settings.MaxBorrowDays)
-            errors.Add($"Срок выдачи должен быть от {_settings.MinBorrowDays} до {_settings.MaxBorrowDays} дней");
+
+        errors.AddRange(BorrowingPolicy.ValidateBorrow(borrowDays, _settings.MinBorrowDays, _settings.MaxBorrowDays));
 
         await Task.CompletedTask;
         return new ValidationResponse(!errors.Any(), errors);
@@ -52,13 +51,9 @@ public class BorrowingValidatorAsync : IValidator
             errors.Add("Запись о выдаче не найдена");
         else if (userRoomBook.IsReturned)
             errors.Add("Нельзя продлить уже возвращенную книгу");
-        else if (extraDays <= 0)
-            errors.Add("Срок продления должен быть больше 0");
-        else if (userRoomBook.TotalExtendedDays + extraDays > _settings.MaxExtendDeadlineDays)
+        else
         {
-            var available = _settings.MaxExtendDeadlineDays - userRoomBook.TotalExtendedDays;
-            errors.Add($"Суммарное продление не может превышать {_settings.MaxExtendDeadlineDays} дней. " +
-                       $"Уже продлено: {userRoomBook.TotalExtendedDays}, доступно: {available}.");
+            errors.AddRange(BorrowingPolicy.ValidateExtend(userRoomBook.TotalExtendedDays, extraDays, _settings.MaxExtendDeadlineDays));
         }
 
         await Task.CompletedTask;
@@ -91,8 +86,7 @@ public class BorrowingValidatorAsync : IValidator
         if (request.RoomBookId == Guid.Empty)
             errors.Add("ID книги обязателен");
 
-        if (request.BorrowDays < _settings.MinBorrowDays || request.BorrowDays > _settings.MaxBorrowDays)
-            errors.Add($"Срок выдачи должен быть от {_settings.MinBorrowDays} до {_settings.MaxBorrowDays} дней");
+        errors.AddRange(BorrowingPolicy.ValidateBorrow(request.BorrowDays, _settings.MinBorrowDays, _settings.MaxBorrowDays));
 
         await Task.CompletedTask;
         return new ValidationResponse(!errors.Any(), errors);

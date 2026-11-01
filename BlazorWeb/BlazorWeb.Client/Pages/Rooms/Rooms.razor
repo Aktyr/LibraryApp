@@ -194,8 +194,8 @@ else if (rooms != null)
 
     private class RoomDraft
     {
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Название обязательно")]
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        [Required(ErrorMessage = "Название обязательно")]
+        [StringLength(100, ErrorMessage = "Не более 100 символов")]
         public string Name { get; set; } = "";
     }
 }

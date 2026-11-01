@@ -49,4 +49,3 @@ global using LibApp.Application.Helpers;
 global using System.IdentityModel.Tokens.Jwt;
 global using System.Security.Claims;
 global using LibApp.Infrastructure.Services;
-global using LibApp.Core.Authorization;

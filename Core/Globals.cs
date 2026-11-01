@@ -1,10 +1,10 @@
 ﻿global using LibApp.Core.DTO.Borrowing;
 global using LibApp.Core.DTO.Entities;
+global using LibApp.Core.DTO.Reports;
+global using LibApp.Core.DTO.Settings;
 global using LibApp.Core.Entities;
 global using LibApp.Core.Enums;
 global using LibApp.Core.Interfaces;
 global using LibApp.Core.Records;
-global using System.ComponentModel.DataAnnotations;
-global using System.ComponentModel.DataAnnotations.Schema;
-global using LibApp.Core.DTO.Reports;
-global using LibApp.Core.DTO.Settings;
+global using System.Net.Mail;
+global using System.Text.RegularExpressions;

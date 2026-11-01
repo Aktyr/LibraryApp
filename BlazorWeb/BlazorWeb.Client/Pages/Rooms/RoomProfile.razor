@@ -264,9 +264,13 @@ else
     private bool discardSaving;
 
     private bool CanSubmitDiscard =>
-        discardSource != null
-        && discardAmount > 0
-        && discardAmount <= discardSource.AvailableCount;
+        discardSource != null &&
+        !DiscardPolicy.ValidateDiscard(
+            discardAmount,
+            discardSource.BookCount,
+            discardSource.AvailableCount,
+            discardCompensation,
+            discardReason).Any();
 
     #region Columns
     private List<DataGridColumn<RoomBookDTO>>? _inRoomColumns;

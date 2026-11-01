@@ -133,7 +133,7 @@
         RedirectManager.RedirectTo(ReturnUrl);
     }
 
-    private sealed class InputModel : System.ComponentModel.DataAnnotations.IValidatableObject
+    private sealed class InputModel : IValidatableObject
     {
         [Required]
         [EmailAddress]
@@ -163,30 +163,16 @@
         [StringLength(200, ErrorMessage = "Контактная информация не может превышать 200 символов")]
         public string ContactInfo { get; set; } = "";
 
-        public IEnumerable<System.ComponentModel.DataAnnotations.ValidationResult> Validate(
-            System.ComponentModel.DataAnnotations.ValidationContext validationContext)
+        public IEnumerable<ValidationResult> Validate(
+    ValidationContext validationContext)
         {
-            if (string.IsNullOrEmpty(Password) || Password.Length < 8 || Password.Length > 100)
-                yield break;
+            var errors = PasswordPolicy.Validate(Password);
 
-            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"\p{Lu}"))
+            foreach (var error in errors)
             {
-                yield return new("Пароль должен содержать хотя бы одну заглавную букву", [nameof(Password)]);
-                yield break;
-            }
-            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"\p{Ll}"))
-            {
-                yield return new("Пароль должен содержать хотя бы одну строчную букву", [nameof(Password)]);
-                yield break;
-            }
-            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[0-9]"))
-            {
-                yield return new("Пароль должен содержать хотя бы одну цифру", [nameof(Password)]);
-                yield break;
-            }
-            if (!System.Text.RegularExpressions.Regex.IsMatch(Password, @"[!@#$%^&*(),.?"":{}|<>]"))
-            {
-                yield return new("Пароль должен содержать хотя бы один спецсимвол", [nameof(Password)]);
+                yield return new ValidationResult(
+                    error,
+                    new[] { nameof(Password) });
             }
         }
     }

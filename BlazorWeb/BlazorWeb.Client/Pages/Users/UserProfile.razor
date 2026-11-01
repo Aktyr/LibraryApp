@@ -449,11 +449,7 @@ else
         penaltyDisplay: b => b.Penalty ?? 0m,
         maxExtendDeadlineDays: MaxExtendDeadlineDays);
 
-    private string BorrowedColor =>
-        user == null ? "#333"
-        : user.ActiveBorrowedCount >= MaxBooksPerUser ? "#a30000"
-        : user.ActiveBorrowedCount >= MaxBooksPerUser - 1 ? "#a85b00"
-        : "#333";
+    private string BorrowedColor => user == null ? "#333" : UserLimitStyle.GetColor(user.ActiveBorrowedCount, MaxBooksPerUser);
 
     private List<RoomBookOption> availableRoomBooks
     {
@@ -965,19 +961,19 @@ else
 
     private class UserDraft
     {
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Фамилия обязательна")]
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        [Required(ErrorMessage = "Фамилия обязательна")]
+        [StringLength(UserPolicy.MaxNameLength, ErrorMessage = "Не более 100 символов")]
         public string LastName { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Имя обязательно")]
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        [Required(ErrorMessage = "Имя обязательно")]
+        [StringLength(UserPolicy.MaxNameLength, ErrorMessage = "Не более 100 символов")]
         public string FirstName { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Не более 100 символов")]
+        [StringLength(UserPolicy.MaxNameLength, ErrorMessage = "Не более 100 символов")]
         public string MiddleName { get; set; } = "";
 
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Контактная информация обязательна")]
-        [System.ComponentModel.DataAnnotations.StringLength(200, ErrorMessage = "Не более 200 символов")]
+        [Required(ErrorMessage = "Контактная информация обязательна")]
+        [StringLength(UserPolicy.MaxContactInfoLength, ErrorMessage = "Не более 200 символов")]
         public string ContactInfo { get; set; } = "";
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace LibApp.Infrastructure.DependencyInjection;
+﻿using LibApp.Core.Policies;
+
+namespace LibApp.Infrastructure.DependencyInjection;
 
 public static partial class DI
 {

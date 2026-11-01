@@ -3,7 +3,7 @@
 [TestFixture]
 public class UpdateUserCommandTests
 {
-    private static UserValidatorAsync CreateUserValidator => new(new EmailValidatorAsync());
+    private static UserValidatorAsync CreateUserValidator => new();
 
     [Test]
     public async Task Execute_UpdateExistingUserWithValidData_UpdatesSuccessfully()

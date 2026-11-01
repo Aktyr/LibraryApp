@@ -4,33 +4,9 @@ public class BookValidatorAsync : IValidator
 {
     public async Task<ValidationResponse> ValidateAsync(Book book, CancellationToken cancellationToken = default)
     {
-        var errors = new List<string>();
-
-        if (string.IsNullOrWhiteSpace(book.Title))
-            errors.Add("Название книги обязательно");
-
-        if (string.IsNullOrWhiteSpace(book.Author))
-            errors.Add("Автор книги обязателен");
-
-        if (book.Year < 0 || book.Year > DateTime.UtcNow.Year + 5)
-            errors.Add($"Год должен быть между 0 и {DateTime.UtcNow.Year + 5}");
-
-        if (string.IsNullOrWhiteSpace(book.Publisher))
-            errors.Add("Издательство обязательно");
-
-        if (book.Title.Length > 100)
-            errors.Add("Название книги не может превышать 100 символов");
-
-        if (book.Author.Length > 100)
-            errors.Add("Имя Автора не может превышать 100 символов");
-
-        if (book.Genre.Length > 100)
-            errors.Add("Название жанра не может превышать 100 символов");
-
+        var errors = BookPolicy.Validate(book.Title, book.Author, book.Year, book.Publisher, book.Genre);
 
         await Task.CompletedTask;
-
         return new ValidationResponse(!errors.Any(), errors);
     }
-
 }

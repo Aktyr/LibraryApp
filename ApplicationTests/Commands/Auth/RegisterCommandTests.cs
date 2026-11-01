@@ -6,7 +6,7 @@ public class RegisterCommandTests
     private static RegisterCommand CreateCommand(FakeUnitOfWork unitOfWork, JwtService jwtService)
     {
         var emailValidator = new EmailValidatorAsync();
-        var userRegistrationValidator = new UserValidatorAsync(emailValidator);
+        var userRegistrationValidator = new UserValidatorAsync();
         var userService = new UserService(unitOfWork, userRegistrationValidator);
         return new RegisterCommand(userService, jwtService);
     }

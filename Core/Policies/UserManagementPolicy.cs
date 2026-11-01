@@ -1,4 +1,4 @@
-﻿namespace LibApp.Core.Authorization;
+﻿namespace LibApp.Core.Policies;
 
 public class UserManagementPolicy : IUserManagementPolicy
 {
