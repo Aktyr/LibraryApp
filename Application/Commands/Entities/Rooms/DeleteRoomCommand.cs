@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Entities.Rooms;
 
-public class DeleteRoomCommand(IUnitOfWork unitOfWork)
+public class DeleteRoomCommand(IUnitOfWork unitOfWork, IAuditService auditService)
     : IDeleteCommand<DeleteRoomRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(DeleteRoomRequest request, CancellationToken cancellationToken)
@@ -16,8 +16,22 @@ public class DeleteRoomCommand(IUnitOfWork unitOfWork)
         if (room.RoomBooks?.Any() == true)
             throw new RoomDeletionException("Not possible to delete a room containing books");
 
-        await roomRepo.RemoveAsync(room, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        var deletedName = room.Name;
+        var deletedId = room.Id.Value;
+
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await roomRepo.RemoveAsync(room, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await auditService.LogAsync(
+                AuditActionType.Delete,
+                nameof(Room),
+                deletedId,
+                details: $"Удалена комната «{deletedName}»",
+                ct: cancellationToken);
+        }, cancellationToken);
+
         return ResponseFactory.Deleted<Room>();
     }
 }

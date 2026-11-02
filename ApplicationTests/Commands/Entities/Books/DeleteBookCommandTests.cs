@@ -21,7 +21,7 @@ public class DeleteBookCommandTests
         await bookRepo.AddRangeAsync(books.AsEnumerable(), CancellationToken.None);
 
         var bookToDelete = books[5];
-        var deleteBookCommand = new DeleteBookCommand(unitOfWork);
+        var deleteBookCommand = new DeleteBookCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteBookRequest = new DeleteBookRequest { Id = bookToDelete.Id };
 
         // Act
@@ -54,7 +54,7 @@ public class DeleteBookCommandTests
                                    .AsEnumerable(), CancellationToken.None);
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var deleteBookCommand = new DeleteBookCommand(unitOfWork);
+        var deleteBookCommand = new DeleteBookCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteBookRequest = new DeleteBookRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -69,7 +69,7 @@ public class DeleteBookCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
-        var deleteBookCommand = new DeleteBookCommand(unitOfWork);
+        var deleteBookCommand = new DeleteBookCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteBookRequest = new DeleteBookRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -93,7 +93,7 @@ public class DeleteBookCommandTests
             .Generate();
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
 
-        var deleteBookCommand = new DeleteBookCommand(unitOfWork);
+        var deleteBookCommand = new DeleteBookCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteBookRequest = new DeleteBookRequest { Id = book.Id };
 
         // Act
@@ -125,7 +125,7 @@ public class DeleteBookCommandTests
         await roomRepo.AddRangeAsync([room], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([rb], CancellationToken.None);
 
-        var command = new DeleteBookCommand(unitOfWork);
+        var command = new DeleteBookCommand(unitOfWork, Mock.Of<IAuditService>());
         var request = new DeleteBookRequest { Id = book.Id };
 
         // Act & Assert

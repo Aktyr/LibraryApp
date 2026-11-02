@@ -2,7 +2,8 @@
 
 public class UpdateUserCommand(
     IUnitOfWork unitOfWork,
-    UserValidatorAsync userValidator) : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>, ICommand
+    UserValidatorAsync userValidator,
+    IAuditService auditService) : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateUserRequest request, CancellationToken cancellationToken)
     {
@@ -26,8 +27,19 @@ public class UpdateUserCommand(
         user.MiddleName = request.MiddleName;
         user.ContactInfo = request.ContactInfo;
 
-        await userRepo.UpdateAsync(user, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await userRepo.UpdateAsync(user, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await auditService.LogAsync(
+                AuditActionType.Update,
+                nameof(User),
+                user.Id.Value,
+                details: $"Обновлён профиль пользователя «{user.FullName}»",
+                ct: cancellationToken);
+        }, cancellationToken);
+
         return ResponseFactory.Updated<User>();
     }
 }

@@ -92,17 +92,24 @@ public class GetPopularBooksReportCommandTests
         var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
-        var books = Enumerable.Range(0, 5).Select(i => new Book { Id = new Id(Guid.NewGuid()), Title = $"Book {i}" }).ToList();
+        var books = Enumerable.Range(0, 5)
+            .Select(i => new Book { Id = new Id(Guid.NewGuid()), Title = $"Book {i}" })
+            .ToList();
         await bookRepo.AddRangeAsync(books, CancellationToken.None);
+
         var room = new Room { Id = new Id(Guid.NewGuid()) };
-        var rbs = books.Select(b => new RoomBook { Id = new Id(Guid.NewGuid()), Book = b, Room = room }).ToList();
+        var rbs = books
+            .Select(b => new RoomBook { Id = new Id(Guid.NewGuid()), Book = b, Room = room })
+            .ToList();
         await roomBookRepo.AddRangeAsync(rbs, CancellationToken.None);
+
         var user = new User { Id = new Id(Guid.NewGuid()), Email = "u@test.com", LastName = "User" };
 
-        // Даём каждой книге по одной выдаче, чтобы все были равны, но порядок не важен
         foreach (var rb in rbs)
         {
-            await userRoomBookRepo.AddRangeAsync(new[] { new UserRoomBook { Id = new Id(Guid.NewGuid()), User = user, RoomBook = rb, BorrowDate = DateTime.UtcNow } }, CancellationToken.None);
+            await userRoomBookRepo.AddRangeAsync(
+                [new UserRoomBook { Id = new Id(Guid.NewGuid()), User = user, RoomBook = rb, BorrowDate = DateTime.UtcNow }],
+                CancellationToken.None);
         }
 
         var command = new GetPopularBooksReportCommand(unitOfWork);

@@ -9,77 +9,48 @@ public class GetUserActivityReportCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = unitOfWork.GetRepository<User>();
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
-        var user1 = new User
-        {
-            Id = new Id(Guid.NewGuid()),
-            LastName = "Иванов",
-            FirstName = "Иван",
-            Email = "ivanov@test.com",
-            ContactInfo = "ivanov@test.com"
-        };
-        var user2 = new User
-        {
-            Id = new Id(Guid.NewGuid()),
-            LastName = "Петров",
-            FirstName = "Петр",
-            Email = "petrov@test.com",
-            ContactInfo = "petrov@test.com"
-        };
-        var user3 = new User
-        {
-            Id = new Id(Guid.NewGuid()),
-            LastName = "Сидоров",
-            FirstName = "Сидор",
-            Email = "sidorov@test.com",
-            ContactInfo = "sidorov@test.com"
-        };
-        await userRepo.AddRangeAsync(new[] { user1, user2, user3 }, CancellationToken.None);
+        var user1 = new User { Id = new Id(Guid.NewGuid()), LastName = "Иванов", FirstName = "Иван", Email = "ivanov@test.com", ContactInfo = "ivanov@test.com" };
+        var user2 = new User { Id = new Id(Guid.NewGuid()), LastName = "Петров", FirstName = "Петр", Email = "petrov@test.com", ContactInfo = "petrov@test.com" };
+        var user3 = new User { Id = new Id(Guid.NewGuid()), LastName = "Сидоров", FirstName = "Сидор", Email = "sidorov@test.com", ContactInfo = "sidorov@test.com" };
 
-        // Создаём бронирования
+        await userRepo.AddRangeAsync([user1, user2, user3], CancellationToken.None);
+
         var now = DateTime.UtcNow;
         var roomBook1 = new RoomBook { Id = new Id(Guid.NewGuid()), Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 1" }, Room = new Room { Id = new Id(Guid.NewGuid()) } };
         var roomBook2 = new RoomBook { Id = new Id(Guid.NewGuid()), Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 2" }, Room = new Room { Id = new Id(Guid.NewGuid()) } };
 
-        var borrows = new List<UserRoomBook>
+        user1.RoomBooks.Add(new UserRoomBook
         {
-            // user1: 2 выдачи, 1 активная, 1 штраф 10
-            new UserRoomBook
-            {
-                Id = new Id(Guid.NewGuid()),
-                User = user1,
-                RoomBook = roomBook1,
-                BorrowDate = now.AddDays(-10),
-                Deadline = now.AddDays(-5),
-                ReturnDate = now.AddDays(-4),
-                Penalty = 10
-            },
-            new UserRoomBook
-            {
-                Id = new Id(Guid.NewGuid()),
-                User = user1,
-                RoomBook = roomBook2,
-                BorrowDate = now.AddDays(-3),
-                Deadline = now.AddDays(3),
-                ReturnDate = null,
-                Penalty = null
-            },
-            // user2: 1 выдача, 0 активных, штраф 5
-            new UserRoomBook
-            {
-                Id = new Id(Guid.NewGuid()),
-                User = user2,
-                RoomBook = roomBook1,
-                BorrowDate = now.AddDays(-20),
-                Deadline = now.AddDays(-10),
-                ReturnDate = now.AddDays(-8),
-                Penalty = 5
-            },
-            // user3: 0 выдач (активность отсутствует)
-        };
-
-        await userRoomBookRepo.AddRangeAsync(borrows, CancellationToken.None);
+            Id = new Id(Guid.NewGuid()),
+            User = user1,
+            RoomBook = roomBook1,
+            BorrowDate = now.AddDays(-10),
+            Deadline = now.AddDays(-5),
+            ReturnDate = now.AddDays(-4),
+            Penalty = 10
+        });
+        user1.RoomBooks.Add(new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = user1,
+            RoomBook = roomBook2,
+            BorrowDate = now.AddDays(-3),
+            Deadline = now.AddDays(3),
+            ReturnDate = null,
+            Penalty = null
+        });
+        user2.RoomBooks.Add(new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = user2,
+            RoomBook = roomBook1,
+            BorrowDate = now.AddDays(-20),
+            Deadline = now.AddDays(-10),
+            ReturnDate = now.AddDays(-8),
+            Penalty = 5
+        });
+        // user3 — без выдач
 
         var command = new GetUserActivityReportCommand(unitOfWork);
         var request = new GetUserActivityRequest();
@@ -90,13 +61,13 @@ public class GetUserActivityReportCommandTests
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(response.Data, Has.Length.EqualTo(3)); // все пользователи
+            Assert.That(response.Data, Has.Length.EqualTo(3));
 
             var user1Data = response.Data.First(u => u.UserId == user1.Id.Value);
             Assert.That(user1Data.TotalBorrowedCount, Is.EqualTo(2));
             Assert.That(user1Data.CurrentBorrowedCount, Is.EqualTo(1));
             Assert.That(user1Data.TotalPenalty, Is.EqualTo(10));
-            Assert.That(user1Data.HasOverdue, Is.False); // у user1 нет активных просрочек (дедлайн ещё в будущем)
+            Assert.That(user1Data.HasOverdue, Is.False);
 
             var user2Data = response.Data.First(u => u.UserId == user2.Id.Value);
             Assert.That(user2Data.TotalBorrowedCount, Is.EqualTo(1));
@@ -118,17 +89,15 @@ public class GetUserActivityReportCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = unitOfWork.GetRepository<User>();
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
         var user1 = new User { Id = new Id(Guid.NewGuid()), LastName = "User1", FirstName = "A", Email = "u1@test.com", ContactInfo = "u1" };
         var user2 = new User { Id = new Id(Guid.NewGuid()), LastName = "User2", FirstName = "B", Email = "u2@test.com", ContactInfo = "u2" };
-        await userRepo.AddRangeAsync(new[] { user1, user2 }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user1, user2], CancellationToken.None);
 
         var now = DateTime.UtcNow;
         var roomBook = new RoomBook { Id = new Id(Guid.NewGuid()), Book = new Book { Id = new Id(Guid.NewGuid()) }, Room = new Room { Id = new Id(Guid.NewGuid()) } };
 
-        // user1 имеет активную просрочку (Deadline < now)
-        var borrow1 = new UserRoomBook
+        user1.RoomBooks.Add(new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             User = user1,
@@ -137,9 +106,8 @@ public class GetUserActivityReportCommandTests
             Deadline = now.AddDays(-5),
             ReturnDate = null,
             Penalty = null
-        };
-        // user2 имеет активную книгу без просрочки
-        var borrow2 = new UserRoomBook
+        });
+        user2.RoomBooks.Add(new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             User = user2,
@@ -148,9 +116,7 @@ public class GetUserActivityReportCommandTests
             Deadline = now.AddDays(5),
             ReturnDate = null,
             Penalty = null
-        };
-
-        await userRoomBookRepo.AddRangeAsync(new[] { borrow1, borrow2 }, CancellationToken.None);
+        });
 
         var command = new GetUserActivityReportCommand(unitOfWork);
         var request = new GetUserActivityRequest { OnlyWithOverdue = true };
@@ -173,17 +139,15 @@ public class GetUserActivityReportCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = unitOfWork.GetRepository<User>();
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
         var user1 = new User { Id = new Id(Guid.NewGuid()), LastName = "User1", FirstName = "A", Email = "u1@test.com", ContactInfo = "u1" };
         var user2 = new User { Id = new Id(Guid.NewGuid()), LastName = "User2", FirstName = "B", Email = "u2@test.com", ContactInfo = "u2" };
-        await userRepo.AddRangeAsync(new[] { user1, user2 }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user1, user2], CancellationToken.None);
 
         var now = DateTime.UtcNow;
         var roomBook = new RoomBook { Id = new Id(Guid.NewGuid()), Book = new Book { Id = new Id(Guid.NewGuid()) }, Room = new Room { Id = new Id(Guid.NewGuid()) } };
 
-        // user1 имеет активную книгу
-        var borrow1 = new UserRoomBook
+        user1.RoomBooks.Add(new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             User = user1,
@@ -191,9 +155,8 @@ public class GetUserActivityReportCommandTests
             BorrowDate = now.AddDays(-3),
             Deadline = now.AddDays(5),
             ReturnDate = null
-        };
-        // user2 вернул все книги
-        var borrow2 = new UserRoomBook
+        });
+        user2.RoomBooks.Add(new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             User = user2,
@@ -201,9 +164,7 @@ public class GetUserActivityReportCommandTests
             BorrowDate = now.AddDays(-10),
             Deadline = now.AddDays(-5),
             ReturnDate = now.AddDays(-5)
-        };
-
-        await userRoomBookRepo.AddRangeAsync(new[] { borrow1, borrow2 }, CancellationToken.None);
+        });
 
         var command = new GetUserActivityReportCommand(unitOfWork);
         var request = new GetUserActivityRequest { OnlyActive = true };
@@ -226,18 +187,16 @@ public class GetUserActivityReportCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = unitOfWork.GetRepository<User>();
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
         var user1 = new User { Id = new Id(Guid.NewGuid()), LastName = "User1", FirstName = "A", Email = "u1@test.com", ContactInfo = "u1" };
         var user2 = new User { Id = new Id(Guid.NewGuid()), LastName = "User2", FirstName = "B", Email = "u2@test.com", ContactInfo = "u2" };
         var user3 = new User { Id = new Id(Guid.NewGuid()), LastName = "User3", FirstName = "C", Email = "u3@test.com", ContactInfo = "u3" };
-        await userRepo.AddRangeAsync(new[] { user1, user2, user3 }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user1, user2, user3], CancellationToken.None);
 
         var now = DateTime.UtcNow;
         var roomBook = new RoomBook { Id = new Id(Guid.NewGuid()), Book = new Book { Id = new Id(Guid.NewGuid()) }, Room = new Room { Id = new Id(Guid.NewGuid()) } };
 
-        // user1: активная просрочка
-        var borrow1 = new UserRoomBook
+        user1.RoomBooks.Add(new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             User = user1,
@@ -245,9 +204,8 @@ public class GetUserActivityReportCommandTests
             BorrowDate = now.AddDays(-20),
             Deadline = now.AddDays(-5),
             ReturnDate = null
-        };
-        // user2: активная без просрочки
-        var borrow2 = new UserRoomBook
+        });
+        user2.RoomBooks.Add(new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             User = user2,
@@ -255,9 +213,8 @@ public class GetUserActivityReportCommandTests
             BorrowDate = now.AddDays(-3),
             Deadline = now.AddDays(5),
             ReturnDate = null
-        };
-        // user3: нет активных книг
-        var borrow3 = new UserRoomBook
+        });
+        user3.RoomBooks.Add(new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             User = user3,
@@ -265,9 +222,7 @@ public class GetUserActivityReportCommandTests
             BorrowDate = now.AddDays(-10),
             Deadline = now.AddDays(-5),
             ReturnDate = now.AddDays(-5)
-        };
-
-        await userRoomBookRepo.AddRangeAsync(new[] { borrow1, borrow2, borrow3 }, CancellationToken.None);
+        });
 
         var command = new GetUserActivityReportCommand(unitOfWork);
         var request = new GetUserActivityRequest { OnlyWithOverdue = true, OnlyActive = true };
@@ -289,16 +244,15 @@ public class GetUserActivityReportCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRepo = unitOfWork.GetRepository<User>();
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
         var user1 = new User { Id = new Id(Guid.NewGuid()), LastName = "User1", FirstName = "A", Email = "u1@test.com", ContactInfo = "u1" };
         var user2 = new User { Id = new Id(Guid.NewGuid()), LastName = "User2", FirstName = "B", Email = "u2@test.com", ContactInfo = "u2" };
-        await userRepo.AddRangeAsync(new[] { user1, user2 }, CancellationToken.None);
+        await userRepo.AddRangeAsync([user1, user2], CancellationToken.None);
 
         var now = DateTime.UtcNow;
         var roomBook = new RoomBook { Id = new Id(Guid.NewGuid()), Book = new Book { Id = new Id(Guid.NewGuid()) }, Room = new Room { Id = new Id(Guid.NewGuid()) } };
 
-        var borrow1 = new UserRoomBook
+        user1.RoomBooks.Add(new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             User = user1,
@@ -307,8 +261,8 @@ public class GetUserActivityReportCommandTests
             Deadline = now.AddDays(-1),
             ReturnDate = now,
             Penalty = 100
-        };
-        var borrow2 = new UserRoomBook
+        });
+        user2.RoomBooks.Add(new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             User = user2,
@@ -317,9 +271,7 @@ public class GetUserActivityReportCommandTests
             Deadline = now.AddDays(-2),
             ReturnDate = now,
             Penalty = 200
-        };
-
-        await userRoomBookRepo.AddRangeAsync(new[] { borrow1, borrow2 }, CancellationToken.None);
+        });
 
         var command = new GetUserActivityReportCommand(unitOfWork);
         var request = new GetUserActivityRequest();
@@ -331,7 +283,7 @@ public class GetUserActivityReportCommandTests
         Assert.Multiple(() =>
         {
             Assert.That(response.Data, Has.Length.EqualTo(2));
-            Assert.That(response.Data[0].UserId, Is.EqualTo(user2.Id.Value)); // штраф 200
+            Assert.That(response.Data[0].UserId, Is.EqualTo(user2.Id.Value));
             Assert.That(response.Data[0].TotalPenalty, Is.EqualTo(200));
             Assert.That(response.Data[1].UserId, Is.EqualTo(user1.Id.Value));
             Assert.That(response.Data[1].TotalPenalty, Is.EqualTo(100));

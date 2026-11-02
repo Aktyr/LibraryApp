@@ -26,7 +26,7 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.RoomBook, f => [])
                                    .Generate(10)
                                    .AsEnumerable());
-        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var createBookRequest = new CreateBookRequest
         {
             Title = title,
@@ -71,7 +71,7 @@ public class CreateBookCommandTests
                                    .RuleFor(x => x.RoomBook, f => [])
                                    .Generate(10)
                                    .AsEnumerable());
-        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var createBookRequest = new CreateBookRequest
         {
             Title = title,
@@ -101,7 +101,7 @@ public class CreateBookCommandTests
                                    .Generate(10)
                                    .AsEnumerable());
 
-        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var createBookRequest = new CreateBookRequest
         {
             Title = new string('A', 101),
@@ -131,7 +131,7 @@ public class CreateBookCommandTests
                                    .Generate(10)
                                    .AsEnumerable());
 
-        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var createBookCommand = new CreateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var createBookRequest = new CreateBookRequest
         {
             Title = "Valid Title",

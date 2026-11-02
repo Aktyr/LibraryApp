@@ -39,7 +39,7 @@ public class LoginCommandTests
 
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(unitOfWork, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
         var request = new LoginRequest
         {
             Email = email,
@@ -90,7 +90,7 @@ public class LoginCommandTests
 
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(unitOfWork, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
         var request = new LoginRequest
         {
             Email = email,
@@ -120,7 +120,7 @@ public class LoginCommandTests
         };
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(unitOfWork, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
         var request = new LoginRequest
         {
             Email = "nonexistent@example.com",
@@ -151,7 +151,7 @@ public class LoginCommandTests
         };
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(unitOfWork, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
         var request = new LoginRequest
         {
             Email = email,
@@ -181,7 +181,7 @@ public class LoginCommandTests
         };
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(unitOfWork, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
         var request = new LoginRequest
         {
             Email = null!,
@@ -216,7 +216,7 @@ public class LoginCommandTests
         };
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(unitOfWork, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
         var request = new LoginRequest
         {
             Email = email,
@@ -250,7 +250,7 @@ public class LoginCommandTests
         };
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(unitOfWork, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
         var request = new LoginRequest
         {
             Email = email,
@@ -286,7 +286,7 @@ public class LoginCommandTests
         };
         await userRepo.AddRangeAsync([deletedUser], CancellationToken.None);
 
-        var loginCommand = new LoginCommand(unitOfWork, JwtService);
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
         var request = new LoginRequest
         {
             Email = email,

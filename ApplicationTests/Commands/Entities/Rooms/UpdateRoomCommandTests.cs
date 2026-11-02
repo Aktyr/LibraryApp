@@ -20,7 +20,7 @@ public class UpdateRoomCommandTests
         await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
 
         var roomToUpdate = rooms[4];
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Mock.Of<IAuditService>(), NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomToUpdate.Id,
@@ -77,7 +77,7 @@ public class UpdateRoomCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Mock.Of<IAuditService>(), NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
@@ -97,7 +97,7 @@ public class UpdateRoomCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Mock.Of<IAuditService>(), NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = new Id(Guid.NewGuid()),
@@ -123,7 +123,7 @@ public class UpdateRoomCommandTests
             .Generate();
         await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Mock.Of<IAuditService>(), NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
@@ -159,7 +159,7 @@ public class UpdateRoomCommandTests
             .Generate();
         await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Mock.Of<IAuditService>(), NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
@@ -190,7 +190,7 @@ public class UpdateRoomCommandTests
         };
         await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
+        var updateRoomCommand = new UpdateRoomCommand(unitOfWork, CreateRoomValidator, new FakeRoomBookSynchronizer(), Mock.Of<IAuditService>(), NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomId,
@@ -245,7 +245,10 @@ public class UpdateRoomCommandTests
         var unitOfWork2 = new FakeUnitOfWork();
         var roomRepo2 = (FakeRepository<Room>)unitOfWork2.GetRepository<Room>();
         await roomRepo2.AddRangeAsync([room], CancellationToken.None);
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork2, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
+        var updateRoomCommand = new UpdateRoomCommand(
+            unitOfWork2, CreateRoomValidator, new FakeRoomBookSynchronizer(),
+            Mock.Of<IAuditService>(),
+            NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
@@ -298,7 +301,10 @@ public class UpdateRoomCommandTests
         var unitOfWork3 = new FakeUnitOfWork();
         var roomRepo3 = (FakeRepository<Room>)unitOfWork3.GetRepository<Room>();
         await roomRepo3.AddRangeAsync([room], CancellationToken.None);
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork3, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
+        var updateRoomCommand = new UpdateRoomCommand(
+            unitOfWork3, CreateRoomValidator, new FakeRoomBookSynchronizer(),
+            Mock.Of<IAuditService>(),
+            NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = roomId,
@@ -339,7 +345,10 @@ public class UpdateRoomCommandTests
         var unitOfWork4 = new FakeUnitOfWork();
         var roomRepo4 = (FakeRepository<Room>)unitOfWork4.GetRepository<Room>();
         await roomRepo4.AddRangeAsync([room], CancellationToken.None);
-        var updateRoomCommand = new UpdateRoomCommand(unitOfWork4, CreateRoomValidator, new FakeRoomBookSynchronizer(), Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdateRoomCommand>.Instance);
+        var updateRoomCommand = new UpdateRoomCommand(
+            unitOfWork4, CreateRoomValidator, new FakeRoomBookSynchronizer(),
+            Mock.Of<IAuditService>(),
+            NullLogger<UpdateRoomCommand>.Instance);
         var updateRoomRequest = new UpdateRoomRequest
         {
             Id = room.Id,
@@ -371,7 +380,7 @@ public class UpdateRoomCommandTests
         var room2 = new Room { Id = new Id(Guid.NewGuid()), Name = "ToUpdate" };
         await roomRepo.AddRangeAsync([room1, room2], CancellationToken.None);
 
-        var command = new UpdateRoomCommand(unitOfWork, new RoomValidatorAsync(), new FakeRoomBookSynchronizer(), NullLogger<UpdateRoomCommand>.Instance);
+        var command = new UpdateRoomCommand(unitOfWork, new RoomValidatorAsync(), new FakeRoomBookSynchronizer(), Mock.Of<IAuditService>(), NullLogger<UpdateRoomCommand>.Instance);
         var request = new UpdateRoomRequest { Id = room2.Id, Name = "Existing", RoomBookDTO = [] };
 
         // Act & Assert
@@ -391,7 +400,7 @@ public class UpdateRoomCommandTests
         syncMock.Setup(s => s.SynchronizeAsync(It.IsAny<Room>(), It.IsAny<ICollection<RoomBookDTO>>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Sync error"));
 
-        var command = new UpdateRoomCommand(unitOfWork, new RoomValidatorAsync(), syncMock.Object, NullLogger<UpdateRoomCommand>.Instance);
+        var command = new UpdateRoomCommand(unitOfWork, new RoomValidatorAsync(), syncMock.Object, Mock.Of<IAuditService>(), NullLogger<UpdateRoomCommand>.Instance);
         var request = new UpdateRoomRequest { Id = room.Id, Name = "NewName", RoomBookDTO = [] };
 
         // Act & Assert
@@ -422,7 +431,7 @@ public class UpdateRoomCommandTests
         var validator = new RoomValidatorAsync();
         var synchronizerMock = new Mock<IRoomBookSynchronizer>();
         var logger = NullLogger<UpdateRoomCommand>.Instance;
-        var command = new UpdateRoomCommand(unitOfWorkMock.Object, validator, synchronizerMock.Object, logger);
+        var command = new UpdateRoomCommand(unitOfWorkMock.Object, validator, synchronizerMock.Object, Mock.Of<IAuditService>(), logger);
         UpdateRoomRequest request = new() { Id = roomId, Name = "NewName", RoomBookDTO = [] };
 
         // Act & Assert

@@ -25,7 +25,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Mock.Of<IAuditService>());
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -69,7 +69,7 @@ public class UpdateUserCommandTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Mock.Of<IAuditService>());
         var updateUserRequest = new UpdateUserRequest
         {
             Id = nonExistingId,
@@ -103,7 +103,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Mock.Of<IAuditService>());
 
         // Пытаемся обновить с пустой фамилией (невалидные данные)
         var updateUserRequest = new UpdateUserRequest
@@ -139,7 +139,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Mock.Of<IAuditService>());
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -189,7 +189,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Mock.Of<IAuditService>());
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -233,7 +233,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Mock.Of<IAuditService>());
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -278,7 +278,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Mock.Of<IAuditService>());
 
         // Обновляем теми же данными
         var updateUserRequest = new UpdateUserRequest
@@ -320,7 +320,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Mock.Of<IAuditService>());
 
         // Слишком длинная фамилия (предполагая, что валидатор проверяет длину)
         var updateUserRequest = new UpdateUserRequest
@@ -367,7 +367,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser], CancellationToken.None);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Mock.Of<IAuditService>());
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,
@@ -411,7 +411,7 @@ public class UpdateUserCommandTests
 
         await userRepo.AddRangeAsync([existingUser]);
 
-        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator);
+        var updateUserCommand = new UpdateUserCommand(unitOfWork, CreateUserValidator, Mock.Of<IAuditService>());
         var updateUserRequest = new UpdateUserRequest
         {
             Id = userId,

@@ -1,6 +1,14 @@
-﻿    namespace LibApp.Application.Commands.Entities.Books;
+﻿namespace LibApp.Application.Commands.Entities.Books;
 
-public class UpdateBookCommand(IUnitOfWork unitOfWork, BookValidatorAsync bookValidator, IConverter<Book, BookDTO> bookConverter)
+/// <summary>
+/// Обновляет реквизиты книги. Валидация выполняется на временной сущности,
+/// чтобы не менять tracked-объект до прохождения проверок.
+/// </summary>
+public class UpdateBookCommand(
+    IUnitOfWork unitOfWork,
+    BookValidatorAsync bookValidator,
+    IConverter<Book, BookDTO> bookConverter,
+    IAuditService auditService)
     : ICreateOrUpdateCommand<UpdateBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(UpdateBookRequest request, CancellationToken cancellationToken)
@@ -17,7 +25,7 @@ public class UpdateBookCommand(IUnitOfWork unitOfWork, BookValidatorAsync bookVa
                                   request.Year,
                                   request.Publisher,
                                   request.Genre, []);
-        var bookForValidation = bookConverter.ToEntity(bookDTO);   
+        var bookForValidation = bookConverter.ToEntity(bookDTO);
 
         var validationResult = await bookValidator.ValidateAsync(bookForValidation, cancellationToken);
 
@@ -32,8 +40,19 @@ public class UpdateBookCommand(IUnitOfWork unitOfWork, BookValidatorAsync bookVa
         book.Genre = request.Genre;
         //book.RoomBook = request.RoomBook;
 
-        await bookRepo.UpdateAsync(book, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await bookRepo.UpdateAsync(book, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await auditService.LogAsync(
+                AuditActionType.Update,
+                nameof(Book),
+                book.Id.Value,
+                details: $"Обновлена книга «{book.Title}»",
+                ct: cancellationToken);
+        }, cancellationToken);
+
         return ResponseFactory.Updated<Book>();
     }
 }

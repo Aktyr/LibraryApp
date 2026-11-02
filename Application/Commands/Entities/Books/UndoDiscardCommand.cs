@@ -1,6 +1,12 @@
 ﻿namespace LibApp.Application.Commands.Entities.Books;
 
-public class UndoDiscardCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand<UndoDiscardRequest, BasicCreateDeleteResponse>, ICommand
+/// <summary>
+/// Отменяет списание книги: возвращает экземпляры в фонд и удаляет запись о списании.
+/// Если книга была помечена как «списанная» (IsDiscarded), флаг снимается.
+/// </summary>
+public class UndoDiscardCommand(
+    IUnitOfWork unitOfWork,
+    IAuditService auditService) : ICreateOrUpdateCommand<UndoDiscardRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(UndoDiscardRequest request, CancellationToken ct)
     {
@@ -17,10 +23,13 @@ public class UndoDiscardCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
         if (roomBook == null)
             throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнате"] };
 
-        await unitOfWork.BeginTransactionAsync(ct);
-        try
+        var amount = discarded.Amount;
+        var bookTitle = discarded.Book.Title;
+        var bookId = discarded.Book.Id.Value;
+
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            roomBook.BookCount += discarded.Amount;
+            roomBook.BookCount += amount;
             await roomBookRepo.UpdateAsync(roomBook, ct);
             await discardedRepo.RemoveAsync(discarded, ct);
 
@@ -32,14 +41,15 @@ public class UndoDiscardCommand(IUnitOfWork unitOfWork) : ICreateOrUpdateCommand
             }
 
             await unitOfWork.SaveChangesAsync(ct);
-            await unitOfWork.CommitTransactionAsync(ct);
-        }
-        catch
-        {
-            await unitOfWork.RollbackTransactionAsync(ct);
-            throw;
-        }
 
-        return ResponseFactory.Success($"Отменено списание {discarded.Amount} экз. книги '{discarded.Book.Title}'. Причина: {request.UndoReason}");
+            await auditService.LogAsync(
+                AuditActionType.Restore,
+                nameof(DiscardedBook),
+                discardId.Value,
+                details: $"Отменено списание {amount} экз. книги «{bookTitle}». Причина: {request.UndoReason}",
+                ct: ct);
+        }, ct);
+
+        return ResponseFactory.Success($"Отменено списание {amount} экз. книги '{bookTitle}'. Причина: {request.UndoReason}");
     }
 }

@@ -14,6 +14,7 @@ public class UserProvisioningService(
         string contactInfo,
         UserRole role,
         bool emailConfirmed = true,
+        bool isSelfRegistration = false,
         CancellationToken ct = default)
     {
         var appUser = new ApplicationUser
@@ -39,7 +40,9 @@ public class UserProvisioningService(
         {
             var libUser = await userService.CreateUserAsync(
                 email, password, lastName, firstName, middleName, contactInfo,
-                role, ct);
+                role,
+                isSelfRegistration,
+                ct);
 
             appUser.LibraryUserId = libUser.Id.Value;
 

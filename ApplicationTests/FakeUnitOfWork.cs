@@ -37,6 +37,12 @@ public class FakeUnitOfWork : IUnitOfWork
     {
         return Task.CompletedTask;
     }
+    public async Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken = default)
+    {
+        // В фейке транзакция не нужна: просто выполняем действие.
+        // Исключения пробрасываются наружу так же, как в реальной реализации.
+        await action();
+    }
 
     public void Dispose()
     {

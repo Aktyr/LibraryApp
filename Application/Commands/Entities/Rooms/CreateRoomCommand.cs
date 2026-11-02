@@ -3,7 +3,8 @@
 public class CreateRoomCommand(
     IUnitOfWork unitOfWork,
     RoomValidatorAsync roomValidator,
-    IConverter<Room, RoomDTO> roomConverter) : ICreateOrUpdateCommand<CreateRoomRequest, BasicCreateDeleteResponse>, ICommand
+    IConverter<Room, RoomDTO> roomConverter,
+    IAuditService auditService) : ICreateOrUpdateCommand<CreateRoomRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(CreateRoomRequest request, CancellationToken cancellationToken)
     {
@@ -24,9 +25,19 @@ public class CreateRoomCommand(
         if (await roomRepo.AnyAsync(r => r.Name == request.Name, cancellationToken))
             throw new RoomExistsException(request.Name);
 
-        // Добавление
-        await roomRepo.AddAsync(room, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await roomRepo.AddAsync(room, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await auditService.LogAsync(
+                AuditActionType.Create,
+                nameof(Room),
+                room.Id.Value,
+                details: $"Создана комната «{room.Name}»",
+                ct: cancellationToken);
+        }, cancellationToken);
+
         return ResponseFactory.Created<Room>();
     }
 }

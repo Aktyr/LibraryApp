@@ -1,8 +1,13 @@
 ﻿namespace LibApp.Application.Commands.Entities.Books;
 
+/// <summary>
+/// Списывает экземпляры книги из фонда конкретной комнаты.
+/// Уменьшает BookCount, создаёт запись DiscardedBook и фиксирует действие в аудите.
+/// </summary>
 public class DiscardBookCommand(
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUser)
+    ICurrentUserService currentUser,
+    IAuditService auditService)
     : ICreateOrUpdateCommand<DiscardBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(DiscardBookRequest request, CancellationToken ct)
@@ -19,7 +24,8 @@ public class DiscardBookCommand(
         if (request.RoomId.HasValue)
         {
             var roomId = new Id(request.RoomId.Value);
-            roomBook = await roomBookRepo.FirstOrDefaultAsync(rb => rb.Book.Id == bookId && rb.Room.Id == roomId, ct);
+            roomBook = await roomBookRepo.FirstOrDefaultAsync(
+                rb => rb.Book.Id == bookId && rb.Room.Id == roomId, ct);
             if (roomBook == null)
                 throw new LibValidationException { ExceptionDetails = ["Книга не найдена в указанной комнате"] };
         }
@@ -30,7 +36,6 @@ public class DiscardBookCommand(
                 throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнатах"] };
         }
 
-        // ВАЛИДАЦИЯ ЧЕРЕЗ ПОЛИТИКУ
         var errors = DiscardPolicy.ValidateDiscard(
             request.Amount,
             roomBook.BookCount,
@@ -59,16 +64,16 @@ public class DiscardBookCommand(
             CompensationAmount = request.CompensationAmount
         };
 
-        // Уменьшаем количество экземпляров
-        await unitOfWork.BeginTransactionAsync(ct);
-        try
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await discardedRepo.AddAsync(discarded, ct);
+
             roomBook.BookCount -= request.Amount;
             await roomBookRepo.UpdateAsync(roomBook, ct);
             await unitOfWork.SaveChangesAsync(ct);
 
-            // Если после списания не осталось ни одного экземпляра ни в одной комнате — помечаем книгу списанной
+            // Если это был последний экземпляр во всех комнатах — помечаем книгу списанной.
+            // Проверка идёт после SaveChanges, чтобы видеть актуальный BookCount в БД.
             var anyRemaining = await roomBookRepo.AnyAsync(
                 rb => rb.Book.Id == bookId && rb.BookCount > 0, ct);
 
@@ -79,16 +84,15 @@ public class DiscardBookCommand(
                 await unitOfWork.SaveChangesAsync(ct);
             }
 
-            await unitOfWork.CommitTransactionAsync(ct);
-        }
-        catch
-        {
-            await unitOfWork.RollbackTransactionAsync(ct);
-            throw;
-        }
+            await auditService.LogAsync(
+                AuditActionType.Update,
+                nameof(Book),
+                book.Id.Value,
+                details: $"Списано {request.Amount} экз. «{book.Title}». Причина: {request.DiscardReason.DisplayName()}",
+                ct: ct);
+        }, ct);
 
-        return ResponseFactory.Success($"Списано {request.Amount} экз. книги '{book.Title}'. Причина: {request.DiscardReason.DisplayName()}");
+        return ResponseFactory.Success(
+            $"Списано {request.Amount} экз. книги '{book.Title}'. Причина: {request.DiscardReason.DisplayName()}");
     }
-
-
 }

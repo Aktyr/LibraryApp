@@ -66,15 +66,16 @@ public static class UsersProxyEndpoints
         try
         {
             await provisioning.CreateAsync(
-                request.Email,
-                request.Password,
-                request.LastName,
-                request.FirstName,
-                request.MiddleName ?? "",
-                request.ContactInfo,
-                targetRole,
+                email: request.Email,
+                password: request.Password,
+                lastName: request.LastName,
+                firstName: request.FirstName,
+                middleName: request.MiddleName ?? "",
+                contactInfo: request.ContactInfo,
+                role: targetRole,
                 emailConfirmed: true,
-                ct);
+                isSelfRegistration: false,
+                ct: ct);
 
             return Results.Ok(new BasicCreateDeleteResponse("Ok", "User created successfully."));
         }

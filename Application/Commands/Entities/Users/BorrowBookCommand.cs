@@ -2,7 +2,8 @@
 
 public class BorrowBookCommand(
     IUnitOfWork unitOfWork,
-    BorrowingValidatorAsync validator) : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>, ICommand
+    BorrowingValidatorAsync validator,
+    IAuditService auditService) : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(BorrowBookRequest request, CancellationToken cancellationToken)
     {
@@ -41,17 +42,19 @@ public class BorrowBookCommand(
         roomBook.BorrowedCount++;
         user.RoomBooks.Add(userRoomBook);
 
-        await unitOfWork.BeginTransactionAsync(cancellationToken);
-        try
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await unitOfWork.SaveChangesAsync(cancellationToken);
-            await unitOfWork.CommitTransactionAsync(cancellationToken);
-        }
-        catch
-        {
-            await unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
+
+            await auditService.LogAsync(
+                AuditActionType.Borrow,
+                nameof(UserRoomBook),
+                userRoomBook.Id.Value,
+                details: $"Выдана книга «{roomBook.Book.Title}» пользователю «{user.FullName}». Срок: {userRoomBook.Deadline:d}",
+                ct: cancellationToken);
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }, cancellationToken);
 
         return ResponseFactory.Success($"Книга выдана. Срок возврата: {userRoomBook.Deadline:d}");
     }

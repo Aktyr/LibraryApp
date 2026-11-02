@@ -1,6 +1,9 @@
 ﻿namespace LibApp.Application.Commands.Auth;
 
-public class LoginCommand(IUnitOfWork unitOfWork, JwtService jwtService) : IGetQuery<LoginRequest, LoginResponse>, ICommand
+public class LoginCommand(
+    IUnitOfWork unitOfWork,
+    JwtService jwtService,
+    IAuditService auditService) : IGetQuery<LoginRequest, LoginResponse>, ICommand
 {
     public async Task<LoginResponse> Execute(LoginRequest request, CancellationToken cancellationToken)
     {
@@ -17,6 +20,19 @@ public class LoginCommand(IUnitOfWork unitOfWork, JwtService jwtService) : IGetQ
 
         // Генерация токена
         var token = jwtService.GenerateToken(user);
+
+        // Логин не меняет состояние пользователя, поэтому транзакция не нужна —
+        // достаточно одной вставки в журнал и одного SaveChanges.
+        // userId/userName передаём явно: ICurrentUserService ещё не знает о пользователе.
+        await auditService.LogAsync(
+            AuditActionType.Login,
+            nameof(User),
+            user.Id.Value,
+            details: $"Вход в систему: {user.Email}",
+            userId: user.Id,
+            userName: user.FullName,
+            ct: cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new LoginResponse(
             Status: "Ok",

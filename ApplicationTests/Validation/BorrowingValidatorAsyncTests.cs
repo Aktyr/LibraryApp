@@ -477,14 +477,15 @@ public class BorrowingValidatorAsyncTests
             LastName = "Test",
             FirstName = "User",
             ContactInfo = "test@test.com",
-            RoomBooks = []
+            RoomBooks = [],
+            SubscriptionStatus = SubscriptionStatus.Active
         };
 
         var roomBook = new RoomBook
         {
             Id = new Id(Guid.NewGuid()),
             BookCount = 5,
-            BorrowedCount = 2, // AvailableCount = 3 > 0
+            BorrowedCount = 2,
             Book = new Book { Id = new Id(Guid.NewGuid()) },
             Room = new Room { Id = new Id(Guid.NewGuid()) }
         };
@@ -492,9 +493,9 @@ public class BorrowingValidatorAsyncTests
         // Act
         var result = await validator.ValidateBorrowAsync(user, roomBook, 14);
 
+        // Assert
         Assert.Multiple(() =>
         {
-            // Assert
             Assert.That(result.IsValid, Is.True);
             Assert.That(result.Errors, Is.Empty);
         });

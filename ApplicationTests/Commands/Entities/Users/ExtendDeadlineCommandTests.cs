@@ -16,7 +16,7 @@ public class ExtendDeadlineCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
-        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator());
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
         var request = new ExtendDeadlineRequest { UserRoomBookId = Guid.NewGuid(), ExtraDays = 7 };
 
         // Act & Assert
@@ -41,7 +41,7 @@ public class ExtendDeadlineCommandTests
         };
         await userRoomBookRepo.AddRangeAsync([userRoomBook]);
 
-        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(settings));
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(settings), Mock.Of<IAuditService>());
 
         // Пытаемся продлить на 20 дней (больше максимума в 14 дней)
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 20 };
@@ -69,11 +69,17 @@ public class ExtendDeadlineCommandTests
             Id = new Id(Guid.NewGuid()),
             BorrowDate = DateTime.Now.AddDays(-5),
             Deadline = initialDeadline,
-            ReturnDate = null
+            ReturnDate = null,
+            RoomBook = new RoomBook
+            {
+                Id = new Id(Guid.NewGuid()),
+                Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Test Book" },
+                Room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" }
+            }
         };
-        await userRoomBookRepo.AddRangeAsync([userRoomBook]);
+        await userRoomBookRepo.AddRangeAsync([userRoomBook], CancellationToken.None);
 
-        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator());
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 7 };
 
         // Act
@@ -107,7 +113,7 @@ public class ExtendDeadlineCommandTests
         };
         await userRoomBookRepo.AddRangeAsync([userRoomBook]);
 
-        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(settings));
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(settings), Mock.Of<IAuditService>());
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 0 };
 
         // Act & Assert
@@ -132,11 +138,17 @@ public class ExtendDeadlineCommandTests
             Id = new Id(Guid.NewGuid()),
             BorrowDate = initialDeadline.AddDays(-14),
             Deadline = initialDeadline,
-            ReturnDate = null
+            ReturnDate = null,
+            RoomBook = new RoomBook
+            {
+                Id = new Id(Guid.NewGuid()),
+                Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Test Book" },
+                Room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" }
+            }
         };
-        await userRoomBookRepo.AddRangeAsync([userRoomBook]);
+        await userRoomBookRepo.AddRangeAsync([userRoomBook], CancellationToken.None);
 
-        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator());
+        var command = new ExtendDeadlineCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
         var request = new ExtendDeadlineRequest { UserRoomBookId = userRoomBook.Id.Value, ExtraDays = 7 };
 
         // Act

@@ -10,5 +10,6 @@ public interface IUserService
         string middleName,
         string contactInfo,
         UserRole role,
+        bool isSelfRegistration = false,
         CancellationToken cancellationToken = default);
 }

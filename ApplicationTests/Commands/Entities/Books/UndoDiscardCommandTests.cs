@@ -43,7 +43,7 @@ public class UndoDiscardCommandTests
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
         await discardedRepo.AddRangeAsync([discarded], CancellationToken.None);
 
-        var command = new UndoDiscardCommand(unitOfWork);
+        var command = new UndoDiscardCommand(unitOfWork, Mock.Of<IAuditService>());
         var request = new UndoDiscardRequest
         {
             DiscardId = discarded.Id.Value,
@@ -73,7 +73,7 @@ public class UndoDiscardCommandTests
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
-        var command = new UndoDiscardCommand(unitOfWork);
+        var command = new UndoDiscardCommand(unitOfWork, Mock.Of<IAuditService>());
         var request = new UndoDiscardRequest
         {
             DiscardId = Guid.NewGuid(),
@@ -118,7 +118,7 @@ public class UndoDiscardCommandTests
         await discardedRepo.AddRangeAsync([discarded], CancellationToken.None);
         // RoomBook не добавляем
 
-        var command = new UndoDiscardCommand(unitOfWork);
+        var command = new UndoDiscardCommand(unitOfWork, Mock.Of<IAuditService>());
         var request = new UndoDiscardRequest
         {
             DiscardId = discarded.Id.Value,
@@ -153,7 +153,7 @@ public class UndoDiscardCommandTests
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
         await discardedRepo.AddRangeAsync([discarded], CancellationToken.None);
 
-        var command = new UndoDiscardCommand(unitOfWork);
+        var command = new UndoDiscardCommand(unitOfWork, Mock.Of<IAuditService>());
         var request = new UndoDiscardRequest { DiscardId = discarded.Id.Value, UndoReason = "Test undo reason", ApprovedBy = "Admin" };
 
         // Act
@@ -191,7 +191,7 @@ public class UndoDiscardCommandTests
         unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
                       .ThrowsAsync(new Exception("DB error"));
 
-        var command = new UndoDiscardCommand(unitOfWorkMock.Object);
+        var command = new UndoDiscardCommand(unitOfWorkMock.Object, Mock.Of<IAuditService>());
         var request = new UndoDiscardRequest { DiscardId = discardedId, UndoReason = "Test" };
 
         // Act & Assert

@@ -36,7 +36,7 @@ public class DiscardBookCommandTests
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DiscardBookRequest
         {
             BookId = bookId.Value,
@@ -72,10 +72,29 @@ public class DiscardBookCommandTests
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
-        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
+        var bookRepo = unitOfWork.GetRepository<Book>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+
+        var bookId = new Id(Guid.NewGuid());
+        var roomId = new Id(Guid.NewGuid());
+        var book = new Book { Id = bookId, Title = "Test Book", RoomBook = [] };
+        var roomBook = new RoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            Book = book,
+            Room = new Room { Id = roomId, Name = "Room" },
+            BookCount = 5,
+            BorrowedCount = 0
+        };
+        book.RoomBook.Add(roomBook);
+
+        await bookRepo.AddRangeAsync([book], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
+
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DiscardBookRequest
         {
-            BookId = Guid.NewGuid(),
+            BookId = bookId.Value,
             Amount = 0,
             DiscardReason = DiscardReason.Wear
         };
@@ -94,7 +113,7 @@ public class DiscardBookCommandTests
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
-        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DiscardBookRequest
         {
             BookId = Guid.NewGuid(),
@@ -132,7 +151,7 @@ public class DiscardBookCommandTests
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DiscardBookRequest
         {
             BookId = bookId.Value,
@@ -174,7 +193,7 @@ public class DiscardBookCommandTests
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DiscardBookRequest
         {
             BookId = bookId.Value,
@@ -216,7 +235,7 @@ public class DiscardBookCommandTests
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DiscardBookRequest
         {
             BookId = bookId.Value,
@@ -251,7 +270,7 @@ public class DiscardBookCommandTests
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService());
+        var command = new DiscardBookCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DiscardBookRequest { BookId = bookId.Value, Amount = 3, DiscardReason = DiscardReason.Loss, ApprovedBy = "Admin", CompensationAmount = 150.50m };
 
         // Act
@@ -267,35 +286,58 @@ public class DiscardBookCommandTests
     {
         // Arrange
         var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var discardedRepoMock = new Mock<IRepository<DiscardedBook>>();
-        var roomBookRepoMock = new Mock<IRepository<RoomBook>>();
+        var roomRepoMock = new Mock<IRepository<Room>>();
 
-        unitOfWorkMock.Setup(u => u.GetRepository<DiscardedBook>()).Returns(discardedRepoMock.Object);
-        unitOfWorkMock.Setup(u => u.GetRepository<RoomBook>()).Returns(roomBookRepoMock.Object);
+        unitOfWorkMock.Setup(u => u.GetRepository<Room>()).Returns(roomRepoMock.Object);
 
-        var discardedId = Guid.NewGuid();
-        var discarded = new DiscardedBook
-        {
-            Id = new Id(discardedId),
-            Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book" },
-            RoomId = new Id(Guid.NewGuid()),
-            Amount = 3
-        };
-        var roomBook = new RoomBook { Id = new Id(Guid.NewGuid()), Book = discarded.Book, BookCount = 10 };
+        unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<Task>, CancellationToken>(async (action, ct) =>
+            {
+                await unitOfWorkMock.Object.BeginTransactionAsync(ct);
+                try
+                {
+                    await action();
+                    await unitOfWorkMock.Object.CommitTransactionAsync(ct);
+                }
+                catch
+                {
+                    await unitOfWorkMock.Object.RollbackTransactionAsync(ct);
+                    throw;
+                }
+            });
 
-        discardedRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<DiscardedBook, bool>>>(), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(discarded);
-        roomBookRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<RoomBook, bool>>>(), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(roomBook);
+        unitOfWorkMock.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        unitOfWorkMock.Setup(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        unitOfWorkMock.Setup(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var roomId = new Id(Guid.NewGuid());
+        var room = new Room { Id = roomId, Name = "Room", RoomBooks = [] };
+
+        roomRepoMock
+            .Setup(r => r.GetAsync(
+                It.IsAny<Expression<Func<Room, bool>>>(),
+                It.IsAny<Func<IQueryable<Room>, IOrderedQueryable<Room>>?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<string[]>()))
+            .ReturnsAsync([room]);
 
         unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
                       .ThrowsAsync(new Exception("DB error"));
 
-        var command = new UndoDiscardCommand(unitOfWorkMock.Object);
-        var request = new UndoDiscardRequest { DiscardId = discardedId, UndoReason = "Test" };
+        var command = new UpdateRoomCommand(
+            unitOfWorkMock.Object,
+            new RoomValidatorAsync(),
+            Mock.Of<IRoomBookSynchronizer>(),
+            Mock.Of<IAuditService>(),
+            NullLogger<UpdateRoomCommand>.Instance);
+
+        var request = new UpdateRoomRequest { Id = roomId, Name = "NewName", RoomBookDTO = [] };
 
         // Act & Assert
-        Assert.Multiple(async () =>
+        await Assert.MultipleAsync(async () =>
         {
             await Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
 

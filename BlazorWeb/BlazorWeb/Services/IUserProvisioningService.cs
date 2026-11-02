@@ -25,5 +25,6 @@ public interface IUserProvisioningService
         string contactInfo,
         UserRole role,
         bool emailConfirmed = true,
+        bool isSelfRegistration = false,
         CancellationToken ct = default);
 }

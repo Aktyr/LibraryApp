@@ -30,7 +30,7 @@ public class BorrowBookCommandTests
         };
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
         var request = new BorrowBookRequest
         {
             UserId = Guid.NewGuid(),
@@ -62,7 +62,7 @@ public class BorrowBookCommandTests
         };
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -104,7 +104,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings), Mock.Of<IAuditService>());
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -146,7 +146,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings), Mock.Of<IAuditService>());
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -205,7 +205,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings));
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings), Mock.Of<IAuditService>());
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -256,7 +256,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -298,7 +298,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -328,7 +328,8 @@ public class BorrowBookCommandTests
             LastName = "Иванов",
             FirstName = "Иван",
             ContactInfo = "ivanov@example.com",
-            RoomBooks = []
+            RoomBooks = [],
+            SubscriptionStatus = SubscriptionStatus.Active
         };
 
         var roomBook = new RoomBook
@@ -343,7 +344,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
         var request = new BorrowBookRequest
         {
             UserId = userId.Value,
@@ -360,7 +361,6 @@ public class BorrowBookCommandTests
             Assert.That(response.Status, Is.EqualTo("Ok"));
             Assert.That(response.Message, Does.Contain("Книга выдана"));
 
-            // Проверяем, что UserRoomBook была создана
             var updatedUser = ((FakeRepository<User>)userRepo).Entities.First(u => u.Id.Value == userId.Value);
             Assert.That(updatedUser.RoomBooks, Has.Count.EqualTo(1));
 
@@ -371,7 +371,6 @@ public class BorrowBookCommandTests
             Assert.That(userRoomBook.Deadline, Is.EqualTo(DateTime.UtcNow.AddDays(14)).Within(TimeSpan.FromSeconds(5)));
             Assert.That(userRoomBook.IsReturned, Is.False);
 
-            // Проверяем, что счетчик увеличился
             Assert.That(roomBook.BorrowedCount, Is.EqualTo(3));
         });
     }
@@ -390,14 +389,18 @@ public class BorrowBookCommandTests
             LastName = "Иванов",
             FirstName = "Иван",
             ContactInfo = "ivanov@example.com",
+            SubscriptionStatus = SubscriptionStatus.Active,
             RoomBooks =
-        [
-            new() {
+            [
+                new()
+            {
                 Id = new Id(Guid.NewGuid()),
                 BorrowDate = DateTime.Now.AddDays(-5),
-                Deadline = DateTime.Now.AddDays(10)
+                Deadline = DateTime.Now.AddDays(10),
+                User = null!,
+                RoomBook = null!
             }
-        ]
+            ]
         };
 
         var user2 = new User
@@ -406,6 +409,7 @@ public class BorrowBookCommandTests
             LastName = "Петров",
             FirstName = "Петр",
             ContactInfo = "petrov@example.com",
+            SubscriptionStatus = SubscriptionStatus.Active,
             RoomBooks = []
         };
 
@@ -421,7 +425,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user1, user2], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
         var request = new BorrowBookRequest
         {
             UserId = user2.Id.Value,
@@ -437,11 +441,9 @@ public class BorrowBookCommandTests
         {
             Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            // user1 не изменился
             var dbUser1 = (await userRepo.GetAsync(u => u.Id.Value == user1.Id.Value, CancellationToken.None)).First();
             Assert.That(dbUser1.RoomBooks, Has.Count.EqualTo(1));
 
-            // user2 получил книгу
             var dbUser2 = (await userRepo.GetAsync(u => u.Id.Value == user2.Id.Value, CancellationToken.None)).First();
             Assert.That(dbUser2.RoomBooks, Has.Count.EqualTo(1));
         });
@@ -466,7 +468,7 @@ public class BorrowBookCommandTests
         var borrow = new UserRoomBook { Id = new Id(Guid.NewGuid()), User = user, RoomBook = roomBook, BorrowDate = DateTime.UtcNow, ReturnDate = null };
         await userRoomBookRepo.AddRangeAsync([borrow], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator());
+        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
         var request = new BorrowBookRequest { UserId = user.Id.Value, RoomBookId = roomBook.Id.Value, BorrowDays = 7 };
 
         // Act & Assert
@@ -484,34 +486,72 @@ public class BorrowBookCommandTests
     {
         // Arrange
         var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var userRoomBookRepoMock = new Mock<IRepository<UserRoomBook>>();
+        var userRepoMock = new Mock<IRepository<User>>();
         var roomBookRepoMock = new Mock<IRepository<RoomBook>>();
+        var userRoomBookRepoMock = new Mock<IRepository<UserRoomBook>>();
 
-        unitOfWorkMock.Setup(u => u.GetRepository<UserRoomBook>()).Returns(userRoomBookRepoMock.Object);
+        unitOfWorkMock.Setup(u => u.GetRepository<User>()).Returns(userRepoMock.Object);
         unitOfWorkMock.Setup(u => u.GetRepository<RoomBook>()).Returns(roomBookRepoMock.Object);
+        unitOfWorkMock.Setup(u => u.GetRepository<UserRoomBook>()).Returns(userRoomBookRepoMock.Object);
 
-        var userRoomBook = new UserRoomBook
+        unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<Task>, CancellationToken>(async (action, ct) =>
+            {
+                await unitOfWorkMock.Object.BeginTransactionAsync(ct);
+                try
+                {
+                    await action();
+                    await unitOfWorkMock.Object.CommitTransactionAsync(ct);
+                }
+                catch
+                {
+                    await unitOfWorkMock.Object.RollbackTransactionAsync(ct);
+                    throw;
+                }
+            });
+
+        unitOfWorkMock.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        unitOfWorkMock.Setup(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        unitOfWorkMock.Setup(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var userId = new Id(Guid.NewGuid());
+        var roomBookId = new Id(Guid.NewGuid());
+        var user = new User
         {
-            Id = new Id(Guid.NewGuid()),
-            User = new User { Id = new Id(Guid.NewGuid()) },
-            RoomBook = new RoomBook { Id = new Id(Guid.NewGuid()), BorrowedCount = 1 }
+            Id = userId,
+            LastName = "Иванов",
+            FirstName = "Иван",
+            ContactInfo = "info@test.com",
+            SubscriptionStatus = SubscriptionStatus.Active,
+            RoomBooks = []
         };
-        userRoomBookRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<UserRoomBook, bool>>>(), It.IsAny<CancellationToken>()))
-                            .ReturnsAsync(userRoomBook);
+        var roomBook = new RoomBook
+        {
+            Id = roomBookId,
+            BookCount = 5,
+            BorrowedCount = 0,
+            Book = new Book { Id = new Id(Guid.NewGuid()), Title = "T" },
+            Room = new Room { Id = new Id(Guid.NewGuid()), Name = "R" }
+        };
+
+        userRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(user);
+        roomBookRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<RoomBook, bool>>>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(roomBook);
+        userRoomBookRepoMock.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<UserRoomBook, bool>>>(), It.IsAny<CancellationToken>()))
+                            .ReturnsAsync(false);
 
         unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
                       .ThrowsAsync(new Exception("DB error"));
 
-        var settingsMock = new Mock<IOptionsSnapshot<BorrowingSettings>>();
-        settingsMock.Setup(s => s.Value).Returns(new BorrowingSettings());
-        var validator = new BorrowingValidatorAsync(settingsMock.Object);
-
-        var penaltyService = new PenaltyCalculatorService(Mock.Of<IOptionsSnapshot<PenaltySettings>>());
-        var notificationMock = new Mock<INotificationService>();
-        var command = new ReturnBookCommand(
-            unitOfWorkMock.Object, validator, penaltyService, notificationMock.Object,
-            new FakeCurrentUserService());
-        var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
+        var command = new BorrowBookCommand(unitOfWorkMock.Object, CreateValidator(), Mock.Of<IAuditService>());
+        var request = new BorrowBookRequest
+        {
+            UserId = userId.Value,
+            RoomBookId = roomBookId.Value,
+            BorrowDays = 14
+        };
 
         // Act & Assert
         await Assert.MultipleAsync(async () =>

@@ -1,6 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
-public class DeleteUserCommand(IUnitOfWork unitOfWork)
+public class DeleteUserCommand(IUnitOfWork unitOfWork, IAuditService auditService)
     : IDeleteCommand<DeleteUserRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(DeleteUserRequest request, CancellationToken cancellationToken)
@@ -30,11 +30,25 @@ public class DeleteUserCommand(IUnitOfWork unitOfWork)
             };
         }
 
+        var deletedFullName = user.FullName;
+        var deletedId = user.Id.Value;
+
         // Soft-delete: не удаляем физически, чтобы сохранить историю
         user.IsDeleted = true;
         user.DeletedAt = DateTime.UtcNow;
-        await userRepo.UpdateAsync(user, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await userRepo.UpdateAsync(user, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await auditService.LogAsync(
+                AuditActionType.Delete,
+                nameof(User),
+                deletedId,
+                details: $"Деактивирован пользователь «{deletedFullName}»",
+                ct: cancellationToken);
+        }, cancellationToken);
 
         return ResponseFactory.Success("Пользователь деактивирован");
     }

@@ -8,14 +8,15 @@ public class RegisterCommand(
     {
         // Создаём пользователя через сервис
         var user = await userService.CreateUserAsync(
-            request.Email,
-            request.Password,
-            request.LastName,
-            request.FirstName,
-            request.MiddleName ?? "",
-            request.ContactInfo,
-            UserRole.Reader, // всегда Reader для самостоятельной регистрации
-            cancellationToken);
+            email: request.Email,
+            password: request.Password,
+            lastName: request.LastName,
+            firstName: request.FirstName,
+            middleName: request.MiddleName ?? "",
+            contactInfo: request.ContactInfo,
+            role: UserRole.Reader,
+            isSelfRegistration: true,
+            cancellationToken: cancellationToken);
 
         // Генерируем токен
         var token = jwtService.GenerateToken(user);

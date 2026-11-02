@@ -2,11 +2,13 @@
 
 public class ExtendDeadlineCommand(
     IUnitOfWork unitOfWork,
-    BorrowingValidatorAsync validator) : ICreateOrUpdateCommand<ExtendDeadlineRequest, BasicCreateDeleteResponse>, ICommand
+    BorrowingValidatorAsync validator,
+    IAuditService auditService) : ICreateOrUpdateCommand<ExtendDeadlineRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(ExtendDeadlineRequest request, CancellationToken cancellationToken)
     {
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+
         // Валидация
         var userRoomBookId = new Id(request.UserRoomBookId);
         var userRoomBook = await userRoomBookRepo.FirstOrDefaultAsync(urb => urb.Id == userRoomBookId, cancellationToken);
@@ -20,9 +22,20 @@ public class ExtendDeadlineCommand(
         userRoomBook.Deadline = userRoomBook.Deadline!.Value.AddDays(request.ExtraDays);
         userRoomBook.TotalExtendedDays += request.ExtraDays;
 
-        // Сохраняем
-        await userRoomBookRepo.UpdateAsync(userRoomBook, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        // Сохраняем в транзакции — аудит не должен фиксироваться без продления
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await userRoomBookRepo.UpdateAsync(userRoomBook, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await auditService.LogAsync(
+                AuditActionType.Update,
+                nameof(UserRoomBook),
+                userRoomBook.Id.Value,
+                details: $"Продлён срок возврата книги «{userRoomBook.RoomBook.Book.Title}» (+{request.ExtraDays} дн., новый срок: {userRoomBook.Deadline:d})",
+                ct: cancellationToken);
+        }, cancellationToken);
+
         return ResponseFactory.Success($"Срок продлен до {userRoomBook.Deadline:d}");
     }
 }

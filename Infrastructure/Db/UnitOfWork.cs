@@ -56,6 +56,29 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
+    public async Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken = default)
+    {
+        // Вложенные вызовы безопасны: если транзакция уже открыта — действие выполняется в её рамках.
+        // Это позволяет вызывать команды друг из друга без риска InvalidOperationException из BeginTransactionAsync.
+        if (_transaction != null)
+        {
+            await action();
+            return;
+        }
+
+        await BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await action();
+            await CommitTransactionAsync(cancellationToken);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
+    }
+
     public void Dispose()
     {
         _transaction?.Dispose();

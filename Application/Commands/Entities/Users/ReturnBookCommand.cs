@@ -5,7 +5,8 @@ public class ReturnBookCommand(
     BorrowingValidatorAsync validator,
     PenaltyCalculatorService penaltyCalculator,
     INotificationService notificationService,
-    ICurrentUserService currentUser) : ICreateOrUpdateCommand<ReturnBookRequest, BasicCreateDeleteResponse>, ICommand
+    ICurrentUserService currentUser,
+    IAuditService auditService) : ICreateOrUpdateCommand<ReturnBookRequest, BasicCreateDeleteResponse>, ICommand
 {
     public async Task<BasicCreateDeleteResponse> Execute(ReturnBookRequest request, CancellationToken cancellationToken)
     {
@@ -26,15 +27,22 @@ public class ReturnBookCommand(
         // Валидация списания — до транзакции, чтобы не начинать её впустую.
         if (request.DiscardReason.HasValue)
         {
-            var discardErrors = DiscardPolicy.ValidateDiscard(
-                1, // Возвращаем всегда 1 экземпляр
-                userRoomBook.RoomBook.BookCount,
-                userRoomBook.RoomBook.AvailableCount,
-                request.CompensationAmount,
-                request.DiscardReason);
+            if (request.DiscardReason == DiscardReason.Loss
+                && (!request.CompensationAmount.HasValue || request.CompensationAmount.Value <= 0))
+            {
+                throw new LibValidationException
+                {
+                    ExceptionDetails = ["При утрате книги необходимо указать сумму компенсации (> 0)"]
+                };
+            }
 
-            if (discardErrors.Any())
-                throw new LibValidationException { ExceptionDetails = discardErrors };
+            if (request.CompensationAmount.HasValue && request.CompensationAmount.Value < 0)
+            {
+                throw new LibValidationException
+                {
+                    ExceptionDetails = ["Сумма компенсации не может быть отрицательной"]
+                };
+            }
         }
 
         // Получаем книгу
@@ -57,8 +65,7 @@ public class ReturnBookCommand(
         roomBook.BorrowedCount--;
         userRoomBook.ReturnDate = DateTime.UtcNow;
 
-        await unitOfWork.BeginTransactionAsync(cancellationToken);
-        try
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             if (request.DiscardReason.HasValue)
             {
@@ -83,6 +90,7 @@ public class ReturnBookCommand(
                 await roomBookRepo.UpdateAsync(roomBook, cancellationToken);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
 
+                // Если после списания не осталось ни одного экземпляра ни в одной комнате — помечаем книгу списанной
                 var anyRemaining = await roomBookRepo.AnyAsync(
                     rb => rb.Book.Id == roomBook.Book.Id && rb.BookCount > 0,
                     cancellationToken);
@@ -101,13 +109,19 @@ public class ReturnBookCommand(
                 await unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
-            await unitOfWork.CommitTransactionAsync(cancellationToken);
-        }
-        catch
-        {
-            await unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
+            // Пишем аудит в той же транзакции, что и возврат:
+            // при падении основного действия запись не останется «фантомной».
+            var auditDetails = request.DiscardReason.HasValue
+                ? $"Возврат со списанием: «{roomBook.Book.Title}» ({ReasonName(request.DiscardReason.Value)})"
+                : $"Возврат книги: «{roomBook.Book.Title}»";
+
+            await auditService.LogAsync(
+                AuditActionType.Return,
+                nameof(UserRoomBook),
+                userRoomBook.Id.Value,
+                details: auditDetails,
+                ct: cancellationToken);
+        }, cancellationToken);
 
         var parts = new List<string> { "Книга возвращена" };
         if (request.DiscardReason.HasValue)

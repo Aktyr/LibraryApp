@@ -18,7 +18,7 @@ public class DeleteRoomCommandTests
         await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
 
         var roomToDelete = rooms[5];
-        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteRoomRequest = new DeleteRoomRequest { Id = roomToDelete.Id };
 
         // Act
@@ -49,7 +49,7 @@ public class DeleteRoomCommandTests
         await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteRoomRequest = new DeleteRoomRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -63,7 +63,7 @@ public class DeleteRoomCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var roomRepo = (FakeRepository<Room>)unitOfWork.GetRepository<Room>();
-        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteRoomRequest = new DeleteRoomRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -84,7 +84,7 @@ public class DeleteRoomCommandTests
             .Generate();
         await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
-        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };
 
         // Act
@@ -122,7 +122,7 @@ public class DeleteRoomCommandTests
         };
         await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
-        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };
 
         // Act & Assert
@@ -145,7 +145,7 @@ public class DeleteRoomCommandTests
         await roomRepo.AddRangeAsync(rooms.AsEnumerable(), CancellationToken.None);
 
         var targetRoom = rooms[7];
-        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteRoomRequest = new DeleteRoomRequest { Id = targetRoom.Id };
 
         // Act
@@ -174,7 +174,7 @@ public class DeleteRoomCommandTests
         };
         await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
-        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork);
+        var deleteRoomCommand = new DeleteRoomCommand(unitOfWork, Mock.Of<IAuditService>());
         var deleteRoomRequest = new DeleteRoomRequest { Id = room.Id };
 
         // Act & Assert

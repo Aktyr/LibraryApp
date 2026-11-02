@@ -322,10 +322,9 @@ public class DeadlineCheckServiceTests
         };
 
         var method = typeof(DeadlineCheckService)
-            .GetMethod("CalculatePenalty", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            .GetMethod("CalculatePenalty", BindingFlags.NonPublic | BindingFlags.Static)!;
 
-        // Act
-        var result = method.Invoke(service, [15, settings]); // 15 дней просрочки × 10 = 150 → capped at 100
+        var result = method.Invoke(null, [15, settings]);
 
         // Assert
         Assert.That(result, Is.EqualTo(100m));
@@ -345,10 +344,9 @@ public class DeadlineCheckServiceTests
         };
 
         var method = typeof(DeadlineCheckService)
-            .GetMethod("CalculatePenalty", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            .GetMethod("CalculatePenalty", BindingFlags.NonPublic | BindingFlags.Static)!;
 
-        // Act
-        var result = method.Invoke(service, [15, settings]); // 15 дней × 10 = 150, без ограничения
+        var result = method.Invoke(null, [15, settings]);
 
         // Assert
         Assert.That(result, Is.EqualTo(150m));

@@ -6,7 +6,7 @@ public class UserServiceTests
     private static UserService CreateService(FakeUnitOfWork unitOfWork, UserValidatorAsync? validator = null)
     {
         validator ??= new UserValidatorAsync();
-        return new UserService(unitOfWork, validator);
+        return new UserService(unitOfWork, validator, Mock.Of<IAuditService>());
     }
 
     [Test]
@@ -81,21 +81,48 @@ public class UserServiceTests
     [Test]
     public async Task CreateUserAsync_WhenSaveFails_RollsBackTransaction()
     {
-        // Arrange — используем реальный UnitOfWork с моком контекста, но проще замокать IUnitOfWork
+        // Arrange
         var mockUnitOfWork = new Mock<IUnitOfWork>();
         var mockRepo = new Mock<IRepository<User>>();
         mockUnitOfWork.Setup(u => u.GetRepository<User>()).Returns(mockRepo.Object);
+
+        mockUnitOfWork
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<Task>, CancellationToken>(async (action, ct) =>
+            {
+                await mockUnitOfWork.Object.BeginTransactionAsync(ct);
+                try
+                {
+                    await action();
+                    await mockUnitOfWork.Object.CommitTransactionAsync(ct);
+                }
+                catch
+                {
+                    await mockUnitOfWork.Object.RollbackTransactionAsync(ct);
+                    throw;
+                }
+            });
+
         mockUnitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("DB error"));
-        // Rollback должен быть вызван
+        mockUnitOfWork.Setup(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        mockUnitOfWork.Setup(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        // Проверка уникальности email должна пройти успешно, иначе до SaveChanges дело не дойдёт.
+        mockRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                      .ThrowsAsync(new Exception("DB error"));
+
         var validator = new UserValidatorAsync();
-        var service = new UserService(mockUnitOfWork.Object, validator);
+        var service = new UserService(mockUnitOfWork.Object, validator, Mock.Of<IAuditService>());
 
         // Act & Assert
         await Assert.MultipleAsync(async () =>
         {
             await Assert.ThrowsAsync<Exception>(async () =>
-                await service.CreateUserAsync("test@test.com", "Password123!", "Иванов", "Иван", "", "info", UserRole.Reader));
+                await service.CreateUserAsync(
+                    "test@test.com", "Password123!", "Иванов", "Иван", "", "info", UserRole.Reader));
 
             mockUnitOfWork.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             mockUnitOfWork.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);

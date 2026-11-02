@@ -25,7 +25,7 @@ public class CreateRoomCommandTests
                                    .AsEnumerable());
 
 
-        var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter, Mock.Of<IAuditService>());
         var createRoomRequest = new CreateRoomRequest(roomName, []);
 
         // Act
@@ -58,7 +58,7 @@ public class CreateRoomCommandTests
                                    .AsEnumerable());
         (await roomRepo.GetAsync()).Last().Name = roomName;
 
-        var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter, Mock.Of<IAuditService>());
         var createRoomRequest = new CreateRoomRequest(roomName, []);
 
         // Act & Assert
@@ -76,7 +76,7 @@ public class CreateRoomCommandTests
             .Generate(10)
             .AsEnumerable());
 
-        var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter);
+        var createRoomCommand = new CreateRoomCommand(unitOfWork, CreateRoomValidator, Converter, Mock.Of<IAuditService>());
         var createRoomRequest = new CreateRoomRequest(new string('A', 101), []);
 
         await Assert.ThrowsAsync<LibValidationException>(() =>

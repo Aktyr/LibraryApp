@@ -4,6 +4,7 @@ public class UpdateRoomCommand(
     IUnitOfWork unitOfWork,
     RoomValidatorAsync roomValidator,
     IRoomBookSynchronizer roomBookSynchronizer,
+    IAuditService auditService,
     ILogger<UpdateRoomCommand> logger)
     : ICreateOrUpdateCommand<UpdateRoomRequest, BasicCreateDeleteResponse>, ICommand
 {
@@ -22,21 +23,26 @@ public class UpdateRoomCommand(
         if (room.Name != request.Name && await IsNameTakenAsync(request.Name, cancellationToken))
             throw new RoomExistsException(request.Name);
 
+        var oldName = room.Name;
         room.Name = request.Name;
 
         // Транзакция охватывает синхронизацию и сохранение
-        await unitOfWork.BeginTransactionAsync(cancellationToken);
-        try
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             await roomBookSynchronizer.SynchronizeAsync(room, request.RoomBookDTO, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
-            await unitOfWork.CommitTransactionAsync(cancellationToken);
-        }
-        catch
-        {
-            await unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
+
+            var details = oldName == room.Name
+                ? $"Обновлена комната «{room.Name}» (изменён состав книг)"
+                : $"Комната переименована: «{oldName}» → «{room.Name}»";
+
+            await auditService.LogAsync(
+                AuditActionType.Update,
+                nameof(Room),
+                room.Id.Value,
+                details: details,
+                ct: cancellationToken);
+        }, cancellationToken);
 
         return ResponseFactory.Updated<Room>();
     }

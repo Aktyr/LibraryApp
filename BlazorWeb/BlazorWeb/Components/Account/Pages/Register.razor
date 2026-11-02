@@ -93,14 +93,11 @@
         try
         {
             user = await ProvisioningService.CreateAsync(
-                Input.Email,
-                Input.Password,
-                Input.LastName,
-                Input.FirstName,
-                Input.MiddleName ?? "",
-                Input.ContactInfo,
+                Input.Email, Input.Password, Input.LastName, Input.FirstName,
+                Input.MiddleName ?? "", Input.ContactInfo,
                 UserRole.Reader,
-                emailConfirmed: false);
+                emailConfirmed: false,
+                isSelfRegistration: true);
         }
         catch (ProvisioningException pex)
         {
@@ -163,7 +160,7 @@
         public string ContactInfo { get; set; } = "";
 
         public IEnumerable<ValidationResult> Validate(
-    ValidationContext validationContext)
+            ValidationContext validationContext)
         {
             var errors = PasswordPolicy.Validate(Password);
 

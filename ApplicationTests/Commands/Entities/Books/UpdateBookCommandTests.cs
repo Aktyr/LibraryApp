@@ -25,7 +25,7 @@ public class UpdateBookCommandTests
         await bookRepo.AddRangeAsync(books.AsEnumerable(), CancellationToken.None);
 
         var bookToUpdate = books[4];
-        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = bookToUpdate.Id,
@@ -73,7 +73,7 @@ public class UpdateBookCommandTests
                                    .RuleFor(x => x.RoomBook, f => [])
                                    .Generate(10)
                                    .AsEnumerable(), CancellationToken.None);
-        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = new Id(Guid.NewGuid()), // ID, которого нет в репозитории
@@ -96,7 +96,7 @@ public class UpdateBookCommandTests
         var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         // Не добавляем книги - репозиторий пустой
 
-        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = new Id(Guid.NewGuid()),
@@ -128,7 +128,7 @@ public class UpdateBookCommandTests
             .Generate();
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
 
-        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -169,7 +169,7 @@ public class UpdateBookCommandTests
             .Generate();
         await bookRepo.AddRangeAsync([book], CancellationToken.None);
 
-        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -201,7 +201,7 @@ public class UpdateBookCommandTests
             .Generate();
         await bookRepo.AddRangeAsync([book]);
 
-        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,
@@ -231,7 +231,7 @@ public class UpdateBookCommandTests
             .Generate();
         await bookRepo.AddRangeAsync([book]);
 
-        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter);
+        var updateBookCommand = new UpdateBookCommand(unitOfWork, CreateBookValidator, Converter, Mock.Of<IAuditService>());
         var updateBookRequest = new UpdateBookRequest
         {
             Id = book.Id,

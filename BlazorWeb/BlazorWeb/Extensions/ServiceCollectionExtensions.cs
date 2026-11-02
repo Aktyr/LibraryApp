@@ -43,6 +43,8 @@ public static class ServiceCollectionExtensions
         services.AddRepositories();
         services.AddUnitOfWork();
 
+        services.AddScoped<IAuditService, BffAuditService>();
+
         // Валидаторы, используемые UserService и командой удаления
         services.AddScoped<UserValidatorAsync>();
 

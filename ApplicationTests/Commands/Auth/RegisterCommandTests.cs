@@ -5,9 +5,8 @@ public class RegisterCommandTests
 {
     private static RegisterCommand CreateCommand(FakeUnitOfWork unitOfWork, JwtService jwtService)
     {
-        var emailValidator = new EmailValidatorAsync();
         var userRegistrationValidator = new UserValidatorAsync();
-        var userService = new UserService(unitOfWork, userRegistrationValidator);
+        var userService = new UserService(unitOfWork, userRegistrationValidator, Mock.Of<IAuditService>());
         return new RegisterCommand(userService, jwtService);
     }
 
@@ -73,7 +72,11 @@ public class RegisterCommandTests
     {
         private readonly FakeUnitOfWork _uow = uow;
 
-        public async Task<User> CreateUserAsync(string email, string password, string lastName, string firstName, string middleName, string contactInfo, UserRole role, CancellationToken cancellationToken = default)
+        public async Task<User> CreateUserAsync(
+            string email, string password, string lastName, string firstName,
+            string middleName, string contactInfo, UserRole role,
+            bool isSelfRegistration = false,
+            CancellationToken cancellationToken = default)
         {
             var repo = (FakeRepository<User>)_uow.GetRepository<User>();
             var user = new User
@@ -137,13 +140,13 @@ public class RegisterCommandTests
     [TestCase("test@test.com", "123", "Иванов", "Иван")]            // Слишком короткий пароль
     [TestCase("test@test.com", "Password123!", "", "Иван")]         // Пустая фамилия
     [TestCase("test@test.com", "Password123!", "Иванов", "")]       // Пустое имя
-    [TestCase("invalid-email", "", " ", "")]       
-    [TestCase("test@test.com", "", "", "")]       
-    [TestCase("", "Password123", "", "")]       
-    [TestCase("", "", "Иванов", "")]       
-    [TestCase("", "", "", "Иван")]       
-    [TestCase(" ", " ", " ", " ")]       
-    [TestCase("", "", "", "")]       
+    [TestCase("invalid-email", "", " ", "")]
+    [TestCase("test@test.com", "", "", "")]
+    [TestCase("", "Password123", "", "")]
+    [TestCase("", "", "Иванов", "")]
+    [TestCase("", "", "", "Иван")]
+    [TestCase(" ", " ", " ", " ")]
+    [TestCase("", "", "", "")]
     public async Task Execute_WithInvalidData_ThrowsValidationException(
         string email, string password, string lastName, string firstName)
     {
@@ -171,6 +174,7 @@ public class RegisterCommandTests
         await Assert.ThrowsAsync<LibValidationException>(async () =>
             await registerCommand.Execute(registerRequest, CancellationToken.None));
     }
+
     [Test]
     public async Task Execute_WithTooLongPassword_ThrowsValidationException()
     {
