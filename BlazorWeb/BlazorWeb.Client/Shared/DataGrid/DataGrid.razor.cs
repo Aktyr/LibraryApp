@@ -396,9 +396,28 @@ public partial class DataGrid<TItem> : IAsyncDisposable
             }
         }
 
-        if (SelectionMode == DataGridSelectionMode.Single) { _selected.Clear(); _selected.Add(item); }
-        else if (e.CtrlKey || e.MetaKey) { if (!_selected.Remove(item)) _selected.Add(item); }
-        else { _selected.Clear(); _selected.Add(item); }
+        if (SelectionMode == DataGridSelectionMode.Single)
+        {
+            if (e.CtrlKey || e.MetaKey)
+            {
+                if (_selected.Contains(item)) _selected.Clear();
+                else { _selected.Clear(); _selected.Add(item); }
+            }
+            else
+            {
+                _selected.Clear();
+                _selected.Add(item);
+            }
+        }
+        else if (e.CtrlKey || e.MetaKey)
+        {
+            if (!_selected.Remove(item)) _selected.Add(item);
+        }
+        else
+        {
+            _selected.Clear();
+            _selected.Add(item);
+        }
 
         lastSelected = item;
         hasLastSelected = true;

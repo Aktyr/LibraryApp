@@ -48,3 +48,7 @@ global using LibApp.Core.Exceptions.Entities;
 global using BlazorWeb.Services;
 global using LibApp.Core.Policies;
 global using System.ComponentModel.DataAnnotations;
+global using LibApp.Infrastructure.DependencyInjection;
+global using LibApp.Core.Interfaces;
+global using BlazorWeb.Extensions;
+

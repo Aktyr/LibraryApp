@@ -9,6 +9,9 @@ public static partial class DI
 {
     private static readonly Assembly ApplicationAssembly = typeof(ICommand).Assembly;
 
+    /// <summary>
+    /// Регистрация для WebAPI
+    /// </summary>
     public static IServiceCollection AddAllServices(this IServiceCollection services)
     {
         services.AddConfigurationSettings()
@@ -24,6 +27,22 @@ public static partial class DI
                 .AddUnitOfWork()
                 .AddSmtpClient()
                 .AddUserManagementPolicy();
+        return services;
+    }
+
+    /// <summary>
+    /// Регистрация только бизнес-логики для BFF (без БД, фоновых служб и SMTP).
+    /// </summary>
+    public static IServiceCollection AddApplicationLogic(this IServiceCollection services)
+    {
+        services.AddValidators()
+                .AddCommands()
+                .AddConverters()
+                .AddServices()
+                .AddRepositories()
+                .AddUnitOfWork()
+                .AddUserManagementPolicy();
+
         return services;
     }
 
