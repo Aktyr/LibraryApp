@@ -35,8 +35,10 @@ public class Program
         {
             options.SignIn.RequireConfirmedAccount = true;
 
-            // Синхронизация правил с UserValidatorAsync (library)
-            options.Password.RequiredLength = 8;
+            // Правила пароля — в PasswordPolicy (Core/Policies). Здесь — Identity-опции,
+            // которые читают встроенные валидаторы (сейчас заменены на UnicodePasswordValidator).
+            // Значения синхронизированы с PasswordPolicy; RequiredUniqueChars оставлен для совместимости.
+            options.Password.RequiredLength = PasswordPolicy.MinLength;
             options.Password.RequiredUniqueChars = 1;
             options.Password.RequireLowercase = true;
             options.Password.RequireUppercase = true;

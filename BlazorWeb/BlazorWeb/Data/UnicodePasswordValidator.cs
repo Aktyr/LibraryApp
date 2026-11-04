@@ -1,18 +1,17 @@
 ﻿namespace BlazorWeb.Data;
 
 /// <summary>
-/// Замена стандартного Identity PasswordValidator, поддерживающая Unicode (кириллицу).
+/// Замена стандартного Identity PasswordValidator. Правила — из <see cref="PasswordPolicy"/> (SSOT),
+/// здесь только маппинг в <see cref="IdentityError"/>.
 ///
-/// Стандартный Microsoft.AspNetCore.Identity.PasswordValidator полагается на
-/// char.IsLower/char.IsUpper, которые должны работать с кириллицей по документации,
-/// но на практике на .NET 10 для паролей типа "Пароль123!" ложно ругаются
-/// "Passwords must have at least one lowercase ('a'-'z')".
+/// Стандартный Microsoft.AspNetCore.Identity.PasswordValidator на .NET 10 ложно отклоняет
+/// кириллические пароли ("Пароль123!"): использует char.IsLower/IsUpper, которые для не-ASCII
+/// работают не так, как ожидается. <see cref="PasswordPolicy"/> использует regex \p{Ll}/\p{Lu},
+/// что корректно для любого алфавита.
 ///
-/// Этот валидатор использует regex-категории \p{Ll}/\p{Lu}, что совпадает
-/// с логикой UserValidatorAsync (library) и работает для любого алфавита.
-///
-/// Коды ошибок (Code) совпадают со стандартными IdentityErrorDescriber.*,
-/// чтобы клиент мог обрабатывать их единообразно.
+/// PasswordPolicyCode.TooLong НЕ маппится в IdentityError: Identity не поддерживает
+/// максимальную длину пароля. Правило MaxLength живёт в PasswordPolicy и проверяется
+/// отдельно в UserService.CreateUserAsync.
 /// </summary>
 public class UnicodePasswordValidator : IPasswordValidator<ApplicationUser>
 {
@@ -21,66 +20,46 @@ public class UnicodePasswordValidator : IPasswordValidator<ApplicationUser>
         ApplicationUser user,
         string? password)
     {
-        var opts = manager.Options.Password;
-        var errors = new List<IdentityError>();
+        var errors = PasswordPolicy.ValidateDetailed(password)
+            .Where(e => e.Code is not PasswordPolicyCode.TooLong)
+            .ToList();
 
-        if (string.IsNullOrWhiteSpace(password))
-        {
-            if (opts.RequiredLength > 0)
-            {
-                errors.Add(new IdentityError
-                {
-                    Code = nameof(IdentityErrorDescriber.PasswordTooShort),
-                    Description = $"Пароль должен быть не менее {opts.RequiredLength} символов"
-                });
-            }
-            return Task.FromResult(IdentityResult.Failed(errors.ToArray()));
-        }
+        if (errors.Count == 0)
+            return Task.FromResult(IdentityResult.Success);
 
-        if (password.Length < opts.RequiredLength)
-            errors.Add(new IdentityError
-            {
-                Code = nameof(IdentityErrorDescriber.PasswordTooShort),
-                Description = $"Пароль должен быть не менее {opts.RequiredLength} символов"
-            });
-
-        if (opts.RequireLowercase && !Regex.IsMatch(password, @"\p{Ll}"))
-            errors.Add(new IdentityError
-            {
-                Code = nameof(IdentityErrorDescriber.PasswordRequiresLower),
-                Description = "Пароль должен содержать хотя бы одну строчную букву"
-            });
-
-        if (opts.RequireUppercase && !Regex.IsMatch(password, @"\p{Lu}"))
-            errors.Add(new IdentityError
-            {
-                Code = nameof(IdentityErrorDescriber.PasswordRequiresUpper),
-                Description = "Пароль должен содержать хотя бы одну заглавную букву"
-            });
-
-        if (opts.RequireDigit && !password.Any(char.IsDigit))
-            errors.Add(new IdentityError
-            {
-                Code = nameof(IdentityErrorDescriber.PasswordRequiresDigit),
-                Description = "Пароль должен содержать хотя бы одну цифру"
-            });
-
-        if (opts.RequireNonAlphanumeric && password.All(char.IsLetterOrDigit))
-            errors.Add(new IdentityError
-            {
-                Code = nameof(IdentityErrorDescriber.PasswordRequiresNonAlphanumeric),
-                Description = "Пароль должен содержать хотя бы один спецсимвол"
-            });
-
-        if (opts.RequiredUniqueChars > 1 && password.Distinct().Count() < opts.RequiredUniqueChars)
-            errors.Add(new IdentityError
-            {
-                Code = nameof(IdentityErrorDescriber.PasswordRequiresUniqueChars),
-                Description = $"Пароль должен содержать минимум {opts.RequiredUniqueChars} уникальных символов"
-            });
-
-        return Task.FromResult(errors.Count == 0
-            ? IdentityResult.Success
-            : IdentityResult.Failed(errors.ToArray()));
+        return Task.FromResult(IdentityResult.Failed(
+            errors.Select(MapToIdentityError).ToArray()));
     }
+
+    private static IdentityError MapToIdentityError(PasswordError error) => new()
+    {
+        Code = ToIdentityCode(error.Code),
+        Description = error.Message
+    };
+
+    /// <summary>
+    /// Коды для IdentityError.Code — через nameof, чтобы не разъезжаться с IdentityErrorDescriber.
+    /// Своего PasswordTooLong здесь нет — это правило Identity не поддерживает.
+    /// </summary>
+    private static class IdentityPasswordCodes
+    {
+        public static readonly string TooShort = nameof(IdentityErrorDescriber.PasswordTooShort);
+        public static readonly string RequiresUpper = nameof(IdentityErrorDescriber.PasswordRequiresUpper);
+        public static readonly string RequiresLower = nameof(IdentityErrorDescriber.PasswordRequiresLower);
+        public static readonly string RequiresDigit = nameof(IdentityErrorDescriber.PasswordRequiresDigit);
+        public static readonly string RequiresNonAlphanumeric = nameof(IdentityErrorDescriber.PasswordRequiresNonAlphanumeric);
+    }
+
+    private static string ToIdentityCode(PasswordPolicyCode code) => code switch
+    {
+        PasswordPolicyCode.Required or PasswordPolicyCode.TooShort => IdentityPasswordCodes.TooShort,
+        PasswordPolicyCode.RequiresUpper => IdentityPasswordCodes.RequiresUpper,
+        PasswordPolicyCode.RequiresLower => IdentityPasswordCodes.RequiresLower,
+        PasswordPolicyCode.RequiresDigit => IdentityPasswordCodes.RequiresDigit,
+        PasswordPolicyCode.RequiresNonAlphanumeric => IdentityPasswordCodes.RequiresNonAlphanumeric,
+        PasswordPolicyCode.TooLong => throw new InvalidOperationException(
+            "PasswordPolicyCode.TooLong должен быть отфильтрован до маппинга в Identity: " +
+            "Identity не поддерживает максимальную длину пароля."),
+        _ => throw new ArgumentOutOfRangeException(nameof(code), code, "Unknown password policy code")
+    };
 }
