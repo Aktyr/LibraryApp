@@ -14,15 +14,18 @@ public class SearchBooksCommand(
         // Формируем сортировку (кроме популярности)
         Func<IQueryable<Book>, IOrderedQueryable<Book>>? orderBy = BuildOrderBy(request);
 
-        // Include для доступности
-        var includePaths = request.AvailableOnly ? [IncludePaths.Book.RoomBook] : Array.Empty<string>();
-
-        // Выполняем запрос
+        // BookDTOConverter всегда читает Book.RoomBook, а RoomBookDTOConverter — rb.Book.Id и rb.Room.Id.
+        // Без явных Include это N+1 на каждой книге каталога.
         var books = await bookRepo.GetWithoutTrackingAsync(
-            filter, 
-            orderBy, 
-            cancellationToken: ct, 
-            includePaths: includePaths);
+            filter,
+            orderBy,
+            cancellationToken: ct,
+            includePaths:
+            [
+                IncludePaths.Book.RoomBook,
+                IncludePaths.Book.RoomBookRoom,
+                IncludePaths.Book.RoomBookBook
+            ]);
 
         // Если AvailableOnly, фильтруем в памяти
         if (request.AvailableOnly)
