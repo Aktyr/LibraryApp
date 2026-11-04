@@ -41,10 +41,8 @@ public class DiscardBookCommand(
             roomBook.BookCount,
             roomBook.AvailableCount,
             request.CompensationAmount,
-            request.DiscardReason);
-
-        if (!string.IsNullOrEmpty(request.ApprovedBy) && request.ApprovedBy.Length > DiscardPolicy.MaxApprovedByNameLength)
-            errors.Add($"ApprovedBy не может превышать {DiscardPolicy.MaxApprovedByNameLength} символов");
+            request.DiscardReason,
+            request.ApprovedBy);
 
         if (errors.Any())
             throw new LibValidationException { ExceptionDetails = errors };

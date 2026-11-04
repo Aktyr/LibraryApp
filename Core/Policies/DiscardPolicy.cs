@@ -4,12 +4,23 @@ public static class DiscardPolicy
 {
     public const int MaxApprovedByNameLength = 100;
 
+    /// <summary>
+    /// Проверяет параметры списания. Единая точка для DiscardBookCommand (списание из фонда)
+    /// и ReturnBookCommand (списание возвращаемого экземпляра).
+    /// </summary>
+    /// <param name="availableCount">
+    /// Сколько экземпляров доступно к списанию прямо сейчас. В сценарии возврата
+    /// вызывающая сторона должна передать значение «как будто книга уже вернулась»:
+    /// <c>AvailableCount + 1</c>.
+    /// </param>
+    /// <param name="approvedBy">ФИО утвердившего; null или пусто — проверка длины пропускается.</param>
     public static List<string> ValidateDiscard(
         int amount,
         int bookCount,
         int availableCount,
         decimal? compensation,
-        DiscardReason? reason = null)
+        DiscardReason? reason = null,
+        string? approvedBy = null)
     {
         var errors = new List<string>();
 
@@ -30,6 +41,9 @@ public static class DiscardPolicy
 
         if (compensation.HasValue && compensation.Value < 0)
             errors.Add("Сумма компенсации не может быть отрицательной");
+
+        if (!string.IsNullOrEmpty(approvedBy) && approvedBy.Length > MaxApprovedByNameLength)
+            errors.Add($"ApprovedBy не может превышать {MaxApprovedByNameLength} символов");
 
         return errors;
     }

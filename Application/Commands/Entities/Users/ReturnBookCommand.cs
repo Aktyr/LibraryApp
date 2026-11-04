@@ -24,29 +24,24 @@ public class ReturnBookCommand(
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
+        var roomBook = userRoomBook.RoomBook;
+
         // Валидация списания — до транзакции, чтобы не начинать её впустую.
+        // AvailableCount + 1: списываем возвращаемый экземпляр, который сейчас числится
+        // в BorrowedCount. Политика проверяет «можно ли списать, если бы книга уже была в фонде».
         if (request.DiscardReason.HasValue)
         {
-            if (request.DiscardReason == DiscardReason.Loss
-                && (!request.CompensationAmount.HasValue || request.CompensationAmount.Value <= 0))
-            {
-                throw new LibValidationException
-                {
-                    ExceptionDetails = ["При утрате книги необходимо указать сумму компенсации (> 0)"]
-                };
-            }
+            var discardErrors = DiscardPolicy.ValidateDiscard(
+                amount: 1,
+                bookCount: roomBook.BookCount,
+                availableCount: roomBook.AvailableCount + 1,
+                compensation: request.CompensationAmount,
+                reason: request.DiscardReason,
+                approvedBy: currentUser.FullName);
 
-            if (request.CompensationAmount.HasValue && request.CompensationAmount.Value < 0)
-            {
-                throw new LibValidationException
-                {
-                    ExceptionDetails = ["Сумма компенсации не может быть отрицательной"]
-                };
-            }
+            if (discardErrors.Count > 0)
+                throw new LibValidationException { ExceptionDetails = discardErrors };
         }
-
-        // Получаем книгу
-        var roomBook = userRoomBook.RoomBook;
 
         // Расчёт штрафа (если есть)
         var penalty = penaltyCalculator.CalculatePenaltyForReturn(userRoomBook);
