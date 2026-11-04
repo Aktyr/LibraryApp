@@ -6,27 +6,26 @@ public class EmailNotificationService(
     IOptions<NotificationSettings> settings,
     ISmtpClient smtpClient) : INotificationService, IService
 {
-    private readonly ILogger<EmailNotificationService> _logger = logger;
-    private readonly EmailValidatorAsync _validator = validator;
+    // settings.Value кешируем: IOptions.Value — стабильная ссылка на конфигурацию,
+    // но чтение через свойство на каждом Log-вызове создаёт лишний шум.
     private readonly NotificationSettings _settings = settings.Value;
-    private readonly ISmtpClient _smtpClient = smtpClient;
 
     public async Task SendEmailAsync(string email, string subject, string body, CancellationToken cancellationToken = default)
     {
         // Валидация Email
-        var validationResult = await _validator.ValidateAsync(email, cancellationToken);
+        var validationResult = await validator.ValidateAsync(email, cancellationToken);
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
         if (!_settings.Enabled)
         {
-            _logger.LogInformation($"[EMAIL DISABLED] To: {email}, Subject: {subject}\n{body}");
+            logger.LogInformation($"[EMAIL DISABLED] To: {email}, Subject: {subject}\n{body}");
             return;
         }
 
         if (string.IsNullOrEmpty(_settings.SmtpServer) || string.IsNullOrEmpty(_settings.SmtpUsername))
         {
-            _logger.LogWarning("SMTP settings are incomplete. Email not sent.");
+            logger.LogWarning("SMTP settings are incomplete. Email not sent.");
             return;
         }
 
@@ -41,12 +40,12 @@ public class EmailNotificationService(
             };
             mailMessage.To.Add(email);
 
-            await _smtpClient.SendMailAsync(mailMessage, cancellationToken);
-            _logger.LogInformation($"Email sent successfully to {email}: {subject}");
+            await smtpClient.SendMailAsync(mailMessage, cancellationToken);
+            logger.LogInformation($"Email sent successfully to {email}: {subject}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Failed to send email to {email}");
+            logger.LogError(ex, $"Failed to send email to {email}");
             throw;
         }
     }
