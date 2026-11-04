@@ -70,6 +70,11 @@ public class UnitOfWork : IUnitOfWork
         try
         {
             await action();
+
+            // ВАЖНО: Принудительно сохраняем ВСЕ изменения (включая AuditLog),
+            // которые могли быть добавлены в самом конце (после ручного SaveChangesAsync)
+            await SaveChangesAsync(cancellationToken);
+
             await CommitTransactionAsync(cancellationToken);
         }
         catch

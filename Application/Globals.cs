@@ -47,3 +47,4 @@ global using System.Security.Claims;
 global using System.Text;
 global using System.Text.RegularExpressions;
 global using LibApp.Core.Policies;
+global using LibApp.Core.Requests.Entities.Audit;

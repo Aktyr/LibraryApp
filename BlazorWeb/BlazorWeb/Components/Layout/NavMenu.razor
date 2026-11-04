@@ -44,6 +44,14 @@
                         </NavLink>
                     </div>
                 }
+                @if (context.User.IsInRole("Admin"))
+                {
+                    <div class="nav-item">
+                        <NavLink class="nav-link" href="audit">
+                            <span class="nav-emoji">📋</span><span class="nav-text">Журнал аудита</span>
+                        </NavLink>
+                    </div>
+                }
 
                 <div class="nav-section-title">Аккаунт</div>
 

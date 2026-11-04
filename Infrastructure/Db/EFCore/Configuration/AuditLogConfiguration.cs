@@ -21,6 +21,9 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
                .IsRequired()
                .HasConversion<string>();
 
+        builder.Property(x => x.Timestamp)
+            .HasConversion<DateTimeToUtcConverter>();
+
         // Индексы под типовые сценарии фильтрации в отчётах
         builder.HasIndex(x => x.Timestamp);
         builder.HasIndex(x => x.UserId);

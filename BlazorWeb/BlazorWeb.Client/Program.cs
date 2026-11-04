@@ -1,7 +1,3 @@
-using LibApp.Core.Interfaces;
-using LibApp.Core.Interfaces;
-using LibApp.Core.Policies;
-
 namespace BlazorWeb.Client;
 
 internal class Program
@@ -27,6 +23,7 @@ internal class Program
         builder.Services.AddScoped<IReportsApiClient, ReportsApiClient>();
         builder.Services.AddScoped<IBorrowingSettingsService, BorrowingSettingsService>();
         builder.Services.AddScoped<IPenaltySettingsService, PenaltySettingsService>();
+        builder.Services.AddScoped<IAuditApiClient, AuditApiClient>();
         #endregion
 
         builder.Services.AddScoped<IConfirmService, ConfirmService>();

@@ -72,4 +72,7 @@ global using System.Net;
 global using WebAPI.Middleware;
 global using LibApp.Application.Commands.Settings;
 global using System.Security.Claims;
+global using LibApp.Application.Commands.Entities;
+global using LibApp.Core.Requests.Entities.Audit;
+global using LibApp.Application.Commands.Audit;
 

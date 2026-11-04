@@ -1,0 +1,131 @@
+﻿@page "/audit"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Services.Interfaces
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Entities
+@using LibApp.Core.Enums
+@using LibApp.Core.Policies
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+@inject IAuditApiClient AuditClient
+@inject IToastService Toast
+
+<PageTitle>Журнал аудита</PageTitle>
+
+<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading" />
+
+<h2>Журнал аудита</h2>
+
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (records != null)
+{
+    <div class="d-flex gap-4 mb-3">
+        <div>
+            <small class="text-muted d-block">Всего записей</small>
+            <span class="fs-5 fw-semibold">@records.Count</span>
+        </div>
+    </div>
+
+    @if (records.Count == 0)
+    {
+        <p class="text-muted">Записей нет.</p>
+    }
+    else
+    {
+        <DataGrid TItem="AuditLogDTO"
+                  Items="records"
+                  PageSize="25"
+                  Columns="columns"
+                  SelectionMode="DataGridSelectionMode.Multiple"/>
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private List<AuditLogDTO>? records;
+
+    private readonly List<DataGridColumn<AuditLogDTO>> columns = new()
+    {
+        new()
+        {
+            Title = "Дата",
+            Width = 170,
+            FilterKind = FilterKind.Date,
+            Value = l => l.Timestamp,
+            FilterText = l => l.Timestamp.ToLocalTime().ToString("yyyy-MM-dd"),
+            Template = item => b =>
+                b.AddContent(0, item.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss"))
+        },
+        new()
+        {
+            Title = "Пользователь",
+            Width = 220,
+            Value = l => l.UserName,
+            FilterText = l => l.UserName
+        },
+        new()
+        {
+            Title = "Действие",
+            Width = 140,
+            Value = l => l.ActionType.DisplayName(),
+            FilterText = l => l.ActionType.DisplayName(),
+            Template = item => b =>
+            {
+                var (bg, fg) = AuditActionStyle.Get(item.ActionType);
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style",
+                    $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
+                b.AddContent(2, item.ActionType.DisplayName());
+                b.CloseElement();
+            }
+        },
+        new()
+        {
+            Title = "Сущность",
+            Width = 130,
+            Value = l => l.EntityType
+        },
+        new()
+        {
+            Title = "ID сущности",
+            Width = 130,
+            Value = l => l.EntityId,
+            FilterText = l => l.EntityId?.ToString() ?? "",
+            Template = item => b => b.AddContent(0, item.EntityId.HasValue
+                ? item.EntityId.Value.ToString("N")[..8]
+                : "—")
+        },
+        new()
+        {
+            Title = "Детали",
+            Width = 500,
+            Value = l => l.Details,
+            FilterText = l => l.Details ?? ""
+        }
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        try
+        {
+            // todo в будущем может очень много записей, нужно будет сделать постраничную загрузку. Это касается и других таблиц
+            var resp = await AuditClient.GetAuditLogAsync(); 
+            records = resp.Data.ToList();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+}

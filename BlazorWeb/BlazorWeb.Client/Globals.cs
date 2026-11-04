@@ -2,6 +2,8 @@
 global using BlazorWeb.Client.Services.APIs;
 global using BlazorWeb.Client.Services.Interfaces;
 global using LibApp.Core.DTO.Settings;
+global using LibApp.Core.Enums;
+global using LibApp.Core.Policies;
 global using LibApp.Core.Requests.Borrowing;
 global using LibApp.Core.Requests.Entities.Book;
 global using LibApp.Core.Requests.Entities.Room;
@@ -17,5 +19,4 @@ global using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 global using System.Net.Http.Json;
 global using System.Security.Claims;
 global using System.Text.Json;
-global using LibApp.Core.Policies;
-global using System.ComponentModel.DataAnnotations;
+global using LibApp.Core.Interfaces;
