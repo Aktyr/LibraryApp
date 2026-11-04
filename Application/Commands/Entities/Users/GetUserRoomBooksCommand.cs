@@ -8,11 +8,18 @@ public class GetUserRoomBooksCommand(
     public async Task<BorrowResponse> Execute(GetUserBooksRequest request, CancellationToken cancellationToken)
     {
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
-        // Получение списка книг
         var userId = new Id(request.UserId);
+
+        // BorrowDTOConverter читает RoomBook.Book.Title/Author и RoomBook.Room.Name.
+        // Без явных Include EF подгружает их лениво — по SQL на каждую выдачу.
         var userBooks = await userRoomBookRepo.GetAsync(
-            urb => urb.User.Id == userId,
-            cancellationToken);
+            filter: urb => urb.User.Id == userId,
+            cancellationToken: cancellationToken,
+            includePaths:
+            [
+                IncludePaths.UserRoomBook.RoomBookBook,
+                IncludePaths.UserRoomBook.RoomBookRoom
+            ]);
 
         var bookDTOs = userBooks
             .Select(urb => converter.ToDto(urb))

@@ -6,6 +6,7 @@ public static class IncludePaths
     {
         public const string RoomBook = nameof(Core.Entities.Book.RoomBook);
         public const string RoomBookRoom = nameof(Core.Entities.Book.RoomBook) + "." + nameof(Core.Entities.RoomBook.Room);
+        public const string RoomBookBook = nameof(Core.Entities.Book.RoomBook) + "." + nameof(Core.Entities.RoomBook.Book);
     }
 
     public static class Room
@@ -21,5 +22,10 @@ public static class IncludePaths
     public static class User
     {
         public const string RoomBooks = nameof(Core.Entities.User.RoomBooks);
+    }
+    public static class UserRoomBook
+    {
+        public const string RoomBookBook = nameof(Core.Entities.UserRoomBook.RoomBook) + "." + nameof(Core.Entities.RoomBook.Book);
+        public const string RoomBookRoom = nameof(Core.Entities.UserRoomBook.RoomBook) + "." + nameof(Core.Entities.RoomBook.Room);
     }
 }
