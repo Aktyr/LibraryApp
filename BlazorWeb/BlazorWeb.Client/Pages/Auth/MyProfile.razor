@@ -11,6 +11,7 @@
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
 @inject IToastService Toast
+@inject IBorrowingSettingsService SettingsService
 
 <PageTitle>Мой профиль</PageTitle>
 
@@ -86,7 +87,7 @@ else
                           PageSize="10"
                           Columns="HistoryColumns"
                           SelectionMode="DataGridSelectionMode.Multiple" />
-ы            </div>
+            </div>
         </details>
     }
 }
@@ -107,7 +108,8 @@ else
     private UserDTO? user;
     private List<BorrowedBookDTO> allBorrows = new();
 
-    private int MaxBooksPerUser = 5; // fixme В идеале подтянуть из настроек, но пока хардкод (исправнено, потереть остатки)
+    private BorrowingSettingsDTO? settings;
+    private int MaxBooksPerUser => settings?.MaxBooksPerUser ?? 5;
 
     protected override async Task OnInitializedAsync()
     {
@@ -119,6 +121,7 @@ else
         isLoading = true;
         try
         {
+            settings = await SettingsService.GetAsync();
             var resp = await UserClient.GetMeAsync();
             user = resp.Users.FirstOrDefault();
 

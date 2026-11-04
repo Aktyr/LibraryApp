@@ -25,7 +25,10 @@ public class GetPopularBooksReportCommand(IUnitOfWork unitOfWork)
                     TotalBorrowedCount = g.Count(),
                     CurrentBorrowedCount = g.Count(urb => urb.ReturnDate == null)
                 })
-                .OrderByDescending(x => x.TotalBorrowedCount);
+                .OrderByDescending(x => x.TotalBorrowedCount)
+                // Take после OrderBy: иначе LIMIT срежет произвольные строки до сортировки.
+                // null трактуем как значение по умолчанию — int? в контракте, но смысл всегда «сколько показать».
+                .Take(request.TopCount ?? 10);
         }, ct);
 
         // Конвертируем в DTO в памяти

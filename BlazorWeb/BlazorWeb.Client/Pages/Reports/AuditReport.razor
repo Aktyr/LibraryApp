@@ -1,4 +1,4 @@
-﻿@page "/audit"
+﻿@page "/reports/audit"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using BlazorWeb.Client.Services.Interfaces
 @using BlazorWeb.Components.Shared.DataGrid
@@ -12,7 +12,7 @@
 
 <PageTitle>Журнал аудита</PageTitle>
 
-<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading" />
+<PageHeader BackUrl="/reports" OnRefresh="LoadAsync" IsLoading="@isLoading" />
 
 <h2>Журнал аудита</h2>
 
