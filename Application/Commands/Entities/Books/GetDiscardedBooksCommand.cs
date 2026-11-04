@@ -7,12 +7,23 @@ public class GetDiscardedBooksCommand(IUnitOfWork unitOfWork)
     {
         var repo = unitOfWork.GetRepository<DiscardedBook>();
 
+        // ToDate приходит как дата без времени (00:00). Чтобы включить весь день,
+        // берём конец суток: +1 день − 1 тик. Kind приводим к Utc — DiscardedDate
+        // хранится в UTC (см. DateTimeToUtcConverter), иначе Npgsql ругается на Unspecified.
+        var from = request.FromDate.HasValue
+            ? DateTime.SpecifyKind(request.FromDate.Value, DateTimeKind.Utc)
+            : (DateTime?)null;
+
+        var to = request.ToDate.HasValue
+            ? DateTime.SpecifyKind(request.ToDate.Value, DateTimeKind.Utc).AddDays(1).AddTicks(-1)
+            : (DateTime?)null;
+
         var raw = await repo.ExecuteQueryAsync(query =>
         {
-            if (request.FromDate.HasValue)
-                query = query.Where(d => d.DiscardedDate >= request.FromDate.Value);
-            if (request.ToDate.HasValue)
-                query = query.Where(d => d.DiscardedDate <= request.ToDate.Value);
+            if (from.HasValue)
+                query = query.Where(d => d.DiscardedDate >= from.Value);
+            if (to.HasValue)
+                query = query.Where(d => d.DiscardedDate <= to.Value);
             if (request.DiscardReason.HasValue)
                 query = query.Where(d => d.DiscardReason == request.DiscardReason.Value);
             if (request.RoomId.HasValue)

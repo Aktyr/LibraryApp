@@ -319,4 +319,41 @@ public class GetDiscardedBooksCommandTests
             Assert.That(response.Discarded, Is.Empty);
         });
     }
+
+    [Test]
+    public async Task Execute_WithToDateFilter_IncludesWholeDay()
+    {
+        // Arrange: запись поздним вечером того же дня, что и ToDate.
+        var unitOfWork = new FakeUnitOfWork();
+        var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
+
+        var day = new DateTime(2024, 1, 15, 0, 0, 0, DateTimeKind.Utc);
+        var book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book" };
+        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Room" };
+
+        var lateInDay = new DiscardedBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            Book = book,
+            Room = room,
+            RoomId = room.Id,
+            Amount = 1,
+            DiscardedDate = day.AddHours(23),
+            DiscardReason = DiscardReason.Wear
+        };
+        await discardedRepo.AddRangeAsync([lateInDay], CancellationToken.None);
+
+        var command = new GetDiscardedBooksCommand(unitOfWork);
+        var request = new GetDiscardedBooksRequest { ToDate = day };
+
+        // Act
+        var response = await command.Execute(request, CancellationToken.None);
+
+        // Assert: без +1 день − 1 тик эта запись отсекалась бы (23:00 > 00:00).
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.Discarded, Has.Length.EqualTo(1));
+            Assert.That(response.Discarded[0].Id, Is.EqualTo(lateInDay.Id.Value));
+        });
+    }
 }
