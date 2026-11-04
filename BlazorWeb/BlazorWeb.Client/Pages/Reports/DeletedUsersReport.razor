@@ -1,0 +1,66 @@
+﻿@page "/reports/deleted-users"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Services.Interfaces
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Entities
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+@inject IUserApiClient UserClient
+@inject NavigationManager Nav
+@inject IToastService Toast
+
+<PageTitle>Удалённые пользователи</PageTitle>
+
+<PageHeader BackUrl="/reports" OnRefresh="LoadAsync" IsLoading="@isLoading" />
+
+<h2>Архив пользователей</h2>
+
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (users != null)
+{
+    @if (users.Count == 0)
+    {
+        <p class="text-muted">Удалённых пользователей нет.</p>
+    }
+    else
+    {
+        <DataGrid TItem="UserDTO"
+                  Items="users"
+                  PageSize="15"
+                  Columns="columns"
+                  SelectionMode="DataGridSelectionMode.Single"
+                  OnRowDoubleClick="OnRowDoubleClick" />
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private List<UserDTO>? users;
+
+    private readonly List<DataGridColumn<UserDTO>> columns = new()
+    {
+        new() { Title = "ФИО", Value = u => $"{u.LastName} {u.FirstName} {u.MiddleName}".Trim(), Width = 250 },
+        new() { Title = "Email", Value = u => u.Email, Width = 200 },
+        new() { Title = "Роль", Value = u => Badges.RoleName(u.Role), Width = 120 }
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var resp = await UserClient.GetDeletedUsersAsync();
+            users = resp.Users.ToList();
+        }
+        catch (Exception ex) { Toast.ShowError($"Ошибка загрузки: {ex.Message}"); }
+        finally { isLoading = false; }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnRowDoubleClick(UserDTO user) => Nav.NavigateTo($"/users/{user.Id}");
+}

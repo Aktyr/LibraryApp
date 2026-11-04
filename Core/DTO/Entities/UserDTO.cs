@@ -10,5 +10,6 @@ public record UserDTO(Guid Id,
                       UserRole Role = UserRole.Reader,
                       int ActiveBorrowedCount = 0,
                       string Email = "",
-                      SubscriptionStatus SubscriptionStatus = SubscriptionStatus.Active)
+                      SubscriptionStatus SubscriptionStatus = SubscriptionStatus.Active, 
+                      bool IsDeleted = false)
 { public UserDTO() : this(default, default!, default!, default!, default!, default, default!) { } }

@@ -29,13 +29,25 @@
 @* ---------- Шапка ---------- *@
 <PageHeader BackUrl="/users" OnRefresh="ReloadAsync" IsLoading="@isLoading">
     <ChildContent>
-        @if (CanEdit)
+        @if (user != null)
         {
-            <button class="btn btn-sm btn-outline-secondary" @onclick="OpenEditDialogAsync" disabled="@isLoading">✏️ Редактировать</button>
-        }
-        @if (CanDelete)
-        {
-            <button class="btn btn-sm btn-outline-danger" @onclick="DeleteUserAsync" disabled="@isLoading">🗑️ Удалить</button>
+            @if (user.IsDeleted)
+            {
+                <button class="btn btn-sm btn-warning" @onclick="RestoreUserAsync" disabled="@isLoading">
+                    ♻️ Восстановить
+                </button>
+            }
+            else
+            {
+                @if (CanEdit)
+                {
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="OpenEditDialogAsync" disabled="@isLoading">✏️ Редактировать</button>
+                }
+                @if (CanDelete)
+                {
+                    <button class="btn btn-sm btn-outline-danger" @onclick="DeleteUserAsync" disabled="@isLoading">🗑️ Удалить</button>
+                }
+            }
         }
     </ChildContent>
 </PageHeader>
@@ -69,7 +81,7 @@ else
             <select class="form-select form-select-sm"
                     style="width: auto;"
                     @onchange="OnStatusChanged"
-                    disabled="@isLoading">
+                    disabled="@(isLoading || user.IsDeleted)">
                 <option value="@SubscriptionStatus.Unconfirmed" selected="@(user.SubscriptionStatus == SubscriptionStatus.Unconfirmed)">
                     Не подтверждён
                 </option>
@@ -113,14 +125,23 @@ else
         <span>Контакт:</span> <strong>@user.ContactInfo</strong>
     </div>
 
-    @if (user.SubscriptionStatus != SubscriptionStatus.Active)
+    @if (user.IsDeleted)
+    {
+        <div class="alert alert-danger py-2 mb-4">
+            ⚠️ Пользователь <strong>деактивирован</strong> и не может входить в систему.
+            @if (user.SubscriptionStatus != SubscriptionStatus.Active)
+            {
+                <span> Профиль также <strong>@(user.SubscriptionStatus == SubscriptionStatus.Unconfirmed ? "не подтверждён" : "заморожен")</strong>.</span>
+            }
+        </div>
+    }
+    else if (user.SubscriptionStatus != SubscriptionStatus.Active)
     {
         <div class="alert alert-danger py-2 mb-4">
             ⚠️ Профиль пользователя <strong>@(user.SubscriptionStatus == SubscriptionStatus.Unconfirmed ? "не подтверждён" : "заморожен")</strong>.
             Выдача новых книг заблокирована. Разблокируйте Профиль, чтобы продолжить выдачу.
         </div>
     }
-
     @* ---------- Активные выдачи ---------- *@
     <div class="mb-4">
         <h4>Активные выдачи (@activeBorrows.Count)</h4>
@@ -141,36 +162,39 @@ else
     </div>
 
     @* ---------- Доступные книги ---------- *@
-    <div class="mb-4">
-        <h4>Доступные книги для выдачи (@availableRoomBooks.Count)</h4>
-        @if (user.ActiveBorrowedCount >= MaxBooksPerUser)
-        {
-            <p class="text-danger mb-0">
-                Лимит книг на руках достигнут (@MaxBooksPerUser / @MaxBooksPerUser).
-                Верните одну из книг, чтобы выдать новую.
-            </p>
-        }
-        else if (overdueCount > 0)
-        {
-            <p class="text-danger mb-0">
-                У пользователя есть просроченные книги. Выдача заблокирована до их возврата.
-            </p>
-        }
-        else if (availableRoomBooks.Count == 0)
-        {
-            <p class="text-muted mb-0">Нет доступных книг в библиотеке.</p>
-        }
-        else
-        {
-            <DataGrid TItem="RoomBookOption"
-                      Items="availableRoomBooks"
-                      PageSize="10"
-                      Columns="availableColumns"
-                      Actions="availableActions"
-                      SelectionMode="DataGridSelectionMode.Single"
-                      OnRowDoubleClick="OpenBorrowDialog" />
-        }
-    </div>
+    @if (!user.IsDeleted)
+    {
+        <div class="mb-4">
+            <h4>Доступные книги для выдачи (@availableRoomBooks.Count)</h4>
+            @if (user.ActiveBorrowedCount >= MaxBooksPerUser)
+            {
+                <p class="text-danger mb-0">
+                    Лимит книг на руках достигнут (@MaxBooksPerUser / @MaxBooksPerUser).
+                    Верните одну из книг, чтобы выдать новую.
+                </p>
+            }
+            else if (overdueCount > 0)
+            {
+                <p class="text-danger mb-0">
+                    У пользователя есть просроченные книги. Выдача заблокирована до их возврата.
+                </p>
+            }
+            else if (availableRoomBooks.Count == 0)
+            {
+                <p class="text-muted mb-0">Нет доступных книг в библиотеке.</p>
+            }
+            else
+            {
+                <DataGrid TItem="RoomBookOption"
+                Items="availableRoomBooks"
+                PageSize="10"
+                Columns="availableColumns"
+                Actions="availableActions"
+                SelectionMode="DataGridSelectionMode.Single"
+                OnRowDoubleClick="OpenBorrowDialog" />
+            }
+        </div>                
+    }
 
     @* ---------- История возвратов (сворачиваемая) ---------- *@
     @if (returnedBorrows.Count > 0)
@@ -756,6 +780,24 @@ else
         {
             Toast.ShowError($"Ошибка деактивации: {ex.Message}");
         }
+    }
+
+    private async Task RestoreUserAsync()
+    {
+        if (user == null) return;
+        var confirmed = await Confirm.AskAsync(
+            $"Восстановить пользователя «{user.LastName} {user.FirstName}»?\nОн снова получит доступ к системе.",
+            title: "Восстановление", confirmText: "Восстановить");
+
+        if (!confirmed) return;
+
+        try
+        {
+            await UserClient.RestoreUserAsync(user.Id);
+            Toast.ShowSuccess("Пользователь восстановлен");
+            await ReloadAsync();
+        }
+        catch (Exception ex) { Toast.ShowError($"Ошибка: {ex.Message}"); }
     }
 
     // ---- Модалка выдачи ----

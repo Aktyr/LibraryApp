@@ -93,14 +93,14 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
         => Task.FromResult(Entities.AsQueryable().FirstOrDefault(predicate.Compile()));
     public Task<TEntity?> SingleOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         => Task.FromResult(Entities.AsQueryable().SingleOrDefault(predicate.Compile()));
-    public Task<bool> AnyAsync(Expression<Func<TEntity, bool>>? predicate = null,CancellationToken cancellationToken = default)
+    public Task<bool> AnyAsync(Expression<Func<TEntity, bool>>? predicate = null, CancellationToken cancellationToken = default)
     {
         if (predicate == null)
             return Task.FromResult(Entities.Any());
         return Task.FromResult(Entities.Any(predicate.Compile()));
     }
 
-    public Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null,CancellationToken cancellationToken = default)
+    public Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null, CancellationToken cancellationToken = default)
     {
         if (predicate == null)
             return Task.FromResult(Entities.Count());
@@ -114,6 +114,10 @@ internal class FakeRepository<TEntity> : IRepository<TEntity> where TEntity : cl
         var query = queryBuilder(Entities.AsQueryable());
         return Task.FromResult(query.ToList().AsEnumerable());
     }
+    public Task<IEnumerable<TResult>> ExecuteQueryIgnoringFiltersAsync<TResult>(
+        Func<IQueryable<TEntity>, IQueryable<TResult>> queryBuilder,
+        CancellationToken cancellationToken = default)
+            => ExecuteQueryAsync(queryBuilder, cancellationToken);
 
     #endregion
 }

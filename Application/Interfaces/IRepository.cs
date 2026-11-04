@@ -30,7 +30,7 @@ public interface IRepository<TEntity> where TEntity : class, IEntity
         CancellationToken cancellationToken = default,
         params string[] includePaths);
 
-    // Получить сущности с указанными Include (БЕЗ ТРЕКИНГА — только для чтения)
+    /// Получить сущности с указанными Include (БЕЗ ТРЕКИНГА — только для чтения)
     Task<IEnumerable<TEntity>> GetWithoutTrackingAsync(
         Expression<Func<TEntity, bool>>? filter = null,
         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
@@ -66,6 +66,11 @@ public interface IRepository<TEntity> where TEntity : class, IEntity
 
     Task<IEnumerable<TResult>> ExecuteQueryAsync<TResult>(
         Func<IQueryable<TEntity>, IQueryable<TResult>> queryBuilder,
+        CancellationToken cancellationToken = default);
+
+    ///<summary> Выполняет запрос, игнорируя глобальные фильтры EF Core (HasQueryFilter).</summary>
+    Task<IEnumerable<TResult>> ExecuteQueryIgnoringFiltersAsync<TResult>(
+        Func<IQueryable<TEntity>, IQueryable<TResult>> queryBuilder,   
         CancellationToken cancellationToken = default);
 
 }

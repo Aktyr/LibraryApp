@@ -127,5 +127,14 @@ public class UniversalRepository<TEntity> : IRepository<TEntity> where TEntity :
         return await query.ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<TResult>> ExecuteQueryIgnoringFiltersAsync<TResult>(
+        Func<IQueryable<TEntity>, IQueryable<TResult>> queryBuilder,
+        CancellationToken cancellationToken = default)
+    {
+        // Применяем IgnoreQueryFilters() к базовому DbSet
+        var query = queryBuilder(_dbSet.IgnoreQueryFilters());
+        return await query.ToListAsync(cancellationToken);
+    }
+
     #endregion
 }

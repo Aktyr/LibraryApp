@@ -16,6 +16,9 @@ public static class UsersProxyEndpoints
         group.MapGet("/my-profile", GetMeAsync);
         group.MapGet("/my-profile/books", GetMyBooksAsync);
         group.MapPut("/{id:guid}/status", ChangeStatusAsync);
+        group.MapGet("/deleted", GetDeletedAsync);
+        group.MapPost("/{id:guid}/restore", RestoreAsync);
+
 
         // Переопределяем Create и Delete (BFF: Identity + Library, с компенсацией)
         group.MapPost("/", CreateAsync);
@@ -27,19 +30,27 @@ public static class UsersProxyEndpoints
 
     private static Task<IResult> GetAllAsync(
         IHttpClientFactory httpFactory, CancellationToken ct)
-        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, "/api/users", null, ct);
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, "/api/users", null, ct);
 
     private static Task<IResult> GetByIdAsync(
         Guid id, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, $"/api/users/{id}", null, ct);
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, $"/api/users/{id}", null, ct);
 
     private static Task<IResult> GetUserBooksAsync(
         Guid id, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, $"/api/users/{id}/books", null, ct);
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, $"/api/users/{id}/books", null, ct);
 
     private static Task<IResult> UpdateAsync(
         UpdateUserRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Put, "/api/users", request, ct);
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Put, "/api/users", request, ct);
+
+    private static Task<IResult> GetDeletedAsync(
+        IHttpClientFactory httpFactory, CancellationToken ct)
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, "/api/users/deleted", null, ct);
+
+    private static Task<IResult> RestoreAsync(
+        Guid id, IHttpClientFactory httpFactory, CancellationToken ct)
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post, $"/api/users/{id}/restore", null, ct);
 
     #endregion
 

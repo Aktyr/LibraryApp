@@ -106,6 +106,15 @@ public class UserEndpoints : EndpointBase
         return Results.Ok(await command.Execute(new GetUserRequest { Id = currentUser.LibraryUserId }, ct));
     }
 
+    [HttpGet("deleted")]
+    public async Task<IResult> GetDeleted(GetDeletedUsersCommand command, CancellationToken ct)
+        => Results.Ok(await command.Execute(new EmptyRequest(), ct));
+
+    [HttpPost("{id:guid}/restore")]
+    public async Task<IResult> Restore(Guid id, RestoreUserCommand command, CancellationToken ct)
+        => Results.Ok(await command.Execute(new RestoreUserRequest { Id = new Id(id) }, ct));
+
+
     [HttpGet("my-profile/books")]
     [EnumAuthorize(UserRole.Reader, UserRole.Librarian, UserRole.Admin)]
     public async Task<IResult> GetMyBooks(GetUserRoomBooksCommand command, ICurrentUserService currentUser, CancellationToken ct)

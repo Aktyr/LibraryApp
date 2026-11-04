@@ -34,6 +34,16 @@ public class UserApiClient(HttpClient http) : IUserApiClient
         return await ReadAsync(resp, ct);
     }
 
+    public async Task<UserResponse> GetDeletedUsersAsync(CancellationToken ct = default)
+        => await http.GetFromJsonAsync<UserResponse>($"{BasePath}/deleted", ct)
+            ?? new UserResponse("Error", "Empty response", []);
+
+    public async Task<BasicCreateDeleteResponse> RestoreUserAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsync($"{BasePath}/{id}/restore", null, ct);
+        return await ReadAsync(resp, ct);
+    }
+
     private static async Task<BasicCreateDeleteResponse> ReadAsync(
         HttpResponseMessage resp, CancellationToken ct)
     {
