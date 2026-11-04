@@ -53,8 +53,6 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
 
-        //app.MapControllers();
-        //app.MapEndpoints();
         app.MapHybridEndpoints();
 
         app.Run();
