@@ -2,8 +2,8 @@
 
 public class GetUserRoomBooksCommand(
     IUnitOfWork unitOfWork,
-    IConverter<UserRoomBook, BorrowedBookDTO> converter,
-    BorrowingValidatorAsync validator) : IGetQuery<GetUserBooksRequest, BorrowResponse>, ICommand
+    IConverter<UserRoomBook, BorrowedBookDTO> converter)
+    : IGetQuery<GetUserBooksRequest, BorrowResponse>, ICommand
 {
     public async Task<BorrowResponse> Execute(GetUserBooksRequest request, CancellationToken cancellationToken)
     {

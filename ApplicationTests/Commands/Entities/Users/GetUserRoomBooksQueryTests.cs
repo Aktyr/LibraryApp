@@ -3,13 +3,6 @@
 [TestFixture]
 public class GetUserRoomBooksQueryTests
 {
-    private static BorrowingValidatorAsync CreateValidator()
-    {
-        var optionsMock = new Mock<IOptionsSnapshot<BorrowingSettings>>();
-        optionsMock.Setup(x => x.Value).Returns(new BorrowingSettings());
-        return new BorrowingValidatorAsync(optionsMock.Object);
-    }
-
     private static BorrowDTOConverter CreateConverter()
     {
         var optionsMock = new Mock<IOptionsSnapshot<PenaltySettings>>();
@@ -25,7 +18,7 @@ public class GetUserRoomBooksQueryTests
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var converter = CreateConverter();
-        var query = new GetUserRoomBooksCommand(unitOfWork, converter, CreateValidator());
+        var query = new GetUserRoomBooksCommand(unitOfWork, converter);
 
         var request = new GetUserBooksRequest { UserId = Guid.NewGuid() };
 
@@ -71,7 +64,7 @@ public class GetUserRoomBooksQueryTests
 
         await repo.AddRangeAsync([urb1, urb2], CancellationToken.None);
 
-        var query = new GetUserRoomBooksCommand(unitOfWork, converter, CreateValidator());
+        var query = new GetUserRoomBooksCommand(unitOfWork, converter);
         var request = new GetUserBooksRequest { UserId = userId };
 
         // Act
