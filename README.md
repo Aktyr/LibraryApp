@@ -1,0 +1,1 @@
+> ⚠️ README в работе. Настройка user-secrets, Docker и production-конфигурация - будут описаны перед релизом.

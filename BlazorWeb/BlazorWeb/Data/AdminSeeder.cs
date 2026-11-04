@@ -21,9 +21,20 @@ public static class AdminSeeder
         }
 
         var email = config["Seed:AdminEmail"] ?? "admin@library.local";
-        var password = config["Seed:AdminPassword"] ?? "Admin123!";
+        var password = config["Seed:AdminPassword"];
         var lastName = config["Seed:AdminLastName"] ?? "Administrator";
         var firstName = config["Seed:AdminFirstName"] ?? "System";
+
+        // Hardcoded fallback удалён: пароль в исходниках — дыра независимо от окружения.
+        // Если админ нужен, а пароль не задан — просим разработчика настроить user-secrets.
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            logger.LogWarning(
+                "Seed:AdminPassword is not configured. Admin user will NOT be seeded. " +
+                "Set it via user-secrets:\n" +
+                "  dotnet user-secrets set \"Seed:AdminPassword\" \"<strong-password>\" --project BlazorWeb/BlazorWeb");
+            return;
+        }
 
         // Если Identity-пользователь с таким email уже есть — используем его,
         // но library-пользователя создаём через сервис, только если LibraryUserId пуст.
