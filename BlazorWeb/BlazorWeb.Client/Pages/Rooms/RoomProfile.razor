@@ -63,13 +63,15 @@ else
         }
         else
         {
+            @* Guard isEditor — внутри OpenEditCountAsync. Тернарник с null здесь даёт CS8604:
+               EventCallbackFactory.Create ожидает не-nullable Func, а Razor компилирует тернарник в него. *@
             <DataGrid TItem="RoomBookDTO"
                       Items="roomBooks"
                       PageSize="15"
                       Columns="InRoomColumns"
                       Actions="InRoomActions"
                       SelectionMode="DataGridSelectionMode.Multiple"
-                      OnRowDoubleClick="@(isEditor ? OpenEditCountAsync : null)" />
+                      OnRowDoubleClick="OpenEditCountAsync" />
         }
     </div>
 
