@@ -19,13 +19,13 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(b => b.Publisher)
                .HasMaxLength(100);
 
-        // Лимиты — из BookPolicy (SSOT). Description необязателен, поэтому .IsRequired() не ставим:
-        // колонка будет NOT NULL с default '' после миграции (сущность инициализирует string.Empty).
         builder.Property(b => b.Description)
-               .HasMaxLength(BookPolicy.MaxDescriptionLength);
+               .HasMaxLength(BookPolicy.MaxDescriptionLength)
+               .HasDefaultValue(string.Empty);
 
         builder.Property(b => b.CoverUrl)
-               .HasMaxLength(BookPolicy.MaxCoverUrlLength);
+               .HasMaxLength(BookPolicy.MaxCoverUrlLength)
+               .HasDefaultValue(string.Empty);
 
         builder.Property(b => b.IsDiscarded)
                .IsRequired()
