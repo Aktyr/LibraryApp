@@ -1,0 +1,15 @@
+﻿@* Счётчик символов для полей с ограничением длины. Не заменяет ValidationMessage — только UX-индикатор. *@
+<span class="@CssClass">@Current / @Max</span>
+
+@code {
+    /// <summary>Текущая длина значения.</summary>
+    [Parameter] public int Current { get; set; }
+
+    /// <summary>Максимально допустимая длина.</summary>
+    [Parameter] public int Max { get; set; }
+
+    private string CssClass =>
+        Current > Max ? "text-danger small"
+        : Current >= Max * 0.9 ? "text-warning small"
+        : "text-muted small";
+}

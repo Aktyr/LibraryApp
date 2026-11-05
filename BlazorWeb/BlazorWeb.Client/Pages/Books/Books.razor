@@ -1,5 +1,6 @@
 ﻿@page "/books"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Shared.CharCounter
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @using BlazorWeb.Client.Services.Interfaces
@@ -39,17 +40,24 @@ else if (books != null)
 
     <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>@(dialogMode == DialogMode.Create ? "Новая книга" : "Редактирование книги")</h3>
-        <EditForm Model="draft" OnValidSubmit="SaveAsync">
+
+                <EditForm Model="draft" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
 
             <div class="mb-3">
-                <label class="form-label">Название <span class="text-danger">*</span></label>
-                <InputText @bind-Value="draft.Title" class="form-control" />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">Название <span class="text-danger">*</span></label>
+                    <CharCounter Current="@(draft.Title?.Length ?? 0)" Max="@BookPolicy.MaxTitleLength" />
+                </div>
+                <InputTextLive @bind-Value="draft.Title" class="form-control" />
                 <ValidationMessage For="() => draft.Title" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Автор <span class="text-danger">*</span></label>
-                <InputText @bind-Value="draft.Author" class="form-control" />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">Автор <span class="text-danger">*</span></label>
+                    <CharCounter Current="@(draft.Author?.Length ?? 0)" Max="@BookPolicy.MaxAuthorLength" />
+                </div>
+                <InputTextLive @bind-Value="draft.Author" class="form-control" />
                 <ValidationMessage For="() => draft.Author" class="text-danger" />
             </div>
             <div class="mb-3">
@@ -58,23 +66,35 @@ else if (books != null)
                 <ValidationMessage For="() => draft.Year" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Издательство <span class="text-danger">*</span></label>
-                <InputText @bind-Value="draft.Publisher" class="form-control" />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">Издательство <span class="text-danger">*</span></label>
+                    <CharCounter Current="@(draft.Publisher?.Length ?? 0)" Max="@BookPolicy.MaxPublisherLength" />
+                </div>
+                <InputTextLive @bind-Value="draft.Publisher" class="form-control" />
                 <ValidationMessage For="() => draft.Publisher" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Жанр</label>
-                <InputText @bind-Value="draft.Genre" class="form-control" />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">Жанр</label>
+                    <CharCounter Current="@(draft.Genre?.Length ?? 0)" Max="@BookPolicy.MaxGenreLength" />
+                </div>
+                <InputTextLive @bind-Value="draft.Genre" class="form-control" />
                 <ValidationMessage For="() => draft.Genre" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">URL обложки</label>
-                <InputText @bind-Value="draft.CoverUrl" class="form-control" placeholder="https://..." />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">URL обложки</label>
+                    <CharCounter Current="@(draft.CoverUrl?.Length ?? 0)" Max="@BookPolicy.MaxCoverUrlLength" />
+                </div>
+                <InputTextLive @bind-Value="draft.CoverUrl" class="form-control" placeholder="https://..." />
                 <ValidationMessage For="() => draft.CoverUrl" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Описание</label>
-                <InputTextArea @bind-Value="draft.Description" class="form-control" rows="4" />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">Описание</label>
+                    <CharCounter Current="@(draft.Description?.Length ?? 0)" Max="@BookPolicy.MaxDescriptionLength" />
+                </div>
+                <InputTextAreaLive @bind-Value="draft.Description" class="form-control" rows="4" />
                 <ValidationMessage For="() => draft.Description" class="text-danger" />
             </div>
 
