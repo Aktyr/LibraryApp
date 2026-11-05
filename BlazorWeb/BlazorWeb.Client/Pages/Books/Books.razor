@@ -28,14 +28,16 @@ else if (books != null)
               Items="books"
               PageSize="10"
               Columns="columns"
-              Actions="actions" />
+              Actions="actions"
+              OnRowDoubleClick="OpenDetailsAsync" />
 }
 
-@if (dialogMode != DialogMode.None)
+@* Модалка создания/редактирования *@
+@if (dialogMode is DialogMode.Create or DialogMode.Edit)
 {
     <div class="modal-backdrop" @onclick="CloseDialog"></div>
 
-    <div class="modal-dialog" @onclick:stopPropagation="true">
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>@(dialogMode == DialogMode.Create ? "Новая книга" : "Редактирование книги")</h3>
         <EditForm Model="draft" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
@@ -65,6 +67,16 @@ else if (books != null)
                 <InputText @bind-Value="draft.Genre" class="form-control" />
                 <ValidationMessage For="() => draft.Genre" class="text-danger" />
             </div>
+            <div class="mb-3">
+                <label class="form-label">URL обложки</label>
+                <InputText @bind-Value="draft.CoverUrl" class="form-control" placeholder="https://..." />
+                <ValidationMessage For="() => draft.CoverUrl" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Описание</label>
+                <InputTextArea @bind-Value="draft.Description" class="form-control" rows="4" />
+                <ValidationMessage For="() => draft.Description" class="text-danger" />
+            </div>
 
             @if (!string.IsNullOrWhiteSpace(dialogError))
             {
@@ -76,14 +88,68 @@ else if (books != null)
     </div>
 }
 
+@* Модалка «Подробнее» *@
+@if (dialogMode == DialogMode.Details && detailsBook != null)
+{
+    <div class="modal-backdrop" @onclick="CloseDialog"></div>
+
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
+        <h3>@detailsBook.Title</h3>
+
+        <div class="row g-3 mt-1">
+            <div class="col-md-4">
+                @if (!string.IsNullOrWhiteSpace(detailsBook.CoverUrl))
+                {
+                    <img src="@detailsBook.CoverUrl"
+                         alt="Обложка «@detailsBook.Title»"
+                         style="max-width: 100%; max-height: 400px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                }
+                else
+                {
+                    <div style="display: flex; align-items: center; justify-content: center;
+                        width: 100%; height: 200px; background: #f3f3f3;
+                        border-radius: 6px; color: #888; font-size: 14px;">
+                        Нет обложки
+                    </div>
+                }
+            </div>
+            <div class="col-md-8">
+                <p class="mb-2"><strong>Автор:</strong> @detailsBook.Author</p>
+                <p class="mb-2"><strong>Год:</strong> @detailsBook.Year</p>
+                <p class="mb-2"><strong>Издательство:</strong> @detailsBook.Publisher</p>
+                @if (!string.IsNullOrWhiteSpace(detailsBook.Genre))
+                {
+                    <p class="mb-2"><strong>Жанр:</strong> @detailsBook.Genre</p>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(detailsBook.Description))
+                {
+                    <hr />
+                    <p style="white-space: pre-wrap;">@detailsBook.Description</p>
+                }
+                else
+                {
+                    <hr />
+                    <p class="text-muted">Описание не добавлено.</p>
+                }
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button class="btn btn-secondary" @onclick="CloseDialog">Закрыть</button>
+        </div>
+    </div>
+}
+
 @code {
     private List<BookDTO>? books;
     private bool isLoading = true;
 
-    private enum DialogMode { None, Create, Edit }
+    private enum DialogMode { None, Create, Edit, Details }
     private DialogMode dialogMode = DialogMode.None;
     private Guid? editingId;
     private BookDraft draft = new();
+    private BookDTO? detailsBook;
     private string? dialogError;
 
     private readonly List<DataGridColumn<BookDTO>> columns = new()
@@ -108,38 +174,45 @@ else if (books != null)
 
     private void ConfigureActions()
     {
-        if (!isEditor)
-        {
-            actions = new(); // пусто = нет кнопок
-            return;
-        }
-
+        // «Подробнее» — для всех: read-only операция.
         actions = new()
         {
             new()
             {
-                Label = "Добавить",
-                Icon = "➕",
-                MinSelection = 0,
-                ShowInContextMenu = false,
-                Handler = _ => OpenCreateDialogAsync()
-            },
-            new()
-            {
-                Label = "Редактировать",
-                Icon = "✏️",
+                Label = "Подробнее",
+                Icon = "ℹ️",
+                MinSelection = 1,
                 CanExecute = s => s.Count == 1,
-                Handler = s => OpenEditDialogAsync(s[0])
-            },
-            new()
-            {
-                Label = "Удалить",
-                Icon = "🗑️",
-                SeparatorBefore = true,
-                CanExecute = s => s.Count == 1,
-                Handler = s => DeleteAsync(s[0])
+                Handler = s => OpenDetailsAsync(s[0])
             }
         };
+
+        if (!isEditor)
+            return;
+
+        actions.Add(new()
+        {
+            Label = "Добавить",
+            Icon = "➕",
+            MinSelection = 0,
+            ShowInContextMenu = false,
+            Handler = _ => OpenCreateDialogAsync()
+        });
+        actions.Add(new()
+        {
+            Label = "Редактировать",
+            Icon = "✏️",
+            CanExecute = s => s.Count == 1,
+            Handler = s => OpenEditDialogAsync(s[0])
+        });
+        actions.Add(new()
+        {
+            Label = "Удалить",
+            Icon = "🗑️",
+            SeparatorBefore = true,
+            CanExecute = s => s.Count == 1,
+            Handler = s => DeleteAsync(s[0])
+        });
     }
 
     private async Task LoadAsync()
@@ -181,9 +254,18 @@ else if (books != null)
             Author = book.Author,
             Year = book.Year,
             Publisher = book.Publisher,
-            Genre = book.Genre
+            Genre = book.Genre,
+            Description = book.Description,
+            CoverUrl = book.CoverUrl
         };
         dialogError = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenDetailsAsync(BookDTO book)
+    {
+        detailsBook = book;
+        dialogMode = DialogMode.Details;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -191,6 +273,7 @@ else if (books != null)
     {
         dialogMode = DialogMode.None;
         editingId = null;
+        detailsBook = null;
         dialogError = null;
     }
 
@@ -207,7 +290,9 @@ else if (books != null)
                     Author = draft.Author,
                     Year = draft.Year,
                     Publisher = draft.Publisher,
-                    Genre = draft.Genre
+                    Genre = draft.Genre,
+                    Description = draft.Description,
+                    CoverUrl = draft.CoverUrl
                 });
                 Toast.ShowSuccess($"Книга «{draft.Title}» добавлена");
             }
@@ -220,7 +305,9 @@ else if (books != null)
                     Author = draft.Author,
                     Year = draft.Year,
                     Publisher = draft.Publisher,
-                    Genre = draft.Genre
+                    Genre = draft.Genre,
+                    Description = draft.Description,
+                    CoverUrl = draft.CoverUrl
                 });
                 Toast.ShowSuccess($"Книга «{draft.Title}» обновлена");
             }
@@ -277,15 +364,24 @@ else if (books != null)
         public string Publisher { get; set; } = "";
 
         public string Genre { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string CoverUrl { get; set; } = "";
 
         public IEnumerable<ValidationResult> Validate(
             ValidationContext validationContext)
         {
-            var errors = BookPolicy.Validate(Title, Author, Year, Publisher, Genre);
+            var errors = BookPolicy.Validate(Title, Author, Year, Publisher, Genre, Description, CoverUrl);
             foreach (var error in errors)
             {
-                // Отдаем ошибку в поле Year, если она про год
-                var memberNames = error.Contains("Год") ? new[] { nameof(Year) } : null;
+                // Ошибки BookPolicy приходят без привязки к полю. Привязываем вручную —
+                // иначе ValidationMessage ниже не покажет их пользователю.
+                string[]? memberNames = error switch
+                {
+                    _ when error.Contains("Год") => [nameof(Year)],
+                    _ when error.Contains("Описание") => [nameof(Description)],
+                    _ when error.Contains("URL обложки") => [nameof(CoverUrl)],
+                    _ => null
+                };
                 yield return new ValidationResult(error, memberNames);
             }
         }
