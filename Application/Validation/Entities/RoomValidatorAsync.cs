@@ -4,17 +4,10 @@ public class RoomValidatorAsync : IValidator
 {
     public async Task<ValidationResponse> ValidateAsync(Room room, CancellationToken cancellationToken = default)
     {
-        var errors = new List<string>();
-
-        if (string.IsNullOrWhiteSpace(room.Name))
-            errors.Add("Название комнаты обязательно");
-
-        if (room.Name.Length > 100)
-            errors.Add("Название комнаты не может превышать 100 символов");
+        var errors = RoomPolicy.Validate(room.Name);
 
         await Task.CompletedTask;
 
-        return new ValidationResponse(!errors.Any(), errors);
+        return new ValidationResponse(errors.Count == 0, errors);
     }
-
 }

@@ -192,10 +192,14 @@ else if (rooms != null)
         }
     }
 
-    private class RoomDraft
+    private class RoomDraft : IValidatableObject
     {
-        [Required(ErrorMessage = "Название обязательно")]
-        [StringLength(100, ErrorMessage = "Не более 100 символов")]
         public string Name { get; set; } = "";
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            foreach (var error in RoomPolicy.Validate(Name))
+                yield return new ValidationResult(error, [nameof(Name)]);
+        }
     }
 }
