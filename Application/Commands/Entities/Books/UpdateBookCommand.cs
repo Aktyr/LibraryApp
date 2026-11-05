@@ -24,7 +24,10 @@ public class UpdateBookCommand(
                                   request.Author,
                                   request.Year,
                                   request.Publisher,
-                                  request.Genre, []);
+                                  request.Genre,
+                                  [],
+                                  Description: request.Description,
+                                  CoverUrl: request.CoverUrl);
         var bookForValidation = bookConverter.ToEntity(bookDTO);
 
         var validationResult = await bookValidator.ValidateAsync(bookForValidation, cancellationToken);
@@ -38,7 +41,8 @@ public class UpdateBookCommand(
         book.Year = request.Year;
         book.Publisher = request.Publisher;
         book.Genre = request.Genre;
-        //book.RoomBook = request.RoomBook;
+        book.Description = request.Description;
+        book.CoverUrl = request.CoverUrl;
 
         await unitOfWork.ExecuteInTransactionAsync(async () =>
         {

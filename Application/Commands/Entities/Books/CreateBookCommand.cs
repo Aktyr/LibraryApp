@@ -19,7 +19,10 @@ public class CreateBookCommand(
                                   request.Author,
                                   request.Year,
                                   request.Publisher,
-                                  request.Genre, []);
+                                  request.Genre,
+                                  [],
+                                  Description: request.Description,
+                                  CoverUrl: request.CoverUrl);
         var book = bookConverter.ToEntity(bookDTO);
 
         // Валидация
