@@ -298,8 +298,6 @@ else if (users != null)
 
     private class UserDraft : IValidatableObject
     {
-        [Required(ErrorMessage = "Email обязателен")]
-        [EmailAddress(ErrorMessage = "Некорректный email")]
         public string Email { get; set; } = "";
 
         [Required(ErrorMessage = "Пароль обязателен")]
@@ -322,17 +320,13 @@ else if (users != null)
 
         public UserRole? Role { get; set; } = UserRole.Reader;
 
-        public IEnumerable<ValidationResult> Validate(
-            ValidationContext validationContext)
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            var errors = PasswordPolicy.Validate(Password);
+            foreach (var error in EmailPolicy.Validate(Email))
+                yield return new ValidationResult(error, [nameof(Email)]);
 
-            foreach (var error in errors)
-            {
-                yield return new ValidationResult(
-                    error,
-                    new[] { nameof(Password) });
-            }
+            foreach (var error in PasswordPolicy.Validate(Password))
+                yield return new ValidationResult(error, [nameof(Password)]);
         }
     }
 }
