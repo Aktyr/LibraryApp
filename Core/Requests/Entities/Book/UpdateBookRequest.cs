@@ -8,5 +8,10 @@ public class UpdateBookRequest : IAddOrUpdateRequest
     public int Year { get; set; }
     public string Publisher { get; set; } = string.Empty;
     public string Genre { get; set; } = string.Empty;
-}
 
+    /// <summary>Аннотация. Необязательна; пустая строка стирает прежнее значение.</summary>
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>URL обложки. Необязателен; пустая строка стирает прежнее значение.</summary>
+    public string CoverUrl { get; set; } = string.Empty;
+}

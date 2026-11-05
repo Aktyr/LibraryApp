@@ -7,4 +7,10 @@ public class CreateBookRequest : IAddOrUpdateRequest
     public int Year { get; set; }
     public string Publisher { get; set; } = string.Empty;
     public string Genre { get; set; } = string.Empty;
+
+    /// <summary>Аннотация. Необязательна.</summary>
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>URL обложки. Необязателен.</summary>
+    public string CoverUrl { get; set; } = string.Empty;
 }
