@@ -1,4 +1,6 @@
-﻿namespace LibApp.ApplicationTests.Validation;
+﻿using LibApp.Core.Policies;
+
+namespace LibApp.ApplicationTests.Validation;
 
 [TestFixture]
 public class BookValidatorAsyncTests
@@ -178,5 +180,135 @@ public class BookValidatorAsyncTests
             Assert.That(result.Errors, Contains.Item("Название жанра не может превышать 100 символов"));
         });
     }
+    [Test]
+    public async Task ValidateAsync_WhenDescriptionAndCoverUrlAreEmpty_ReturnsIsValid()
+    {
+        // Arrange: пустые строки — валидное состояние (поля необязательны).
+        var validator = new BookValidatorAsync();
+        var book = new Book
+        {
+            Id = new Id(Guid.NewGuid()),
+            Title = "Война и мир",
+            Author = "Лев Толстой",
+            Year = 1869,
+            Publisher = "Русский вестник",
+            Description = "",
+            CoverUrl = ""
+        };
 
+        // Act
+        var result = await validator.ValidateAsync(book);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(result.Errors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenDescriptionExceedsMaxLength_ReturnsError()
+    {
+        // Arrange
+        var validator = new BookValidatorAsync();
+        var book = new Book
+        {
+            Id = new Id(Guid.NewGuid()),
+            Title = "Valid Title",
+            Author = "Valid Author",
+            Year = 2000,
+            Publisher = "Valid Publisher",
+            Description = new string('A', BookPolicy.MaxDescriptionLength + 1)
+        };
+
+        // Act
+        var result = await validator.ValidateAsync(book);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors,
+                Contains.Item($"Описание не может превышать {BookPolicy.MaxDescriptionLength} символов"));
+        });
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenCoverUrlIsNotAbsoluteHttp_ReturnsError()
+    {
+        // Arrange: относительный URL — не абсолютный, должен отсекаться.
+        var validator = new BookValidatorAsync();
+        var book = new Book
+        {
+            Id = new Id(Guid.NewGuid()),
+            Title = "Valid Title",
+            Author = "Valid Author",
+            Year = 2000,
+            Publisher = "Valid Publisher",
+            CoverUrl = "/images/cover.png"
+        };
+
+        // Act
+        var result = await validator.ValidateAsync(book);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Contains.Item("URL обложки должен быть абсолютным http/https-адресом"));
+        });
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenCoverUrlHasUnsafeScheme_ReturnsError()
+    {
+        // Arrange: javascript: и data: — XSS-векторы, не должны проходить.
+        var validator = new BookValidatorAsync();
+
+        foreach (var unsafeUrl in new[] { "javascript:alert(1)", "data:image/png;base64,AAAA", "ftp://example.com/a.png" })
+        {
+            var book = new Book
+            {
+                Id = new Id(Guid.NewGuid()),
+                Title = "Valid Title",
+                Author = "Valid Author",
+                Year = 2000,
+                Publisher = "Valid Publisher",
+                CoverUrl = unsafeUrl
+            };
+
+            // Act
+            var result = await validator.ValidateAsync(book);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.IsValid, Is.False, $"URL '{unsafeUrl}' должен быть отклонён");
+                Assert.That(result.Errors, Contains.Item("URL обложки должен быть абсолютным http/https-адресом"));
+            });
+        }
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenCoverUrlIsValidHttps_ReturnsIsValid()
+    {
+        // Arrange
+        var validator = new BookValidatorAsync();
+        var book = new Book
+        {
+            Id = new Id(Guid.NewGuid()),
+            Title = "Valid Title",
+            Author = "Valid Author",
+            Year = 2000,
+            Publisher = "Valid Publisher",
+            CoverUrl = "https://example.com/cover.png"
+        };
+
+        // Act
+        var result = await validator.ValidateAsync(book);
+
+        // Assert
+        Assert.That(result.IsValid, Is.True);
+    }
 }
