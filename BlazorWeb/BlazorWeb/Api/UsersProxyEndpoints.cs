@@ -1,6 +1,4 @@
-﻿using LibApp.Core.Interfaces;
-
-namespace BlazorWeb.Api;
+﻿namespace BlazorWeb.Api;
 
 public static class UsersProxyEndpoints
 {
@@ -13,6 +11,7 @@ public static class UsersProxyEndpoints
         group.MapGet("/", GetAllAsync);
         group.MapGet("/{id:guid}", GetByIdAsync);
         group.MapGet("/{id:guid}/books", GetUserBooksAsync);
+        group.MapDelete("/my-profile", DeleteMyProfileAsync);
         group.MapGet("/my-profile", GetMeAsync);
         group.MapGet("/my-profile/books", GetMyBooksAsync);
         group.MapPut("/{id:guid}/status", ChangeStatusAsync);
@@ -159,6 +158,83 @@ public static class UsersProxyEndpoints
         }
 
         return Results.Ok(new BasicCreateDeleteResponse("Ok", "Пользователь деактивирован"));
+    }
+
+    private static async Task<IResult> DeleteMyProfileAsync(
+        ClaimsPrincipal user,
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        ICurrentUserService currentUser,
+        SelfDeleteCommand selfDeleteCommand,
+        RestoreUserCommand restoreUserCommand,
+        ILoggerFactory loggerFactory,
+        HttpContext httpContext,
+        CancellationToken ct)
+    {
+        var logger = loggerFactory.CreateLogger("DeleteMyProfileBff");
+
+        if (currentUser.LibraryUserId is null)
+            return Results.Unauthorized();
+
+        var appUser = await userManager.GetUserAsync(user);
+        if (appUser is null)
+            return Results.Unauthorized();
+
+        try
+        {
+            await selfDeleteCommand.Execute(
+                new DeleteUserRequest { Id = currentUser.LibraryUserId }, ct);
+        }
+        catch (LibValidationException ex)
+        {
+            return Results.Problem(
+                detail: string.Join("\n", ex.ExceptionDetails),
+                statusCode: 400);
+        }
+
+        // Компенсация: library уже soft-deleted, если Identity-удаление упадёт —
+        // возвращаем library обратно, иначе пользователь останется без Identity и
+        // с активной library-записью (self-restore не сработает: !IsDeleted).
+        var identityResult = await userManager.DeleteAsync(appUser);
+        if (!identityResult.Succeeded)
+        {
+            try
+            {
+                await restoreUserCommand.Execute(
+                    new RestoreUserRequest { Id = currentUser.LibraryUserId }, ct);
+                logger.LogWarning(
+                    "Self-delete: Identity deletion failed, library user {Id} rolled back",
+                    currentUser.LibraryUserId.Value);
+            }
+            catch (Exception compEx)
+            {
+                logger.LogCritical(compEx,
+                    "Self-delete compensation FAILED: library user {Id} is deleted, Identity still exists",
+                    currentUser.LibraryUserId.Value);
+            }
+
+            return Results.Problem(
+                detail: "Не удалось удалить аккаунт. Попробуйте позже или обратитесь к администратору.",
+                statusCode: 500);
+        }
+
+        await signInManager.SignOutAsync();
+
+        // Cookie статуса читает StatusMessage.razor на /Account/Login.
+        // Дублируем private-настройки IdentityRedirectManager.StatusCookieBuilder —
+        // шаблон не трогаем.
+        httpContext.Response.Cookies.Append(
+            IdentityRedirectManager.StatusCookieName,
+            "Аккаунт удалён. Восстановить можно по email и паролю.",
+            new CookieOptions
+            {
+                SameSite = SameSiteMode.Strict,
+                HttpOnly = true,
+                IsEssential = true,
+                MaxAge = TimeSpan.FromSeconds(5),
+            });
+
+        return Results.Ok(new BasicCreateDeleteResponse("Ok", "Аккаунт удалён"));
     }
 
     private static UserRole ParseActorRole(ClaimsPrincipal user)
