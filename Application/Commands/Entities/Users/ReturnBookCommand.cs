@@ -17,7 +17,19 @@ public class ReturnBookCommand(
 
         // Валидация
         var userRoomBookId = new Id(request.UserRoomBookId);
-        var userRoomBook = await userRoomBookRepo.FirstOrDefaultAsync(urb => urb.Id == userRoomBookId, cancellationToken);
+
+        // Eager-load: User — для ФИО в аудите, RoomBook.Book/Room — для текста аудита
+        // и списания. Без явных Include lazy-прокси даёт по SQL на каждой навигации.
+        var userRoomBook = (await userRoomBookRepo.GetAsync(
+            filter: urb => urb.Id == userRoomBookId,
+            cancellationToken: cancellationToken,
+            includePaths:
+            [
+                IncludePaths.UserRoomBook.User,
+                IncludePaths.UserRoomBook.RoomBookBook,
+                IncludePaths.UserRoomBook.RoomBookRoom
+            ])).FirstOrDefault();
+
         if (userRoomBook == null) throw new UserRoomBookNotFoundException();
 
         var validationResult = await validator.ValidateReturnAsync(userRoomBook, cancellationToken);
@@ -104,11 +116,10 @@ public class ReturnBookCommand(
                 await unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
-            // Пишем аудит в той же транзакции, что и возврат:
-            // при падении основного действия запись не останется «фантомной».
+            // ФИО читателя — чтобы в AuditReport было видно, у кого списана книга.
             var auditDetails = request.DiscardReason.HasValue
-                ? $"Возврат со списанием: «{roomBook.Book.Title}» ({ReasonName(request.DiscardReason.Value)})"
-                : $"Возврат книги: «{roomBook.Book.Title}»";
+                ? $"Возврат со списанием: «{roomBook.Book.Title}» ({ReasonName(request.DiscardReason.Value)}). Читатель: {userRoomBook.User.FullName}"
+                : $"Возврат книги: «{roomBook.Book.Title}». Читатель: {userRoomBook.User.FullName}";
 
             await auditService.LogAsync(
                 AuditActionType.Return,

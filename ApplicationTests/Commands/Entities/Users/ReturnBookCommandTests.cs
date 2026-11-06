@@ -80,6 +80,7 @@ public class ReturnBookCommandTests
         var userRoomBookRepo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
         var roomBookRepo = (FakeRepository<RoomBook>)unitOfWork.GetRepository<RoomBook>();
         var notificationMock = new Mock<INotificationService>();
+        var auditMock = new Mock<IAuditService>();
 
         var roomBook = new RoomBook
         {
@@ -109,7 +110,7 @@ public class ReturnBookCommandTests
             CreateValidator(),
             CreatePenaltyService(),
             notificationMock.Object,
-            new FakeCurrentUserService(), Mock.Of<IAuditService>());
+            new FakeCurrentUserService(), auditMock.Object);
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
@@ -134,6 +135,16 @@ public class ReturnBookCommandTests
                     It.IsAny<User>(), It.IsAny<UserRoomBook>(),
                     It.IsAny<decimal>(), It.IsAny<CancellationToken>()),
                 Times.Never);
+
+            auditMock.Verify(a => a.LogAsync(
+                AuditActionType.Return,
+                nameof(UserRoomBook),
+                It.IsAny<Guid?>(),
+                It.Is<string>(s => s.Contains("Возврат книги") && s.Contains("Читатель: ")),
+                It.IsAny<Id?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
         });
     }
 
@@ -763,6 +774,8 @@ public class ReturnBookCommandTests
         var command = new ReturnBookCommand(
             uow, CreateValidator(), CreatePenaltyService(),
             new Mock<INotificationService>().Object, new FakeCurrentUserService(), Mock.Of<IAuditService>());
+        var auditMock = new Mock<IAuditService>();
+
 
         var request = new ReturnBookRequest
         {
@@ -791,6 +804,16 @@ public class ReturnBookCommandTests
             Assert.That(d.CompensationAmount, Is.Null);
             Assert.That(d.ApprovedById, Is.Not.Null);
             Assert.That(d.ApprovedBy, Is.Not.Null.And.Not.Empty);
+
+            auditMock.Verify(a => a.LogAsync(
+                AuditActionType.Return,
+                nameof(UserRoomBook),
+                It.IsAny<Guid?>(),
+                It.Is<string>(s => s.Contains("Возврат книги") && s.Contains("Читатель: ")),
+                It.IsAny<Id?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
         });
     }
 
