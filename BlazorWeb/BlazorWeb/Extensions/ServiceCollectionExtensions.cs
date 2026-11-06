@@ -62,6 +62,11 @@ public static class ServiceCollectionExtensions
         // Самостоятельное восстановление: снимает soft-delete в library и пересоздаёт Identity.
         services.AddScoped<ISelfRestoreService, SelfRestoreService>();
 
+        // ICurrentUserService для BFF: резолвит library-пользователя из Identity-контекста.
+        // Infrastructure.CurrentUserService здесь не подходит — он читает JWT-claims,
+        // а в BFF NameIdentifier — это Identity-id, а не library-id.
+        services.AddScoped<ICurrentUserService, BffCurrentUserService>();
+
         return services;
     }
 
