@@ -262,6 +262,9 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("DeletedByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -301,6 +304,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                         .HasDefaultValue("Unconfirmed");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeletedByUserId");
 
                     b.HasIndex("Email")
                         .IsUnique()
@@ -412,6 +417,14 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Navigation("Book");
 
                     b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("LibApp.Core.Entities.User", b =>
+                {
+                    b.HasOne("LibApp.Core.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("LibApp.Core.Entities.UserRoomBook", b =>

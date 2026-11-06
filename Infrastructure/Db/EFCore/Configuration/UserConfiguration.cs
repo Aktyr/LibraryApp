@@ -31,6 +31,17 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.DeletedAt);
 
+        // Self-reference: кто удалил. Restrict — админа нельзя hard-delete'ить,
+        // пока за ним числятся чужие удаления. При GDPR — анонимизация (не hard-delete),
+        // так что FK не сломается.
+        builder.HasOne<User>()
+               .WithMany()
+               .HasForeignKey(u => u.DeletedByUserId)
+               .OnDelete(DeleteBehavior.Restrict)
+               .IsRequired(false);
+
+        builder.HasIndex(u => u.DeletedByUserId);
+
         builder.HasIndex(u => u.Email)
                .IsUnique()
                .HasFilter("\"IsDeleted\" = false");

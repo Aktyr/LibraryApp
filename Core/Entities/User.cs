@@ -22,6 +22,7 @@ public class User : IEntity
     // todo тайм-аут после N неудачных вводов пароля? 
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
+    public Id? DeletedByUserId { get; set; }
 
     public TimeSpan? NearestReturnTimeSpan
     {
