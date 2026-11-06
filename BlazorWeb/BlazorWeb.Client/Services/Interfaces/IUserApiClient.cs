@@ -1,6 +1,4 @@
-﻿using LibApp.Core.Enums;
-
-namespace BlazorWeb.Client.Services.Interfaces;
+﻿namespace BlazorWeb.Client.Services.Interfaces;
 
 public interface IUserApiClient
 {
@@ -11,6 +9,7 @@ public interface IUserApiClient
     Task<BasicCreateDeleteResponse> UpdateUserAsync(UpdateUserRequest request, CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> DeleteUserAsync(Guid id, CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> ChangeStatusAsync(Guid id, SubscriptionStatus newStatus, CancellationToken ct = default);
+    Task<BasicCreateDeleteResponse> DeleteMyProfileAsync(CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> RestoreUserAsync(Guid id, CancellationToken ct = default);
     Task<UserResponse> GetDeletedUsersAsync(CancellationToken ct = default);
     Task<UserResponse> GetMeAsync(CancellationToken ct = default);

@@ -66,4 +66,10 @@ public class UserApiClient(HttpClient http) : IUserApiClient
     public async Task<BorrowResponse> GetMyBooksAsync(CancellationToken ct = default)
         => await http.GetFromJsonAsync<BorrowResponse>($"{BasePath}/my-profile/books", ct)
            ?? new BorrowResponse("Error", "Empty response", []);
+
+    public async Task<BasicCreateDeleteResponse> DeleteMyProfileAsync(CancellationToken ct = default)
+    {
+        var resp = await http.DeleteAsync($"{BasePath}/my-profile", ct);
+        return await ReadAsync(resp, ct);
+    }
 }
