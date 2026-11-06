@@ -297,4 +297,111 @@ public class LoginCommandTests
         await Assert.ThrowsAsync<UnauthorizedException>(async () =>
             await loginCommand.Execute(request, CancellationToken.None));
     }
+
+    [Test]
+    public async Task Execute_WhenUserSelfDeleted_ReturnsRestoreRequired()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+
+        var userId = new Id(Guid.NewGuid());
+        var deletedUser = new User
+        {
+            Id = userId,
+            Email = "self-deleted@example.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password"),
+            LastName = "Удалён",
+            FirstName = "Сам",
+            ContactInfo = "self-deleted@example.com",
+            Role = UserRole.Reader,
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow,
+            DeletedByUserId = userId, // сам себя
+            RoomBooks = []
+        };
+
+        // FakeRepository игнорирует IgnoreQueryFilters, но ExecuteQueryIgnoringFiltersAsync
+        // в нём делегируется в ExecuteQueryAsync — данные находятся.
+        await userRepo.AddRangeAsync([deletedUser], CancellationToken.None);
+
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
+        var request = new LoginRequest { Email = deletedUser.Email, Password = "Password" };
+
+        // Act
+        var result = await loginCommand.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo("RestoreRequired"));
+            Assert.That(result.Token, Is.Null);
+            Assert.That(result.CanSelfRestore, Is.True);
+            Assert.That(result.Email, Is.EqualTo(deletedUser.Email));
+            Assert.That(result.UserId, Is.EqualTo(userId.Value));
+        });
+    }
+
+    [Test]
+    public async Task Execute_WhenUserDeletedByAdmin_ThrowsUnauthorized()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+
+        var deletedUser = new User
+        {
+            Id = new Id(Guid.NewGuid()),
+            Email = "admin-deleted@example.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password"),
+            LastName = "Удалён",
+            FirstName = "Админом",
+            ContactInfo = "admin-deleted@example.com",
+            Role = UserRole.Reader,
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow,
+            DeletedByUserId = new Id(Guid.NewGuid()), // другой пользователь
+            RoomBooks = []
+        };
+        await userRepo.AddRangeAsync([deletedUser], CancellationToken.None);
+
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
+        var request = new LoginRequest { Email = deletedUser.Email, Password = "Password" };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedException>(() =>
+            loginCommand.Execute(request, CancellationToken.None));
+    }
+
+    [Test]
+    public async Task Execute_WhenUserDeletedWithWrongPassword_ThrowsUnauthorized()
+    {
+        // Arrange: перебором email нельзя узнать, что аккаунт self-deleted.
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+
+        var userId = new Id(Guid.NewGuid());
+        var deletedUser = new User
+        {
+            Id = userId,
+            Email = "self-deleted@example.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("CorrectPassword"),
+            LastName = "Удалён",
+            FirstName = "Сам",
+            ContactInfo = "self-deleted@example.com",
+            Role = UserRole.Reader,
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow,
+            DeletedByUserId = userId,
+            RoomBooks = []
+        };
+        await userRepo.AddRangeAsync([deletedUser], CancellationToken.None);
+
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, Mock.Of<IAuditService>());
+        var request = new LoginRequest { Email = deletedUser.Email, Password = "WrongPassword" };
+
+        // Act & Assert: неверный пароль — UnauthorizedException, не RestoreRequired.
+        await Assert.ThrowsAsync<UnauthorizedException>(() =>
+            loginCommand.Execute(request, CancellationToken.None));
+    }
 }
