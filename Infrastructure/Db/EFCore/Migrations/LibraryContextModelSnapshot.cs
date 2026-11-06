@@ -171,6 +171,40 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.ToTable("Book", "library");
                 });
 
+            modelBuilder.Entity("LibApp.Core.Entities.PenaltyPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PaidByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserRoomBookId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaidAt");
+
+                    b.HasIndex("PaidByUserId");
+
+                    b.HasIndex("UserRoomBookId")
+                        .IsUnique();
+
+                    b.ToTable("PenaltyPayment", "library");
+                });
+
             modelBuilder.Entity("LibApp.Core.Entities.Room", b =>
                 {
                     b.Property<Guid>("Id")
@@ -342,6 +376,25 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Navigation("Room");
                 });
 
+            modelBuilder.Entity("LibApp.Core.Entities.PenaltyPayment", b =>
+                {
+                    b.HasOne("LibApp.Core.Entities.User", "PaidByUser")
+                        .WithMany()
+                        .HasForeignKey("PaidByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LibApp.Core.Entities.UserRoomBook", "UserRoomBook")
+                        .WithMany("PenaltyPayments")
+                        .HasForeignKey("UserRoomBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PaidByUser");
+
+                    b.Navigation("UserRoomBook");
+                });
+
             modelBuilder.Entity("LibApp.Core.Entities.RoomBook", b =>
                 {
                     b.HasOne("LibApp.Core.Entities.Book", "Book")
@@ -393,6 +446,11 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
             modelBuilder.Entity("LibApp.Core.Entities.User", b =>
                 {
                     b.Navigation("RoomBooks");
+                });
+
+            modelBuilder.Entity("LibApp.Core.Entities.UserRoomBook", b =>
+                {
+                    b.Navigation("PenaltyPayments");
                 });
 #pragma warning restore 612, 618
         }
