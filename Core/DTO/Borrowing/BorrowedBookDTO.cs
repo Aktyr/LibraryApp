@@ -9,11 +9,12 @@ public record BorrowedBookDTO(
     DateTime? Deadline,
     DateTime? ReturnDate,
     decimal? Penalty,
-    int TotalExtendedDays = 0
+    int TotalExtendedDays = 0,
+    bool IsPenaltyPaid = false
 )
 {
     public BorrowedBookDTO() : this(
         default, default!, default!, default!,
-        default, default, default, default, default)
+        default, default, default, default, default, default)
     { }
 }

@@ -10,15 +10,16 @@ public class GetUserRoomBooksCommand(
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         var userId = new Id(request.UserId);
 
-        // BorrowDTOConverter читает RoomBook.Book.Title/Author и RoomBook.Room.Name.
-        // Без явных Include EF подгружает их лениво — по SQL на каждую выдачу.
+        // PenaltyPayments — для вычисляемого IsPenaltyPaid в конвертере.
+        // Без eager-load lazy-прокси даст по SQL на каждую выдачу.
         var userBooks = await userRoomBookRepo.GetAsync(
             filter: urb => urb.User.Id == userId,
             cancellationToken: cancellationToken,
             includePaths:
             [
                 IncludePaths.UserRoomBook.RoomBookBook,
-                IncludePaths.UserRoomBook.RoomBookRoom
+                IncludePaths.UserRoomBook.RoomBookRoom,
+                IncludePaths.UserRoomBook.PenaltyPayments
             ]);
 
         var bookDTOs = userBooks

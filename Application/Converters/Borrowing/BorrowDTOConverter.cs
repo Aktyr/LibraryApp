@@ -27,7 +27,8 @@ public class BorrowDTOConverter : IConverter<UserRoomBook, BorrowedBookDTO>
             Deadline: entity.Deadline,
             ReturnDate: entity.ReturnDate,
             Penalty: currentPenalty,
-            TotalExtendedDays: entity.TotalExtendedDays
+            TotalExtendedDays: entity.TotalExtendedDays,
+            IsPenaltyPaid: entity.IsPenaltyPaid
         );
     }
 
