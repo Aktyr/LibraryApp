@@ -6,17 +6,41 @@
 @using LibApp.Core.DTO.Borrowing
 @using LibApp.Core.DTO.Entities
 @using LibApp.Core.Enums
+@using LibApp.Core.Records
 @using Microsoft.AspNetCore.Authorization
 @inject IUserApiClient UserClient
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
+@inject IConfirmService Confirm
 @inject IToastService Toast
 @inject IBorrowingSettingsService SettingsService
 
 <PageTitle>Мой профиль</PageTitle>
 
-<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading" />
-
+<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading">
+    <ChildContent>
+        @if (user != null)
+        {
+            <button class="btn btn-sm btn-outline-secondary"
+                    @onclick="OpenEditDialog"
+                    disabled="@isLoading">
+                ✏️ Редактировать профиль
+            </button>
+            <a class="btn btn-sm btn-outline-secondary" href="Account/Manage">
+                🔐 Безопасность
+            </a>
+            @if (user.Role != UserRole.Admin)
+            {
+                <button class="btn btn-sm btn-outline-danger"
+                        @onclick="DeleteAccountAsync"
+                        disabled="@(isLoading || user.ActiveBorrowedCount > 0)"
+                        title="@(user.ActiveBorrowedCount > 0 ? "Сначала верните все книги" : "Удалить аккаунт")">
+                    🗑️ Удалить аккаунт
+                </button>
+            }
+        }
+    </ChildContent>
+</PageHeader>
 @if (isLoading)
 {
     <p>Загрузка...</p>
@@ -91,7 +115,46 @@ else
         </details>
     }
 }
+@* Модалка редактирования профиля *@
+@if (editDialogOpen)
+{
+    <div class="modal-backdrop" @onclick="CloseEditDialog"></div>
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
+        <h3>Редактирование профиля</h3>
+        <EditForm Model="draft" OnValidSubmit="SaveProfileAsync">
+            <DataAnnotationsValidator />
 
+            <div class="mb-3">
+                <label class="form-label">Фамилия <span class="text-danger">*</span></label>
+                <InputText @bind-Value="draft.LastName" class="form-control" />
+                <ValidationMessage For="() => draft.LastName" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Имя <span class="text-danger">*</span></label>
+                <InputText @bind-Value="draft.FirstName" class="form-control" />
+                <ValidationMessage For="() => draft.FirstName" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Отчество</label>
+                <InputText @bind-Value="draft.MiddleName" class="form-control" />
+                <ValidationMessage For="() => draft.MiddleName" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Контактная информация <span class="text-danger">*</span></label>
+                <InputText @bind-Value="draft.ContactInfo" class="form-control" />
+                <ValidationMessage For="() => draft.ContactInfo" class="text-danger" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(editError))
+            {
+                <div class="alert alert-danger mb-3" style="white-space: pre-line;">@editError</div>
+            }
+
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <button type="button" class="btn btn-secondary ms-2" @onclick="CloseEditDialog">Отмена</button>
+        </EditForm>
+    </div>
+}
 @code {
     private string FullName => user.FullName();
     private List<BorrowedBookDTO> activeBorrows => allBorrows.ActiveBorrows();
@@ -114,6 +177,108 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
+    }
+
+    private bool editDialogOpen;
+    private UserDraft draft = new();
+    private string? editError;
+
+    private async Task OpenEditDialog()
+    {
+        if (user == null) return;
+        draft = new UserDraft
+        {
+            LastName = user.LastName,
+            FirstName = user.FirstName,
+            MiddleName = user.MiddleName,
+            ContactInfo = user.ContactInfo
+        };
+        editError = null;
+        editDialogOpen = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseEditDialog()
+    {
+        editDialogOpen = false;
+        editError = null;
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        if (user == null) return;
+        editError = null;
+        try
+        {
+            await UserClient.UpdateUserAsync(new UpdateUserRequest
+            {
+                Id = new Id(user.Id),
+                LastName = draft.LastName,
+                FirstName = draft.FirstName,
+                MiddleName = draft.MiddleName,
+                ContactInfo = draft.ContactInfo
+            });
+            Toast.ShowSuccess("Профиль обновлён");
+            CloseEditDialog();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            editError = ex.Message;
+        }
+    }
+
+    private async Task DeleteAccountAsync()
+    {
+        if (user == null) return;
+
+        if (user.ActiveBorrowedCount > 0)
+        {
+            Toast.ShowError($"Нельзя удалить аккаунт: у вас {user.ActiveBorrowedCount} активных выдач. Сначала верните все книги.");
+            return;
+        }
+
+        var confirmed = await Confirm.AskAsync(
+            "Удалить аккаунт?\n\n" +
+            "Аккаунт будет деактивирован, вы выйдете из системы. " +
+            "Восстановить можно в любой момент по email и паролю на странице входа.\n\n" +
+            "История выдач и штрафов сохранится.",
+            title: "Удаление аккаунта",
+            confirmText: "Удалить",
+            requireConfirmationWord: true,
+            confirmationWord: "УДАЛИТЬ");
+
+        if (!confirmed) return;
+
+        try
+        {
+            var resp = await UserClient.DeleteMyProfileAsync();
+            Toast.ShowSuccess(resp.Message);
+            // forceLoad: полный reload, чтобы сбросить WASM-состояние и cookie Identity.
+            Nav.NavigateTo("/Account/Login", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка удаления: {ex.Message}");
+        }
+    }
+
+    private class UserDraft
+    {
+        [Required(ErrorMessage = "Фамилия обязательна")]
+        [StringLength(UserPolicy.MaxNameLength, ErrorMessage = "Не более 100 символов")]
+        public string LastName { get; set; } = "";
+
+        [Required(ErrorMessage = "Имя обязательно")]
+        [StringLength(UserPolicy.MaxNameLength, ErrorMessage = "Не более 100 символов")]
+        public string FirstName { get; set; } = "";
+
+        [StringLength(UserPolicy.MaxNameLength, ErrorMessage = "Не более 100 символов")]
+        public string MiddleName { get; set; } = "";
+
+        [Required(ErrorMessage = "Контактная информация обязательна")]
+        [StringLength(UserPolicy.MaxContactInfoLength, ErrorMessage = "Не более 200 символов")]
+        public string ContactInfo { get; set; } = "";
     }
 
     private async Task LoadAsync()
