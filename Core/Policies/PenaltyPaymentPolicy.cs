@@ -12,12 +12,10 @@ public static class PenaltyPaymentPolicy
     /// <param name="penalty">Начисленный штраф. null или 0 — платить нечего.</param>
     /// <param name="returnDate">Дата возврата книги. null — книга ещё на руках, штраф может вырасти.</param>
     /// <param name="hasExistingPayment">Признак того, что штраф уже оплачен.</param>
-    /// <param name="amount">Сумма, которую вводит кассир. Должна точно совпадать с penalty.</param>
     public static List<string> Validate(
-        decimal? penalty,
-        DateTime? returnDate,
-        bool hasExistingPayment,
-        decimal amount)
+    decimal? penalty,
+    DateTime? returnDate,
+    bool hasExistingPayment)
     {
         var errors = new List<string>();
 
@@ -27,8 +25,6 @@ public static class PenaltyPaymentPolicy
             errors.Add("Штраф можно оплатить только после возврата книги");
         else if (hasExistingPayment)
             errors.Add("Штраф уже оплачен");
-        else if (amount != penalty.Value)
-            errors.Add($"Сумма оплаты должна быть равна сумме штрафа ({penalty.Value:0.##} ₽)");
 
         return errors;
     }
