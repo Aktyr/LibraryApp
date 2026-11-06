@@ -12,4 +12,10 @@ public class UserRoomBook : IEntity
 
     public virtual User User { get; set; } = null!;
     public virtual RoomBook RoomBook { get; set; } = null!;
+
+    /// <summary>Оплаты штрафа. По правилу — не более одной (уникальный индекс в конфиге EF).</summary>
+    public virtual ICollection<PenaltyPayment> PenaltyPayments { get; set; } = [];
+
+    /// <summary>Штраф полностью оплачен. Вычисляется по наличию платежа; в БД не хранится.</summary>
+    public bool IsPenaltyPaid => PenaltyPayments.Count > 0;
 }
