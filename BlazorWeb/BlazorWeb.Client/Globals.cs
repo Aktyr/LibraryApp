@@ -20,3 +20,5 @@ global using System.Net.Http.Json;
 global using System.Security.Claims;
 global using System.Text.Json;
 global using LibApp.Core.Interfaces;
+global using Microsoft.AspNetCore.Components.Forms;
+global using Microsoft.AspNetCore.Components.Rendering;

@@ -1,8 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Components.Rendering;
-
-namespace BlazorWeb.Client.Shared.CharCounter;
+﻿namespace BlazorWeb.Client.Shared.CharCounter;
 
 /// <summary>Многострочное поле с привязкой на oninput вместо onchange. См. <see cref="InputTextLive"/>.</summary>
 public class InputTextAreaLive : InputBase<string>
