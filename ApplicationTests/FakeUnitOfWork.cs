@@ -16,11 +16,15 @@ public class FakeUnitOfWork : IUnitOfWork
         return (IRepository<TEntity>)value;
     }
 
+    /// <summary>Если задан — SaveChangesAsync бросает это исключение (для тестов отката).</summary>
+    public Exception? SaveException { get; set; }
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // В фейке ничего не сохраняем, просто возвращаем успех
+        if (SaveException != null) throw SaveException;
         return Task.FromResult(1);
     }
+
 
     public Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
