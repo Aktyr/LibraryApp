@@ -148,7 +148,7 @@ public static class UserBorrowsColumns
         new()
         {
             Title = "Штраф",
-            Width = 100,
+            Width = 180,
             FilterKind = FilterKind.Number,
             Value = b => b.Penalty,
             FilterText = b => b.Penalty?.ToString("0.##") ?? "",
@@ -157,8 +157,18 @@ public static class UserBorrowsColumns
                 if (item.Penalty is > 0)
                 {
                     b.OpenElement(0, "span");
-                    b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
+                    b.AddAttribute(1, "style", "color:#a30000;font-weight:600;margin-right:6px;");
                     b.AddContent(2, $"{item.Penalty.Value:0.##} ₽");
+                    b.CloseElement();
+
+                    var (bg, fg, label) = item.IsPenaltyPaid
+                        ? ("#e6f7eb", "#0a7f2e", "оплачен")
+                        : ("#fde7e9", "#a30000", "не оплачен");
+
+                    b.OpenElement(3, "span");
+                    b.AddAttribute(4, "style",
+                        $"background:{bg};color:{fg};padding:2px 8px;border-radius:10px;font-size:12px;");
+                    b.AddContent(5, label);
                     b.CloseElement();
                 }
                 else

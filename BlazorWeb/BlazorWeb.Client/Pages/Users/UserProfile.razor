@@ -212,6 +212,7 @@ else
                           Items="returnedBorrows"
                           PageSize="10"
                           Columns="historyColumns"
+                          Actions="historyActions"
                           SelectionMode="DataGridSelectionMode.Multiple" />
             </div>
         </details>
@@ -414,6 +415,48 @@ else
     </div>
 }
 
+@* Модалка приёма оплаты штрафа *@
+@if (payingPenaltyBorrow != null)
+{
+    <div class="modal-backdrop" @onclick="ClosePayPenaltyDialog"></div>
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
+        <h3>Принять оплату штрафа</h3>
+        <p class="mb-1"><strong>@payingPenaltyBorrow.BookTitle</strong> — @payingPenaltyBorrow.RoomName</p>
+        <p class="mb-3">
+            Читатель: <strong>@FullName</strong> ·
+            Сумма штрафа: <strong>@payingPenaltyBorrow.Penalty?.ToString("0.##") ₽</strong>
+        </p>
+
+        <div class="alert alert-info py-2 mb-3">
+            Оплата принимается только в полном размере. Частичные оплаты не поддерживаются.
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Примечание (необязательно)</label>
+            <textarea class="form-control" rows="2"
+                      placeholder="Номер квитанции и т.п."
+                      @bind="payPenaltyNotes"></textarea>
+        </div>
+
+        @if (!string.IsNullOrEmpty(payPenaltyError))
+        {
+            <div class="alert alert-danger py-2 mb-3" style="white-space: pre-line;">@payPenaltyError</div>
+        }
+
+        <div>
+            <button class="btn btn-success"
+                    disabled="@payPenaltySaving"
+                    @onclick="SubmitPayPenaltyAsync">
+                @(payPenaltySaving ? "Принятие..." : "Принять оплату")
+            </button>
+            <button class="btn btn-secondary ms-2"
+                    @onclick="ClosePayPenaltyDialog"
+                    disabled="@payPenaltySaving">
+                Отмена
+            </button>
+        </div>
+    </div>
+}
 @code {
     private BorrowingSettingsDTO? settings;
     private int MaxBooksPerUser => settings?.MaxBooksPerUser ?? 5;
@@ -447,6 +490,12 @@ else
     // Модалка продления
     private BorrowedBookDTO? extendingBorrow;
     private int extendDays = 7;
+
+    // Модалка приёма оплаты штрафа
+    private BorrowedBookDTO? payingPenaltyBorrow;
+    private string? payPenaltyNotes;
+    private string? payPenaltyError;
+    private bool payPenaltySaving;
 
     // Модалка возврата с осмотром
     private BorrowedBookDTO? returnDialogBorrow;
@@ -569,6 +618,23 @@ else
             ShowInToolbar = true,
             SeparatorBefore = true,
             Handler = s => BulkReturnAsync(s)
+        }
+    };
+
+    private List<DataGridAction<BorrowedBookDTO>>? _historyActions;
+    private List<DataGridAction<BorrowedBookDTO>> historyActions => _historyActions ??= new()
+    {
+        new()
+        {
+            Label = "Принять оплату штрафа",
+            Icon = "💰",
+            MinSelection = 1,
+            ShowInToolbar = true,
+            ShowInContextMenu = true,
+            CanExecute = s => s.Count == 1
+                              && s[0].Penalty is > 0
+                              && !s[0].IsPenaltyPaid,
+            Handler = s => OpenPayPenaltyDialog(s[0])
         }
     };
 
@@ -957,6 +1023,48 @@ else
         finally
         {
             returnDialogSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OpenPayPenaltyDialog(BorrowedBookDTO borrow)
+    {
+        payingPenaltyBorrow = borrow;
+        payPenaltyNotes = null;
+        payPenaltyError = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ClosePayPenaltyDialog()
+    {
+        payingPenaltyBorrow = null;
+        payPenaltyError = null;
+    }
+
+    private async Task SubmitPayPenaltyAsync()
+    {
+        if (payingPenaltyBorrow == null) return;
+
+        payPenaltySaving = true;
+        payPenaltyError = null;
+        try
+        {
+            var resp = await BorrowingClient.PayPenaltyAsync(new RegisterPenaltyPaymentRequest
+            {
+                UserRoomBookId = payingPenaltyBorrow.Id,
+                Notes = payPenaltyNotes
+            });
+            Toast.ShowSuccess(resp.Message);
+            ClosePayPenaltyDialog();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            payPenaltyError = ex.Message;
+        }
+        finally
+        {
+            payPenaltySaving = false;
             await InvokeAsync(StateHasChanged);
         }
     }
