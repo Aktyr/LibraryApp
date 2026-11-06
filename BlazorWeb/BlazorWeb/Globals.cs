@@ -51,4 +51,7 @@ global using System.ComponentModel.DataAnnotations;
 global using LibApp.Infrastructure.DependencyInjection;
 global using LibApp.Core.Interfaces;
 global using BlazorWeb.Extensions;
+global using LibApp.Core.Exceptions.Auth;
+global using System.Net;
+global using LibApp.Core.Requests.Auth;
 

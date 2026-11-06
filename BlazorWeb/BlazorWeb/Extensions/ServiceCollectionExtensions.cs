@@ -59,6 +59,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserManagementPolicy, UserManagementPolicy>();
         services.AddScoped<IUserProvisioningService, UserProvisioningService>();
 
+        // Самостоятельное восстановление: снимает soft-delete в library и пересоздаёт Identity.
+        services.AddScoped<ISelfRestoreService, SelfRestoreService>();
+
         return services;
     }
 

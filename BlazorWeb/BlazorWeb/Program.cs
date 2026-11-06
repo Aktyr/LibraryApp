@@ -97,6 +97,7 @@ public class Program
         app.MapReportsProxy();
         app.MapSettingsProxy();
         app.MapAuditProxy();
+        app.MapAuthProxy();
 
         // Дополнительные эндпоинты Identity (Logout, Manage, ExternalLogin и т.д.)
         app.MapAdditionalIdentityEndpoints();
