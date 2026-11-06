@@ -51,6 +51,7 @@ public class RegisterPenaltyPaymentCommand(
             PaidByUserId = cashierId,
             Notes = request.Notes
         };
+        urb.PenaltyPayments.Add(payment);
 
         await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
