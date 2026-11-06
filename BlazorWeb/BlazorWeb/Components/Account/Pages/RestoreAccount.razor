@@ -15,7 +15,12 @@
 <h2>Введите email и пароль</h2>
 <hr />
 
-<StatusMessage Message="@message" />
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert @(messageIsError ? "alert-danger" : "alert-success")" role="alert">
+        @message
+    </div>
+}
 
 <div class="row">
     <div class="col-md-4">
@@ -45,6 +50,7 @@
 
 @code {
     private string? message;
+    private bool messageIsError;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -57,24 +63,37 @@
         try
         {
             await SelfRestoreService.SelfRestoreAsync(Input.Email, Input.Password);
-            Logger.LogInformation("User {Email} self-restored account", Input.Email);
-            RedirectManager.RedirectToCurrentPageWithStatus(
-                "Аккаунт восстановлен. Войдите с тем же паролем.",
-                HttpContext);
         }
-        catch (UnauthorizedException)
+        catch (UnauthorizedException ex)
         {
+            Logger.LogWarning(ex, "Self-restore: invalid credentials for {Email}", Input.Email);
             message = "Неверный email или пароль";
+            messageIsError = true;
+            return;
         }
         catch (LibValidationException ex)
         {
+            Logger.LogWarning(ex, "Self-restore validation failed for {Email}", Input.Email);
             message = $"Ошибка: {string.Join("; ", ex.ExceptionDetails)}";
+            messageIsError = true;
+            return;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Self-restore failed for {Email}", Input.Email);
             message = "Не удалось восстановить аккаунт, попробуйте позже";
+            messageIsError = true;
+            return;
         }
+
+        Logger.LogInformation("User {Email} self-restored account", Input.Email);
+
+        // Redirect вне try: RedirectManager бросает InvalidOperationException —
+        // штатный механизм редиректа из статического компонента, не ошибка.
+        RedirectManager.RedirectToWithStatus(
+            "Account/Login",
+            "Аккаунт восстановлен. Войдите с тем же паролем.",
+            HttpContext);
     }
 
     private sealed class InputModel
