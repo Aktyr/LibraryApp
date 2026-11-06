@@ -24,6 +24,12 @@ public class BorrowingApiClient(HttpClient http) : IBorrowingApiClient
         return await ReadAsync(resp, ct);
     }
 
+    public async Task<BasicCreateDeleteResponse> PayPenaltyAsync(RegisterPenaltyPaymentRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync($"{BasePath}/pay-penalty", request, ct);
+        return await ReadAsync(resp, ct);
+    }
+
     private static async Task<BasicCreateDeleteResponse> ReadAsync(
         HttpResponseMessage resp, CancellationToken ct)
     {
