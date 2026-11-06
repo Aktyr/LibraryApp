@@ -11,6 +11,7 @@ public static class BorrowingProxyEndpoints
         group.MapPost("/borrow", BorrowAsync);
         group.MapPost("/return", ReturnAsync);
         group.MapPost("/extend", ExtendAsync);
+        group.MapPost("/pay-penalty", PayPenaltyAsync);
     }
 
     private static Task<IResult> BorrowAsync(
@@ -24,4 +25,8 @@ public static class BorrowingProxyEndpoints
     private static Task<IResult> ExtendAsync(
         ExtendDeadlineRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
         => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post, "/api/borrowing/extend", request, ct);
+
+    private static Task<IResult> PayPenaltyAsync(
+        RegisterPenaltyPaymentRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
+        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post, "/api/borrowing/pay-penalty", request, ct);
 }

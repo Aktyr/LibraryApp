@@ -13,4 +13,7 @@ public class BorrowingEndpoints : EndpointBase
 
     [HttpPost("/extend")]
     public async Task<IResult> Extend(ExtendDeadlineCommand command, ExtendDeadlineRequest request, CancellationToken ct) => Results.Ok(await command.Execute(request, ct));
+
+    [HttpPost("/pay-penalty")]
+    public async Task<IResult> PayPenalty(RegisterPenaltyPaymentCommand command, RegisterPenaltyPaymentRequest request, CancellationToken ct) => Results.Ok(await command.Execute(request, ct));
 }
