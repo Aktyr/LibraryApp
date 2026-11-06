@@ -26,6 +26,7 @@ public class UserRoomBookConfiguration : IEntityTypeConfiguration<UserRoomBook>
                .HasConversion<DateTimeToUtcConverter>();
 
         builder.Ignore(urb => urb.IsReturned);
+        builder.Ignore(urb => urb.IsPenaltyPaid);
 
         builder.HasQueryFilter(urb => !urb.User.IsDeleted);
 
