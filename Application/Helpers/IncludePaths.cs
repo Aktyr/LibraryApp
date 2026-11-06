@@ -27,5 +27,7 @@ public static class IncludePaths
     {
         public const string RoomBookBook = nameof(Core.Entities.UserRoomBook.RoomBook) + "." + nameof(Core.Entities.RoomBook.Book);
         public const string RoomBookRoom = nameof(Core.Entities.UserRoomBook.RoomBook) + "." + nameof(Core.Entities.RoomBook.Room);
+        public const string PenaltyPayments = nameof(Core.Entities.UserRoomBook.PenaltyPayments);
+        public const string User = nameof(Core.Entities.UserRoomBook.User);
     }
 }
