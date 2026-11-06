@@ -1,0 +1,91 @@
+﻿@page "/Account/RestoreAccount"
+
+@using System.ComponentModel.DataAnnotations
+@using LibApp.Core.Exceptions
+@using LibApp.Core.Exceptions.Auth
+@using BlazorWeb.Services
+
+@inject ISelfRestoreService SelfRestoreService
+@inject ILogger<RestoreAccount> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Восстановление аккаунта</PageTitle>
+
+<h1>Восстановление аккаунта</h1>
+<h2>Введите email и пароль</h2>
+<hr />
+
+<StatusMessage Message="@message" />
+
+<div class="row">
+    <div class="col-md-4">
+        <EditForm Model="Input" FormName="restore-account" OnValidSubmit="OnValidSubmitAsync" method="post">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                <label for="email" class="form-label">Email</label>
+                <ValidationMessage For="() => Input.Email" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+                <label for="password" class="form-label">Пароль</label>
+                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            </div>
+
+            <button type="submit" class="w-100 btn btn-lg btn-primary">Восстановить</button>
+        </EditForm>
+
+        <p class="mt-3">
+            <a href="Account/Login">Вернуться к входу</a>
+        </p>
+    </div>
+</div>
+
+@code {
+    private string? message;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    private async Task OnValidSubmitAsync()
+    {
+        try
+        {
+            await SelfRestoreService.SelfRestoreAsync(Input.Email, Input.Password);
+            Logger.LogInformation("User {Email} self-restored account", Input.Email);
+            RedirectManager.RedirectToCurrentPageWithStatus(
+                "Аккаунт восстановлен. Войдите с тем же паролем.",
+                HttpContext);
+        }
+        catch (UnauthorizedException)
+        {
+            message = "Неверный email или пароль";
+        }
+        catch (LibValidationException ex)
+        {
+            message = $"Ошибка: {string.Join("; ", ex.ExceptionDetails)}";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Self-restore failed for {Email}", Input.Email);
+            message = "Не удалось восстановить аккаунт, попробуйте позже";
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required(ErrorMessage = "Email обязателен")]
+        [EmailAddress(ErrorMessage = "Некорректный email")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Пароль обязателен")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+    }
+}
