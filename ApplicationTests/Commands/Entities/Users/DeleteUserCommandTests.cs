@@ -22,7 +22,7 @@ public class DeleteUserCommandTests
         await userRepo.AddRangeAsync(users.AsEnumerable(), CancellationToken.None);
 
         var userToDelete = users[3]; // Выбираем пользователя для удаления
-        var deleteUserCommand = new DeleteUserCommand(unitOfWork, Mock.Of<IAuditService>());
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var deleteUserRequest = new DeleteUserRequest { Id = userToDelete.Id };
 
         var initialCount = userRepo.Entities.Count;
@@ -64,7 +64,7 @@ public class DeleteUserCommandTests
                                    .AsEnumerable());
 
         var nonExistingId = new Id(Guid.NewGuid());
-        var deleteUserCommand = new DeleteUserCommand(unitOfWork, Mock.Of<IAuditService>());
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var deleteUserRequest = new DeleteUserRequest { Id = nonExistingId };
 
         // Act & Assert
@@ -78,7 +78,7 @@ public class DeleteUserCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork(); // Пустой репозиторий
         var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
-        var deleteUserCommand = new DeleteUserCommand(unitOfWork, Mock.Of<IAuditService>());
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var deleteUserRequest = new DeleteUserRequest { Id = new Id(Guid.NewGuid()) };
 
         // Act & Assert
@@ -117,7 +117,7 @@ public class DeleteUserCommandTests
         };
         await urbRepo.AddRangeAsync([borrow], CancellationToken.None);
 
-        var command = new DeleteUserCommand(unitOfWork, Mock.Of<IAuditService>());
+        var command = new DeleteUserCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DeleteUserRequest { Id = userId };
 
         // Act
@@ -163,7 +163,7 @@ public class DeleteUserCommandTests
         };
         await urbRepo.AddRangeAsync([borrow], CancellationToken.None);
 
-        var command = new DeleteUserCommand(unitOfWork, Mock.Of<IAuditService>());
+        var command = new DeleteUserCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DeleteUserRequest { Id = userId };
 
         // Act & Assert
@@ -207,7 +207,7 @@ public class DeleteUserCommandTests
         new() { Id = new Id(Guid.NewGuid()), User = user, BorrowDate = DateTime.UtcNow.AddDays(-20), Deadline = DateTime.UtcNow.AddDays(-10), ReturnDate = DateTime.UtcNow.AddDays(-9) }
         ], CancellationToken.None);
 
-        var command = new DeleteUserCommand(unitOfWork, Mock.Of<IAuditService>());
+        var command = new DeleteUserCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DeleteUserRequest { Id = userId };
 
         // Act & Assert
@@ -247,7 +247,7 @@ public class DeleteUserCommandTests
         new() { Id = new Id(Guid.NewGuid()), User = user, BorrowDate = DateTime.UtcNow.AddDays(-15), Deadline = DateTime.UtcNow.AddDays(-5), ReturnDate = DateTime.UtcNow.AddDays(-4) }
         ], CancellationToken.None);
 
-        var command = new DeleteUserCommand(unitOfWork, Mock.Of<IAuditService>());
+        var command = new DeleteUserCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var request = new DeleteUserRequest { Id = userId };
 
         // Act
@@ -280,7 +280,7 @@ public class DeleteUserCommandTests
 
         await userRepo.AddRangeAsync(users.AsEnumerable(), CancellationToken.None);
 
-        var deleteUserCommand = new DeleteUserCommand(unitOfWork, Mock.Of<IAuditService>());
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var initialCount = userRepo.Entities.Count;
 
         // Act & Assert - удаляем всех пользователей по одному
@@ -318,7 +318,7 @@ public class DeleteUserCommandTests
 
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var deleteUserCommand = new DeleteUserCommand(unitOfWork, Mock.Of<IAuditService>());
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var deleteUserRequest = new DeleteUserRequest { Id = user.Id };
 
         // Act
@@ -351,7 +351,7 @@ public class DeleteUserCommandTests
 
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var deleteUserCommand = new DeleteUserCommand(unitOfWork, Mock.Of<IAuditService>());
+        var deleteUserCommand = new DeleteUserCommand(unitOfWork, new FakeCurrentUserService(), Mock.Of<IAuditService>());
         var deleteUserRequest = new DeleteUserRequest { Id = user.Id };
         var cancellationToken = new CancellationToken();
 
@@ -362,5 +362,31 @@ public class DeleteUserCommandTests
         Assert.That(result, Is.Not.Null);
         // Здесь можно добавить проверку, что cancellationToken был передан в репозиторий,
         // если FakeRepository поддерживает эту проверку
+    }
+    [Test]
+    public async Task Execute_DeleteUser_SetsDeletedByUserIdFromCurrentUser()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = (FakeRepository<User>)unitOfWork.GetRepository<User>();
+        var user = new User
+        {
+            Id = new Id(Guid.NewGuid()),
+            LastName = "Иванов",
+            FirstName = "Иван",
+            ContactInfo = "ivanov@example.com",
+            RoomBooks = []
+        };
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+
+        var adminId = new Id(Guid.NewGuid());
+        var admin = new FakeCurrentUserService { LibraryUserId = adminId };
+        var command = new DeleteUserCommand(unitOfWork, admin, Mock.Of<IAuditService>());
+
+        // Act
+        await command.Execute(new DeleteUserRequest { Id = user.Id }, CancellationToken.None);
+
+        // Assert
+        Assert.That(user.DeletedByUserId, Is.EqualTo(adminId));
     }
 }
