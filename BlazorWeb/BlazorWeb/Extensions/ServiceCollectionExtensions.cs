@@ -52,9 +52,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<JwtService>();
 
-        // Команды, которые BFF вызывает напрямую: удаление пользователя админом и self-delete.
+        // Команды, которые BFF вызывает напрямую
         services.AddTransient<DeleteUserCommand>();
         services.AddTransient<SelfDeleteCommand>();
+        services.AddTransient<RestoreUserCommand>();
+
 
         // Политика прав и сервис создания пары Identity + Library
         services.AddScoped<IUserManagementPolicy, UserManagementPolicy>();
