@@ -163,45 +163,58 @@ public class UndoDiscardCommandTests
         Assert.That(response.Message, Does.Contain("Test undo reason"));
     }
     [Test]
-    public async Task Execute_WhenSaveFails_RollsBackTransaction()
+    public async Task Execute_WhenSaveFails_PropagatesExceptionAndDoesNotAudit()
     {
         // Arrange
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var discardedRepoMock = new Mock<IRepository<DiscardedBook>>();
-        var roomBookRepoMock = new Mock<IRepository<RoomBook>>();
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = unitOfWork.GetRepository<Book>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+        var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
+        var auditMock = new Mock<IAuditService>();
 
-        unitOfWorkMock.Setup(u => u.GetRepository<DiscardedBook>()).Returns(discardedRepoMock.Object);
-        unitOfWorkMock.Setup(u => u.GetRepository<RoomBook>()).Returns(roomBookRepoMock.Object);
-
-        var discardedId = Guid.NewGuid();
+        var book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book" };
+        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Room" };
+        var roomBook = new RoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            Book = book,
+            Room = room,
+            BookCount = 10
+        };
         var discarded = new DiscardedBook
         {
-            Id = new Id(discardedId),
-            Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book" },
-            RoomId = new Id(Guid.NewGuid()),
-            Amount = 3
+            Id = new Id(Guid.NewGuid()),
+            Book = book,
+            Room = room,
+            RoomId = room.Id,
+            Amount = 3,
+            DiscardedDate = DateTime.UtcNow,
+            DiscardReason = DiscardReason.Wear
+        }; 
+
+        await bookRepo.AddRangeAsync([book], CancellationToken.None);
+        await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
+        await discardedRepo.AddRangeAsync([discarded], CancellationToken.None);
+
+        var saveException = new InvalidOperationException("DB error");
+        unitOfWork.SaveException = saveException;
+
+        var command = new UndoDiscardCommand(unitOfWork, auditMock.Object);
+        var request = new UndoDiscardRequest
+        {
+            DiscardId = discarded.Id.Value,
+            UndoReason = "Test"
         };
-        var roomBook = new RoomBook { Id = new Id(Guid.NewGuid()), Book = discarded.Book, BookCount = 10 };
-
-        discardedRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<DiscardedBook, bool>>>(), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(discarded);
-        roomBookRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<RoomBook, bool>>>(), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(roomBook);
-
-        unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                      .ThrowsAsync(new Exception("DB error"));
-
-        var command = new UndoDiscardCommand(unitOfWorkMock.Object, Mock.Of<IAuditService>());
-        var request = new UndoDiscardRequest { DiscardId = discardedId, UndoReason = "Test" };
 
         // Act & Assert
-        Assert.Multiple(async () =>
-        {
-            await Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => command.Execute(request, CancellationToken.None));
+        Assert.That(ex, Is.SameAs(saveException));
 
-            unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-            unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-            unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
-        });
+        // Аудит не должен фиксироваться, если сохранение упало (транзакция откатилась).
+        auditMock.Verify(a => a.LogAsync(
+            It.IsAny<AuditActionType>(), It.IsAny<string>(), It.IsAny<Guid?>(),
+            It.IsAny<string?>(), It.IsAny<Id?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

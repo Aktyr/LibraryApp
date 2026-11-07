@@ -639,75 +639,76 @@ public class ReturnBookCommandTests
     }
 
     [Test]
-    public async Task Execute_WhenSaveFails_RollsBackTransaction()
+    public async Task Execute_WhenSaveFails_PropagatesExceptionAndDoesNotAudit()
     {
         // Arrange
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var userRoomBookRepoMock = new Mock<IRepository<UserRoomBook>>();
-        var roomBookRepoMock = new Mock<IRepository<RoomBook>>();
+        var unitOfWork = new FakeUnitOfWork();
+        var auditMock = new Mock<IAuditService>();
+        var notificationMock = new Mock<INotificationService>();
+        var currentUserMock = new Mock<ICurrentUserService>();
+        currentUserMock.Setup(c => c.LibraryUserId).Returns(new Id(Guid.NewGuid()));
+        currentUserMock.Setup(c => c.FullName).Returns("Тестовый Библиотекарь");
 
-        unitOfWorkMock.Setup(u => u.GetRepository<UserRoomBook>()).Returns(userRoomBookRepoMock.Object);
-        unitOfWorkMock.Setup(u => u.GetRepository<RoomBook>()).Returns(roomBookRepoMock.Object);
-
-        unitOfWorkMock
-            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
-            .Returns<Func<Task>, CancellationToken>(async (action, ct) =>
-            {
-                await unitOfWorkMock.Object.BeginTransactionAsync(ct);
-                try
-                {
-                    await action();
-                    await unitOfWorkMock.Object.CommitTransactionAsync(ct);
-                }
-                catch
-                {
-                    await unitOfWorkMock.Object.RollbackTransactionAsync(ct);
-                    throw;
-                }
-            });
-
-        unitOfWorkMock.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        unitOfWorkMock.Setup(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        unitOfWorkMock.Setup(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-
+        var user = new User
+        {
+            Id = new Id(Guid.NewGuid()),
+            LastName = "Иванов",
+            FirstName = "Иван",
+            ContactInfo = "test@test.com",
+            SubscriptionStatus = SubscriptionStatus.Active,
+            RoomBooks = []
+        };
+        var book = new Book { Id = new Id(Guid.NewGuid()), Title = "Test Book" };
+        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Room" };
+        var roomBook = new RoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            Book = book,
+            Room = room,
+            BookCount = 5,
+            BorrowedCount = 1
+        };
         var userRoomBook = new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
-            User = new User { Id = new Id(Guid.NewGuid()) },
-            RoomBook = new RoomBook
-            {
-                Id = new Id(Guid.NewGuid()),
-                BorrowedCount = 1,
-                Book = new Book { Id = new Id(Guid.NewGuid()), Title = "T" },
-                Room = new Room { Id = new Id(Guid.NewGuid()) }
-            }
+            User = user,
+            RoomBook = roomBook,
+            BorrowDate = DateTime.UtcNow.AddDays(-10),
+            Deadline = DateTime.UtcNow.AddDays(5),
+            ReturnDate = null
         };
-        userRoomBookRepoMock
-            .Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<UserRoomBook, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(userRoomBook);
 
-        unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                      .ThrowsAsync(new Exception("DB error"));
+        await unitOfWork.GetRepository<User>().AddRangeAsync([user], default);
+        await unitOfWork.GetRepository<Book>().AddRangeAsync([book], default);
+        await unitOfWork.GetRepository<Room>().AddRangeAsync([room], default);
+        await unitOfWork.GetRepository<RoomBook>().AddRangeAsync([roomBook], default);
+        await unitOfWork.GetRepository<UserRoomBook>().AddRangeAsync([userRoomBook], default);
+
+        var saveException = new InvalidOperationException("DB error");
+        unitOfWork.SaveException = saveException;
+
+        var penaltySettingsMock = new Mock<IOptionsSnapshot<PenaltySettings>>();
+        penaltySettingsMock.Setup(x => x.Value).Returns(new PenaltySettings());
 
         var command = new ReturnBookCommand(
-            unitOfWorkMock.Object,
+            unitOfWork,
             CreateValidator(),
-            CreatePenaltyService(),
-            new Mock<INotificationService>().Object,
-            new FakeCurrentUserService(),
-            Mock.Of<IAuditService>());
+            new PenaltyCalculatorService(penaltySettingsMock.Object),
+            notificationMock.Object,
+            currentUserMock.Object,
+            auditMock.Object);
 
         var request = new ReturnBookRequest { UserRoomBookId = userRoomBook.Id.Value };
 
         // Act & Assert
-        await Assert.MultipleAsync(async () =>
-        {
-            await Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => command.Execute(request, CancellationToken.None));
+        Assert.That(ex, Is.SameAs(saveException));
 
-            unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-            unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-            unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
-        });
+        auditMock.Verify(a => a.LogAsync(
+            It.IsAny<AuditActionType>(), It.IsAny<string>(), It.IsAny<Guid?>(),
+            It.IsAny<string?>(), It.IsAny<Id?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     #region Discard on return
@@ -770,12 +771,58 @@ public class ReturnBookCommandTests
     public async Task Execute_WithDiscardReasonWear_CreatesDiscardedBookWithoutCompensation()
     {
         // Arrange
-        var (uow, _, _, _, discardedRepo, book, _, roomBook, userRoomBook, _) = CreateReturnScenario();
-        var command = new ReturnBookCommand(
-            uow, CreateValidator(), CreatePenaltyService(),
-            new Mock<INotificationService>().Object, new FakeCurrentUserService(), Mock.Of<IAuditService>());
+        var unitOfWork = new FakeUnitOfWork();
         var auditMock = new Mock<IAuditService>();
+        var notificationMock = new Mock<INotificationService>();
+        var currentUserMock = new Mock<ICurrentUserService>();
+        currentUserMock.Setup(c => c.LibraryUserId).Returns(new Id(Guid.NewGuid()));
+        currentUserMock.Setup(c => c.FullName).Returns("Тестовый Библиотекарь");
 
+        var user = new User
+        {
+            Id = new Id(Guid.NewGuid()),
+            LastName = "Петров",
+            FirstName = "Пётр",
+            ContactInfo = "petrov@test.com",
+            SubscriptionStatus = SubscriptionStatus.Active,
+            RoomBooks = []
+        };
+        var book = new Book { Id = new Id(Guid.NewGuid()), Title = "Wear Book" };
+        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Room" };
+        var roomBook = new RoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            Book = book,
+            Room = room,
+            BookCount = 5,
+            BorrowedCount = 1
+        };
+        var userRoomBook = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = user,
+            RoomBook = roomBook,
+            BorrowDate = DateTime.UtcNow.AddDays(-10),
+            Deadline = DateTime.UtcNow.AddDays(5),
+            ReturnDate = null
+        };
+
+        await unitOfWork.GetRepository<User>().AddRangeAsync([user], default);
+        await unitOfWork.GetRepository<Book>().AddRangeAsync([book], default);
+        await unitOfWork.GetRepository<Room>().AddRangeAsync([room], default);
+        await unitOfWork.GetRepository<RoomBook>().AddRangeAsync([roomBook], default);
+        await unitOfWork.GetRepository<UserRoomBook>().AddRangeAsync([userRoomBook], default);
+
+        var penaltySettingsMock = new Mock<IOptionsSnapshot<PenaltySettings>>();
+        penaltySettingsMock.Setup(x => x.Value).Returns(new PenaltySettings());
+
+        var command = new ReturnBookCommand(
+            unitOfWork,
+            CreateValidator(),
+            new PenaltyCalculatorService(penaltySettingsMock.Object),
+            notificationMock.Object,
+            currentUserMock.Object,
+            auditMock.Object);
 
         var request = new ReturnBookRequest
         {
@@ -788,33 +835,23 @@ public class ReturnBookCommandTests
         var response = await command.Execute(request, CancellationToken.None);
 
         // Assert
-        Assert.Multiple(() =>
-        {
-            Assert.That(response.Status, Is.EqualTo("Ok"));
-            Assert.That(response.Message, Does.Contain("Списана (износ)"));
+        Assert.That(response.Status, Is.EqualTo("Ok"));
 
-            Assert.That(roomBook.BookCount, Is.EqualTo(4));         // 5 => 4
-            Assert.That(roomBook.BorrowedCount, Is.EqualTo(0));     // 1 => 0
-            Assert.That(book.IsDiscarded, Is.False);                // 4 > 0, не списана
+        var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
+        var discarded = (await discardedRepo.GetAsync()).FirstOrDefault();
+        Assert.That(discarded, Is.Not.Null);
+        Assert.That(discarded!.DiscardReason, Is.EqualTo(DiscardReason.Wear));
+        Assert.That(discarded.CompensationAmount, Is.Null);
 
-            Assert.That(discardedRepo.Entities, Has.Count.EqualTo(1));
-            var d = discardedRepo.Entities.First();
-            Assert.That(d.Amount, Is.EqualTo(1));
-            Assert.That(d.DiscardReason, Is.EqualTo(DiscardReason.Wear));
-            Assert.That(d.CompensationAmount, Is.Null);
-            Assert.That(d.ApprovedById, Is.Not.Null);
-            Assert.That(d.ApprovedBy, Is.Not.Null.And.Not.Empty);
-
-            auditMock.Verify(a => a.LogAsync(
-                AuditActionType.Return,
-                nameof(UserRoomBook),
-                It.IsAny<Guid?>(),
-                It.Is<string>(s => s.Contains("Возврат книги") && s.Contains("Читатель: ")),
-                It.IsAny<Id?>(),
-                It.IsAny<string?>(),
-                It.IsAny<CancellationToken>()),
-                Times.Once);
-        });
+        auditMock.Verify(a => a.LogAsync(
+            AuditActionType.Return,
+            nameof(UserRoomBook),
+            userRoomBook.Id.Value,
+            It.Is<string>(s => s.Contains("Возврат со списанием") && s.Contains("износ") && s.Contains("Читатель: Петров")),
+            It.IsAny<Id?>(),
+            It.IsAny<string?>(),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Test]

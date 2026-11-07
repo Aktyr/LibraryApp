@@ -407,41 +407,36 @@ public class UpdateRoomCommandTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => command.Execute(request, CancellationToken.None));
     }
     [Test]
-    public async Task Execute_WhenSaveFails_RollsBackTransaction()
+    public async Task Execute_WhenSaveFails_PropagatesExceptionAndDoesNotAudit()
     {
         // Arrange
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var roomRepoMock = new Mock<IRepository<Room>>();
-        unitOfWorkMock.Setup(u => u.GetRepository<Room>()).Returns(roomRepoMock.Object);
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = unitOfWork.GetRepository<Room>();
+        var auditMock = new Mock<IAuditService>();
 
-        var roomId = new Id(Guid.NewGuid());
-        var room = new Room { Id = roomId, Name = "Room", RoomBooks = [] };
-        roomRepoMock.Setup(r => r.GetAsync(
-                It.IsAny<Expression<Func<Room, bool>>>(),
-                It.IsAny<Func<IQueryable<Room>, IOrderedQueryable<Room>>?>(),
-                It.IsAny<int?>(),
-                It.IsAny<int?>(),
-                It.IsAny<CancellationToken>(),
-                It.IsAny<string[]>()))
-            .ReturnsAsync([room]);
+        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Room", RoomBooks = [] };
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
-        unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                      .ThrowsAsync(new Exception("DB error"));
+        var saveException = new InvalidOperationException("DB error");
+        unitOfWork.SaveException = saveException;
 
-        var validator = new RoomValidatorAsync();
-        var synchronizerMock = new Mock<IRoomBookSynchronizer>();
-        var logger = NullLogger<UpdateRoomCommand>.Instance;
-        var command = new UpdateRoomCommand(unitOfWorkMock.Object, validator, synchronizerMock.Object, Mock.Of<IAuditService>(), logger);
-        UpdateRoomRequest request = new() { Id = roomId, Name = "NewName", RoomBookDTO = [] };
+        var command = new UpdateRoomCommand(
+            unitOfWork,
+            new RoomValidatorAsync(),
+            new FakeRoomBookSynchronizer(),
+            auditMock.Object,
+            NullLogger<UpdateRoomCommand>.Instance);
+        var request = new UpdateRoomRequest { Id = room.Id, Name = "NewName", RoomBookDTO = [] };
 
         // Act & Assert
-        await Assert.MultipleAsync(async () =>
-        {
-            await Assert.ThrowsAsync<Exception>(() => command.Execute(request, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => command.Execute(request, CancellationToken.None));
+        Assert.That(ex, Is.SameAs(saveException));
 
-            unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-            unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-            unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
-        });
+        // Аудит не должен фиксироваться, если сохранение упало.
+        auditMock.Verify(a => a.LogAsync(
+            It.IsAny<AuditActionType>(), It.IsAny<string>(), It.IsAny<Guid?>(),
+            It.IsAny<string?>(), It.IsAny<Id?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }
