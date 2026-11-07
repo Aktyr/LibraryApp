@@ -25,11 +25,16 @@
             <button class="btn btn-sm btn-outline-secondary" @onclick="OpenRenameDialogAsync" disabled="@isLoading">✏️ Переименовать</button>
             <button class="btn btn-sm btn-outline-danger" @onclick="DeleteRoomAsync" disabled="@isLoading" title="@(roomBooks.Count > 0 ? "Нельзя удалить комнату, в которой есть книги" : "Удалить комнату")">🗑️ Удалить комнату</button>
 
+            <button class="btn btn-sm btn-primary" @onclick="OpenAddBooksDialog" disabled="@isLoading">
+                ➕ Добавить книги
+            </button>
+
             <div class="vr mx-1" style="opacity: 0.25;"></div> @* Визуальный разделитель *@
 
             <button class="btn btn-sm btn-success" @onclick="SaveAsync" disabled="@(!isDirty || isSaving)">
                 @(isSaving ? "Сохранение..." : "💾 Сохранить")
             </button>
+
             <button class="btn btn-sm btn-outline-secondary" @onclick="CancelChanges" disabled="@(!isDirty || isSaving)">
                 Отменить
             </button>
@@ -84,28 +89,6 @@ else
                       OnRowDoubleClick="OpenEditCountAsync" />
         }
     </div>
-
-    @* ---------- Каталог книг (только для редакторов) ---------- *@
-    @if (isEditor)
-    {
-        <div class="mb-4">
-            <h4>Доступные книги для добавления (@AvailableBooks.Count)</h4>
-            @if (AvailableBooks.Count == 0)
-            {
-                <p class="text-muted">Все книги из каталога уже добавлены в комнату.</p>
-            }
-            else
-            {
-                <DataGrid TItem="BookDTO"
-                          Items="AvailableBooks"
-                          PageSize="10"
-                          Columns="CatalogColumns"
-                          Actions="CatalogActions"
-                          SelectionMode="DataGridSelectionMode.Multiple"
-                          OnRowDoubleClick="AddBookToRoomAndRender" />
-            }
-        </div>
-    }
 }
 
 @* ---------- Модалка переименования ---------- *@
@@ -229,7 +212,38 @@ else
         </div>
     </div>
 }
+@* ---------- Модалка добавления книг ---------- *@
+@if (addBooksDialogOpen)
+{
+    <div class="modal-backdrop" @onclick="CloseAddBooksDialog"></div>
+    <div class="modal-dialog modal-add-books" @onclick:stopPropagation="true">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="mb-0">Добавить книги в комнату</h3>
+            <button type="button" class="btn-close" @onclick="CloseAddBooksDialog" aria-label="Закрыть"></button>
+        </div>
 
+        @if (AvailableBooks.Count == 0)
+        {
+            <p class="text-muted mt-3">Все книги из каталога уже добавлены в комнату.</p>
+        }
+        else
+        {
+            <DataGrid TItem="BookDTO"
+                      Items="AvailableBooks"
+                      PageSize="10"
+                      Columns="CatalogColumns"
+                      Actions="CatalogActions"
+                      ShowExport="false"
+                      Hint=""
+                      SelectionMode="DataGridSelectionMode.Multiple"
+                      OnRowDoubleClick="AddBookToRoomAndRender" />
+        }
+
+        <div class="mt-3 text-end">
+            <button class="btn btn-secondary" @onclick="CloseAddBooksDialog">Закрыть</button>
+        </div>
+    </div>
+}
 @code {
     [Parameter] public Guid Id { get; set; }
 
@@ -252,6 +266,7 @@ else
         catalog.Where(b => roomBooks.All(rb => rb.BookId != b.Id)).OrderBy(b => b.Title).ToList();
 
     private bool renameDialogOpen;
+    private bool addBooksDialogOpen;
     private string newRoomName = "";
     private string? renameDialogError;
 
@@ -552,6 +567,16 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
+    private void OpenAddBooksDialog()
+    {
+        addBooksDialogOpen = true;
+    }
+
+    private void CloseAddBooksDialog()
+    {
+        addBooksDialogOpen = false;
+    }
+
     private void CloseRenameDialog() => renameDialogOpen = false;
 
     private async Task SubmitRenameAsync()
@@ -601,3 +626,35 @@ else
     #endregion
 
 }
+<style>
+    /* Модалка добавления книг: адаптивная ширина и ограничение высоты DataGrid */
+    .modal-add-books {
+        width: 95vw;
+        max-width: 850px;
+        min-width: 0; /* Сбрасываем min-width из .modal-dialog-wide */
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto; /* Прокрутка на случай, если DataGrid не влезет */
+    }
+
+        /* Ограничиваем высоту внутреннего скролла DataGrid, чтобы кнопка «Закрыть» была видна */
+        .modal-add-books .dg-wrapper {
+            max-height: 55vh;
+        }
+
+    /* На мобильных делаем модалку почти на весь экран */
+    @@media (max-width: 576px) {
+        .modal-add-books {
+            width: 100vw;
+            height: 100vh;
+            max-height: 100vh;
+            border-radius: 0;
+            padding: 16px;
+        }
+
+            .modal-add-books .dg-wrapper {
+                max-height: calc(100vh - 180px); /* Вычитаем шапку и футер модалки */
+            }
+    }
+</style>
