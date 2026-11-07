@@ -36,6 +36,10 @@
                 <button class="btn btn-sm btn-warning" @onclick="RestoreUserAsync" disabled="@isLoading">
                     ♻️ Восстановить
                 </button>
+                @if (CanDelete)
+                {
+                    <button class="btn btn-sm btn-outline-dark" @onclick="AnonymizeUserAsync" disabled="@isLoading" title="Необратимо затереть персональные данные, сохранив историю">🕵️ Анонимизировать</button>
+                }
             }
             else
             {
@@ -45,10 +49,10 @@
                 }
                 @if (CanDelete)
                 {
-                    <button class="btn btn-sm btn-outline-dark" @onclick="AnonymizeUserAsync" disabled="@isLoading" title="Необратимо затереть персональные данные, сохранив историю">🕵️ Анонимизировать</button>
                     <button class="btn btn-sm btn-outline-danger" @onclick="DeleteUserAsync" disabled="@isLoading">🗑️ Удалить</button>
                 }
             }
+
         }
     </ChildContent>
 </PageHeader>

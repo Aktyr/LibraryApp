@@ -17,7 +17,12 @@ public class AnonymizeUserCommand(
         var userRepo = unitOfWork.GetRepository<User>();
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
 
-        var user = await userRepo.FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
+        // Обход глобального HasQueryFilter(IsDeleted): анонимизация доступна только
+        // для удалённых пользователей, обычный FirstOrDefaultAsync вернёт null.
+        var user = (await userRepo.ExecuteQueryIgnoringFiltersAsync(
+            q => q.Where(u => u.Id == request.Id),
+            cancellationToken)).FirstOrDefault();
+
         if (user == null) throw new UserNotFoundException();
 
         if (user.Role == UserRole.Admin)
@@ -26,12 +31,24 @@ public class AnonymizeUserCommand(
                 ExceptionDetails = ["Нельзя анонимизировать администратора"]
             };
 
-        if (user.IsDeleted)
+        if (!user.IsDeleted)
             throw new LibValidationException
             {
-                ExceptionDetails = ["Пользователь уже деактивирован. Анонимизация доступна только для активных."]
+                ExceptionDetails =
+                [
+                    "Анонимизация доступна только для удалённых пользователей. " +
+                    "Сначала деактивируйте пользователя."
+                ]
             };
 
+        if (user.Email.StartsWith("deleted_", StringComparison.Ordinal))
+            throw new LibValidationException
+            {
+                ExceptionDetails = ["Пользователь уже анонимизирован"]
+            };
+
+        // Удалённый пользователь мог быть удалён до введения этих проверок,
+        // либо удаление было через прямой SQL. Перепроверяем перед затиранием данных.
         var activeBorrows = await userRoomBookRepo.CountAsync(
             urb => urb.User.Id == request.Id && urb.ReturnDate == null,
             cancellationToken);
@@ -45,9 +62,6 @@ public class AnonymizeUserCommand(
                 ]
             };
 
-        // Неоплаченный штраф = есть начисление, но нет ни одного платежа.
-        // After ReturnDate-only penalty: штраф может быть начислен только после возврата,
-        // так что ReturnDate != null подразумевается, но явная проверка безопаснее.
         var unpaidPenalties = await userRoomBookRepo.CountAsync(
             urb => urb.User.Id == request.Id
                    && urb.Penalty.HasValue && urb.Penalty > 0
@@ -59,13 +73,15 @@ public class AnonymizeUserCommand(
             {
                 ExceptionDetails =
                 [
-                    $"Нельзя анонимизировать пользователя: {unpaidPenalties} неоплаченных штрафов. Сначала примите оплату или спишите."
+                    $"Нельзя анонимизировать пользователя: {unpaidPenalties} неоплаченных штрафов. " +
+                    "Сначала примите оплату или спишите."
                 ]
             };
 
-        var deletedFullName = user.FullName;
-        var deletedId = user.Id.Value;
-        var anonymizedEmail = $"deleted_{deletedId:N}@library.local";
+        var oldFullName = user.FullName;
+        var oldEmail = user.Email;
+        var userId = user.Id.Value;
+        var anonymizedEmail = $"deleted_{userId:N}@library.local";
 
         user.LastName = "Deleted";
         user.FirstName = "User";
@@ -73,9 +89,6 @@ public class AnonymizeUserCommand(
         user.Email = anonymizedEmail;
         user.ContactInfo = string.Empty;
         user.PasswordHash = string.Empty;
-        user.IsDeleted = true;
-        user.DeletedAt = DateTime.UtcNow;
-        user.DeletedByUserId = currentUser.LibraryUserId;
 
         await unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -85,8 +98,8 @@ public class AnonymizeUserCommand(
             await auditService.LogAsync(
                 AuditActionType.Delete,
                 nameof(User),
-                deletedId,
-                details: $"Анонимизирован пользователь (ранее: «{deletedFullName}»). Email: {anonymizedEmail}",
+                userId,
+                details: $"Анонимизирован удалённый пользователь (ранее: «{oldFullName}», {oldEmail}). Email: {anonymizedEmail}",
                 userId: currentUser.LibraryUserId,
                 userName: currentUser.FullName,
                 ct: cancellationToken);
