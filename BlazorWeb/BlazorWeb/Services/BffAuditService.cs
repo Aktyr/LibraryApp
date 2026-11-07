@@ -35,6 +35,8 @@ public sealed class BffAuditService : IAuditService
 
         // Если команда не передала userId явно — пробуем достать library-Id
         // из текущего Identity-пользователя.
+        // Если команда не передала userId явно — пробуем достать library-Id
+        // из текущего Identity-пользователя.
         if (finalUserId is null && httpUser?.Identity?.IsAuthenticated == true)
         {
             var identityUserId = httpUser.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -44,7 +46,21 @@ public sealed class BffAuditService : IAuditService
                 {
                     var appUser = await _userManager.FindByIdAsync(identityUserId);
                     if (appUser?.LibraryUserId is Guid libraryUserId)
+                    {
                         finalUserId = new Id(libraryUserId);
+
+                        // Если userName не передан явно — достаём FullName из library.User.
+                        // ClaimTypes.Name в BFF содержит email (UserName = Email), это не подпись.
+                        if (string.IsNullOrWhiteSpace(finalUserName))
+                        {
+                            var libUser = await _unitOfWork.GetRepository<LibApp.Core.Entities.User>()
+                                .FirstOrDefaultAsync(u => u.Id == finalUserId, ct);
+                            if (libUser != null)
+                            {
+                                finalUserName = libUser.FullName;
+                            }
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -55,9 +71,7 @@ public sealed class BffAuditService : IAuditService
 
         if (string.IsNullOrWhiteSpace(finalUserName))
         {
-            finalUserName = httpUser?.FindFirstValue(ClaimTypes.Name)
-                ?? httpUser?.Identity?.Name
-                ?? (httpUser is null ? "Система" : "Неизвестный пользователь");
+            finalUserName = "Неизвестный пользователь";
         }
 
         var log = new AuditLog
