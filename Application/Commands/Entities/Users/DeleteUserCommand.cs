@@ -19,8 +19,8 @@ public class DeleteUserCommand(
                 return ResponseFactory.Success("Пользователь уже деактивирован");
 
             var activeBorrows = await userRoomBookRepo.CountAsync(
-                urb => urb.User.Id == request.Id && urb.ReturnDate == null,
-                cancellationToken);
+    urb => urb.User.Id == request.Id && urb.ReturnDate == null,
+    cancellationToken);
 
             if (activeBorrows > 0)
             {
@@ -30,6 +30,24 @@ public class DeleteUserCommand(
                     [
                         $"Нельзя деактивировать пользователя: у него {activeBorrows} активных выдач. " +
                     "Сначала верните все книги."
+                    ]
+                };
+            }
+
+            var unpaidPenalties = await userRoomBookRepo.CountAsync(
+                urb => urb.User.Id == request.Id
+                       && urb.Penalty.HasValue && urb.Penalty > 0
+                       && !urb.PenaltyPayments.Any(),
+                cancellationToken);
+
+            if (unpaidPenalties > 0)
+            {
+                throw new LibValidationException
+                {
+                    ExceptionDetails =
+                    [
+                        $"Нельзя деактивировать пользователя: у него {unpaidPenalties} неоплаченных штрафов. " +
+                    "Сначала примите оплату или спишите штраф."
                     ]
                 };
             }

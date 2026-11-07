@@ -37,6 +37,22 @@ public class SelfDeleteCommand(
                 ]
             };
 
+        var unpaidPenalties = await userRoomBookRepo.CountAsync(
+            urb => urb.User.Id == request.Id
+                   && urb.Penalty.HasValue && urb.Penalty > 0
+                   && !urb.PenaltyPayments.Any(),
+            cancellationToken);
+
+        if (unpaidPenalties > 0)
+            throw new LibValidationException
+            {
+                ExceptionDetails =
+                [
+                    $"Нельзя удалить аккаунт: у вас {unpaidPenalties} неоплаченных штрафов. " +
+                    "Обратитесь к библиотекарю."
+                ]
+            };
+
         var deletedFullName = user.FullName;
         var deletedId = user.Id.Value;
 
