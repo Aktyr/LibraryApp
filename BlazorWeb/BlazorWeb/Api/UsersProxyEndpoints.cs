@@ -123,8 +123,8 @@ public static class UsersProxyEndpoints
         var logger = loggerFactory.CreateLogger("DeleteUserBff");
         var libUserId = new Id(id);
 
-        // Пред-проверка активных выдач: fail-fast без открытия транзакции.
-        // Неоплаченные штрафы проверит DeleteUserCommand и вернёт LibValidationException.
+        // Предварительная проверка активных выдач для раннего отказа без запуска транзакции.
+        // Неоплаченные штрафы обрабатывает DeleteUserCommand через LibValidationException.
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         var activeBorrows = await userRoomBookRepo.CountAsync(
             urb => urb.User.Id == libUserId && urb.ReturnDate == null, ct);
@@ -136,10 +136,9 @@ public static class UsersProxyEndpoints
                 statusCode: 400);
         }
 
-        // Library-first: если Identity-удаление упадёт, откатываем library через RestoreUserCommand.
-        // Identity-first приводил к «зависанию»: Identity нет, library активен, пользователь
-        // не виден в /users (глобальный фильтр IsDeleted), не восстанавливается ни через UI,
-        // ни через /api/auth/restore-account.
+        // Library-first с компенсацией при сбое Identity.
+        // Порядок Identity-first оставлял пользователя в состоянии «Identity удалён, library активен»:
+        // он исчезал из /users из-за глобального фильтра IsDeleted и не мог восстановиться через self-restore.
         try
         {
             await deleteUserCommand.Execute(new DeleteUserRequest { Id = libUserId }, ct);
@@ -150,7 +149,6 @@ public static class UsersProxyEndpoints
         }
         catch (LibValidationException ex)
         {
-            // Неоплаченные штрафы и др. валидационные проверки: library не тронут.
             return Results.Problem(
                 detail: string.Join("\n", ex.ExceptionDetails),
                 statusCode: 400);
@@ -168,12 +166,12 @@ public static class UsersProxyEndpoints
             return Results.Ok(new BasicCreateDeleteResponse("Ok", "Пользователь деактивирован"));
         }
 
-        // Компенсация: library уже soft-deleted, Identity-удаление упало — откатываем library.
+        // Откат library, если Identity-удаление не удалось. Состояние «library удалён, Identity остался»
+        // непригодно: пользователь не виден в /users, но его сессия BFF продолжает работать.
         try
         {
             await restoreUserCommand.Execute(new RestoreUserRequest { Id = libUserId }, ct);
-            logger.LogWarning(
-                "Delete: Identity deletion failed, library user {Id} rolled back", id);
+            logger.LogWarning("Delete: Identity deletion failed, library user {Id} rolled back", id);
         }
         catch (Exception compEx)
         {
@@ -185,6 +183,7 @@ public static class UsersProxyEndpoints
             detail: $"Identity delete error: {string.Join(", ", identityResult.Errors.Select(e => e.Description))}",
             statusCode: 500);
     }
+
     private static async Task<IResult> DeleteMyProfileAsync(
         ClaimsPrincipal user,
         UserManager<ApplicationUser> userManager,
