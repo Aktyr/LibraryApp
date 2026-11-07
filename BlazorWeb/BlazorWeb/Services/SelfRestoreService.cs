@@ -26,11 +26,25 @@ public class SelfRestoreService(
 
             if (resp.StatusCode == HttpStatusCode.Unauthorized)
                 throw new UnauthorizedException(detail);
-            if (resp.StatusCode == HttpStatusCode.BadRequest)
-                throw new LibValidationException { ExceptionDetails = [detail] };
 
-            logger.LogWarning("Self-restore: WebAPI returned {Status} for {Email}", (int)resp.StatusCode, email);
-            throw new InvalidOperationException(detail);
+            // WebAPI вернул 400 «Аккаунт не деактивирован» — library уже восстановлен
+            // прямым вызовом /api/auth/restore-account или предыдущей неудачной попыткой.
+            // Продолжаем выполнение, чтобы довести до конца проверку Identity.
+            if (resp.StatusCode == HttpStatusCode.BadRequest
+                && detail.Contains("не деактивирован", StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogInformation(
+                    "Self-restore: library already restored for {Email}, continuing with Identity check", email);
+            }
+            else if (resp.StatusCode == HttpStatusCode.BadRequest)
+            {
+                throw new LibValidationException { ExceptionDetails = [detail] };
+            }
+            else
+            {
+                logger.LogWarning("Self-restore: WebAPI returned {Status} for {Email}", (int)resp.StatusCode, email);
+                throw new InvalidOperationException(detail);
+            }
         }
 
         // library восстановлен — ищем пользователя, чтобы взять Id для привязки Identity.
@@ -41,19 +55,27 @@ public class SelfRestoreService(
                 ExceptionDetails = ["Пользователь не найден после восстановления"]
             };
 
-        // Identity-пользователь должен быть удалён (Admin-удаление в DeleteAsync).
-        // Если он есть — сценарий не self-restore (например, library-удаление упало), нельзя
-        // создавать дубликат. Просим обратиться к администратору.
         var existingIdentity = await userManager.FindByEmailAsync(email);
         if (existingIdentity != null)
         {
+            // Если Identity уже связан с восстановленным library-пользователем, значит WebAPI восстановил
+            // запись в обход BFF или предыдущий вызов упал после восстановления library. Создавать
+            // Identity заново нельзя — рабочий аккаунт уже существует, достаточно пропустить создание.
+            if (existingIdentity.LibraryUserId == libraryUser.Id.Value)
+            {
+                logger.LogInformation(
+                    "Self-restore: library user {Id} restored, Identity {Email} already linked. Ready to log in.",
+                    libraryUser.Id.Value, email);
+                return;
+            }
+
+            // LibraryUserId не совпадает: email совпадает, но это другой пользователь.
             logger.LogError(
-                "Self-restore: library user {Id} restored, but Identity user {Email} still exists. " +
-                "Manual admin intervention required.",
-                libraryUser.Id.Value, email);
+                "Self-restore: library user {Id} restored, but Identity {Email} linked to different library user {OtherId}",
+                libraryUser.Id.Value, email, existingIdentity.LibraryUserId);
             throw new LibValidationException
             {
-                ExceptionDetails = ["Не удалось создать Identity-аккаунт. Обратитесь к администратору."]
+                ExceptionDetails = ["Конфликт данных аккаунта. Обратитесь к администратору."]
             };
         }
 
