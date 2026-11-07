@@ -389,4 +389,46 @@ public class DeleteUserCommandTests
         // Assert
         Assert.That(user.DeletedByUserId, Is.EqualTo(adminId));
     }
+    [Test]
+    public async Task Execute_WhenUserHasUnpaidPenalties_ThrowsLibValidationException()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+        var currentUserMock = new Mock<ICurrentUserService>();
+        var auditMock = new Mock<IAuditService>();
+
+        var user = new User
+        {
+            Id = new Id(Guid.NewGuid()),
+            LastName = "Test",
+            FirstName = "User",
+            Email = "test@test.com",
+            ContactInfo = "test",
+            RoomBooks = []
+        };
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+
+        // Выдача возвращена (не активная), но штраф начислен и не оплачен
+        var borrow = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = user,
+            ReturnDate = DateTime.UtcNow,
+            Penalty = 100m,
+            PenaltyPayments = [],
+            RoomBook = new RoomBook { Id = new Id(Guid.NewGuid()) }
+        };
+        await userRoomBookRepo.AddRangeAsync([borrow], CancellationToken.None);
+
+        var command = new DeleteUserCommand(unitOfWork, currentUserMock.Object, auditMock.Object);
+        var request = new DeleteUserRequest { Id = user.Id };
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<LibValidationException>(() =>
+            command.Execute(request, CancellationToken.None));
+
+        Assert.That(ex!.Message, Does.Contain("неоплаченных штрафов").IgnoreCase);
+    }
 }
