@@ -19,11 +19,20 @@
 
 <PageHeader BackUrl="/rooms" OnRefresh="ReloadAsync" IsLoading="@isLoading">
     <ChildContent>
-    @* --- Кнопки управления только для редакторов --- *@
+        @* --- Кнопки управления только для редакторов --- *@
         @if (isEditor)
         {
             <button class="btn btn-sm btn-outline-secondary" @onclick="OpenRenameDialogAsync" disabled="@isLoading">✏️ Переименовать</button>
             <button class="btn btn-sm btn-outline-danger" @onclick="DeleteRoomAsync" disabled="@isLoading" title="@(roomBooks.Count > 0 ? "Нельзя удалить комнату, в которой есть книги" : "Удалить комнату")">🗑️ Удалить комнату</button>
+
+            <div class="vr mx-1" style="opacity: 0.25;"></div> @* Визуальный разделитель *@
+
+            <button class="btn btn-sm btn-success" @onclick="SaveAsync" disabled="@(!isDirty || isSaving)">
+                @(isSaving ? "Сохранение..." : "💾 Сохранить")
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="CancelChanges" disabled="@(!isDirty || isSaving)">
+                Отменить
+            </button>
         }
         @if (isDirty)
         {
@@ -95,16 +104,6 @@ else
                           SelectionMode="DataGridSelectionMode.Multiple"
                           OnRowDoubleClick="AddBookToRoomAndRender" />
             }
-        </div>
-
-        @* ---------- Панель сохранения ---------- *@
-        <div class="d-flex gap-2 mb-4">
-            <button class="btn btn-success" @onclick="SaveAsync" disabled="@(!isDirty || isSaving)">
-                @(isSaving ? "Сохранение..." : "💾 Сохранить изменения")
-            </button>
-            <button class="btn btn-outline-secondary" @onclick="CancelChanges" disabled="@(!isDirty || isSaving)">
-                Отменить изменения
-            </button>
         </div>
     }
 }
