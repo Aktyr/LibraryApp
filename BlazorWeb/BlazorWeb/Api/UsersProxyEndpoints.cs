@@ -107,6 +107,7 @@ public static class UsersProxyEndpoints
         ClaimsPrincipal user,
         UserManager<ApplicationUser> userManager,
         DeleteUserCommand deleteUserCommand,
+        RestoreUserCommand restoreUserCommand,
         IUserManagementPolicy policy,
         IUnitOfWork unitOfWork,
         ILoggerFactory loggerFactory,
@@ -120,8 +121,10 @@ public static class UsersProxyEndpoints
         }
 
         var logger = loggerFactory.CreateLogger("DeleteUserBff");
-
         var libUserId = new Id(id);
+
+        // Пред-проверка активных выдач: fail-fast без открытия транзакции.
+        // Неоплаченные штрафы проверит DeleteUserCommand и вернёт LibValidationException.
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         var activeBorrows = await userRoomBookRepo.CountAsync(
             urb => urb.User.Id == libUserId && urb.ReturnDate == null, ct);
@@ -133,34 +136,55 @@ public static class UsersProxyEndpoints
                 statusCode: 400);
         }
 
-        var appUser = userManager.Users.FirstOrDefault(u => u.LibraryUserId == id);
-        if (appUser != null)
-        {
-            var identityResult = await userManager.DeleteAsync(appUser);
-            if (!identityResult.Succeeded)
-            {
-                return Results.Problem(
-                    detail: $"Identity delete error: {string.Join(", ", identityResult.Errors.Select(e => e.Description))}",
-                    statusCode: 400);
-            }
-        }
-
+        // Library-first: если Identity-удаление упадёт, откатываем library через RestoreUserCommand.
+        // Identity-first приводил к «зависанию»: Identity нет, library активен, пользователь
+        // не виден в /users (глобальный фильтр IsDeleted), не восстанавливается ни через UI,
+        // ни через /api/auth/restore-account.
         try
         {
-            await deleteUserCommand.Execute(new DeleteUserRequest { Id = new Id(id) }, ct);
+            await deleteUserCommand.Execute(new DeleteUserRequest { Id = libUserId }, ct);
         }
-        catch (UserNotFoundException) { /* идемпотентно */ }
-        catch (Exception ex)
+        catch (UserNotFoundException)
         {
-            logger.LogError(ex, "Failed to soft-delete library user {Id} after Identity deletion.", id);
+            // Идемпотентно: пользователь уже удалён в library. Переходим к Identity.
+        }
+        catch (LibValidationException ex)
+        {
+            // Неоплаченные штрафы и др. валидационные проверки: library не тронут.
             return Results.Problem(
-                detail: $"Пользователь удалён из Identity, но не деактивирован в библиотеке: {ex.Message}",
-                statusCode: 500);
+                detail: string.Join("\n", ex.ExceptionDetails),
+                statusCode: 400);
         }
 
-        return Results.Ok(new BasicCreateDeleteResponse("Ok", "Пользователь деактивирован"));
-    }
+        var appUser = userManager.Users.FirstOrDefault(u => u.LibraryUserId == id);
+        if (appUser == null)
+        {
+            return Results.Ok(new BasicCreateDeleteResponse("Ok", "Пользователь деактивирован"));
+        }
 
+        var identityResult = await userManager.DeleteAsync(appUser);
+        if (identityResult.Succeeded)
+        {
+            return Results.Ok(new BasicCreateDeleteResponse("Ok", "Пользователь деактивирован"));
+        }
+
+        // Компенсация: library уже soft-deleted, Identity-удаление упало — откатываем library.
+        try
+        {
+            await restoreUserCommand.Execute(new RestoreUserRequest { Id = libUserId }, ct);
+            logger.LogWarning(
+                "Delete: Identity deletion failed, library user {Id} rolled back", id);
+        }
+        catch (Exception compEx)
+        {
+            logger.LogCritical(compEx,
+                "Delete compensation FAILED: library user {Id} is deleted, Identity still exists", id);
+        }
+
+        return Results.Problem(
+            detail: $"Identity delete error: {string.Join(", ", identityResult.Errors.Select(e => e.Description))}",
+            statusCode: 500);
+    }
     private static async Task<IResult> DeleteMyProfileAsync(
         ClaimsPrincipal user,
         UserManager<ApplicationUser> userManager,
