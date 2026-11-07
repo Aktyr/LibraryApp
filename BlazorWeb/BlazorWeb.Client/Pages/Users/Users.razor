@@ -47,8 +47,11 @@ else if (users != null)
             <DataAnnotationsValidator />
 
             <div class="mb-3">
-                <label class="form-label">Email <span class="text-danger">*</span></label>
-                <InputText @bind-Value="draft.Email" class="form-control" type="email" />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                    <CharCounter Current="@(draft.Email?.Length ?? 0)" Max="@EmailPolicy.MaxLength" />
+                </div>
+                <InputTextLive @bind-Value="draft.Email" class="form-control" type="email" />
                 <ValidationMessage For="() => draft.Email" class="text-danger" />
             </div>
             <div class="mb-3">

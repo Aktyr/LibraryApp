@@ -8,6 +8,7 @@
 @using LibApp.Core.Enums
 @using LibApp.Core.Records
 @using Microsoft.AspNetCore.Authorization
+@using BlazorWeb.Client.Shared.CharCounter
 @inject IUserApiClient UserClient
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
@@ -125,23 +126,35 @@ else
             <DataAnnotationsValidator />
 
             <div class="mb-3">
-                <label class="form-label">Фамилия <span class="text-danger">*</span></label>
-                <InputText @bind-Value="draft.LastName" class="form-control" />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">Фамилия <span class="text-danger">*</span></label>
+                    <CharCounter Current="@(draft.LastName?.Length ?? 0)" Max="@UserPolicy.MaxNameLength" />
+                </div>
+                <InputTextLive @bind-Value="draft.LastName" class="form-control" />
                 <ValidationMessage For="() => draft.LastName" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Имя <span class="text-danger">*</span></label>
-                <InputText @bind-Value="draft.FirstName" class="form-control" />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">Имя <span class="text-danger">*</span></label>
+                    <CharCounter Current="@(draft.FirstName?.Length ?? 0)" Max="@UserPolicy.MaxNameLength" />
+                </div>
+                <InputTextLive @bind-Value="draft.FirstName" class="form-control" />
                 <ValidationMessage For="() => draft.FirstName" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Отчество</label>
-                <InputText @bind-Value="draft.MiddleName" class="form-control" />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">Отчество</label>
+                    <CharCounter Current="@(draft.MiddleName?.Length ?? 0)" Max="@UserPolicy.MaxNameLength" />
+                </div>
+                <InputTextLive @bind-Value="draft.MiddleName" class="form-control" />
                 <ValidationMessage For="() => draft.MiddleName" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Контактная информация <span class="text-danger">*</span></label>
-                <InputText @bind-Value="draft.ContactInfo" class="form-control" />
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="form-label">Контактная информация <span class="text-danger">*</span></label>
+                    <CharCounter Current="@(draft.ContactInfo?.Length ?? 0)" Max="@UserPolicy.MaxContactInfoLength" />
+                </div>
+                <InputTextLive @bind-Value="draft.ContactInfo" class="form-control" />
                 <ValidationMessage For="() => draft.ContactInfo" class="text-danger" />
             </div>
 

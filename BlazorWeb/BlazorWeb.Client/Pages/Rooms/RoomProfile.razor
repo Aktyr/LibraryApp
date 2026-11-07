@@ -6,6 +6,7 @@
 @using LibApp.Core.Records
 @using LibApp.Core.Requests.Entities.Room
 @using Microsoft.AspNetCore.Authorization
+@using BlazorWeb.Client.Shared.CharCounter
 @attribute [Authorize]
 @inject IRoomApiClient RoomClient
 @inject IBookApiClient BookClient
@@ -115,8 +116,12 @@ else
     <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>Переименовать комнату</h3>
         <div class="mb-3">
-            <label class="form-label">Название <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" @bind="newRoomName" />
+            <div class="d-flex justify-content-between align-items-baseline">
+                <label class="form-label">Название <span class="text-danger">*</span></label>
+                <CharCounter Current="@(newRoomName?.Length ?? 0)" Max="@RoomPolicy.MaxNameLength" />
+            </div>
+            @* Модалка не в EditForm, InputTextLive требует EditContext и бросит. Поэтому нативный input с oninput. *@
+            <input type="text" class="form-control" @bind="newRoomName" @bind:event="oninput" />
         </div>
         @if (!string.IsNullOrEmpty(renameDialogError))
         {
