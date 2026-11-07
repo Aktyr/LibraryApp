@@ -55,6 +55,7 @@ public static class ServiceCollectionExtensions
         // Команды, которые BFF вызывает напрямую
         services.AddTransient<DeleteUserCommand>();
         services.AddTransient<SelfDeleteCommand>();
+        services.AddTransient<AnonymizeUserCommand>();
         services.AddTransient<RestoreUserCommand>();
 
 

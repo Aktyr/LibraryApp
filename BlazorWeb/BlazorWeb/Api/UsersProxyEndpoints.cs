@@ -17,6 +17,7 @@ public static class UsersProxyEndpoints
         group.MapPut("/{id:guid}/status", ChangeStatusAsync);
         group.MapGet("/deleted", GetDeletedAsync);
         group.MapPost("/{id:guid}/restore", RestoreAsync);
+        group.MapPost("/{id:guid}/anonymize", AnonymizeAsync);
 
 
         // Переопределяем Create и Delete (BFF: Identity + Library, с компенсацией)
@@ -237,6 +238,65 @@ public static class UsersProxyEndpoints
         return Results.Ok(new BasicCreateDeleteResponse("Ok", "Аккаунт удалён"));
     }
 
+    private static async Task<IResult> AnonymizeAsync(
+        Guid id,
+        ClaimsPrincipal user,
+        UserManager<ApplicationUser> userManager,
+        AnonymizeUserCommand anonymizeUserCommand,
+        IUserManagementPolicy policy,
+        ICurrentUserService currentUser,
+        ILoggerFactory loggerFactory,
+        CancellationToken ct)
+    {
+        var logger = loggerFactory.CreateLogger("AnonymizeUserBff");
+
+        if (!policy.CanDelete(ParseActorRole(user)))
+        {
+            return Results.Problem(
+                detail: "Только администратор может анонимизировать пользователей",
+                statusCode: 403);
+        }
+
+        if (currentUser.LibraryUserId?.Value == id)
+        {
+            return Results.Problem(
+                detail: "Нельзя анонимизировать свой собственный аккаунт",
+                statusCode: 400);
+        }
+
+        try
+        {
+            await anonymizeUserCommand.Execute(new DeleteUserRequest { Id = new Id(id) }, ct);
+        }
+        catch (UserNotFoundException)
+        {
+            return Results.Problem(detail: "Пользователь не найден", statusCode: 404);
+        }
+        catch (LibValidationException ex)
+        {
+            return Results.Problem(
+                detail: string.Join("\n", ex.ExceptionDetails),
+                statusCode: 400);
+        }
+
+        // library анонимизирован — персональные данные затёрты, GDPR-цель достигнута.
+        // Identity-запись удаляем следом; при падении library уже не откатить
+        // (PasswordHash стёрт), поэтому логируем Critical для ручного разбора.
+        var appUser = userManager.Users.FirstOrDefault(u => u.LibraryUserId == id);
+        if (appUser != null)
+        {
+            var identityResult = await userManager.DeleteAsync(appUser);
+            if (!identityResult.Succeeded)
+            {
+                logger.LogCritical(
+                    "Anonymize: library user {Id} anonymized, but Identity delete failed: {Errors}. " +
+                    "Manual cleanup required.",
+                    id, string.Join("; ", identityResult.Errors.Select(e => e.Description)));
+            }
+        }
+
+        return Results.Ok(new BasicCreateDeleteResponse("Ok", "Пользователь анонимизирован"));
+    }
     private static UserRole ParseActorRole(ClaimsPrincipal user)
     {
         var raw = user.FindFirst(ClaimTypes.Role)?.Value;
