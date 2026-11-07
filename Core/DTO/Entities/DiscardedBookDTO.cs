@@ -10,5 +10,7 @@ public record DiscardedBookDTO(
     DateTime DiscardedDate,
     DiscardReason DiscardReason,
     string? ApprovedBy,
-    decimal? CompensationAmount)
-{ public DiscardedBookDTO() : this(default, default, default!, default, default!, default, default, default, default!, default) { } }
+    decimal? CompensationAmount,
+    Guid? ReaderId = null,
+    string? ReaderName = null)
+{ public DiscardedBookDTO() : this(default, default, default!, default, default!, default, default, default, default!, default, default, default) { } }

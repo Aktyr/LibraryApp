@@ -46,7 +46,9 @@ public class GetDiscardedBooksCommand(IUnitOfWork unitOfWork)
                     d.DiscardedDate,
                     d.DiscardReason,
                     d.ApprovedBy,
-                    d.CompensationAmount
+                    d.CompensationAmount,
+                    d.ReaderId,
+                    d.ReaderName
                 });
         }, ct);
 
@@ -60,7 +62,9 @@ public class GetDiscardedBooksCommand(IUnitOfWork unitOfWork)
             x.DiscardedDate,
             x.DiscardReason,
             x.ApprovedBy,
-            x.CompensationAmount)).ToArray();
+            x.CompensationAmount,
+            x.ReaderId?.Value,
+            x.ReaderName)).ToArray();
 
         return ResponseFactory.Found<DiscardedBook, DiscardedBookDTO, DiscardedBookResponse>(dtos);
     }

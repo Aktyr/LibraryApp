@@ -344,6 +344,7 @@ else
                 b.CloseElement();
             }
         },
+        new() { Title = "Читатель", Width = 180, Value = r => r.ReaderName ?? "—", FilterText = r => r.ReaderName ?? "" },
         new() { Title = "Списал", Width = 180, Value = r => r.ApprovedBy, FilterText = r => r.ApprovedBy ?? "" },
         new()
         {

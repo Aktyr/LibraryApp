@@ -90,6 +90,8 @@ public class ReturnBookCommand(
                     DiscardReason = request.DiscardReason.Value,
                     ApprovedById = currentUser.LibraryUserId,
                     ApprovedBy = currentUser.FullName,
+                    ReaderId = userRoomBook.User.Id,
+                    ReaderName = userRoomBook.User.FullName,
                     CompensationAmount = request.CompensationAmount
                 };
 

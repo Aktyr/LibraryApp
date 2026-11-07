@@ -32,6 +32,16 @@ public class DiscardedBookConfiguration : IEntityTypeConfiguration<DiscardedBook
         builder.Property(d => d.ApprovedBy)
                .HasMaxLength(100);
 
+        builder.HasOne(d => d.Reader)
+               .WithMany()
+               .HasForeignKey(d => d.ReaderId)
+               .OnDelete(DeleteBehavior.SetNull)
+               .IsRequired(false);
+
+        builder.Property(d => d.ReaderName)
+               .HasMaxLength(300);
+
+        builder.HasIndex(d => d.ReaderId);
         builder.Property(d => d.CompensationAmount)
                .HasPrecision(18, 2);
 

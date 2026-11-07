@@ -14,6 +14,10 @@
     /// </summary>
     public Id? ApprovedById { get; set; }
     public virtual User? ApprovedByUser { get; set; }
+    public Id? ReaderId { get; set; }
+    public virtual User? Reader { get; set; }
+
+    public string? ReaderName { get; set; }
 
     /// <summary>
     /// Снимок ФИО на момент списания. Заполняется при создании

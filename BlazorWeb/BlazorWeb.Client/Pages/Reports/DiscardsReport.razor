@@ -102,6 +102,7 @@ else if (records != null)
                 b.CloseElement();
             }
         },
+        new() { Title = "Читатель", Width = 200, Value = r => r.ReaderName ?? "—", FilterText = r => r.ReaderName ?? "" },
         new() { Title = "Списал", Width = 200, Value = r => r.ApprovedBy, FilterText = r => r.ApprovedBy ?? "" },
         new()
         {

@@ -55,6 +55,13 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Property<DateTime>("DiscardedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("ReaderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReaderName")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 
@@ -63,6 +70,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.HasIndex("ApprovedById");
 
                     b.HasIndex("BookId");
+
+                    b.HasIndex("ReaderId");
 
                     b.HasIndex("RoomId");
 
@@ -368,6 +377,11 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("LibApp.Core.Entities.User", "Reader")
+                        .WithMany()
+                        .HasForeignKey("ReaderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("LibApp.Core.Entities.Room", "Room")
                         .WithMany()
                         .HasForeignKey("RoomId")
@@ -377,6 +391,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Navigation("ApprovedByUser");
 
                     b.Navigation("Book");
+
+                    b.Navigation("Reader");
 
                     b.Navigation("Room");
                 });
