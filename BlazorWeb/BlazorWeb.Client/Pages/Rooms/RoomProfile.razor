@@ -34,7 +34,11 @@
                 ➕ Добавить книги
             </button>
 
-            <div class="vr mx-1" style="opacity: 0.25;"></div> @* Визуальный разделитель *@
+            <button class="btn btn-sm btn-outline-secondary" @onclick="OpenDiscardHistoryDialog" disabled="@isLoading">
+                📋 История списаний
+            </button>
+
+            <div class="vr mx-1" style="opacity: 0.25;"></div>
 
             <button class="btn btn-sm btn-success" @onclick="SaveAsync" disabled="@(!isDirty || isSaving)">
                 @(isSaving ? "Сохранение..." : "💾 Сохранить")
@@ -217,6 +221,33 @@ else
         </div>
     </div>
 }
+@* ---------- Модалка истории списаний ---------- *@
+<ModalDialog IsVisible="@discardHistoryDialogOpen" OnClose="CloseDiscardHistoryDialog" Title="История списаний">
+    <ChildContent>
+        @if (discardHistoryLoading)
+        {
+            <p class="text-muted">Загрузка...</p>
+        }
+        else if (discardHistory.Count == 0)
+        {
+            <p class="text-muted">В этой комнате ещё не было списаний.</p>
+        }
+        else
+        {
+            <DataGrid TItem="DiscardedBookDTO"
+                      Items="discardHistory"
+                      PageSize="15"
+                      Columns="discardHistoryColumns"
+                      ShowExport="false"
+                      Hint=""
+                      SelectionMode="DataGridSelectionMode.Multiple" />
+        }
+    </ChildContent>
+    <Footer>
+        <button class="btn btn-secondary" @onclick="CloseDiscardHistoryDialog">Закрыть</button>
+    </Footer>
+</ModalDialog>
+
 @* ---------- Модалка добавления книг ---------- *@
 <ModalDialog IsVisible="@addBooksDialogOpen" OnClose="CloseAddBooksDialog" Title="Добавить книги в комнату">
     <ChildContent>
@@ -280,6 +311,63 @@ else
     private decimal? discardCompensation;
     private string? discardError;
     private bool discardSaving;
+
+    private bool discardHistoryDialogOpen;
+    private bool discardHistoryLoading;
+    private List<DiscardedBookDTO> discardHistory = new();
+
+    private readonly List<DataGridColumn<DiscardedBookDTO>> discardHistoryColumns = new()
+    {
+        new()
+        {
+            Title = "Дата",
+            Width = 120,
+            FilterKind = FilterKind.Date,
+            Value = r => r.DiscardedDate,
+            FilterText = r => r.DiscardedDate.ToString("yyyy-MM-dd"),
+            Template = item => b => b.AddContent(0, item.DiscardedDate.ToLocalTime().ToString("dd.MM.yyyy"))
+        },
+        new() { Title = "Книга", Width = 240, Value = r => r.BookTitle },
+        new() { Title = "Кол-во", Width = 80, FilterKind = FilterKind.Number, Value = r => r.Amount },
+        new()
+        {
+            Title = "Причина",
+            Width = 140,
+            Value = r => r.DiscardReason.DisplayName(),
+            FilterText = r => r.DiscardReason.DisplayName(),
+            Template = item => b =>
+            {
+                var (bg, fg) = DiscardReasonStyle.Get(item.DiscardReason);
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style", $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
+                b.AddContent(2, item.DiscardReason.DisplayName());
+                b.CloseElement();
+            }
+        },
+        new() { Title = "Списал", Width = 180, Value = r => r.ApprovedBy, FilterText = r => r.ApprovedBy ?? "" },
+        new()
+        {
+            Title = "Компенсация, ₽",
+            Width = 140,
+            FilterKind = FilterKind.Number,
+            Value = r => r.CompensationAmount,
+            FilterText = r => r.CompensationAmount?.ToString("0.##") ?? "",
+            Template = item => b =>
+            {
+                if (item.CompensationAmount is > 0)
+                {
+                    b.OpenElement(0, "span");
+                    b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
+                    b.AddContent(2, $"{item.CompensationAmount.Value:0.##}");
+                    b.CloseElement();
+                }
+                else
+                {
+                    b.AddContent(0, "—");
+                }
+            }
+        }
+    };
 
     private bool CanSubmitDiscard =>
         discardSource != null &&
@@ -572,6 +660,35 @@ else
     private void CloseAddBooksDialog()
     {
         addBooksDialogOpen = false;
+    }
+
+    private async Task OpenDiscardHistoryDialog()
+    {
+        discardHistoryDialogOpen = true;
+        discardHistoryLoading = true;
+        discardHistory = new();
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var resp = await BookClient.GetDiscardedBooksAsync(roomId: Id);
+            discardHistory = resp.Discarded.ToList();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка загрузки истории списаний: {ex.Message}");
+        }
+        finally
+        {
+            discardHistoryLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void CloseDiscardHistoryDialog()
+    {
+        discardHistoryDialogOpen = false;
+        discardHistory = new();
     }
 
     private void CloseRenameDialog() => renameDialogOpen = false;
