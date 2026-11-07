@@ -3,6 +3,7 @@
 @attribute [Authorize(Roles = "Librarian,Admin")]
 @using BlazorWeb.Client.Services.APIs
 @using BlazorWeb.Client.Services.Interfaces
+@using BlazorWeb.Client.Shared.CharCounter
 @using BlazorWeb.Components.Shared.DataGrid
 @using LibApp.Core.DTO.Borrowing
 @using LibApp.Core.DTO.Entities
@@ -13,7 +14,6 @@
 @using LibApp.Core.Requests.Entities.User
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
-@using BlazorWeb.Client.Shared.CharCounter
 @inject IUserApiClient UserClient
 @inject IRoomApiClient RoomClient
 @inject IBookApiClient BookClient
@@ -28,7 +28,7 @@
 <PageTitle>Профиль — @FullName</PageTitle>
 
 @* ---------- Шапка ---------- *@
-<PageHeader BackUrl="/users" OnRefresh="ReloadAsync" IsLoading="@isLoading">
+<PageHeader BackUrl="@BackUrl" OnRefresh="ReloadAsync" IsLoading="@isLoading">
     <ChildContent>
         @if (user != null)
         {
@@ -53,7 +53,6 @@
                     <button class="btn btn-sm btn-outline-danger" @onclick="DeleteUserAsync" disabled="@isLoading">🗑️ Удалить</button>
                 }
             }
-
         }
     </ChildContent>
 </PageHeader>
@@ -148,6 +147,7 @@ else
             Выдача новых книг заблокирована. Разблокируйте Профиль, чтобы продолжить выдачу.
         </div>
     }
+
     @* ---------- Активные выдачи ---------- *@
     <div class="mb-4">
         <h4>Активные выдачи (@activeBorrows.Count)</h4>
@@ -162,6 +162,7 @@ else
                       PageSize="10"
                       Columns="ActiveColumns"
                       Actions="activeActions"
+                      Hint="<b>Продлить</b> — двойной клик по строке или кнопка, если не исчерпан лимит | <b>Вернуть</b> — одиночный возврат откроет осмотр с указанием состояния книги; массовый примет книги как «Ок» без осмотра"
                       SelectionMode="DataGridSelectionMode.Multiple"
                       OnRowDoubleClick="OnActiveRowDoubleClick" />
         }
@@ -192,14 +193,15 @@ else
             else
             {
                 <DataGrid TItem="RoomBookOption"
-                Items="availableRoomBooks"
-                PageSize="10"
-                Columns="availableColumns"
-                Actions="availableActions"
-                SelectionMode="DataGridSelectionMode.Single"
-                OnRowDoubleClick="OpenBorrowDialog" />
+                          Items="availableRoomBooks"
+                          PageSize="10"
+                          Columns="availableColumns"
+                          Actions="availableActions"
+                          Hint="<b>📖 Выдать</b> — двойной клик по книге или кнопка | <b>Лимит выдачи</b> — блокируется при превышении лимита книг или наличии просрочек"
+                          SelectionMode="DataGridSelectionMode.Single"
+                          OnRowDoubleClick="OpenBorrowDialog" />
             }
-        </div>                
+        </div>
     }
 
     @* ---------- История возвратов (сворачиваемая) ---------- *@
@@ -219,6 +221,7 @@ else
                           PageSize="10"
                           Columns="historyColumns"
                           Actions="historyActions"
+                          Hint="<b>💰 Принять оплату штрафа</b> — только для возвратов с неоплаченным штрафом | <b>Оплата всегда полная</b> — частичные платежи не поддерживаются"
                           SelectionMode="DataGridSelectionMode.Multiple" />
             </div>
         </details>
@@ -475,6 +478,7 @@ else
         </div>
     </div>
 }
+
 @code {
     private BorrowingSettingsDTO? settings;
     private int MaxBooksPerUser => settings?.MaxBooksPerUser ?? 5;
@@ -483,6 +487,9 @@ else
     private int MaxBorrowDays => settings?.MaxBorrowDays ?? 30;
 
     [Parameter] public Guid Id { get; set; }
+
+    private string? ReturnUrl { get; set; }
+    private string BackUrl => ReturnUrl ?? "/users";
 
     private bool isLoading = true;
     private string? errorMessage;
@@ -675,6 +682,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // [SupplyParameterFromQuery] не парсит query в WASM при prerender:false.
+        // Microsoft.AspNetCore.WebUtilities недоступен в клиенте — парсим вручную.
+        ReturnUrl = GetQueryValue(new Uri(Nav.Uri), "returnUrl");
+
         var auth = await AuthProvider.GetAuthenticationStateAsync();
         actorRole = auth.User.IsInRole("Admin") ? UserRole.Admin
                   : auth.User.IsInRole("Librarian") ? UserRole.Librarian
@@ -777,7 +788,6 @@ else
             await InvokeAsync(StateHasChanged);
         }
     }
-
 
     private async Task OnActiveRowDoubleClick(BorrowedBookDTO b)
     {
@@ -1172,5 +1182,23 @@ else
         [Required(ErrorMessage = "Контактная информация обязательна")]
         [StringLength(UserPolicy.MaxContactInfoLength, ErrorMessage = "Не более 200 символов")]
         public string ContactInfo { get; set; } = "";
+    }
+    private static string? GetQueryValue(Uri uri, string key)
+    {
+        var query = uri.Query;
+        if (string.IsNullOrEmpty(query)) return null;
+
+        foreach (var pair in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var idx = pair.IndexOf('=');
+            if (idx < 0) continue;
+
+            var k = Uri.UnescapeDataString(pair[..idx]);
+            if (!string.Equals(k, key, StringComparison.OrdinalIgnoreCase)) continue;
+
+            return Uri.UnescapeDataString(pair[(idx + 1)..]);
+        }
+
+        return null;
     }
 }

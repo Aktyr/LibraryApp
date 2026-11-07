@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject IReportsApiClient ReportsClient
+@inject NavigationManager Nav
 @inject IToastService Toast
 
 <PageTitle>Активность пользователей</PageTitle>
@@ -37,7 +38,9 @@ else if (userActivity != null)
               Items="userActivity"
               PageSize="15"
               Columns="columns"
-              SelectionMode="DataGridSelectionMode.Multiple" />
+              Hint="<b>Двойной клик</b> по строке — открыть профиль | <b>Только должники</b> / <b>только с активными</b> — переключатели в шапке | <b>📥 Экспорт</b> — выгрузить отчёт"
+              SelectionMode="DataGridSelectionMode.Multiple"
+              OnRowDoubleClick="OnRowDoubleClick" />
 }
 
 @code {
@@ -61,6 +64,9 @@ else if (userActivity != null)
     {
         await LoadAsync();
     }
+
+    private void OnRowDoubleClick(UserActivityReportDTO user)
+        => Nav.NavigateTo($"/users/{user.UserId}?returnUrl={Uri.EscapeDataString("/reports/user-activity")}");
 
     private async Task LoadAsync()
     {
