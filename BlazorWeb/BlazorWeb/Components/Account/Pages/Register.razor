@@ -8,6 +8,7 @@
 @using BlazorWeb.Data
 @using LibApp.Core.Enums
 @using BlazorWeb.Client.Shared.CharCounter
+@using BlazorWeb.Client.Shared.PasswordHint
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
@@ -70,11 +71,14 @@
                 <InputTextLive @bind-Value="Input.ContactInfo" class="form-control" aria-required="true" placeholder="+7-999-123-45-67 или email" />
                 <ValidationMessage For="() => Input.ContactInfo" class="text-danger" />
             </div>
-            <div class="form-floating mb-3">
+            <div class="mb-3">
+                <label for="password" class="form-label d-flex align-items-center">
+                    Password <span class="text-danger ms-1">*</span>
+                    <PasswordHint />
+                </label>
                 <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="password">Password</label>
                 <ValidationMessage For="() => Input.Password" class="text-danger" />
-            </div>
+            </div>            
             <div class="form-floating mb-3">
                 <InputText type="password" @bind-Value="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
                 <label for="confirm-password">Confirm Password</label>

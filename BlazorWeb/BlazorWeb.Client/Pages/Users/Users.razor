@@ -10,6 +10,7 @@
 @using LibApp.Core.Interfaces
 @using LibApp.Core.Requests.Entities.User
 @using BlazorWeb.Client.Shared.CharCounter
+@using BlazorWeb.Client.Shared.PasswordHint
 @inject IUserApiClient ApiClient
 @inject NavigationManager Nav
 @inject IBorrowingSettingsService SettingsService
@@ -55,7 +56,10 @@ else if (users != null)
                 <ValidationMessage For="() => draft.Email" class="text-danger" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Пароль <span class="text-danger">*</span></label>
+                <label class="form-label d-flex align-items-center">
+                    Пароль <span class="text-danger ms-1">*</span>
+                    <PasswordHint />
+                </label>
                 <InputText @bind-Value="draft.Password" class="form-control" type="password" />
                 <ValidationMessage For="() => draft.Password" class="text-danger" />
             </div>
