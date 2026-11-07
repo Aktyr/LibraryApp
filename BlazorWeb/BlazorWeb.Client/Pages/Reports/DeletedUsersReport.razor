@@ -62,5 +62,6 @@ else if (users != null)
         await InvokeAsync(StateHasChanged);
     }
 
-    private void OnRowDoubleClick(UserDTO user) => Nav.NavigateTo($"/users/{user.Id}");
+    private void OnRowDoubleClick(UserDTO user)
+        => Nav.NavigateTo($"/users/{user.Id}?returnUrl={Uri.EscapeDataString("/reports/deleted-users")}");
 }
