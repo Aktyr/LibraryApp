@@ -44,6 +44,12 @@ public class UserApiClient(HttpClient http) : IUserApiClient
         return await ReadAsync(resp, ct);
     }
 
+    public async Task<BasicCreateDeleteResponse> AnonymizeUserAsync(Guid id, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsync($"{BasePath}/{id}/anonymize", null, ct);
+        return await ReadAsync(resp, ct);
+    }
+
     private static async Task<BasicCreateDeleteResponse> ReadAsync(
         HttpResponseMessage resp, CancellationToken ct)
     {

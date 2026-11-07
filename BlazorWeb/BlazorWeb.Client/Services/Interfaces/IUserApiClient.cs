@@ -11,6 +11,7 @@ public interface IUserApiClient
     Task<BasicCreateDeleteResponse> ChangeStatusAsync(Guid id, SubscriptionStatus newStatus, CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> DeleteMyProfileAsync(CancellationToken ct = default);
     Task<BasicCreateDeleteResponse> RestoreUserAsync(Guid id, CancellationToken ct = default);
+    Task<BasicCreateDeleteResponse> AnonymizeUserAsync(Guid id, CancellationToken ct = default);
     Task<UserResponse> GetDeletedUsersAsync(CancellationToken ct = default);
     Task<UserResponse> GetMeAsync(CancellationToken ct = default);
     Task<BorrowResponse> GetMyBooksAsync(CancellationToken ct = default);

@@ -45,6 +45,7 @@
                 }
                 @if (CanDelete)
                 {
+                    <button class="btn btn-sm btn-outline-dark" @onclick="AnonymizeUserAsync" disabled="@isLoading" title="Необратимо затереть персональные данные, сохранив историю">🕵️ Анонимизировать</button>
                     <button class="btn btn-sm btn-outline-danger" @onclick="DeleteUserAsync" disabled="@isLoading">🗑️ Удалить</button>
                 }
             }
@@ -864,6 +865,35 @@ else
             await ReloadAsync();
         }
         catch (Exception ex) { Toast.ShowError($"Ошибка: {ex.Message}"); }
+    }
+
+    private async Task AnonymizeUserAsync()
+    {
+        if (user == null || !CanDelete) return;
+
+        var confirmed = await Confirm.AskAsync(
+            $"Анонимизировать пользователя «{user.LastName} {user.FirstName}»?\n" +
+            $"Email: {user.Email}\n\n" +
+            "Персональные данные (ФИО, email, контакт, пароль) будут необратимо затёрты. " +
+            "История выдач и штрафов сохранится для отчётности.\n\n" +
+            "Действие необратимо.",
+            title: "Анонимизация пользователя",
+            confirmText: "Анонимизировать",
+            requireConfirmationWord: true,
+            confirmationWord: "АНОНИМИЗИРОВАТЬ");
+
+        if (!confirmed) return;
+
+        try
+        {
+            await UserClient.AnonymizeUserAsync(user.Id);
+            Toast.ShowSuccess($"Пользователь «{user.LastName} {user.FirstName}» анонимизирован");
+            Nav.NavigateTo("/users");
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка анонимизации: {ex.Message}");
+        }
     }
 
     // ---- Модалка выдачи ----
