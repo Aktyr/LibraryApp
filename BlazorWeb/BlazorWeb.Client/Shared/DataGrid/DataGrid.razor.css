@@ -31,13 +31,49 @@
     border-radius: 6px 6px 0 0;
 }
 
-.dg-filter {
-    padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    min-width: 200px;
+.dg-filter-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-width: 240px;
 }
 
+.dg-filter {
+    padding: 6px 32px 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+    .dg-filter::-webkit-search-cancel-button {
+        display: none;
+    }
+
+.dg-filter-clear {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #888;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+    .dg-filter-clear:hover {
+        color: #d44;
+        background: rgba(0, 0, 0, 0.05);
+    }
 .dg-actions {
     display: flex;
     gap: 4px;

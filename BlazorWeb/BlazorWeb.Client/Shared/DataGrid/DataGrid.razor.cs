@@ -301,6 +301,13 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     }
 
     private void OnFilterChanged(ChangeEventArgs e) { filter = e.Value?.ToString() ?? ""; currentPage = 1; RefreshFiltered(); }
+    private void ClearFilter()
+    {
+        filter = "";
+        currentPage = 1;
+        RefreshFiltered();
+        StateHasChanged();
+    }
 
     #endregion
 
@@ -461,8 +468,8 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         contextMenuX = e.ClientX; contextMenuY = e.ClientY;
         contextMenuVisible = true;
     }
-
     private void CloseContextMenu() { contextMenuVisible = false; hintOpen = false; settingsMenuOpen = false; }
+    private void ClosePopovers() { hintOpen = false; settingsMenuOpen = false; }
     private void ToggleSettingsMenu() => settingsMenuOpen = !settingsMenuOpen;
     private void ToggleHint() => hintOpen = !hintOpen;
 

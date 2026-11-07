@@ -10,8 +10,14 @@
     @* --- Строка быстрого поиска --- *@
     @if (ShowFilter)
     {
-        <input class="dg-filter" type="search" placeholder="@FilterPlaceholder"
-               value="@filter" @oninput="OnFilterChanged" />
+        <div class="dg-filter-wrap">
+            <input class="dg-filter" type="search" placeholder="@FilterPlaceholder"
+                   value="@filter" @oninput="OnFilterChanged" />
+            @if (!string.IsNullOrEmpty(filter))
+            {
+                <button class="dg-filter-clear" @onclick="ClearFilter" title="Очистить поиск">✖</button>
+            }
+        </div>
     }
 
     @* --- Пользовательские действия над выделением --- *@
@@ -105,6 +111,10 @@
             </div>
         }
     </div>
+    @if (hintOpen || settingsMenuOpen)
+    {
+        <div class="dg-overlay" @onclick="ClosePopovers" @oncontextmenu="ClosePopovers" @oncontextmenu:preventDefault="true"></div>
+    }
 </div>
 @* ============================================================
    Панель фильтров: чипы активных условий + кнопка «Добавить»
