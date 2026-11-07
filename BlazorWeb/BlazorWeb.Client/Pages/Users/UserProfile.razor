@@ -39,14 +39,30 @@
                 </button>
                 @if (CanDelete)
                 {
-                    <button class="btn btn-sm btn-outline-dark" @onclick="AnonymizeUserAsync" disabled="@isLoading" title="Необратимо затереть персональные данные, сохранив историю">🕵️ Анонимизировать</button>
+                    <span title="@AnonymizeBlockReason" style="display: inline-block;">
+                        <button class="btn btn-sm btn-outline-dark"
+                                @onclick="AnonymizeUserAsync"
+                                disabled="@(isLoading || !CanAnonymizeUser)">
+                            🕵️ Анонимизировать
+                        </button>
+                    </span>
                 }
             }
             else
             {
+                @if (CanEdit)
+                {
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="OpenEditDialogAsync" disabled="@isLoading">✏️ Редактировать</button>
+                }
                 @if (CanDelete)
                 {
-                    <button class="btn btn-sm btn-outline-danger" @onclick="DeleteUserAsync" disabled="@isLoading">🗑️ Удалить</button>
+                    <span title="@DeleteBlockReason" style="display: inline-block;">
+                        <button class="btn btn-sm btn-outline-danger"
+                                @onclick="DeleteUserAsync"
+                                disabled="@(isLoading || !CanDeleteUser)">
+                            🗑️ Удалить
+                        </button>
+                    </span>
                 }
 
                 <div class="vr mx-1" style="opacity: 0.25;"></div>
@@ -564,6 +580,47 @@ else
             if (overdueCount > 0)
                 return "У пользователя есть просроченные книги. Примите возврат просроченных книг, чтобы разблокировать выдачу.";
             return "";
+        }
+    }
+    private int UnpaidPenaltyCount => allBorrows.Count(b => b.Penalty is > 0 && !b.IsPenaltyPaid);
+
+    private bool CanDeleteUser =>
+        CanDelete
+        && user != null
+        && !user.IsDeleted
+        && user.ActiveBorrowedCount == 0
+        && UnpaidPenaltyCount == 0;
+
+    private bool CanAnonymizeUser =>
+        CanDelete
+        && user != null
+        && user.IsDeleted
+        && user.ActiveBorrowedCount == 0
+        && UnpaidPenaltyCount == 0;
+
+    private string DeleteBlockReason
+    {
+        get
+        {
+            if (user == null) return "";
+            if (user.ActiveBorrowedCount > 0)
+                return $"Нельзя удалить: {user.ActiveBorrowedCount} активных выдач. Сначала верните все книги.";
+            if (UnpaidPenaltyCount > 0)
+                return $"Нельзя удалить: {UnpaidPenaltyCount} неоплаченных штрафов. Сначала примите оплату.";
+            return "Удалить пользователя";
+        }
+    }
+
+    private string AnonymizeBlockReason
+    {
+        get
+        {
+            if (user == null) return "";
+            if (user.ActiveBorrowedCount > 0)
+                return $"Нельзя анонимизировать: {user.ActiveBorrowedCount} активных выдач.";
+            if (UnpaidPenaltyCount > 0)
+                return $"Нельзя анонимизировать: {UnpaidPenaltyCount} неоплаченных штрафов.";
+            return "Анонимизировать пользователя";
         }
     }
 

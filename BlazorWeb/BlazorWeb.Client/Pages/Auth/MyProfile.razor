@@ -32,12 +32,13 @@
             </a>
             @if (user.Role != UserRole.Admin)
             {
-                <button class="btn btn-sm btn-outline-danger"
-                        @onclick="DeleteAccountAsync"
-                        disabled="@(isLoading || user.ActiveBorrowedCount > 0)"
-                        title="@(user.ActiveBorrowedCount > 0 ? "Сначала верните все книги" : "Удалить аккаунт")">
-                    🗑️ Удалить аккаунт
-                </button>
+                <span title="@DeleteAccountBlockReason" style="display: inline-block;">
+                    <button class="btn btn-sm btn-outline-danger"
+                            @onclick="DeleteAccountAsync"
+                            disabled="@(isLoading || !CanDeleteAccount)">
+                        🗑️ Удалить аккаунт
+                    </button>
+                </span>
             }
         }
     </ChildContent>
@@ -241,15 +242,30 @@ else
         }
     }
 
+    private int UnpaidPenaltyCount => allBorrows.Count(b => b.Penalty is > 0 && !b.IsPenaltyPaid);
+
+    private bool CanDeleteAccount =>
+        user != null
+        && user.ActiveBorrowedCount == 0
+        && UnpaidPenaltyCount == 0;
+
+    private string DeleteAccountBlockReason
+    {
+        get
+        {
+            if (user == null) return "";
+            if (user.ActiveBorrowedCount > 0)
+                return $"Нельзя удалить: {user.ActiveBorrowedCount} активных выдач. Сначала верните все книги.";
+            if (UnpaidPenaltyCount > 0)
+                return $"Нельзя удалить: {UnpaidPenaltyCount} неоплаченных штрафов. Обратитесь к библиотекарю.";
+            return "Удалить аккаунт";
+        }
+    }
+
     private async Task DeleteAccountAsync()
     {
-        if (user == null) return;
+        if (user == null || !CanDeleteAccount) return;
 
-        if (user.ActiveBorrowedCount > 0)
-        {
-            Toast.ShowError($"Нельзя удалить аккаунт: у вас {user.ActiveBorrowedCount} активных выдач. Сначала верните все книги.");
-            return;
-        }
 
         var confirmed = await Confirm.AskAsync(
             "Удалить аккаунт?\n\n" +

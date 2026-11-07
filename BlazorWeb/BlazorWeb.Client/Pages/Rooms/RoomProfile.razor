@@ -23,8 +23,13 @@
         @if (isEditor)
         {
             <button class="btn btn-sm btn-outline-secondary" @onclick="OpenRenameDialogAsync" disabled="@isLoading">✏️ Переименовать</button>
-            <button class="btn btn-sm btn-outline-danger" @onclick="DeleteRoomAsync" disabled="@isLoading" title="@(roomBooks.Count > 0 ? "Нельзя удалить комнату, в которой есть книги" : "Удалить комнату")">🗑️ Удалить комнату</button>
-
+            <span title="@(roomBooks.Count > 0 ? "Нельзя удалить комнату, в которой есть книги" : "Удалить комнату")" style="display: inline-block;">
+                <button class="btn btn-sm btn-outline-danger"
+                        @onclick="DeleteRoomAsync"
+                        disabled="@(isLoading || roomBooks.Count > 0)">
+                    🗑️ Удалить комнату
+                </button>
+            </span>
             <button class="btn btn-sm btn-primary" @onclick="OpenAddBooksDialog" disabled="@isLoading">
                 ➕ Добавить книги
             </button>

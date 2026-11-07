@@ -230,7 +230,7 @@ else if (books != null)
             Label = "Удалить",
             Icon = "🗑️",
             SeparatorBefore = true,
-            CanExecute = s => s.Count == 1,
+            CanExecute = s => s.Count == 1 && s[0].RoomBook is not { Count: > 0 },
             Handler = s => DeleteAsync(s[0])
         });
     }
