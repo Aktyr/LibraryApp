@@ -213,15 +213,8 @@ else
     </div>
 }
 @* ---------- Модалка добавления книг ---------- *@
-@if (addBooksDialogOpen)
-{
-    <div class="modal-backdrop" @onclick="CloseAddBooksDialog"></div>
-    <div class="modal-dialog modal-add-books" @onclick:stopPropagation="true">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 class="mb-0">Добавить книги в комнату</h3>
-            <button type="button" class="btn-close" @onclick="CloseAddBooksDialog" aria-label="Закрыть"></button>
-        </div>
-
+<ModalDialog IsVisible="@addBooksDialogOpen" OnClose="CloseAddBooksDialog" Title="Добавить книги в комнату">
+    <ChildContent>
         @if (AvailableBooks.Count == 0)
         {
             <p class="text-muted mt-3">Все книги из каталога уже добавлены в комнату.</p>
@@ -238,12 +231,11 @@ else
                       SelectionMode="DataGridSelectionMode.Multiple"
                       OnRowDoubleClick="AddBookToRoomAndRender" />
         }
-
-        <div class="mt-3 text-end">
-            <button class="btn btn-secondary" @onclick="CloseAddBooksDialog">Закрыть</button>
-        </div>
-    </div>
-}
+    </ChildContent>
+    <Footer>
+        <button class="btn btn-secondary" @onclick="CloseAddBooksDialog">Закрыть</button>
+    </Footer>
+</ModalDialog>
 @code {
     [Parameter] public Guid Id { get; set; }
 
@@ -626,35 +618,3 @@ else
     #endregion
 
 }
-<style>
-    /* Модалка добавления книг: адаптивная ширина и ограничение высоты DataGrid */
-    .modal-add-books {
-        width: 95vw;
-        max-width: 850px;
-        min-width: 0; /* Сбрасываем min-width из .modal-dialog-wide */
-        max-height: 90vh;
-        display: flex;
-        flex-direction: column;
-        overflow-y: auto; /* Прокрутка на случай, если DataGrid не влезет */
-    }
-
-        /* Ограничиваем высоту внутреннего скролла DataGrid, чтобы кнопка «Закрыть» была видна */
-        .modal-add-books .dg-wrapper {
-            max-height: 55vh;
-        }
-
-    /* На мобильных делаем модалку почти на весь экран */
-    @@media (max-width: 576px) {
-        .modal-add-books {
-            width: 100vw;
-            height: 100vh;
-            max-height: 100vh;
-            border-radius: 0;
-            padding: 16px;
-        }
-
-            .modal-add-books .dg-wrapper {
-                max-height: calc(100vh - 180px); /* Вычитаем шапку и футер модалки */
-            }
-    }
-</style>

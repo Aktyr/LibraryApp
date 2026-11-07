@@ -68,14 +68,32 @@ h1:focus {
     background: #fff;
     border-radius: 8px;
     padding: 20px 24px;
-    min-width: 420px;
-    max-width: 90vw;
+    min-width: 0;
+    width: 95vw;
+    max-width: 850px;
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     pointer-events: auto;
+    display: flex;
+    flex-direction: column;
 }
 
-.modal-dialog-wide {
-    min-width: 480px;
+    /* Ограничиваем высоту таблиц внутри любой модалки */
+    .modal-dialog .dg-wrapper {
+        max-height: 55vh;
+    }
+
+@media (max-width: 576px) {
+    .modal-dialog {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        padding: 16px;
+    }
+
+        .modal-dialog .dg-wrapper {
+            max-height: calc(100vh - 180px);
+        }
 }

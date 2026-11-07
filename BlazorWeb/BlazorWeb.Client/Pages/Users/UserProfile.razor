@@ -44,13 +44,27 @@
             }
             else
             {
-                @if (CanEdit)
-                {
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="OpenEditDialogAsync" disabled="@isLoading">✏️ Редактировать</button>
-                }
                 @if (CanDelete)
                 {
                     <button class="btn btn-sm btn-outline-danger" @onclick="DeleteUserAsync" disabled="@isLoading">🗑️ Удалить</button>
+                }
+
+                <div class="vr mx-1" style="opacity: 0.25;"></div>
+
+                @if (availableRoomBooks.Count > 0)
+                {
+                    <button class="btn btn-sm btn-outline-primary"
+                            @onclick="OpenAvailableBooksDialog"
+                            disabled="@(isLoading || !CanBorrow)"
+                            title="@(CanBorrow ? "Доступные книги для выдачи" : BorrowBlockReason)">
+                        📚 Доступные книги (@availableRoomBooks.Count)
+                    </button>
+                }
+                @if (returnedBorrows.Count > 0)
+                {
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="OpenHistoryDialog" disabled="@isLoading">
+                        🕰️ История возвратов (@returnedBorrows.Count)
+                    </button>
                 }
             }
         }
@@ -147,6 +161,12 @@ else
             Выдача новых книг заблокирована. Разблокируйте Профиль, чтобы продолжить выдачу.
         </div>
     }
+    else if (!CanBorrow && availableRoomBooks.Count > 0)
+    {
+        <div class="alert alert-warning py-2 mb-4">
+            ⚠️ @BorrowBlockReason
+        </div>
+    }
 
     @* ---------- Активные выдачи ---------- *@
     <div class="mb-4">
@@ -167,65 +187,6 @@ else
                       OnRowDoubleClick="OnActiveRowDoubleClick" />
         }
     </div>
-
-    @* ---------- Доступные книги ---------- *@
-    @if (!user.IsDeleted)
-    {
-        <div class="mb-4">
-            <h4>Доступные книги для выдачи (@availableRoomBooks.Count)</h4>
-            @if (user.ActiveBorrowedCount >= MaxBooksPerUser)
-            {
-                <p class="text-danger mb-0">
-                    Лимит книг на руках достигнут (@MaxBooksPerUser / @MaxBooksPerUser).
-                    Верните одну из книг, чтобы выдать новую.
-                </p>
-            }
-            else if (overdueCount > 0)
-            {
-                <p class="text-danger mb-0">
-                    У пользователя есть просроченные книги. Выдача заблокирована до их возврата.
-                </p>
-            }
-            else if (availableRoomBooks.Count == 0)
-            {
-                <p class="text-muted mb-0">Нет доступных книг в библиотеке.</p>
-            }
-            else
-            {
-                <DataGrid TItem="RoomBookOption"
-                          Items="availableRoomBooks"
-                          PageSize="10"
-                          Columns="availableColumns"
-                          Actions="availableActions"
-                          Hint="<b>📖 Выдать</b> — двойной клик по книге или кнопка | <b>Лимит выдачи</b> — блокируется при превышении лимита книг или наличии просрочек"
-                          SelectionMode="DataGridSelectionMode.Single"
-                          OnRowDoubleClick="OpenBorrowDialog" />
-            }
-        </div>
-    }
-
-    @* ---------- История возвратов (сворачиваемая) ---------- *@
-    @if (returnedBorrows.Count > 0)
-    {
-        <details class="mb-4">
-            <summary class="h5" style="cursor: pointer;">
-                История возвратов (@returnedBorrows.Count)
-                @if (totalPenalty > 0)
-                {
-                    <small class="text-danger fs-6 ms-2">· Штрафы: @totalPenalty.ToString("0.##") ₽</small>
-                }
-            </summary>
-            <div class="mt-2">
-                <DataGrid TItem="BorrowedBookDTO"
-                          Items="returnedBorrows"
-                          PageSize="10"
-                          Columns="historyColumns"
-                          Actions="historyActions"
-                          Hint="<b>💰 Принять оплату штрафа</b> — только для возвратов с неоплаченным штрафом | <b>Оплата всегда полная</b> — частичные платежи не поддерживаются"
-                          SelectionMode="DataGridSelectionMode.Multiple" />
-            </div>
-        </details>
-    }
 }
 
 @* ---------- Модалка редактирования профиля ---------- *@
@@ -441,7 +402,7 @@ else
 {
     <div class="modal-backdrop" @onclick="ClosePayPenaltyDialog"></div>
     <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
-        <h3>Принять оплату штрафа</h3>
+        <h3>Оплатить штраф</h3>
         <p class="mb-1"><strong>@payingPenaltyBorrow.BookTitle</strong> — @payingPenaltyBorrow.RoomName</p>
         <p class="mb-3">
             Читатель: <strong>@FullName</strong> ·
@@ -468,7 +429,7 @@ else
             <button class="btn btn-success"
                     disabled="@payPenaltySaving"
                     @onclick="SubmitPayPenaltyAsync">
-                @(payPenaltySaving ? "Принятие..." : "Принять оплату")
+                @(payPenaltySaving ? "Оплата..." : "Оплатить штраф")
             </button>
             <button class="btn btn-secondary ms-2"
                     @onclick="ClosePayPenaltyDialog"
@@ -478,7 +439,48 @@ else
         </div>
     </div>
 }
+@* ---------- Модалка доступных книг ---------- *@
+<ModalDialog IsVisible="@availableBooksDialogOpen" OnClose="CloseAvailableBooksDialog" Title="Доступные книги для выдачи">
+    <ChildContent>
+        @if (!CanBorrow && user != null)
+        {
+            <div class="alert alert-warning py-2 mb-3">
+                @if (user.ActiveBorrowedCount >= MaxBooksPerUser)
+                {
+                    <span>⚠️ Лимит книг на руках достигнут (@user.ActiveBorrowedCount / @MaxBooksPerUser). Верните одну из книг, чтобы выдать новую.</span>
+                }
+                else if (overdueCount > 0)
+                {
+                    <span>⚠️ У пользователя есть просроченные книги. Выдача заблокирована до их возврата.</span>
+                }
+            </div>
+        }
+        <DataGrid TItem="RoomBookOption"
+                  Items="availableRoomBooks"
+                  PageSize="10"
+                  Columns="availableColumns"
+                  Actions="availableActions"
+                  Hint="<b>📖 Выдать</b> — двойной клик по книге или кнопка | <b>Лимит выдачи</b> — блокируется при превышении лимита книг или наличии просрочек"
+                  SelectionMode="DataGridSelectionMode.Single"
+                  OnRowDoubleClick="OpenBorrowDialog" />
+    </ChildContent>
+</ModalDialog>
 
+@* ---------- Модалка истории возвратов ---------- *@
+<ModalDialog IsVisible="@historyDialogOpen" OnClose="CloseHistoryDialog" Title="История возвратов">
+    <ChildContent>
+        <DataGrid TItem="BorrowedBookDTO"
+                  Items="returnedBorrows"
+                  PageSize="10"
+                  Columns="historyColumns"
+                  Actions="historyActions"
+                  Hint="<b>💰 Оплатить штраф</b> — только для возвратов с неоплаченным штрафом | <b>Оплата всегда полная</b> — частичные платежи не поддерживаются"
+                  SelectionMode="DataGridSelectionMode.Multiple" />
+    </ChildContent>
+    <Footer>
+        <button class="btn btn-secondary" @onclick="CloseHistoryDialog">Закрыть</button>
+    </Footer>
+</ModalDialog>
 @code {
     private BorrowingSettingsDTO? settings;
     private int MaxBooksPerUser => settings?.MaxBooksPerUser ?? 5;
@@ -493,6 +495,8 @@ else
 
     private bool isLoading = true;
     private string? errorMessage;
+    private bool availableBooksDialogOpen;
+    private bool historyDialogOpen;
 
     private UserDTO? user;
     private UserRole actorRole;
@@ -539,6 +543,29 @@ else
 
     private bool CanEdit => user != null && Policy.CanEdit(actorRole, user.Role);
     private bool CanDelete => user != null && Policy.CanDelete(actorRole);
+
+    private bool CanBorrow =>
+        user != null
+        && user.SubscriptionStatus == SubscriptionStatus.Active
+        && user.ActiveBorrowedCount < MaxBooksPerUser
+        && overdueCount == 0;
+
+    private string BorrowBlockReason
+    {
+        get
+        {
+            if (user == null) return "";
+            if (user.SubscriptionStatus == SubscriptionStatus.Unconfirmed)
+                return "Профиль не подтверждён. Выдача книг запрещена.";
+            if (user.SubscriptionStatus == SubscriptionStatus.Frozen)
+                return "Профиль заморожен. Выдача книг запрещена.";
+            if (user.ActiveBorrowedCount >= MaxBooksPerUser)
+                return $"Лимит книг на руках достигнут ({user.ActiveBorrowedCount} / {MaxBooksPerUser}). Верните одну из книг, чтобы выдать новую.";
+            if (overdueCount > 0)
+                return "У пользователя есть просроченные книги. Примите возврат просроченных книг, чтобы разблокировать выдачу.";
+            return "";
+        }
+    }
 
     private List<DataGridColumn<BorrowedBookDTO>>? _activeColumns;
     private List<DataGridColumn<BorrowedBookDTO>> ActiveColumns => _activeColumns ??= UserBorrowsColumns.CreateActive(
@@ -651,7 +678,7 @@ else
     {
         new()
         {
-            Label = "Принять оплату штрафа",
+            Label = "Оплатить штраф",
             Icon = "💰",
             MinSelection = 1,
             ShowInToolbar = true,
@@ -673,7 +700,7 @@ else
             MinSelection = 1,
             ShowInToolbar = true,
             ShowInContextMenu = true,
-            CanExecute = s => s.Count == 1,
+            CanExecute = s => s.Count == 1 && CanBorrow,
             Handler = s => OpenBorrowDialog(s[0])
         }
     };
@@ -812,6 +839,20 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
+    private void OpenAvailableBooksDialog()
+    {
+        if (!CanBorrow)
+        {
+            Toast.ShowError(BorrowBlockReason);
+            return;
+        }
+        availableBooksDialogOpen = true;
+    }
+
+    private void CloseAvailableBooksDialog() => availableBooksDialogOpen = false;
+    private void OpenHistoryDialog() => historyDialogOpen = true;
+    private void CloseHistoryDialog() => historyDialogOpen = false;
+
     private void CloseDialog()
     {
         dialogMode = DialogMode.None;
@@ -926,11 +967,10 @@ else
     // ---- Модалка выдачи ----
     private async Task OpenBorrowDialog(RoomBookOption book)
     {
-        if (book == null) return;
-        if (user == null) return;
-        if (user.ActiveBorrowedCount >= MaxBooksPerUser) return;
-        if (overdueCount > 0) return;
+        if (book == null || user == null) return;
+        if (!CanBorrow) return;  // Алерт на странице объясняет причину.
 
+        availableBooksDialogOpen = false;
         borrowDialogOpen = true;
         borrowDialogBook = book;
         borrowDueDate = DateTime.Today.AddDays(14);
@@ -1086,6 +1126,7 @@ else
 
     private async Task OpenPayPenaltyDialog(BorrowedBookDTO borrow)
     {
+        historyDialogOpen = false;
         payingPenaltyBorrow = borrow;
         payPenaltyNotes = null;
         payPenaltyError = null;
