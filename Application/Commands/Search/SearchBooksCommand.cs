@@ -1,138 +1,132 @@
 ﻿namespace LibApp.Application.Commands.Search;
 
-public class SearchBooksCommand(
-    IUnitOfWork unitOfWork,
-    IConverter<Book, BookDTO> bookConverter) : IGetQuery<SearchBooksRequest, BookResponse>, ICommand
+public class SearchBooksCommand(IUnitOfWork unitOfWork)
+    : IGetQuery<SearchBooksRequest, BookResponse>, ICommand
 {
     public async Task<BookResponse> Execute(SearchBooksRequest request, CancellationToken ct)
     {
         var bookRepo = unitOfWork.GetRepository<Book>();
 
-        // Формируем фильтр
-        Expression<Func<Book, bool>>? filter = BuildFilter(request);
-
-        // Формируем сортировку (кроме популярности)
-        Func<IQueryable<Book>, IOrderedQueryable<Book>>? orderBy = BuildOrderBy(request);
-
-        // BookDTOConverter всегда читает Book.RoomBook, а RoomBookDTOConverter — rb.Book.Id и rb.Room.Id.
-        // Без явных Include это N+1 на каждой книге каталога.
-        var books = await bookRepo.GetWithoutTrackingAsync(
-            filter,
-            orderBy,
-            cancellationToken: ct,
-            includePaths:
-            [
-                IncludePaths.Book.RoomBook,
-                IncludePaths.Book.RoomBookRoom,
-                IncludePaths.Book.RoomBookBook
-            ]);
-
-        // Если AvailableOnly, фильтруем в памяти
-        if (request.AvailableOnly)
+        var raw = await bookRepo.ExecuteQueryAsync(query =>
         {
-            books = books.Where(b => b.RoomBook.Any(rb => rb.BookCount - rb.BorrowedCount > 0));
-        }
+            query = ApplyFilters(query, request);
 
-        // Сортировка по популярности
-        if (string.Equals(request.SortBy, "popularity", StringComparison.OrdinalIgnoreCase))
-        {
-            books = request.SortDescending
-                ? books.OrderByDescending(b => b.RoomBook.Sum(rb => rb.BorrowedCount))
-                : books.OrderBy(b => b.RoomBook.Sum(rb => rb.BorrowedCount));
-        }
+            if (request.AvailableOnly)
+                query = query.Where(b => b.RoomBook.Any(rb => rb.BookCount > rb.BorrowedCount));
 
-        var bookDTOs = books.Select(b => bookConverter.ToDto(b)).ToArray();
-        return ResponseFactory.Found<Book, BookDTO, BookResponse>(bookDTOs);
+            query = ApplySort(query, request);
+
+            // Проекция в анонимный тип: EF транслирует навигацию RoomBook -> RoomBook.Room/Book
+            // в LEFT JOIN без необходимости явных Include и без N+1.
+            return query.Select(b => new
+            {
+                b.Id,
+                b.Title,
+                b.Author,
+                b.Year,
+                b.Publisher,
+                b.Genre,
+                b.IsDiscarded,
+                b.Description,
+                b.CoverUrl,
+                RoomBook = b.RoomBook.Select(rb => new
+                {
+                    rb.Id,
+                    RoomId = rb.Room.Id,
+                    BookId = rb.Book.Id,
+                    rb.BookCount,
+                    rb.BorrowedCount
+                }).ToList()
+            });
+        }, ct);
+
+        var dtos = raw.Select(x => new BookDTO(
+            x.Id.Value,
+            x.Title,
+            x.Author,
+            x.Year,
+            x.Publisher,
+            x.Genre,
+            x.RoomBook.Select(rb => new RoomBookDTO(
+                rb.Id.Value,
+                rb.RoomId.Value,
+                rb.BookId.Value,
+                rb.BookCount,
+                rb.BorrowedCount
+            )).ToList(),
+            x.IsDiscarded,
+            x.Description,
+            x.CoverUrl
+        )).ToArray();
+
+        return ResponseFactory.Found<Book, BookDTO, BookResponse>(dtos);
     }
 
-    private Expression<Func<Book, bool>>? BuildFilter(SearchBooksRequest request)
+    private static IQueryable<Book> ApplyFilters(IQueryable<Book> query, SearchBooksRequest request)
     {
-        Expression<Func<Book, bool>>? filter = null;
-        bool hasFilter = false;
-
         if (!string.IsNullOrWhiteSpace(request.Query))
         {
             var q = request.Query.ToLower();
-            Expression<Func<Book, bool>> queryFilter = b =>
+            query = query.Where(b =>
                 b.Title.ToLower().Contains(q) ||
                 b.Author.ToLower().Contains(q) ||
                 b.Publisher.ToLower().Contains(q) ||
-                b.Genre.ToLower().Contains(q);
-            filter = queryFilter;
-            hasFilter = true;
+                b.Genre.ToLower().Contains(q));
         }
 
         if (!string.IsNullOrWhiteSpace(request.Title))
         {
             var t = request.Title.ToLower();
-            Expression<Func<Book, bool>> titleFilter = b => b.Title.ToLower().Contains(t);
-            filter = hasFilter ? ExpressionHelper.CombineAnd(filter!, titleFilter) : titleFilter;
-            hasFilter = true;
+            query = query.Where(b => b.Title.ToLower().Contains(t));
         }
 
         if (!string.IsNullOrWhiteSpace(request.Author))
         {
             var a = request.Author.ToLower();
-            Expression<Func<Book, bool>> authorFilter = b => b.Author.ToLower().Contains(a);
-            filter = hasFilter ? ExpressionHelper.CombineAnd(filter!, authorFilter) : authorFilter;
-            hasFilter = true;
+            query = query.Where(b => b.Author.ToLower().Contains(a));
         }
 
         if (!string.IsNullOrWhiteSpace(request.Genre))
         {
             var g = request.Genre.ToLower();
-            Expression<Func<Book, bool>> genreFilter = b => b.Genre.ToLower().Contains(g);
-            filter = hasFilter ? ExpressionHelper.CombineAnd(filter!, genreFilter) : genreFilter;
-            hasFilter = true;
+            query = query.Where(b => b.Genre.ToLower().Contains(g));
         }
 
         if (!string.IsNullOrWhiteSpace(request.Publisher))
         {
             var p = request.Publisher.ToLower();
-            Expression<Func<Book, bool>> publisherFilter = b => b.Publisher.ToLower().Contains(p);
-            filter = hasFilter ? ExpressionHelper.CombineAnd(filter!, publisherFilter) : publisherFilter;
-            hasFilter = true;
+            query = query.Where(b => b.Publisher.ToLower().Contains(p));
         }
 
         if (request.YearFrom.HasValue)
-        {
-            Expression<Func<Book, bool>> yearFromFilter = b => b.Year >= request.YearFrom.Value;
-            filter = hasFilter ? ExpressionHelper.CombineAnd(filter!, yearFromFilter) : yearFromFilter;
-            hasFilter = true;
-        }
+            query = query.Where(b => b.Year >= request.YearFrom.Value);
 
         if (request.YearTo.HasValue)
-        {
-            Expression<Func<Book, bool>> yearToFilter = b => b.Year <= request.YearTo.Value;
-            filter = hasFilter ? ExpressionHelper.CombineAnd(filter!, yearToFilter) : yearToFilter;
-            hasFilter = true;
-        }
+            query = query.Where(b => b.Year <= request.YearTo.Value);
 
-        // AvailableOnly не добавляем в фильтр, т.к. требует работы с коллекцией – оставим в памяти
-        return filter;
+        return query;
     }
 
-    private Func<IQueryable<Book>, IOrderedQueryable<Book>>? BuildOrderBy(SearchBooksRequest request)
+    private static IQueryable<Book> ApplySort(IQueryable<Book> query, SearchBooksRequest request)
     {
-        if (string.IsNullOrEmpty(request.SortBy))
-            return q => q.OrderBy(b => b.Title);
-
-        switch (request.SortBy.ToLower())
+        // Популярность сортируется через SQL SUM по навигации RoomBook.
+        // EF транслирует collection.Sum() в COALESCE(SUM(...), 0) через LEFT JOIN,
+        // что позволяет делать ORDER BY прямо в БД без материализации.
+        if (string.Equals(request.SortBy, "popularity", StringComparison.OrdinalIgnoreCase))
         {
-            case "title":
-                return request.SortDescending ? q => q.OrderByDescending(b => b.Title) : q => q.OrderBy(b => b.Title);
-            case "author":
-                return request.SortDescending ? q => q.OrderByDescending(b => b.Author) : q => q.OrderBy(b => b.Author);
-            case "year":
-                return request.SortDescending ? q => q.OrderByDescending(b => b.Year) : q => q.OrderBy(b => b.Year);
-            case "publisher":
-                return request.SortDescending ? q => q.OrderByDescending(b => b.Publisher) : q => q.OrderBy(b => b.Publisher);
-            case "popularity":
-                // Для сортировки по популярности требуется вычисление суммы BorrowedCount.
-                // В текущей реализации оставляем сортировку по умолчанию.
-                return request.SortDescending ? q => q.OrderByDescending(b => b.Title) : q => q.OrderBy(b => b.Title);
-            default:
-                return q => q.OrderBy(b => b.Title);
+            return request.SortDescending
+                ? query.OrderByDescending(b => b.RoomBook.Sum(rb => rb.BorrowedCount))
+                : query.OrderBy(b => b.RoomBook.Sum(rb => rb.BorrowedCount));
         }
+
+        return request.SortBy?.ToLower() switch
+        {
+            null or "" => query.OrderBy(b => b.Title),
+            "title" => request.SortDescending ? query.OrderByDescending(b => b.Title) : query.OrderBy(b => b.Title),
+            "author" => request.SortDescending ? query.OrderByDescending(b => b.Author) : query.OrderBy(b => b.Author),
+            "year" => request.SortDescending ? query.OrderByDescending(b => b.Year) : query.OrderBy(b => b.Year),
+            "publisher" => request.SortDescending ? query.OrderByDescending(b => b.Publisher) : query.OrderBy(b => b.Publisher),
+            _ => query.OrderBy(b => b.Title)
+        };
     }
 }
