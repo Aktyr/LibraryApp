@@ -1,0 +1,49 @@
+﻿@using LibApp.Core.DTO.Entities
+
+@* Карточка книги для витрины каталога (Ozon-style). Только отображение, действия — в модалке. *@
+<div class="book-card" @onclick="() => OnClick.InvokeAsync(Book)">
+    <div class="book-cover">
+        @if (!string.IsNullOrWhiteSpace(Book.CoverUrl))
+        {
+            <img src="@Book.CoverUrl" alt="@Book.Title" loading="lazy" />
+        }
+        else
+        {
+            <div class="cover-placeholder">📖</div>
+        }
+        @if (!IsAvailable)
+        {
+            <div class="cover-overlay">Нет в наличии</div>
+        }
+    </div>
+    <div class="book-info">
+        <div class="book-title" title="@Book.Title">@Book.Title</div>
+        <div class="book-author">@Book.Author</div>
+        <div class="book-meta">
+            <span>@Book.Year</span>
+            <span>·</span>
+            <span>@Book.Genre</span>
+        </div>
+        <div class="book-stock">
+            @if (IsAvailable)
+            {
+                <span class="stock-badge stock-available">В наличии: @TotalAvailable</span>
+            }
+            else
+            {
+                <span class="stock-badge stock-empty">Все выданы</span>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>Книга для отображения. <c>RoomBook</c> должен быть загружен для расчёта наличия.</summary>
+    [Parameter, EditorRequired] public BookDTO Book { get; set; } = default!;
+
+    /// <summary>Callback при клике по карточке. Обычно открывает модалку с деталями.</summary>
+    [Parameter] public EventCallback<BookDTO> OnClick { get; set; }
+
+    private int TotalAvailable => Book.RoomBook?.Sum(rb => rb.AvailableCount) ?? 0;
+    private bool IsAvailable => TotalAvailable > 0;
+}
