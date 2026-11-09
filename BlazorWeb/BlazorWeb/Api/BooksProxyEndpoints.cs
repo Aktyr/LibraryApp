@@ -12,6 +12,7 @@ public static class BooksProxyEndpoints
 
         group.MapGet("/", GetAllAsync);
         group.MapGet("/{id:guid}", GetByIdAsync);
+        group.MapGet("/search", SearchAsync);
         group.MapPost("/", CreateAsync);
         group.MapPut("/", UpdateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
@@ -66,5 +67,34 @@ public static class BooksProxyEndpoints
             httpFactory, HttpMethod.Get,
             $"/api/books/discarded{request.BuildQueryString()}", null, ct);
     }
+    private static Task<IResult> SearchAsync(
+        string? query,
+        string? title,
+        string? author,
+        string? genre,
+        string? publisher,
+        int? yearFrom,
+        int? yearTo,
+        bool? availableOnly,
+        string? sortBy,
+        bool? sortDescending,
+        IHttpClientFactory httpFactory,
+        CancellationToken ct)
+    {
+        var q = new List<string>();
+        if (!string.IsNullOrWhiteSpace(query)) q.Add($"query={Uri.EscapeDataString(query)}");
+        if (!string.IsNullOrWhiteSpace(title)) q.Add($"title={Uri.EscapeDataString(title)}");
+        if (!string.IsNullOrWhiteSpace(author)) q.Add($"author={Uri.EscapeDataString(author)}");
+        if (!string.IsNullOrWhiteSpace(genre)) q.Add($"genre={Uri.EscapeDataString(genre)}");
+        if (!string.IsNullOrWhiteSpace(publisher)) q.Add($"publisher={Uri.EscapeDataString(publisher)}");
+        if (yearFrom.HasValue) q.Add($"yearFrom={yearFrom.Value}");
+        if (yearTo.HasValue) q.Add($"yearTo={yearTo.Value}");
+        if (availableOnly == true) q.Add("availableOnly=true");
+        if (!string.IsNullOrWhiteSpace(sortBy)) q.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+        if (sortDescending == true) q.Add("sortDescending=true");
 
+        var qs = q.Count > 0 ? "?" + string.Join("&", q) : "";
+        return ProxyForwarder.ForwardAsync(
+            httpFactory, HttpMethod.Get, $"/api/search/books{qs}", null, ct);
+    }
 }

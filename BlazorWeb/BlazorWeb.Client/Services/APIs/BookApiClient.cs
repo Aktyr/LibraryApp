@@ -68,7 +68,7 @@ public class BookApiClient(HttpClient http) : IBookApiClient
     public async Task<DiscardedBookResponse> GetDiscardedBooksAsync(
         DateTime? fromDate = null,
         DateTime? toDate = null,
-        LibApp.Core.Enums.DiscardReason? discardReason = null,
+        DiscardReason? discardReason = null,
         Guid? roomId = null,
         Guid? approvedById = null,
         Guid? bookId = null,
