@@ -19,6 +19,13 @@
 
         <AuthorizeView>
             <Authorized>
+                <div class="nav-section-title">Каталог</div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="catalog">
+                        <span class="nav-emoji">🛍️</span><span class="nav-text">Витрина книг</span>
+                    </NavLink>
+                </div>
+
                 @if (context.User.IsInRole("Librarian") || context.User.IsInRole("Admin"))
                 {
                     <div class="nav-section-title">Библиотека</div>
@@ -46,7 +53,6 @@
                 }
 
                 <div class="nav-section-title">Аккаунт</div>
-
                 <div class="nav-item">
                     <NavLink class="nav-link" href="my-profile">
                         <span class="nav-emoji">👤</span><span class="nav-text">Мой профиль</span>

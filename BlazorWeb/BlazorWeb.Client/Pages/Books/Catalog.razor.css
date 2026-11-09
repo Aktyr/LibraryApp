@@ -1,0 +1,67 @@
+﻿.catalog-header {
+    margin-bottom: 24px;
+}
+
+    .catalog-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+.catalog-filters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 16px;
+    background: #f8f9fa;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.search-box {
+    flex: 1 1 300px;
+}
+
+.filter-group {
+    display: flex;
+    gap: 8px;
+}
+
+    .filter-group select {
+        min-width: 150px;
+    }
+
+.catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+/* На планшетах и мобильных уменьшаем минимальную ширину карточки */
+@media (max-width: 768px) {
+    .catalog-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+    }
+
+    .catalog-filters {
+        position: static;
+    }
+}
+
+.detail-cover-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    background: #f5f5f5;
+    border-radius: 8px;
+    font-size: 5rem;
+    color: #ccc;
+}

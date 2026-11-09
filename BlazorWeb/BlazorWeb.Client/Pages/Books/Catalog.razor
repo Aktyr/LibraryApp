@@ -1,0 +1,171 @@
+﻿@page "/catalog"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@attribute [Authorize]
+@using BlazorWeb.Client.Shared
+@using LibApp.Core.DTO.Entities
+@using LibApp.Core.Requests.Search
+@using Microsoft.AspNetCore.Authorization
+@using BlazorWeb.Client.Shared.BookCard
+@inject IBookApiClient BookClient
+@inject IToastService Toast
+
+<PageTitle>Каталог книг</PageTitle>
+
+<div class="catalog-header">
+    <h1>Каталог</h1>
+    <p class="text-muted">Найдите нужную книгу и проверьте её наличие в фонде.</p>
+</div>
+
+<div class="catalog-filters">
+    <div class="search-box">
+        <input type="search" 
+               class="form-control" 
+               placeholder="Поиск по названию, автору, издательству..." 
+               @bind="request.Query" 
+               @bind:event="onchange" 
+               @bind:after="LoadAsync" />
+    </div>
+    
+    <div class="filter-group">
+        <select class="form-select" @bind="request.SortBy" @bind:after="LoadAsync">
+            <option value="Title">По названию</option>
+            <option value="Author">По автору</option>
+            <option value="Year">По году</option>
+            <option value="popularity">По популярности</option>
+        </select>
+        <select class="form-select" @bind="request.SortDescending" @bind:after="LoadAsync">
+            <option value="false">По возрастанию</option>
+            <option value="true">По убыванию</option>
+        </select>
+    </div>
+
+    <div class="form-check form-switch ms-auto">
+        <input class="form-check-input" type="checkbox" id="availCheck" 
+               @bind="request.AvailableOnly" @bind:after="LoadAsync" />
+        <label class="form-check-label" for="availCheck">Только в наличии</label>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Поиск книг...</p>
+    </div>
+}
+else if (books == null || books.Count == 0)
+{
+    <div class="alert alert-info mt-4">
+        <h4 class="alert-heading">Ничего не найдено</h4>
+        <p class="mb-0">Попробуйте изменить поисковый запрос или снять фильтры.</p>
+    </div>
+}
+else
+{
+    <div class="catalog-grid">
+        @foreach (var book in books)
+        {
+            <BookCard Book="book" OnClick="OpenDetails" />
+        }
+    </div>
+}
+
+@* Модалка с деталями книги *@
+<ModalDialog IsVisible="@(selectedBook != null)" OnClose="CloseDetails" Title="@(selectedBook?.Title)">
+    <ChildContent>
+        @if (selectedBook != null)
+        {
+            <div class="row g-4">
+                <div class="col-md-4">
+                    @if (!string.IsNullOrWhiteSpace(selectedBook.CoverUrl))
+                    {
+                        <img src="@selectedBook.CoverUrl" alt="Обложка" class="img-fluid rounded shadow-sm" />
+                    }
+                    else
+                    {
+                        <div class="detail-cover-placeholder">📖</div>
+                    }
+                </div>
+                <div class="col-md-8">
+                    <p class="mb-2 fs-5"><strong>@selectedBook.Author</strong></p>
+                    <p class="mb-2 text-muted">@selectedBook.Year · @selectedBook.Publisher</p>
+                    <p class="mb-3"><span class="badge bg-secondary">@selectedBook.Genre</span></p>
+                    
+                    <div class="mb-4">
+                        <strong>Наличие:</strong>
+                        @{
+                            var available = selectedBook.RoomBook?.Sum(rb => rb.AvailableCount) ?? 0;
+                            var total = selectedBook.RoomBook?.Sum(rb => rb.BookCount) ?? 0;
+                        }
+                        @if (available > 0)
+                        {
+                            <span class="text-success fw-bold ms-2">Доступно @available из @total</span>
+                        }
+                        else
+                        {
+                            <span class="text-danger fw-bold ms-2">Все экземпляры выданы</span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(selectedBook.Description))
+                    {
+                        <hr />
+                        <p style="white-space: pre-wrap;">@selectedBook.Description</p>
+                    }
+                    else
+                    {
+                        <hr />
+                        <p class="text-muted fst-italic">Описание пока не добавлено.</p>
+                    }
+                </div>
+            </div>
+        }
+    </ChildContent>
+    <Footer>
+        <button class="btn btn-secondary" @onclick="CloseDetails">Закрыть</button>
+        @* Место под кнопку «Запросить» (Borrow Request), появится в следующей итерации *@
+    </Footer>
+</ModalDialog>
+
+@code {
+    private bool isLoading = true;
+    private List<BookDTO>? books;
+    private BookDTO? selectedBook;
+    
+    private SearchBooksRequest request = new()
+    {
+        SortBy = "Title",
+        SortDescending = false,
+        AvailableOnly = false
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var resp = await BookClient.SearchBooksAsync(request);
+            books = resp.Book.ToList();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка загрузки каталога: {ex.Message}");
+            books = new();
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OpenDetails(BookDTO book) => selectedBook = book;
+    private void CloseDetails() => selectedBook = null;
+}
