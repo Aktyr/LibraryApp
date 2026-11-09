@@ -22,3 +22,5 @@ global using System.Text.Json;
 global using LibApp.Core.Interfaces;
 global using Microsoft.AspNetCore.Components.Forms;
 global using Microsoft.AspNetCore.Components.Rendering;
+global using LibApp.Core.Requests.Search;
+global using LibApp.Core.Requests.Reports;

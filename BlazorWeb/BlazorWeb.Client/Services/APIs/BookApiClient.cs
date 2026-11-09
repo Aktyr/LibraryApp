@@ -1,7 +1,4 @@
-﻿using BlazorWeb.Client.Services.Interfaces;
-using LibApp.Core.Requests.Reports;
-
-namespace BlazorWeb.Client.Services.APIs;
+﻿namespace BlazorWeb.Client.Services.APIs;
 
 public class BookApiClient(HttpClient http) : IBookApiClient
 {
@@ -49,6 +46,24 @@ public class BookApiClient(HttpClient http) : IBookApiClient
     {
         var resp = await http.PostAsJsonAsync($"{BasePath}/discard", request, ct);
         return await ReadAsync(resp, ct);
+    }
+    public async Task<BookResponse> SearchBooksAsync(SearchBooksRequest request, CancellationToken ct = default)
+    {
+        var q = new List<string>();
+        if (!string.IsNullOrWhiteSpace(request.Query)) q.Add($"query={Uri.EscapeDataString(request.Query)}");
+        if (!string.IsNullOrWhiteSpace(request.Title)) q.Add($"title={Uri.EscapeDataString(request.Title)}");
+        if (!string.IsNullOrWhiteSpace(request.Author)) q.Add($"author={Uri.EscapeDataString(request.Author)}");
+        if (!string.IsNullOrWhiteSpace(request.Genre)) q.Add($"genre={Uri.EscapeDataString(request.Genre)}");
+        if (!string.IsNullOrWhiteSpace(request.Publisher)) q.Add($"publisher={Uri.EscapeDataString(request.Publisher)}");
+        if (request.YearFrom.HasValue) q.Add($"yearFrom={request.YearFrom.Value}");
+        if (request.YearTo.HasValue) q.Add($"yearTo={request.YearTo.Value}");
+        if (request.AvailableOnly) q.Add("availableOnly=true");
+        if (!string.IsNullOrWhiteSpace(request.SortBy)) q.Add($"sortBy={Uri.EscapeDataString(request.SortBy)}");
+        if (request.SortDescending) q.Add("sortDescending=true");
+
+        var qs = q.Count > 0 ? "?" + string.Join("&", q) : "";
+        return await http.GetFromJsonAsync<BookResponse>($"{BasePath}/search{qs}", ct)
+               ?? new BookResponse("Error", "Empty response", []);
     }
     public async Task<DiscardedBookResponse> GetDiscardedBooksAsync(
         DateTime? fromDate = null,

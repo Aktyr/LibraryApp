@@ -16,4 +16,5 @@ public interface IBookApiClient
         Guid? approvedById = null,
         Guid? bookId = null,
         CancellationToken ct = default);
+    Task<BookResponse> SearchBooksAsync(SearchBooksRequest request, CancellationToken ct = default);
 }
