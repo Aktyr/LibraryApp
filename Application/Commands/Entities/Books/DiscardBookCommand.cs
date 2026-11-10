@@ -83,7 +83,7 @@ public class DiscardBookCommand(
             }
 
             await auditService.LogAsync(
-                AuditActionType.Update,
+                AuditActionType.Discard,
                 nameof(Book),
                 book.Id.Value,
                 details: $"Списано {request.Amount} экз. «{book.Title}». Причина: {request.DiscardReason.DisplayName()}",

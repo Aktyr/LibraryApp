@@ -13,5 +13,10 @@ public enum AuditActionType
     Logout,
     Borrow,
     Return,
-    Register
+    Register,
+    Discard,
+    UndoDiscard,
+    Anonymize,
+    ApproveBorrowRequest,
+    RejectBorrowRequest
 }

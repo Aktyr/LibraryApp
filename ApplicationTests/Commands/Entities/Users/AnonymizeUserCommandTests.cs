@@ -45,10 +45,13 @@ public class AnonymizeUserCommandTests
         var command = CreateCommand(uow, out _, out _);
         var request = new DeleteUserRequest { Id = new Id(Guid.NewGuid()) };
 
-        var ex = await Assert.ThrowsAsync<UserNotFoundException>(
-            () => command.Execute(request, default));
+        await Assert.MultipleAsync(async () =>
+        {
+            var ex = await Assert.ThrowsAsync<UserNotFoundException>(
+                () => command.Execute(request, default));
 
-        Assert.That(ex!.Message, Does.Contain("not found").IgnoreCase);
+            Assert.That(ex!.Message, Does.Contain("not found").IgnoreCase);
+        });
     }
 
     [Test]
@@ -61,10 +64,13 @@ public class AnonymizeUserCommandTests
         var repo = uow.GetRepository<User>();
         await repo.AddRangeAsync([user], default);
 
-        var ex = await Assert.ThrowsAsync<LibValidationException>(
-            () => command.Execute(RequestFor(user), default));
+        await Assert.MultipleAsync(async () =>
+        {
+            var ex = await Assert.ThrowsAsync<LibValidationException>(
+                () => command.Execute(RequestFor(user), default));
 
-        Assert.That(ex!.Message, Does.Contain("администратора").IgnoreCase);
+            Assert.That(ex!.Message, Does.Contain("администратора").IgnoreCase);
+        });
     }
 
     [Test]
@@ -77,10 +83,13 @@ public class AnonymizeUserCommandTests
         var repo = uow.GetRepository<User>();
         await repo.AddRangeAsync([user], default);
 
-        var ex = await Assert.ThrowsAsync<LibValidationException>(
-            () => command.Execute(RequestFor(user), default));
+        await Assert.MultipleAsync(async () =>
+        {
+            var ex = await Assert.ThrowsAsync<LibValidationException>(
+                () => command.Execute(RequestFor(user), default));
 
-        Assert.That(ex!.Message, Does.Contain("только для удалённых").IgnoreCase);
+            Assert.That(ex!.Message, Does.Contain("только для удалённых").IgnoreCase);
+        });
     }
 
     [Test]
@@ -103,10 +112,13 @@ public class AnonymizeUserCommandTests
         };
         await urbRepo.AddRangeAsync([borrow], default);
 
-        var ex = await Assert.ThrowsAsync<LibValidationException>(
-            () => command.Execute(RequestFor(user), default));
+        await Assert.MultipleAsync(async () =>
+        {
+            var ex = await Assert.ThrowsAsync<LibValidationException>(
+                () => command.Execute(RequestFor(user), default));
 
-        Assert.That(ex!.Message, Does.Contain("активных выдач").IgnoreCase);
+            Assert.That(ex!.Message, Does.Contain("активных выдач").IgnoreCase);
+        });
     }
 
     [Test]
@@ -131,10 +143,13 @@ public class AnonymizeUserCommandTests
         };
         await urbRepo.AddRangeAsync([borrow], default);
 
-        var ex = await Assert.ThrowsAsync<LibValidationException>(
-            () => command.Execute(RequestFor(user), default));
+        await Assert.MultipleAsync(async () =>
+        {
+            var ex = await Assert.ThrowsAsync<LibValidationException>(
+                () => command.Execute(RequestFor(user), default));
 
-        Assert.That(ex!.Message, Does.Contain("неоплаченных штрафов").IgnoreCase);
+            Assert.That(ex!.Message, Does.Contain("неоплаченных штрафов").IgnoreCase);
+        });
     }
 
     [Test]
@@ -147,10 +162,13 @@ public class AnonymizeUserCommandTests
         var repo = uow.GetRepository<User>();
         await repo.AddRangeAsync([user], default);
 
-        var ex = await Assert.ThrowsAsync<LibValidationException>(
-            () => command.Execute(RequestFor(user), default));
+        await Assert.MultipleAsync(async () =>
+        {
+            var ex = await Assert.ThrowsAsync<LibValidationException>(
+                () => command.Execute(RequestFor(user), default));
 
-        Assert.That(ex!.Message, Does.Contain("уже анонимизирован").IgnoreCase);
+            Assert.That(ex!.Message, Does.Contain("уже анонимизирован").IgnoreCase);
+        });
     }
 
     [Test]
@@ -169,31 +187,35 @@ public class AnonymizeUserCommandTests
         var repo = uow.GetRepository<User>();
         await repo.AddRangeAsync([user], default);
 
-        var response = await command.Execute(RequestFor(user), default);
+        await Assert.MultipleAsync(async () =>
+        {
+            var response = await command.Execute(RequestFor(user), default);
 
-        Assert.That(response.Status, Is.EqualTo("Ok"));
-        Assert.That(response.Message, Does.Contain("анонимизирован").IgnoreCase);
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+            Assert.That(response.Message, Does.Contain("анонимизирован").IgnoreCase);
 
-        var updatedUser = ((FakeRepository<User>)repo).Entities.First(u => u.Id.Value == originalId.Value);
-        Assert.That(updatedUser.LastName, Is.EqualTo("Deleted"));
-        Assert.That(updatedUser.FirstName, Is.EqualTo("User"));
-        Assert.That(updatedUser.MiddleName, Is.Empty);
-        Assert.That(updatedUser.Email, Is.EqualTo($"deleted_{originalId.Value:N}@library.local"));
-        Assert.That(updatedUser.ContactInfo, Is.Empty);
-        Assert.That(updatedUser.PasswordHash, Is.Empty);
-        Assert.That(updatedUser.IsDeleted, Is.True);
-        Assert.That(updatedUser.DeletedAt, Is.EqualTo(originalDeletedAt));
-        Assert.That(updatedUser.DeletedByUserId, Is.EqualTo(originalDeletedBy));
+            var updatedUser = ((FakeRepository<User>)repo).Entities
+                .First(u => u.Id.Value == originalId.Value);
+            Assert.That(updatedUser.LastName, Is.EqualTo("Deleted"));
+            Assert.That(updatedUser.FirstName, Is.EqualTo("User"));
+            Assert.That(updatedUser.MiddleName, Is.Empty);
+            Assert.That(updatedUser.Email, Is.EqualTo($"deleted_{originalId.Value:N}@library.local"));
+            Assert.That(updatedUser.ContactInfo, Is.Empty);
+            Assert.That(updatedUser.PasswordHash, Is.Empty);
+            Assert.That(updatedUser.IsDeleted, Is.True);
+            Assert.That(updatedUser.DeletedAt, Is.EqualTo(originalDeletedAt));
+            Assert.That(updatedUser.DeletedByUserId, Is.EqualTo(originalDeletedBy));
 
-        auditMock.Verify(a => a.LogAsync(
-            AuditActionType.Delete,
-            nameof(User),
-            originalId.Value,
-            It.Is<string>(s => s.Contains(originalFullName) && s.Contains(originalEmail)),
-            It.IsAny<Id?>(),
-            It.IsAny<string?>(),
-            It.IsAny<CancellationToken>()),
-            Times.Once);
+            auditMock.Verify(a => a.LogAsync(
+                AuditActionType.Anonymize,
+                nameof(User),
+                originalId.Value,
+                It.Is<string>(s => s.Contains(originalFullName) && s.Contains(originalEmail)),
+                It.IsAny<Id?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
+        });
     }
 
     [Test]
@@ -251,18 +273,21 @@ public class AnonymizeUserCommandTests
 
         var command = new AnonymizeUserCommand(uowMock.Object, currentUserMock.Object, auditMock.Object);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => command.Execute(RequestFor(user), default));
+        await Assert.MultipleAsync(async () =>
+        {
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => command.Execute(RequestFor(user), default));
 
-        Assert.That(ex, Is.SameAs(saveException));
+            Assert.That(ex, Is.SameAs(saveException));
 
-        uowMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        uowMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
-        uowMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            uowMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uowMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            uowMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
 
-        auditMock.Verify(a => a.LogAsync(
-            It.IsAny<AuditActionType>(), It.IsAny<string>(), It.IsAny<Guid?>(),
-            It.IsAny<string?>(), It.IsAny<Id?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+            auditMock.Verify(a => a.LogAsync(
+                It.IsAny<AuditActionType>(), It.IsAny<string>(), It.IsAny<Guid?>(),
+                It.IsAny<string?>(), It.IsAny<Id?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        });
     }
 }

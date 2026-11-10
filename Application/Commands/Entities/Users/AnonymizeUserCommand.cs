@@ -96,7 +96,7 @@ public class AnonymizeUserCommand(
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             await auditService.LogAsync(
-                AuditActionType.Delete,
+                AuditActionType.Anonymize,
                 nameof(User),
                 userId,
                 details: $"Анонимизирован удалённый пользователь (ранее: «{oldFullName}», {oldEmail}). Email: {anonymizedEmail}",

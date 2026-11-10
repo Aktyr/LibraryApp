@@ -13,6 +13,11 @@ public static class AuditActionTypeExtensions
         AuditActionType.Borrow => "Выдача",
         AuditActionType.Return => "Возврат",
         AuditActionType.Register => "Регистрация",
+        AuditActionType.Discard => "Списание",
+        AuditActionType.UndoDiscard => "Отмена списания",
+        AuditActionType.Anonymize => "Анонимизация",
+        AuditActionType.ApproveBorrowRequest => "Одобрение заявки",
+        AuditActionType.RejectBorrowRequest => "Отклонение заявки",
         _ => type.ToString()
     };
 }

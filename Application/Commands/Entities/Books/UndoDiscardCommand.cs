@@ -43,7 +43,7 @@ public class UndoDiscardCommand(
             await unitOfWork.SaveChangesAsync(ct);
 
             await auditService.LogAsync(
-                AuditActionType.Restore,
+                AuditActionType.UndoDiscard,
                 nameof(DiscardedBook),
                 discardId.Value,
                 details: $"Отменено списание {amount} экз. книги «{bookTitle}». Причина: {request.UndoReason}",
