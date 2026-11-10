@@ -19,7 +19,20 @@ public class LoginCommand(
         // что аккаунт существует и деактивирован. Пользователь с неверным паролем
         // не должен узнать статус аккаунта.
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            // Аудит неуспешного входа — стандарт безопасности. Пишем до throw:
+            // после броска вызов не выполнится. user может быть null (email не найден),
+            // тогда EntityId = null и details без ФИО — только email-попытка для поиска по повторам.
+            await auditService.LogAsync(
+                AuditActionType.LoginFailed,
+                nameof(User),
+                user?.Id.Value,
+                details: $"Неудачная попытка входа: {request.Email}",
+                ct: cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
             throw new UnauthorizedException("Неверный email или пароль");
+        }
 
         if (user.IsDeleted)
         {

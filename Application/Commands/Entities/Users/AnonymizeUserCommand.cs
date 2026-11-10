@@ -79,8 +79,6 @@ public class AnonymizeUserCommand(
                 ]
             };
 
-        var oldFullName = user.FullName;
-        var oldEmail = user.Email;
         var userId = user.Id.Value;
         var anonymizedEmail = $"deleted_{userId:N}@library.local";
 
@@ -93,17 +91,19 @@ public class AnonymizeUserCommand(
 
         await userRepo.UpdateAsync(user, cancellationToken);
 
-        // userId/userName — снимок админа-инициатора: пользователь уже анонимизирован,
-        // оригинальные ФИО/email доступны только в тексте аудита ниже.
+        // PII (ФИО, старый email) не пишем в аудит: цель GDPR-анонимизации — стереть данные.
+        // userId достаточно для аудиторской связи с оригиналом через историю выдач.
         var actorName = currentUser.FullName ?? "администратор";
         var audit = new AuditEntry(
             AuditActionType.Anonymize,
             nameof(User),
             userId,
-            $"Анонимизирован удалённый пользователь «{oldFullName}» ({oldEmail}) " +
-            $"администратором «{actorName}». Новый email: {anonymizedEmail}",
+            $"library: персональные данные затёрты (ID {userId:N}). " +
+            $"Identity: удаление выполняется BFF. " +
+            $"Администратор: «{actorName}». Новый email: {anonymizedEmail}",
             UserId: currentUser.LibraryUserId,
             UserName: currentUser.FullName);
+
         return (ResponseFactory.Success("Пользователь анонимизирован"), audit);
     }
 }

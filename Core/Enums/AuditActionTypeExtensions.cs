@@ -9,6 +9,7 @@ public static class AuditActionTypeExtensions
         AuditActionType.Delete => "Удаление",
         AuditActionType.Restore => "Восстановление",
         AuditActionType.Login => "Вход",
+        AuditActionType.LoginFailed => "Ошибка входа",
         AuditActionType.Logout => "Выход",
         AuditActionType.Borrow => "Выдача",
         AuditActionType.Return => "Возврат",
@@ -18,6 +19,7 @@ public static class AuditActionTypeExtensions
         AuditActionType.Anonymize => "Анонимизация",
         AuditActionType.ApproveBorrowRequest => "Одобрение заявки",
         AuditActionType.RejectBorrowRequest => "Отклонение заявки",
+        AuditActionType.PayPenalty => "Оплата штрафа",
         _ => type.ToString()
     };
 }

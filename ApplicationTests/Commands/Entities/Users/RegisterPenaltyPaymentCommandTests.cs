@@ -165,7 +165,7 @@ public class RegisterPenaltyPaymentCommandTests
         // IsPenaltyPaid в фейке не пересчитывается (коллекция PenaltyPayments
         // не обновляется при AddAsync в paymentRepo), это проверяется смоуком.
         auditMock.Verify(a => a.LogAsync(
-            AuditActionType.Update,
+            AuditActionType.PayPenalty,
             nameof(PenaltyPayment),
             It.IsAny<Guid?>(),
             It.Is<string>(s => s.Contains("Принята оплата штрафа") && s.Contains(book.Title)),

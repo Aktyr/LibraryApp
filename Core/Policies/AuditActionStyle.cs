@@ -16,6 +16,8 @@ public static class AuditActionStyle
         AuditActionType.Anonymize => ("#3d0000", "#fff"),
         AuditActionType.ApproveBorrowRequest => ("#e6f7eb", "#0a7f2e"),
         AuditActionType.RejectBorrowRequest => ("#fde7e9", "#a30000"),
+        AuditActionType.PayPenalty => ("#e6f7eb", "#0a7f2e"),
+        AuditActionType.LoginFailed => ("#fde7e9", "#a30000"),
         _ => ("#f3f3f3", "#555")
     };
 }

@@ -10,6 +10,7 @@ public enum AuditActionType
     Delete,
     Restore,
     Login,
+    LoginFailed,
     Logout,
     Borrow,
     Return,
@@ -18,5 +19,6 @@ public enum AuditActionType
     UndoDiscard,
     Anonymize,
     ApproveBorrowRequest,
-    RejectBorrowRequest
+    RejectBorrowRequest,
+    PayPenalty
 }

@@ -179,8 +179,6 @@ public class AnonymizeUserCommandTests
 
         var user = CreateUser();
         var originalId = user.Id;
-        var originalEmail = user.Email;
-        var originalFullName = user.FullName;
         var originalDeletedAt = user.DeletedAt;
         var originalDeletedBy = user.DeletedByUserId;
 
@@ -206,11 +204,16 @@ public class AnonymizeUserCommandTests
             Assert.That(updatedUser.DeletedAt, Is.EqualTo(originalDeletedAt));
             Assert.That(updatedUser.DeletedByUserId, Is.EqualTo(originalDeletedBy));
 
+            // PII (ФИО, старый email) в Details не пишем. Проверяем userId и статус.
             auditMock.Verify(a => a.LogAsync(
                 AuditActionType.Anonymize,
                 nameof(User),
                 originalId.Value,
-                It.Is<string>(s => s.Contains(originalFullName) && s.Contains(originalEmail)),
+                It.Is<string>(s =>
+                    s.Contains(originalId.Value.ToString("N")) &&
+                    s.Contains("deleted_") &&
+                    s.Contains("library:") &&
+                    s.Contains("Identity:")),
                 It.IsAny<Id?>(),
                 It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()),

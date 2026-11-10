@@ -404,4 +404,79 @@ public class LoginCommandTests
         await Assert.ThrowsAsync<UnauthorizedException>(() =>
             loginCommand.Execute(request, CancellationToken.None));
     }
+    [Test]
+    public async Task Execute_WithInvalidPassword_LogsLoginFailedAudit()
+    {
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var auditMock = new Mock<IAuditService>();
+        // ... setup user с паролем "Password"
+
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, auditMock.Object);
+        var request = new LoginRequest { Email = "test@example.com", Password = "wrongPassword" };
+        Assert.Multiple(async () =>
+        {
+            await Assert.ThrowsAsync<UnauthorizedException>(async () =>
+                await loginCommand.Execute(request, CancellationToken.None));
+
+            auditMock.Verify(a => a.LogAsync(
+                AuditActionType.LoginFailed,
+                nameof(User),
+                It.IsAny<Guid?>(),
+                It.Is<string>(s => s.Contains("test@example.com") && !s.Contains("wrongPassword")),
+                It.IsAny<Id?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
+        });
+
+    }
+
+    [Test]
+    public async Task Execute_WithInvalidPassword_LogsLoginFailedAuditWithoutPassword()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var userRepo = unitOfWork.GetRepository<User>();
+        var auditMock = new Mock<IAuditService>();
+
+        var email = "test@example.com";
+        var correctPassword = "CorrectPassword";
+        var wrongPassword = "wrongPassword";
+
+        var user = new User
+        {
+            Id = new Id(Guid.NewGuid()),
+            Email = email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(correctPassword),
+            LastName = "Test",
+            FirstName = "User",
+            ContactInfo = email,
+            Role = UserRole.Reader,
+            RoomBooks = []
+        };
+        await userRepo.AddRangeAsync([user], CancellationToken.None);
+
+        var loginCommand = new LoginCommand(unitOfWork, JwtService, auditMock.Object);
+        var request = new LoginRequest { Email = email, Password = wrongPassword };
+
+        // Act & Assert
+        using (Assert.EnterMultipleScope())
+        {
+            await Assert.ThrowsAsync<UnauthorizedException>(async () =>
+                await loginCommand.Execute(request, CancellationToken.None));
+
+            // LoginFailed записан, email есть, пароля нет (архитектурное требование)
+            auditMock.Verify(a => a.LogAsync(
+                AuditActionType.LoginFailed,
+                nameof(User),
+                user.Id.Value,
+                It.Is<string>(s => s.Contains(email) && !s.Contains(wrongPassword)),
+                It.IsAny<Id?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+    }
+
 }

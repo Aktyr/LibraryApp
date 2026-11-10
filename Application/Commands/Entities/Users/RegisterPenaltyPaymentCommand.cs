@@ -57,7 +57,7 @@ public class RegisterPenaltyPaymentCommand(
         await paymentRepo.AddAsync(payment, ct);
 
         var audit = new AuditEntry(
-            AuditActionType.Update,
+            AuditActionType.PayPenalty,
             nameof(PenaltyPayment),
             payment.Id.Value,
             $"Принята оплата штрафа {payment.Amount:0.##} ₽ за книгу «{urb.RoomBook.Book.Title}». Читатель: {urb.User.FullName}");

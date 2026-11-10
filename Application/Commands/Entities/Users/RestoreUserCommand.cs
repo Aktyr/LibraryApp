@@ -20,6 +20,7 @@ public class RestoreUserCommand(IUnitOfWork unitOfWork, IAuditService auditServi
 
         user.IsDeleted = false;
         user.DeletedAt = null;
+        user.DeletedByUserId = null;
 
         await repo.UpdateAsync(user, ct);
 
