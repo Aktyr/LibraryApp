@@ -6,6 +6,7 @@
 /// и может быть любой из разрешённых политикой <c>IUserManagementPolicy</c>.
 /// Аудит пишется внутри <see cref="IUserService.CreateUserAsync"/> с типом <c>Create</c>.
 /// </summary>
+[NoAudit("Audit is written in UserService.CreateUserAsync")]
 public class CreateUserCommand(IUserService userService)
     : ICreateOrUpdateCommand<CreateUserRequest, BasicCreateDeleteResponse>, ICommand
 {

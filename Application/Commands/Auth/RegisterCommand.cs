@@ -1,5 +1,6 @@
 ﻿namespace LibApp.Application.Commands.Auth;
 
+[NoAudit("Audit is written in UserService.CreateUserAsync")]
 public class RegisterCommand(
     IUserService userService,
     JwtService jwtService) : ICreateOrUpdateCommand<RegisterRequest, RegisterResponse>, ICommand
