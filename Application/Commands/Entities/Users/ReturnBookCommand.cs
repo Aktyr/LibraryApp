@@ -6,14 +6,16 @@ public class ReturnBookCommand(
     PenaltyCalculatorService penaltyCalculator,
     INotificationService notificationService,
     ICurrentUserService currentUser,
-    IAuditService auditService) : ICreateOrUpdateCommand<ReturnBookRequest, BasicCreateDeleteResponse>, ICommand
+    IAuditService auditService)
+    : AuditedCreateOrUpdateCommand<ReturnBookRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(ReturnBookRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        ReturnBookRequest request, CancellationToken cancellationToken)
     {
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
-        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
-        var bookRepo = unitOfWork.GetRepository<Book>();
-        var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
+        var userRoomBookRepo = UnitOfWork.GetRepository<UserRoomBook>();
+        var roomBookRepo = UnitOfWork.GetRepository<RoomBook>();
+        var bookRepo = UnitOfWork.GetRepository<Book>();
+        var discardedRepo = UnitOfWork.GetRepository<DiscardedBook>();
 
         // Валидация
         var userRoomBookId = new Id(request.UserRoomBookId);
@@ -72,64 +74,61 @@ public class ReturnBookCommand(
         roomBook.BorrowedCount--;
         userRoomBook.ReturnDate = DateTime.UtcNow;
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        if (request.DiscardReason.HasValue)
         {
-            if (request.DiscardReason.HasValue)
+            // Списание: экземпляр уходит из фонда.
+            roomBook.BookCount--;
+
+            var discarded = new DiscardedBook
             {
-                // Списание: экземпляр уходит из фонда.
-                roomBook.BookCount--;
+                Id = new Id(Guid.NewGuid()),
+                Book = roomBook.Book,
+                Room = roomBook.Room,
+                RoomId = roomBook.Room.Id,
+                Amount = 1,
+                DiscardedDate = DateTime.UtcNow,
+                DiscardReason = request.DiscardReason.Value,
+                ApprovedById = currentUser.LibraryUserId,
+                ApprovedBy = currentUser.FullName,
+                ReaderId = userRoomBook.User.Id,
+                ReaderName = userRoomBook.User.FullName,
+                CompensationAmount = request.CompensationAmount
+            };
 
-                var discarded = new DiscardedBook
-                {
-                    Id = new Id(Guid.NewGuid()),
-                    Book = roomBook.Book,
-                    Room = roomBook.Room,
-                    RoomId = roomBook.Room.Id,
-                    Amount = 1,
-                    DiscardedDate = DateTime.UtcNow,
-                    DiscardReason = request.DiscardReason.Value,
-                    ApprovedById = currentUser.LibraryUserId,
-                    ApprovedBy = currentUser.FullName,
-                    ReaderId = userRoomBook.User.Id,
-                    ReaderName = userRoomBook.User.FullName,
-                    CompensationAmount = request.CompensationAmount
-                };
+            await discardedRepo.AddAsync(discarded, cancellationToken);
+            await roomBookRepo.UpdateAsync(roomBook, cancellationToken);
 
-                await discardedRepo.AddAsync(discarded, cancellationToken);
-                await roomBookRepo.UpdateAsync(roomBook, cancellationToken);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+            // Промежуточный SaveChanges: проверка anyRemaining должна видеть актуальный
+            // BookCount в БД. Финальный SaveChanges (с аудитом) сделает база перед коммитом.
+            await UnitOfWork.SaveChangesAsync(cancellationToken);
 
-                // Если после списания не осталось ни одного экземпляра ни в одной комнате — помечаем книгу списанной
-                var anyRemaining = await roomBookRepo.AnyAsync(
-                    rb => rb.Book.Id == roomBook.Book.Id && rb.BookCount > 0,
-                    cancellationToken);
+            // Если после списания не осталось ни одного экземпляра ни в одной комнате — помечаем книгу списанной
+            var anyRemaining = await roomBookRepo.AnyAsync(
+                rb => rb.Book.Id == roomBook.Book.Id && rb.BookCount > 0,
+                cancellationToken);
 
-                if (!anyRemaining)
-                {
-                    roomBook.Book.IsDiscarded = true;
-                    await bookRepo.UpdateAsync(roomBook.Book, cancellationToken);
-                    await unitOfWork.SaveChangesAsync(cancellationToken);
-                }
-            }
-            else
+            if (!anyRemaining)
             {
-                // Обычный возврат: BookCount не трогаем, книга остаётся в фонде.
-                await roomBookRepo.UpdateAsync(roomBook, cancellationToken);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+                roomBook.Book.IsDiscarded = true;
+                await bookRepo.UpdateAsync(roomBook.Book, cancellationToken);
             }
+        }
+        else
+        {
+            // Обычный возврат: BookCount не трогаем, книга остаётся в фонде.
+            await roomBookRepo.UpdateAsync(roomBook, cancellationToken);
+        }
 
-            // ФИО читателя — чтобы в AuditReport было видно, у кого списана книга.
-            var auditDetails = request.DiscardReason.HasValue
-                ? $"Возврат со списанием: «{roomBook.Book.Title}» ({ReasonName(request.DiscardReason.Value)}). Читатель: {userRoomBook.User.FullName}"
-                : $"Возврат книги: «{roomBook.Book.Title}». Читатель: {userRoomBook.User.FullName}";
+        // ФИО читателя — чтобы в AuditReport было видно, у кого списана книга.
+        var auditDetails = request.DiscardReason.HasValue
+            ? $"Возврат со списанием: «{roomBook.Book.Title}» ({ReasonName(request.DiscardReason.Value)}). Читатель: {userRoomBook.User.FullName}"
+            : $"Возврат книги: «{roomBook.Book.Title}». Читатель: {userRoomBook.User.FullName}";
 
-            await auditService.LogAsync(
-                AuditActionType.Return,
-                nameof(UserRoomBook),
-                userRoomBook.Id.Value,
-                details: auditDetails,
-                ct: cancellationToken);
-        }, cancellationToken);
+        var audit = new AuditEntry(
+            AuditActionType.Return,
+            nameof(UserRoomBook),
+            userRoomBook.Id.Value,
+            auditDetails);
 
         var parts = new List<string> { "Книга возвращена" };
         if (request.DiscardReason.HasValue)
@@ -139,7 +138,7 @@ public class ReturnBookCommand(
         if (request.CompensationAmount.HasValue && request.CompensationAmount.Value > 0)
             parts.Add($"Компенсация: {request.CompensationAmount.Value:0.##} руб.");
 
-        return ResponseFactory.Success(string.Join(". ", parts));
+        return (ResponseFactory.Success(string.Join(". ", parts)), audit);
     }
 
     // В тексте ответа причина идёт строчными (как часть фразы «Списана (износ)»),

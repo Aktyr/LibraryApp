@@ -8,12 +8,13 @@ public class RegisterPenaltyPaymentCommand(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
     IAuditService auditService)
-    : ICreateOrUpdateCommand<RegisterPenaltyPaymentRequest, BasicCreateDeleteResponse>, ICommand
+    : AuditedCreateOrUpdateCommand<RegisterPenaltyPaymentRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(RegisterPenaltyPaymentRequest request, CancellationToken ct)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        RegisterPenaltyPaymentRequest request, CancellationToken ct)
     {
-        var urbRepo = unitOfWork.GetRepository<UserRoomBook>();
-        var paymentRepo = unitOfWork.GetRepository<PenaltyPayment>();
+        var urbRepo = UnitOfWork.GetRepository<UserRoomBook>();
+        var paymentRepo = UnitOfWork.GetRepository<PenaltyPayment>();
 
         var urbId = new Id(request.UserRoomBookId);
 
@@ -53,19 +54,14 @@ public class RegisterPenaltyPaymentCommand(
         };
         urb.PenaltyPayments.Add(payment);
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await paymentRepo.AddAsync(payment, ct);
-            await unitOfWork.SaveChangesAsync(ct);
+        await paymentRepo.AddAsync(payment, ct);
 
-            await auditService.LogAsync(
-                AuditActionType.Update,
-                nameof(PenaltyPayment),
-                payment.Id.Value,
-                details: $"Принята оплата штрафа {payment.Amount:0.##} ₽ за книгу «{urb.RoomBook.Book.Title}». Читатель: {urb.User.FullName}",
-                ct: ct);
-        }, ct);
+        var audit = new AuditEntry(
+            AuditActionType.Update,
+            nameof(PenaltyPayment),
+            payment.Id.Value,
+            $"Принята оплата штрафа {payment.Amount:0.##} ₽ за книгу «{urb.RoomBook.Book.Title}». Читатель: {urb.User.FullName}");
 
-        return ResponseFactory.Success($"Оплата {payment.Amount:0.##} ₽ принята");
+        return (ResponseFactory.Success($"Оплата {payment.Amount:0.##} ₽ принята"), audit);
     }
 }

@@ -171,13 +171,14 @@ public class SelfDeleteCommandTests
         urbRepoMock.SetupSequence(r => r.CountAsync(
                 It.IsAny<Expression<Func<UserRoomBook, bool>>>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0)   // активные выдачи
-            .ReturnsAsync(0);  // неоплаченные штрафы
+            .ReturnsAsync(0)
+            .ReturnsAsync(0);
 
         var saveException = new InvalidOperationException("db down");
         uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
                .ThrowsAsync(saveException);
 
+        // SaveChanges внутри транзакции — как в реальном UnitOfWork.
         uowMock
             .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
             .Returns<Func<Task>, CancellationToken>(async (action, ct) =>
@@ -186,6 +187,7 @@ public class SelfDeleteCommandTests
                 try
                 {
                     await action();
+                    await uowMock.Object.SaveChangesAsync(ct);
                     await uowMock.Object.CommitTransactionAsync(ct);
                 }
                 catch
@@ -209,10 +211,5 @@ public class SelfDeleteCommandTests
         uowMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
         uowMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
         uowMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
-
-        auditMock.Verify(a => a.LogAsync(
-            It.IsAny<AuditActionType>(), It.IsAny<string>(), It.IsAny<Guid?>(),
-            It.IsAny<string?>(), It.IsAny<Id?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 }

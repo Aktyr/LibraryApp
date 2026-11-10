@@ -3,13 +3,15 @@
 public class BorrowBookCommand(
     IUnitOfWork unitOfWork,
     BorrowingValidatorAsync validator,
-    IAuditService auditService) : ICreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>, ICommand
+    IAuditService auditService)
+    : AuditedCreateOrUpdateCommand<BorrowBookRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(BorrowBookRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        BorrowBookRequest request, CancellationToken cancellationToken)
     {
-        var userRepo = unitOfWork.GetRepository<User>();
-        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+        var userRepo = UnitOfWork.GetRepository<User>();
+        var roomBookRepo = UnitOfWork.GetRepository<RoomBook>();
+        var userRoomBookRepo = UnitOfWork.GetRepository<UserRoomBook>();
 
         // Валидация
         var userId = new Id(request.UserId);
@@ -42,20 +44,13 @@ public class BorrowBookCommand(
         roomBook.BorrowedCount++;
         user.RoomBooks.Add(userRoomBook);
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        // SaveChanges и LogAsync выполняет база в одной транзакции.
+        var audit = new AuditEntry(
+            AuditActionType.Borrow,
+            nameof(UserRoomBook),
+            userRoomBook.Id.Value,
+            $"Выдана книга «{roomBook.Book.Title}» пользователю «{user.FullName}». Срок: {userRoomBook.Deadline:d}");
 
-            await auditService.LogAsync(
-                AuditActionType.Borrow,
-                nameof(UserRoomBook),
-                userRoomBook.Id.Value,
-                details: $"Выдана книга «{roomBook.Book.Title}» пользователю «{user.FullName}». Срок: {userRoomBook.Deadline:d}",
-                ct: cancellationToken);
-
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-        }, cancellationToken);
-
-        return ResponseFactory.Success($"Книга выдана. Срок возврата: {userRoomBook.Deadline:d}");
+        return (ResponseFactory.Success($"Книга выдана. Срок возврата: {userRoomBook.Deadline:d}"), audit);
     }
 }

@@ -3,11 +3,13 @@
 public class ExtendDeadlineCommand(
     IUnitOfWork unitOfWork,
     BorrowingValidatorAsync validator,
-    IAuditService auditService) : ICreateOrUpdateCommand<ExtendDeadlineRequest, BasicCreateDeleteResponse>, ICommand
+    IAuditService auditService)
+    : AuditedCreateOrUpdateCommand<ExtendDeadlineRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(ExtendDeadlineRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        ExtendDeadlineRequest request, CancellationToken cancellationToken)
     {
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+        var userRoomBookRepo = UnitOfWork.GetRepository<UserRoomBook>();
 
         // Валидация
         var userRoomBookId = new Id(request.UserRoomBookId);
@@ -22,20 +24,15 @@ public class ExtendDeadlineCommand(
         userRoomBook.Deadline = userRoomBook.Deadline!.Value.AddDays(request.ExtraDays);
         userRoomBook.TotalExtendedDays += request.ExtraDays;
 
-        // Сохраняем в транзакции — аудит не должен фиксироваться без продления
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await userRoomBookRepo.UpdateAsync(userRoomBook, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        await userRoomBookRepo.UpdateAsync(userRoomBook, cancellationToken);
 
-            await auditService.LogAsync(
-                AuditActionType.Update,
-                nameof(UserRoomBook),
-                userRoomBook.Id.Value,
-                details: $"Продлён срок возврата книги «{userRoomBook.RoomBook.Book.Title}» (+{request.ExtraDays} дн., новый срок: {userRoomBook.Deadline:d})",
-                ct: cancellationToken);
-        }, cancellationToken);
+        // SaveChanges и LogAsync выполняет база в одной транзакции.
+        var audit = new AuditEntry(
+            AuditActionType.Update,
+            nameof(UserRoomBook),
+            userRoomBook.Id.Value,
+            $"Продлён срок возврата книги «{userRoomBook.RoomBook.Book.Title}» (+{request.ExtraDays} дн., новый срок: {userRoomBook.Deadline:d})");
 
-        return ResponseFactory.Success($"Срок продлен до {userRoomBook.Deadline:d}");
+        return (ResponseFactory.Success($"Срок продлен до {userRoomBook.Deadline:d}"), audit);
     }
 }

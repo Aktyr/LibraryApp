@@ -1,35 +1,34 @@
 ﻿namespace LibApp.Application.Commands.Entities.Users;
 
 public class RestoreUserCommand(IUnitOfWork unitOfWork, IAuditService auditService)
-    : ICreateOrUpdateCommand<RestoreUserRequest, BasicCreateDeleteResponse>, ICommand
+    : AuditedCreateOrUpdateCommand<RestoreUserRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(RestoreUserRequest request, CancellationToken ct)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        RestoreUserRequest request, CancellationToken ct)
     {
-        var repo = unitOfWork.GetRepository<User>();
+        var repo = UnitOfWork.GetRepository<User>();
 
         var user = (await repo.ExecuteQueryIgnoringFiltersAsync(
             query => query.Where(u => u.Id == request.Id),
             ct)).FirstOrDefault();
 
         if (user == null) throw new UserNotFoundException();
-        if (!user.IsDeleted) return ResponseFactory.Success("Пользователь уже активен");
+
+        // Ранний выход без аудита: пользователь уже активен.
+        if (!user.IsDeleted)
+            return (ResponseFactory.Success("Пользователь уже активен"), null);
 
         user.IsDeleted = false;
         user.DeletedAt = null;
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await repo.UpdateAsync(user, ct);
-            await unitOfWork.SaveChangesAsync(ct);
+        await repo.UpdateAsync(user, ct);
 
-            await auditService.LogAsync(
-                AuditActionType.Restore,
-                nameof(User),
-                user.Id.Value,
-                details: $"Восстановлен пользователь «{user.FullName}»",
-                ct: ct);
-        }, ct);
+        var audit = new AuditEntry(
+            AuditActionType.Restore,
+            nameof(User),
+            user.Id.Value,
+            $"Восстановлен пользователь «{user.FullName}»");
 
-        return ResponseFactory.Success($"Пользователь «{user.FullName}» восстановлен");
+        return (ResponseFactory.Success($"Пользователь «{user.FullName}» восстановлен"), audit);
     }
 }

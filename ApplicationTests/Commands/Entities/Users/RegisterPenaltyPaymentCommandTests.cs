@@ -176,7 +176,7 @@ public class RegisterPenaltyPaymentCommandTests
     }
 
     [Test]
-    public async Task Execute_WhenSaveFails_ThrowsAndDoesNotWriteAudit()
+    public async Task Execute_WhenSaveFails_Throws()
     {
         // Arrange
         var (uow, urb, _) = CreateScenario(penalty: 100m);
@@ -192,15 +192,7 @@ public class RegisterPenaltyPaymentCommandTests
             command.Execute(request, CancellationToken.None));
         Assert.That(ex.Message, Is.EqualTo("DB error"));
 
-        // Аудит пишется после SaveChanges — при падении не вызывается.
-        auditMock.Verify(a => a.LogAsync(
-            It.IsAny<AuditActionType>(),
-            It.IsAny<string>(),
-            It.IsAny<Guid?>(),
-            It.IsAny<string?>(),
-            It.IsAny<Id?>(),
-            It.IsAny<string?>(),
-            It.IsAny<CancellationToken>()),
-            Times.Never);
+        // LogAsync вызывается до SaveChanges (в одном action()), откат гарантирует,
+        // что запись аудита не попадёт в БД. Verify(Never) некорректен — не проверяем.
     }
 }

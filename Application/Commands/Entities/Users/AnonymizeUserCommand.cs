@@ -10,12 +10,13 @@ public class AnonymizeUserCommand(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
     IAuditService auditService)
-    : IDeleteCommand<DeleteUserRequest, BasicCreateDeleteResponse>, ICommand
+    : AuditedDeleteCommand<DeleteUserRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(DeleteUserRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        DeleteUserRequest request, CancellationToken cancellationToken)
     {
-        var userRepo = unitOfWork.GetRepository<User>();
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+        var userRepo = UnitOfWork.GetRepository<User>();
+        var userRoomBookRepo = UnitOfWork.GetRepository<UserRoomBook>();
 
         // Обход глобального HasQueryFilter(IsDeleted): анонимизация доступна только
         // для удалённых пользователей, обычный FirstOrDefaultAsync вернёт null.
@@ -90,21 +91,18 @@ public class AnonymizeUserCommand(
         user.ContactInfo = string.Empty;
         user.PasswordHash = string.Empty;
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await userRepo.UpdateAsync(user, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        await userRepo.UpdateAsync(user, cancellationToken);
 
-            await auditService.LogAsync(
-                AuditActionType.Anonymize,
-                nameof(User),
-                userId,
-                details: $"Анонимизирован удалённый пользователь (ранее: «{oldFullName}», {oldEmail}). Email: {anonymizedEmail}",
-                userId: currentUser.LibraryUserId,
-                userName: currentUser.FullName,
-                ct: cancellationToken);
-        }, cancellationToken);
+        // userId/userName — снимок админа-инициатора: пользователь уже анонимизирован,
+        // оригинальные ФИО/email доступны только в тексте аудита ниже.
+        var audit = new AuditEntry(
+            AuditActionType.Anonymize,
+            nameof(User),
+            userId,
+            $"Анонимизирован удалённый пользователь (ранее: «{oldFullName}», {oldEmail}). Email: {anonymizedEmail}",
+            UserId: currentUser.LibraryUserId,
+            UserName: currentUser.FullName);
 
-        return ResponseFactory.Success("Пользователь анонимизирован");
+        return (ResponseFactory.Success("Пользователь анонимизирован"), audit);
     }
 }

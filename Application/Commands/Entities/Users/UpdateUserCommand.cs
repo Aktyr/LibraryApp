@@ -3,11 +3,13 @@
 public class UpdateUserCommand(
     IUnitOfWork unitOfWork,
     UserValidatorAsync userValidator,
-    IAuditService auditService) : ICreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>, ICommand
+    IAuditService auditService)
+    : AuditedCreateOrUpdateCommand<UpdateUserRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(UpdateUserRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        UpdateUserRequest request, CancellationToken cancellationToken)
     {
-        var userRepo = unitOfWork.GetRepository<User>();
+        var userRepo = UnitOfWork.GetRepository<User>();
         var user = await userRepo.FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
         if (user == null) throw new UserNotFoundException();
 
@@ -39,23 +41,19 @@ public class UpdateUserCommand(
         user.MiddleName = request.MiddleName;
         user.ContactInfo = request.ContactInfo;
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await userRepo.UpdateAsync(user, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        await userRepo.UpdateAsync(user, cancellationToken);
 
-            var details = diffLines.Count > 0
-                ? string.Join("\n", diffLines)
-                : "Обновлён профиль (без изменений)";
+        // SaveChanges и LogAsync выполняет база в одной транзакции.
+        var details = diffLines.Count > 0
+            ? string.Join("\n", diffLines)
+            : "Обновлён профиль (без изменений)";
 
-            await auditService.LogAsync(
-                AuditActionType.Update,
-                nameof(User),
-                user.Id.Value,
-                details: details,
-                ct: cancellationToken);
-        }, cancellationToken);
+        var audit = new AuditEntry(
+            AuditActionType.Update,
+            nameof(User),
+            user.Id.Value,
+            details);
 
-        return ResponseFactory.Updated<User>();
+        return (ResponseFactory.Updated<User>(), audit);
     }
 }

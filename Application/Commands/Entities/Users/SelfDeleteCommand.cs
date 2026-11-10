@@ -8,12 +8,13 @@
 public class SelfDeleteCommand(
     IUnitOfWork unitOfWork,
     IAuditService auditService)
-    : IDeleteCommand<DeleteUserRequest, BasicCreateDeleteResponse>, ICommand
+    : AuditedDeleteCommand<DeleteUserRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(DeleteUserRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        DeleteUserRequest request, CancellationToken cancellationToken)
     {
-        var userRepo = unitOfWork.GetRepository<User>();
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+        var userRepo = UnitOfWork.GetRepository<User>();
+        var userRoomBookRepo = UnitOfWork.GetRepository<UserRoomBook>();
 
         var user = await userRepo.FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
         if (user == null) throw new UserNotFoundException();
@@ -53,29 +54,23 @@ public class SelfDeleteCommand(
                 ]
             };
 
-        var deletedFullName = user.FullName;
-        var deletedId = user.Id.Value;
-
         user.IsDeleted = true;
         user.DeletedAt = DateTime.UtcNow;
         // Self-delete: инициатор = сам пользователь, чтобы self-restore сработал.
         user.DeletedByUserId = user.Id;
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await userRepo.UpdateAsync(user, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        await userRepo.UpdateAsync(user, cancellationToken);
 
-            await auditService.LogAsync(
-                AuditActionType.Delete,
-                nameof(User),
-                deletedId,
-                details: $"Самостоятельное удаление аккаунта «{deletedFullName}»",
-                userId: user.Id,
-                userName: deletedFullName,
-                ct: cancellationToken);
-        }, cancellationToken);
+        // userId/userName передаём явно: пользователь удаляется, ICurrentUserService
+        // уже не резолвится корректно в следующих запросах. Снимок для аудита нужен здесь.
+        var audit = new AuditEntry(
+            AuditActionType.Delete,
+            nameof(User),
+            user.Id.Value,
+            $"Самостоятельное удаление аккаунта «{user.FullName}»",
+            UserId: user.Id,
+            UserName: user.FullName);
 
-        return ResponseFactory.Success("Аккаунт деактивирован. Восстановить можно по email и паролю.");
+        return (ResponseFactory.Success("Аккаунт деактивирован. Восстановить можно по email и паролю."), audit);
     }
 }

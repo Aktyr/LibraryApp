@@ -494,6 +494,7 @@ public class BorrowBookCommandTests
         unitOfWorkMock.Setup(u => u.GetRepository<RoomBook>()).Returns(roomBookRepoMock.Object);
         unitOfWorkMock.Setup(u => u.GetRepository<UserRoomBook>()).Returns(userRoomBookRepoMock.Object);
 
+        // SaveChanges внутри транзакции — как в реальном UnitOfWork.
         unitOfWorkMock
             .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
             .Returns<Func<Task>, CancellationToken>(async (action, ct) =>
@@ -502,6 +503,7 @@ public class BorrowBookCommandTests
                 try
                 {
                     await action();
+                    await unitOfWorkMock.Object.SaveChangesAsync(ct);
                     await unitOfWorkMock.Object.CommitTransactionAsync(ct);
                 }
                 catch

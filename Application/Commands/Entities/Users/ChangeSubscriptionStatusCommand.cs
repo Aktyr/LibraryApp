@@ -6,11 +6,12 @@
 public class ChangeSubscriptionStatusCommand(
     IUnitOfWork unitOfWork,
     IAuditService auditService)
-    : ICreateOrUpdateCommand<ChangeSubscriptionStatusRequest, BasicCreateDeleteResponse>, ICommand
+    : AuditedCreateOrUpdateCommand<ChangeSubscriptionStatusRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(ChangeSubscriptionStatusRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        ChangeSubscriptionStatusRequest request, CancellationToken cancellationToken)
     {
-        var userRepo = unitOfWork.GetRepository<User>();
+        var userRepo = UnitOfWork.GetRepository<User>();
         var user = await userRepo.FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
 
         if (user == null) throw new UserNotFoundException();
@@ -18,19 +19,14 @@ public class ChangeSubscriptionStatusCommand(
         var oldStatus = user.SubscriptionStatus;
         user.SubscriptionStatus = request.NewStatus;
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await userRepo.UpdateAsync(user, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        await userRepo.UpdateAsync(user, cancellationToken);
 
-            await auditService.LogAsync(
-                AuditActionType.Update,
-                nameof(User),
-                user.Id.Value,
-                details: $"Изменён статус профиля «{user.FullName}»: {oldStatus} → {request.NewStatus}",
-                ct: cancellationToken);
-        }, cancellationToken);
+        var audit = new AuditEntry(
+            AuditActionType.Update,
+            nameof(User),
+            user.Id.Value,
+            $"Изменён статус профиля «{user.FullName}»: {oldStatus} → {request.NewStatus}");
 
-        return ResponseFactory.Success($"Статус изменён на {request.NewStatus}");
+        return (ResponseFactory.Success($"Статус изменён на {request.NewStatus}"), audit);
     }
 }
