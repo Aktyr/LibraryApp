@@ -4,11 +4,13 @@ public class CreateRoomCommand(
     IUnitOfWork unitOfWork,
     RoomValidatorAsync roomValidator,
     IConverter<Room, RoomDTO> roomConverter,
-    IAuditService auditService) : ICreateOrUpdateCommand<CreateRoomRequest, BasicCreateDeleteResponse>, ICommand
+    IAuditService auditService)
+    : AuditedCreateOrUpdateCommand<CreateRoomRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(CreateRoomRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        CreateRoomRequest request, CancellationToken cancellationToken)
     {
-        var roomRepo = unitOfWork.GetRepository<Room>();
+        var roomRepo = UnitOfWork.GetRepository<Room>();
 
         // Создание
         RoomDTO roomDto = new(Guid.NewGuid(),
@@ -25,19 +27,15 @@ public class CreateRoomCommand(
         if (await roomRepo.AnyAsync(r => r.Name == request.Name, cancellationToken))
             throw new RoomExistsException(request.Name);
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await roomRepo.AddAsync(room, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        await roomRepo.AddAsync(room, cancellationToken);
 
-            await auditService.LogAsync(
-                AuditActionType.Create,
-                nameof(Room),
-                room.Id.Value,
-                details: $"Создана комната «{room.Name}»",
-                ct: cancellationToken);
-        }, cancellationToken);
+        // SaveChanges и LogAsync выполняет база в одной транзакции.
+        var audit = new AuditEntry(
+            AuditActionType.Create,
+            nameof(Room),
+            room.Id.Value,
+            $"Создана комната «{room.Name}»");
 
-        return ResponseFactory.Created<Room>();
+        return (ResponseFactory.Created<Room>(), audit);
     }
 }

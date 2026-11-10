@@ -1,11 +1,12 @@
 ﻿namespace LibApp.Application.Commands.Entities.Rooms;
 
 public class DeleteRoomCommand(IUnitOfWork unitOfWork, IAuditService auditService)
-    : IDeleteCommand<DeleteRoomRequest, BasicCreateDeleteResponse>, ICommand
+    : AuditedDeleteCommand<DeleteRoomRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(DeleteRoomRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        DeleteRoomRequest request, CancellationToken cancellationToken)
     {
-        var roomRepo = unitOfWork.GetRepository<Room>();
+        var roomRepo = UnitOfWork.GetRepository<Room>();
 
         var rooms = await roomRepo.GetAsync(
             r => r.Id == request.Id,
@@ -16,22 +17,15 @@ public class DeleteRoomCommand(IUnitOfWork unitOfWork, IAuditService auditServic
         if (room.RoomBooks?.Any() == true)
             throw new RoomDeletionException("Not possible to delete a room containing books");
 
-        var deletedName = room.Name;
-        var deletedId = room.Id.Value;
+        await roomRepo.RemoveAsync(room, cancellationToken);
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await roomRepo.RemoveAsync(room, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        // SaveChanges и LogAsync выполняет база в одной транзакции.
+        var audit = new AuditEntry(
+            AuditActionType.Delete,
+            nameof(Room),
+            room.Id.Value,
+            $"Удалена комната «{room.Name}»");
 
-            await auditService.LogAsync(
-                AuditActionType.Delete,
-                nameof(Room),
-                deletedId,
-                details: $"Удалена комната «{deletedName}»",
-                ct: cancellationToken);
-        }, cancellationToken);
-
-        return ResponseFactory.Deleted<Room>();
+        return (ResponseFactory.Deleted<Room>(), audit);
     }
 }

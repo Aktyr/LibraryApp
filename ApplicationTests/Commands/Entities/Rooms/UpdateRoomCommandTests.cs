@@ -407,7 +407,7 @@ public class UpdateRoomCommandTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => command.Execute(request, CancellationToken.None));
     }
     [Test]
-    public async Task Execute_WhenSaveFails_PropagatesExceptionAndDoesNotAudit()
+    public async Task Execute_WhenSaveFails_PropagatesException()
     {
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
@@ -432,11 +432,5 @@ public class UpdateRoomCommandTests
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             () => command.Execute(request, CancellationToken.None));
         Assert.That(ex, Is.SameAs(saveException));
-
-        // Аудит не должен фиксироваться, если сохранение упало.
-        auditMock.Verify(a => a.LogAsync(
-            It.IsAny<AuditActionType>(), It.IsAny<string>(), It.IsAny<Guid?>(),
-            It.IsAny<string?>(), It.IsAny<Id?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 }

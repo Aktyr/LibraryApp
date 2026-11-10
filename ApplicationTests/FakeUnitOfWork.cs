@@ -43,9 +43,11 @@ public class FakeUnitOfWork : IUnitOfWork
     }
     public async Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken = default)
     {
-        // В фейке транзакция не нужна: просто выполняем действие.
-        // Исключения пробрасываются наружу так же, как в реальной реализации.
+        // Реальный UnitOfWork делает SaveChangesAsync перед коммитом — повторяем,
+        // чтобы тесты на откат при падении SaveChanges вели себя как в проде.
+        // Исключения пробрасываются наружу, как в реальной реализации.
         await action();
+        await SaveChangesAsync(cancellationToken);
     }
 
     public void Dispose()

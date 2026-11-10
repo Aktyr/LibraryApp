@@ -6,11 +6,16 @@ public class UpdateRoomCommand(
     IRoomBookSynchronizer roomBookSynchronizer,
     IAuditService auditService,
     ILogger<UpdateRoomCommand> logger)
-    : ICreateOrUpdateCommand<UpdateRoomRequest, BasicCreateDeleteResponse>, ICommand
+    : AuditedCreateOrUpdateCommand<UpdateRoomRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(UpdateRoomRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        UpdateRoomRequest request, CancellationToken cancellationToken)
     {
-        var roomRepo = unitOfWork.GetRepository<Room>();
+        // Клиент может прислать null вместо [] (удаление всех книг из комнаты).
+        // Нормализуем, чтобы не падать на .Where/.All в diff-секции.
+        request.RoomBookDTO ??= [];
+
+        var roomRepo = UnitOfWork.GetRepository<Room>();
 
         var room = (await roomRepo.GetAsync(
             r => r.Id == request.Id,
@@ -30,7 +35,7 @@ public class UpdateRoomCommand(
         if (oldName != room.Name)
             diffLines.Add($"Переименована: «{oldName}» → «{room.Name}»");
 
-        var bookRepo = unitOfWork.GetRepository<Book>();
+        var bookRepo = UnitOfWork.GetRepository<Book>();
 
         // Удалённые книги (были в комнате, но отсутствуют в запросе)
         var removed = room.RoomBooks.Where(rb => request.RoomBookDTO.All(dto => dto.Id != rb.Id.Value)).ToList();
@@ -62,26 +67,23 @@ public class UpdateRoomCommand(
             diffLines.Add($"Изменено количество «{rb.Book.Title}»: {rb.BookCount} → {dto.BookCount}");
         }
 
-        // Транзакция охватывает синхронизацию и сохранение
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await roomBookSynchronizer.SynchronizeAsync(room, request.RoomBookDTO, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        // Синхронизация — до финального SaveChanges в базе. Новые/удалённые RoomBook
+        // попадают в один SaveChanges вместе с переименованием и аудитом.
+        await roomBookSynchronizer.SynchronizeAsync(room, request.RoomBookDTO, cancellationToken);
 
-            var details = diffLines.Count > 0
-                ? string.Join("\n", diffLines)
-                : "Обновлена комната (без изменений)";
+        var details = diffLines.Count > 0
+            ? string.Join("\n", diffLines)
+            : "Обновлена комната (без изменений)";
 
-            await auditService.LogAsync(
-                AuditActionType.Update,
-                nameof(Room),
-                room.Id.Value,
-                details: details,
-                ct: cancellationToken);
-        }, cancellationToken);
+        var audit = new AuditEntry(
+            AuditActionType.Update,
+            nameof(Room),
+            room.Id.Value,
+            details);
 
-        return ResponseFactory.Updated<Room>();
+        return (ResponseFactory.Updated<Room>(), audit);
     }
+
     private async Task ValidateRoomNameAsync(string name, CancellationToken ct)
     {
         var tempRoom = new Room { Name = name };
@@ -92,7 +94,7 @@ public class UpdateRoomCommand(
 
     private async Task<bool> IsNameTakenAsync(string name, CancellationToken ct)
     {
-        var repo = unitOfWork.GetRepository<Room>();
+        var repo = UnitOfWork.GetRepository<Room>();
         return await repo.AnyAsync(r => r.Name == name, ct);
     }
 }
