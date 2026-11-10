@@ -6,11 +6,12 @@
 /// Пароль перепроверяется: токена у деактивированного нет, credentials — единственный фактор.
 /// </summary>
 public class SelfRestoreCommand(IUnitOfWork unitOfWork, IAuditService auditService)
-    : ICreateOrUpdateCommand<SelfRestoreRequest, BasicCreateDeleteResponse>, ICommand
+    : AuditedCreateOrUpdateCommand<SelfRestoreRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(SelfRestoreRequest request, CancellationToken ct)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        SelfRestoreRequest request, CancellationToken ct)
     {
-        var userRepo = unitOfWork.GetRepository<User>();
+        var userRepo = UnitOfWork.GetRepository<User>();
 
         // IgnoreQueryFilters: пользователь в статусе IsDeleted, глобальный фильтр его скрывает.
         var user = (await userRepo.ExecuteQueryIgnoringFiltersAsync(
@@ -36,21 +37,19 @@ public class SelfRestoreCommand(IUnitOfWork unitOfWork, IAuditService auditServi
         user.DeletedAt = null;
         user.DeletedByUserId = null;
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await userRepo.UpdateAsync(user, ct);
-            await unitOfWork.SaveChangesAsync(ct);
+        await userRepo.UpdateAsync(user, ct);
 
-            await auditService.LogAsync(
-                AuditActionType.Restore,
-                nameof(User),
-                user.Id.Value,
-                details: $"Самостоятельное восстановление аккаунта «{user.FullName}» ({user.Email})",
-                userId: user.Id,
-                userName: user.FullName,
-                ct: ct);
-        }, ct);
+        // ICurrentUserService пуст: пользователь только что восстановлен, Identity-сессии нет.
+        // UserId/UserName передаём явно из восстановленной записи — иначе AuditService
+        // подставит «Неизвестный пользователь».
+        var audit = new AuditEntry(
+            AuditActionType.Restore,
+            nameof(User),
+            user.Id.Value,
+            $"Самостоятельное восстановление аккаунта «{user.FullName}» ({user.Email})",
+            UserId: user.Id,
+            UserName: user.FullName);
 
-        return ResponseFactory.Success($"Аккаунт «{user.FullName}» восстановлен");
+        return (ResponseFactory.Success($"Аккаунт «{user.FullName}» восстановлен"), audit);
     }
 }

@@ -24,16 +24,20 @@ public class AuditCoverageTests
         foreach (var type in commandTypes)
         {
             var hasNoAudit = type.GetCustomAttribute<NoAuditAttribute>() is not null;
+            var inheritsAuditedBase = typeof(AuditedCommandBase).IsAssignableFrom(type);
+            // Fallback для команд, которые по каким-то причинам не на базе (например,
+            // LoginCommand — формально IGetQuery, но инжектит IAuditService явно).
             var injectsAudit = type.GetConstructors()
                 .Any(c => c.GetParameters()
                     .Any(p => typeof(IAuditService).IsAssignableFrom(p.ParameterType)));
 
-            if (!hasNoAudit && !injectsAudit)
+            if (!hasNoAudit && !inheritsAuditedBase && !injectsAudit)
                 offenders.Add(type.Name);
         }
 
         Assert.That(offenders, Is.Empty,
             $"Write-команды без аудита: {string.Join(", ", offenders)}. " +
-            "Инжектируйте IAuditService или пометьте команду [NoAudit(\"причина\")].");
+            "Наследуйте AuditedCommandBase, инжектируйте IAuditService " +
+            "или пометьте команду [NoAudit(\"причина\")].");
     }
 }
