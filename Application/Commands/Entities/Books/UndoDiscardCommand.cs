@@ -6,13 +6,15 @@
 /// </summary>
 public class UndoDiscardCommand(
     IUnitOfWork unitOfWork,
-    IAuditService auditService) : ICreateOrUpdateCommand<UndoDiscardRequest, BasicCreateDeleteResponse>, ICommand
+    IAuditService auditService)
+    : AuditedCreateOrUpdateCommand<UndoDiscardRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(UndoDiscardRequest request, CancellationToken ct)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        UndoDiscardRequest request, CancellationToken ct)
     {
-        var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
-        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
-        var bookRepo = unitOfWork.GetRepository<Book>();
+        var discardedRepo = UnitOfWork.GetRepository<DiscardedBook>();
+        var roomBookRepo = UnitOfWork.GetRepository<RoomBook>();
+        var bookRepo = UnitOfWork.GetRepository<Book>();
 
         var discardId = new Id(request.DiscardId);
         var discarded = await discardedRepo.FirstOrDefaultAsync(d => d.Id == discardId, ct);
@@ -23,33 +25,26 @@ public class UndoDiscardCommand(
         if (roomBook == null)
             throw new LibValidationException { ExceptionDetails = ["Книга не найдена в комнате"] };
 
-        var amount = discarded.Amount;
-        var bookTitle = discarded.Book.Title;
-        var bookId = discarded.Book.Id.Value;
+        roomBook.BookCount += discarded.Amount;
+        await roomBookRepo.UpdateAsync(roomBook, ct);
+        await discardedRepo.RemoveAsync(discarded, ct);
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        // Снимаем флаг «списана», если книга снова есть в наличии
+        if (roomBook.Book.IsDiscarded && roomBook.BookCount > 0)
         {
-            roomBook.BookCount += amount;
-            await roomBookRepo.UpdateAsync(roomBook, ct);
-            await discardedRepo.RemoveAsync(discarded, ct);
+            roomBook.Book.IsDiscarded = false;
+            await bookRepo.UpdateAsync(roomBook.Book, ct);
+        }
 
-            // Снимаем флаг «списана», если книга снова есть в наличии
-            if (roomBook.Book.IsDiscarded && roomBook.BookCount > 0)
-            {
-                roomBook.Book.IsDiscarded = false;
-                await bookRepo.UpdateAsync(roomBook.Book, ct);
-            }
+        var audit = new AuditEntry(
+            AuditActionType.UndoDiscard,
+            nameof(DiscardedBook),
+            discardId.Value,
+            $"Отменено списание {discarded.Amount} экз. книги «{discarded.Book.Title}». Причина: {request.UndoReason}");
 
-            await unitOfWork.SaveChangesAsync(ct);
+        var response = ResponseFactory.Success(
+            $"Отменено списание {discarded.Amount} экз. книги '{discarded.Book.Title}'. Причина: {request.UndoReason}");
 
-            await auditService.LogAsync(
-                AuditActionType.UndoDiscard,
-                nameof(DiscardedBook),
-                discardId.Value,
-                details: $"Отменено списание {amount} экз. книги «{bookTitle}». Причина: {request.UndoReason}",
-                ct: ct);
-        }, ct);
-
-        return ResponseFactory.Success($"Отменено списание {amount} экз. книги '{bookTitle}'. Причина: {request.UndoReason}");
+        return (response, audit);
     }
 }

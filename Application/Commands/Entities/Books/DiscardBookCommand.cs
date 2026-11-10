@@ -8,13 +8,14 @@ public class DiscardBookCommand(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
     IAuditService auditService)
-    : ICreateOrUpdateCommand<DiscardBookRequest, BasicCreateDeleteResponse>, ICommand
+    : AuditedCreateOrUpdateCommand<DiscardBookRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(DiscardBookRequest request, CancellationToken ct)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        DiscardBookRequest request, CancellationToken ct)
     {
-        var bookRepo = unitOfWork.GetRepository<Book>();
-        var discardedRepo = unitOfWork.GetRepository<DiscardedBook>();
-        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+        var bookRepo = UnitOfWork.GetRepository<Book>();
+        var discardedRepo = UnitOfWork.GetRepository<DiscardedBook>();
+        var roomBookRepo = UnitOfWork.GetRepository<RoomBook>();
 
         var bookId = new Id(request.BookId);
         var book = await bookRepo.FirstOrDefaultAsync(b => b.Id == bookId, ct);
@@ -62,35 +63,35 @@ public class DiscardBookCommand(
             CompensationAmount = request.CompensationAmount
         };
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        await discardedRepo.AddAsync(discarded, ct);
+
+        roomBook.BookCount -= request.Amount;
+        await roomBookRepo.UpdateAsync(roomBook, ct);
+
+        // Промежуточный SaveChanges: проверка anyRemaining должна видеть актуальный
+        // BookCount в БД, а не значения в tracking-кэше. Финальный SaveChanges (с аудитом)
+        // сделает база перед коммитом.
+        await UnitOfWork.SaveChangesAsync(ct);
+
+        // Если это был последний экземпляр во всех комнатах — помечаем книгу списанной.
+        var anyRemaining = await roomBookRepo.AnyAsync(
+            rb => rb.Book.Id == bookId && rb.BookCount > 0, ct);
+
+        if (!anyRemaining)
         {
-            await discardedRepo.AddAsync(discarded, ct);
+            book.IsDiscarded = true;
+            await bookRepo.UpdateAsync(book, ct);
+        }
 
-            roomBook.BookCount -= request.Amount;
-            await roomBookRepo.UpdateAsync(roomBook, ct);
-            await unitOfWork.SaveChangesAsync(ct);
+        var audit = new AuditEntry(
+            AuditActionType.Discard,
+            nameof(Book),
+            book.Id.Value,
+            $"Списано {request.Amount} экз. «{book.Title}». Причина: {request.DiscardReason.DisplayName()}");
 
-            // Если это был последний экземпляр во всех комнатах — помечаем книгу списанной.
-            // Проверка идёт после SaveChanges, чтобы видеть актуальный BookCount в БД.
-            var anyRemaining = await roomBookRepo.AnyAsync(
-                rb => rb.Book.Id == bookId && rb.BookCount > 0, ct);
-
-            if (!anyRemaining)
-            {
-                book.IsDiscarded = true;
-                await bookRepo.UpdateAsync(book, ct);
-                await unitOfWork.SaveChangesAsync(ct);
-            }
-
-            await auditService.LogAsync(
-                AuditActionType.Discard,
-                nameof(Book),
-                book.Id.Value,
-                details: $"Списано {request.Amount} экз. «{book.Title}». Причина: {request.DiscardReason.DisplayName()}",
-                ct: ct);
-        }, ct);
-
-        return ResponseFactory.Success(
+        var response = ResponseFactory.Success(
             $"Списано {request.Amount} экз. книги '{book.Title}'. Причина: {request.DiscardReason.DisplayName()}");
+
+        return (response, audit);
     }
 }
