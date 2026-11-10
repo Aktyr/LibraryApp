@@ -7,11 +7,12 @@ public class CreateBookCommand(
     IUnitOfWork unitOfWork,
     BookValidatorAsync bookValidator,
     IConverter<Book, BookDTO> bookConverter,
-    IAuditService auditService) : ICreateOrUpdateCommand<CreateBookRequest, BasicCreateDeleteResponse>, ICommand
+    IAuditService auditService) : AuditedCreateOrUpdateCommand<CreateBookRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(CreateBookRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        CreateBookRequest request, CancellationToken cancellationToken)
     {
-        var bookRepo = unitOfWork.GetRepository<Book>();
+        var bookRepo = UnitOfWork.GetRepository<Book>();
 
         // Создание
         var bookDTO = new BookDTO(Guid.NewGuid(),
@@ -30,21 +31,15 @@ public class CreateBookCommand(
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
-        // Транзакция нужна, чтобы запись аудита попала в тот же commit, что и сама книга.
-        // Если SaveChanges упадёт — журнал не останется с «фантомной» записью.
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await bookRepo.AddAsync(book, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        await bookRepo.AddAsync(book, cancellationToken);
 
-            await auditService.LogAsync(
-                AuditActionType.Create,
-                nameof(Book),
-                book.Id.Value,
-                details: $"Создана книга «{book.Title}» ({book.Author}, {book.Year})",
-                ct: cancellationToken);
-        }, cancellationToken);
+        // SaveChanges и LogAsync выполняет база в одной транзакции.
+        var audit = new AuditEntry(
+            AuditActionType.Create,
+            nameof(Book),
+            book.Id.Value,
+            $"Создана книга «{book.Title}» ({book.Author}, {book.Year})");
 
-        return ResponseFactory.Created<Book>();
+        return (ResponseFactory.Created<Book>(), audit);
     }
 }
