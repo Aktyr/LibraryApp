@@ -95,14 +95,15 @@ public class AnonymizeUserCommand(
 
         // userId/userName — снимок админа-инициатора: пользователь уже анонимизирован,
         // оригинальные ФИО/email доступны только в тексте аудита ниже.
+        var actorName = currentUser.FullName ?? "администратор";
         var audit = new AuditEntry(
             AuditActionType.Anonymize,
             nameof(User),
             userId,
-            $"Анонимизирован удалённый пользователь (ранее: «{oldFullName}», {oldEmail}). Email: {anonymizedEmail}",
+            $"Анонимизирован удалённый пользователь «{oldFullName}» ({oldEmail}) " +
+            $"администратором «{actorName}». Новый email: {anonymizedEmail}",
             UserId: currentUser.LibraryUserId,
             UserName: currentUser.FullName);
-
         return (ResponseFactory.Success("Пользователь анонимизирован"), audit);
     }
 }

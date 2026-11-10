@@ -83,11 +83,22 @@ public class DiscardBookCommand(
             await bookRepo.UpdateAsync(book, ct);
         }
 
+        var details = new StringBuilder();
+        details.Append($"Списано {request.Amount} экз. «{book.Title}». ");
+        details.Append($"Причина: {request.DiscardReason.DisplayName()}");
+
+        var approvedBy = request.ApprovedBy ?? currentUser.FullName;
+        if (!string.IsNullOrWhiteSpace(approvedBy))
+            details.Append($". Утвердил: {approvedBy}");
+
+        if (request.CompensationAmount is > 0)
+            details.Append($". Компенсация: {request.CompensationAmount.Value:0.##} ₽");
+
         var audit = new AuditEntry(
             AuditActionType.Discard,
             nameof(Book),
             book.Id.Value,
-            $"Списано {request.Amount} экз. «{book.Title}». Причина: {request.DiscardReason.DisplayName()}");
+            details.ToString());
 
         var response = ResponseFactory.Success(
             $"Списано {request.Amount} экз. книги '{book.Title}'. Причина: {request.DiscardReason.DisplayName()}");

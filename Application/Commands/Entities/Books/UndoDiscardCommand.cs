@@ -40,7 +40,8 @@ public class UndoDiscardCommand(
             AuditActionType.UndoDiscard,
             nameof(DiscardedBook),
             discardId.Value,
-            $"Отменено списание {discarded.Amount} экз. книги «{discarded.Book.Title}». Причина: {request.UndoReason}");
+            $"Отменено списание {discarded.Amount} экз. книги «{discarded.Book.Title}» " +
+            $"из комнаты «{discarded.Room.Name}». Причина: {request.UndoReason}");
 
         var response = ResponseFactory.Success(
             $"Отменено списание {discarded.Amount} экз. книги '{discarded.Book.Title}'. Причина: {request.UndoReason}");

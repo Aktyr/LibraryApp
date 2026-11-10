@@ -119,16 +119,26 @@ public class ReturnBookCommand(
             await roomBookRepo.UpdateAsync(roomBook, cancellationToken);
         }
 
-        // ФИО читателя — чтобы в AuditReport было видно, у кого списана книга.
-        var auditDetails = request.DiscardReason.HasValue
-            ? $"Возврат со списанием: «{roomBook.Book.Title}» ({ReasonName(request.DiscardReason.Value)}). Читатель: {userRoomBook.User.FullName}"
-            : $"Возврат книги: «{roomBook.Book.Title}». Читатель: {userRoomBook.User.FullName}";
+        // ФИО читателя и все побочные финансовые эффекты — чтобы в AuditReport было видно,
+        // у кого списана книга, каков штраф и компенсация.
+        var details = new System.Text.StringBuilder();
+        details.Append(request.DiscardReason.HasValue
+            ? $"Возврат со списанием: «{roomBook.Book.Title}» ({ReasonName(request.DiscardReason.Value)})"
+            : $"Возврат книги: «{roomBook.Book.Title}»");
+
+        details.Append($". Читатель: {userRoomBook.User.FullName}");
+
+        if (userRoomBook.Penalty is > 0)
+            details.Append($". Штраф: {userRoomBook.Penalty.Value:0.##} руб.");
+
+        if (request.CompensationAmount is > 0)
+            details.Append($". Компенсация: {request.CompensationAmount.Value:0.##} руб.");
 
         var audit = new AuditEntry(
             AuditActionType.Return,
             nameof(UserRoomBook),
             userRoomBook.Id.Value,
-            auditDetails);
+            details.ToString());
 
         var parts = new List<string> { "Книга возвращена" };
         if (request.DiscardReason.HasValue)
