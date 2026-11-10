@@ -39,13 +39,91 @@ else if (records != null)
                   Items="records"
                   PageSize="25"
                   Columns="columns"
-                  SelectionMode="DataGridSelectionMode.Multiple"/>
+                  Hint="<b>Двойной клик</b> по записи — полная информация о действии"
+                  SelectionMode="DataGridSelectionMode.Multiple"
+                  OnRowDoubleClick="OpenDetails" />
     }
 }
+
+<ModalDialog IsVisible="@(detailsRecord != null)" OnClose="CloseDetails" Title="Запись аудита">
+    <ChildContent>
+        @if (detailsRecord != null)
+        {
+            <div class="mb-3 pb-3 border-bottom">
+                <h5 class="text-muted mb-2">Кто</h5>
+                <p class="mb-1">
+                    <strong>Время:</strong>
+                    @detailsRecord.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")
+                </p>
+                <p class="mb-1">
+                    <strong>Пользователь:</strong>
+                    @detailsRecord.UserName
+                </p>
+                @if (detailsRecord.UserId.HasValue)
+                {
+                    <p class="mb-0 text-muted small">ID: @detailsRecord.UserId.Value</p>
+                }
+            </div>
+
+            <div class="mb-3 pb-3 border-bottom">
+                <h5 class="text-muted mb-2">Что</h5>
+                <p class="mb-1">
+                    <strong>Действие:</strong>
+                    @{
+                        var (bg, fg) = AuditActionStyle.Get(detailsRecord.ActionType);
+                    }
+                    <span style="background:@bg;color:@fg;padding:2px 10px;border-radius:10px;font-size:12px;">
+                        @detailsRecord.ActionType.DisplayName()
+                    </span>
+                </p>
+                <p class="mb-0">
+                    <strong>Сущность:</strong>
+                    @detailsRecord.EntityType
+                    @if (detailsRecord.EntityId.HasValue)
+                    {
+                        @if (GetEntityLink(detailsRecord) is string link)
+                        {
+                            <a href="@link" class="ms-2 small" title="Открыть">
+                                @detailsRecord.EntityId.Value.ToString("N")[..8] →
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted ms-2 small" title="@detailsRecord.EntityId.Value">
+                                @detailsRecord.EntityId.Value.ToString("N")[..8]
+                            </span>
+                        }
+                    }
+                </p>
+            </div>
+
+            <div>
+                <h5 class="text-muted mb-2">Детали</h5>
+                @if (string.IsNullOrWhiteSpace(detailsRecord.Details))
+                {
+                    <p class="text-muted mb-0">—</p>
+                }
+                else
+                {
+                    <ul class="mb-0">
+                        @foreach (var line in detailsRecord.Details.Split('\n'))
+                        {
+                            <li>@line</li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+    </ChildContent>
+    <Footer>
+        <button class="btn btn-secondary" @onclick="CloseDetails">Закрыть</button>
+    </Footer>
+</ModalDialog>
 
 @code {
     private bool isLoading = true;
     private List<AuditLogDTO>? records;
+    private AuditLogDTO? detailsRecord;
 
     private readonly List<DataGridColumn<AuditLogDTO>> columns = new()
     {
@@ -103,11 +181,44 @@ else if (records != null)
             Title = "Детали",
             Width = 500,
             Value = l => l.Details,
-            FilterText = l => l.Details ?? ""
+            FilterText = l => l.Details ?? "",
+            // Template вместо Value: нужен title с полным текстом и CSS-ellipsis.
+            // Value оставлен для сортировки и фильтрации.
+            Template = item => b =>
+            {
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "title", item.Details ?? "");
+                b.AddAttribute(2, "style",
+                    "display: inline-block; max-width: 100%; white-space: nowrap; " +
+                    "overflow: hidden; text-overflow: ellipsis;");
+                b.AddContent(3, item.Details ?? "");
+                b.CloseElement();
+            }
         }
     };
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private void OpenDetails(AuditLogDTO item)
+    {
+        detailsRecord = item;
+    }
+
+    private void CloseDetails() => detailsRecord = null;
+
+    // Доступны только страницы с детальным роутом. Для Book / UserRoomBook /
+    // DiscardedBook / PenaltyPayment детальной страницы нет — показываем ID текстом.
+    private static string? GetEntityLink(AuditLogDTO item)
+    {
+        if (!item.EntityId.HasValue) return null;
+
+        return item.EntityType switch
+        {
+            "User" => $"/users/{item.EntityId.Value}",
+            "Room" => $"/rooms/{item.EntityId.Value}",
+            _ => null
+        };
+    }
 
     private async Task LoadAsync()
     {
@@ -115,7 +226,7 @@ else if (records != null)
         try
         {
             // todo в будущем может очень много записей, нужно будет сделать постраничную загрузку. Это касается и других таблиц
-            var resp = await AuditClient.GetAuditLogAsync(); 
+            var resp = await AuditClient.GetAuditLogAsync();
             records = resp.Data.ToList();
         }
         catch (Exception ex)
