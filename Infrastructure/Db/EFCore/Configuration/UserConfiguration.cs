@@ -8,22 +8,37 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.LastName)
                .IsRequired()
-               .HasMaxLength(100);
+               .HasMaxLength(UserPolicy.MaxNameLength);
 
         builder.Property(u => u.FirstName)
                .IsRequired()
-               .HasMaxLength(100);
+               .HasMaxLength(UserPolicy.MaxNameLength);
 
         builder.Property(u => u.MiddleName)
-               .HasMaxLength(100);
+               .HasMaxLength(UserPolicy.MaxNameLength);
 
         builder.Property(u => u.Email)
                .IsRequired()
-               .HasMaxLength(200);
+               .HasMaxLength(EmailPolicy.MaxLength);
 
         builder.Property(u => u.ContactInfo)
                .IsRequired()
+               .HasMaxLength(UserPolicy.MaxContactInfoLength);
+
+        builder.Property(u => u.Role)
+               .IsRequired()
+               .HasConversion<UserRoleConverter>();
+
+        builder.Property(u => u.SubscriptionStatus)
+               .IsRequired()
+               .HasConversion<string>()
+               .HasDefaultValue(SubscriptionStatus.Unconfirmed);
+
+
+        builder.Property(u => u.PasswordHash)
+               .IsRequired()
                .HasMaxLength(200);
+
 
         builder.Property(u => u.IsDeleted)
                .IsRequired()

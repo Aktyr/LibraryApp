@@ -8,7 +8,7 @@ public class RoomConfiguration : IEntityTypeConfiguration<Room>
 
         builder.Property(r => r.Name)
                .IsRequired()
-               .HasMaxLength(100);
+               .HasMaxLength(RoomPolicy.MaxNameLength);
 
         builder.HasIndex(r => r.Name).IsUnique();
 

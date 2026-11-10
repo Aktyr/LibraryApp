@@ -16,6 +16,15 @@ public class RoomBookConfiguration : IEntityTypeConfiguration<RoomBook>
                .HasForeignKey("BookId")
                .OnDelete(DeleteBehavior.Cascade);
 
+        // Инварианты БД: код уже держит их в командах, но прямой SQL или баг
+        // в команде не должны ломать данные. Проверка на уровне БД — последняя линия защиты.
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_RoomBook_BookCount_NonNegative", "\"BookCount\" >= 0");
+            t.HasCheckConstraint("CK_RoomBook_BorrowedCount_NonNegative", "\"BorrowedCount\" >= 0");
+            t.HasCheckConstraint("CK_RoomBook_BorrowedCount_LE_BookCount", "\"BorrowedCount\" <= \"BookCount\"");
+        });
+
         builder.Ignore(rb => rb.AvailableCount);
 
         builder.HasIndex("BookId");

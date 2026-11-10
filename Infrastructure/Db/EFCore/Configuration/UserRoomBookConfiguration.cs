@@ -14,7 +14,7 @@ public class UserRoomBookConfiguration : IEntityTypeConfiguration<UserRoomBook>
         builder.HasOne(urb => urb.RoomBook)
                .WithMany()
                .HasForeignKey("RoomBookId")
-               .OnDelete(DeleteBehavior.Cascade);
+               .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(urb => urb.BorrowDate)
                .HasConversion<DateTimeToUtcConverter>();
@@ -24,6 +24,9 @@ public class UserRoomBookConfiguration : IEntityTypeConfiguration<UserRoomBook>
 
         builder.Property(urb => urb.ReturnDate)
                .HasConversion<DateTimeToUtcConverter>();
+        
+        builder.Property(urb => urb.Penalty)
+               .HasPrecision(18, 2);
 
         builder.Ignore(urb => urb.IsReturned);
         builder.Ignore(urb => urb.IsPenaltyPaid);

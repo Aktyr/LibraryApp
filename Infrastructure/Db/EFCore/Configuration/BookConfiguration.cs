@@ -8,14 +8,18 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
 
         builder.Property(b => b.Title)
                .IsRequired()
-               .HasMaxLength(200);
+               .HasMaxLength(BookPolicy.MaxTitleLength);
 
         builder.Property(b => b.Author)
                .IsRequired()
-               .HasMaxLength(150);
+               .HasMaxLength(BookPolicy.MaxAuthorLength);
+
+        builder.Property(b => b.Genre)
+               .IsRequired()
+               .HasMaxLength(BookPolicy.MaxGenreLength);
 
         builder.Property(b => b.Publisher)
-               .HasMaxLength(100);
+               .HasMaxLength(BookPolicy.MaxPublisherLength);
 
         builder.Property(b => b.Description)
                .HasMaxLength(BookPolicy.MaxDescriptionLength)

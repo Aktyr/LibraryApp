@@ -130,8 +130,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
                     b.Property<string>("Author")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("CoverUrl")
                         .IsRequired()
@@ -149,7 +149,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
                     b.Property<string>("Genre")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<bool>("IsDiscarded")
                         .ValueGeneratedOnAdd()
@@ -163,8 +164,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("Year")
                         .HasColumnType("integer");
@@ -255,7 +256,14 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
                     b.HasIndex("RoomId");
 
-                    b.ToTable("RoomBook", "library");
+                    b.ToTable("RoomBook", "library", t =>
+                        {
+                            t.HasCheckConstraint("CK_RoomBook_BookCount_NonNegative", "\"BookCount\" >= 0");
+
+                            t.HasCheckConstraint("CK_RoomBook_BorrowedCount_LE_BookCount", "\"BorrowedCount\" <= \"BookCount\"");
+
+                            t.HasCheckConstraint("CK_RoomBook_BorrowedCount_NonNegative", "\"BorrowedCount\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("LibApp.Core.Entities.User", b =>
@@ -301,10 +309,12 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("integer");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("SubscriptionStatus")
                         .IsRequired()
@@ -337,7 +347,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal?>("Penalty")
-                        .HasColumnType("numeric");
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<DateTime?>("ReturnDate")
                         .HasColumnType("timestamp with time zone");
@@ -448,7 +459,7 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.HasOne("LibApp.Core.Entities.RoomBook", "RoomBook")
                         .WithMany()
                         .HasForeignKey("RoomBookId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("LibApp.Core.Entities.User", "User")

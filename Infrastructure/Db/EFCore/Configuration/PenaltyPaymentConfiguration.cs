@@ -27,7 +27,7 @@ public class PenaltyPaymentConfiguration : IEntityTypeConfiguration<PenaltyPayme
                .HasConversion<DateTimeToUtcConverter>();
 
         builder.Property(p => p.Notes)
-               .HasMaxLength(500);
+               .HasMaxLength(PenaltyPaymentPolicy.MaxNotesLength);
 
         // Один платёж на выдачу: частичные оплаты не поддерживаются.
         // UNIQUE-индекс защищает от двойной оплаты при параллельных запросах.

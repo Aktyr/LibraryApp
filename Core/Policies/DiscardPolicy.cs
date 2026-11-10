@@ -3,6 +3,7 @@
 public static class DiscardPolicy
 {
     public const int MaxApprovedByNameLength = 100;
+    public const int MaxReaderNameLength = 300;
 
     /// <summary>
     /// Проверяет параметры списания. Единая точка для DiscardBookCommand (списание из фонда)

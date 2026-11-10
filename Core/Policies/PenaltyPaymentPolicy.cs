@@ -6,6 +6,8 @@
 /// </summary>
 public static class PenaltyPaymentPolicy
 {
+    public const int MaxNotesLength = 500;
+
     /// <summary>
     /// Проверяет параметры оплаты. Возвращает сообщения для UI; пустой список — оплата допустима.
     /// </summary>

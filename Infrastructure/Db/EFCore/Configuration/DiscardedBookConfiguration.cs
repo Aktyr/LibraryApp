@@ -30,7 +30,7 @@ public class DiscardedBookConfiguration : IEntityTypeConfiguration<DiscardedBook
                .HasConversion<string>();
 
         builder.Property(d => d.ApprovedBy)
-               .HasMaxLength(100);
+               .HasMaxLength(DiscardPolicy.MaxApprovedByNameLength);
 
         builder.HasOne(d => d.Reader)
                .WithMany()
@@ -39,7 +39,7 @@ public class DiscardedBookConfiguration : IEntityTypeConfiguration<DiscardedBook
                .IsRequired(false);
 
         builder.Property(d => d.ReaderName)
-               .HasMaxLength(300);
+               .HasMaxLength(DiscardPolicy.MaxReaderNameLength);
 
         builder.HasIndex(d => d.ReaderId);
         builder.Property(d => d.CompensationAmount)
