@@ -8,14 +8,14 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 
         builder.Property(x => x.UserName)
                .IsRequired()
-               .HasMaxLength(200);
+               .HasMaxLength(AuditPolicy.UserNameMaxLength);
 
         builder.Property(x => x.EntityType)
                .IsRequired()
-               .HasMaxLength(100);
+               .HasMaxLength(AuditPolicy.EntityTypeMaxLength);
 
         builder.Property(x => x.Details)
-               .HasMaxLength(4000); // Ограничение, чтобы не раздувать БД гигантскими JSON
+               .HasMaxLength(AuditPolicy.DetailsMaxLength);
 
         builder.Property(x => x.ActionType)
                .IsRequired()

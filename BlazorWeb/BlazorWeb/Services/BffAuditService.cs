@@ -79,11 +79,11 @@ public sealed class BffAuditService : IAuditService
             Id = new Id(Guid.NewGuid()),
             Timestamp = DateTime.UtcNow,
             UserId = finalUserId,
-            UserName = finalUserName,
+            UserName = AuditPolicy.Truncate(finalUserName, AuditPolicy.UserNameMaxLength)!,
             ActionType = action,
-            EntityType = entityType,
+            EntityType = AuditPolicy.Truncate(entityType, AuditPolicy.EntityTypeMaxLength)!,
             EntityId = entityId,
-            Details = details
+            Details = AuditPolicy.Truncate(details, AuditPolicy.DetailsMaxLength)
         };
 
         var repo = _unitOfWork.GetRepository<AuditLog>();

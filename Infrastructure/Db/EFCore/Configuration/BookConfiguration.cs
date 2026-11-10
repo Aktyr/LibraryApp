@@ -1,6 +1,4 @@
-﻿using LibApp.Core.Policies;
-
-namespace LibApp.Infrastructure.Db.EFCore.Configuration;
+﻿namespace LibApp.Infrastructure.Db.EFCore.Configuration;
 
 public class BookConfiguration : IEntityTypeConfiguration<Book>
 {
