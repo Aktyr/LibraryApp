@@ -11,6 +11,18 @@ public class UpdateUserCommand(
         var user = await userRepo.FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
         if (user == null) throw new UserNotFoundException();
 
+        var diffLines = new List<string>();
+        void AddDiff(string field, object? oldVal, object? newVal)
+        {
+            var diff = AuditDiffBuilder.FormatChange(field, oldVal, newVal);
+            if (!string.IsNullOrEmpty(diff)) diffLines.Add(diff);
+        }
+
+        AddDiff("Изменена фамилия", user.LastName, request.LastName);
+        AddDiff("Изменено имя", user.FirstName, request.FirstName);
+        AddDiff("Изменено отчество", user.MiddleName, request.MiddleName);
+        AddDiff("Изменена контактная информация", user.ContactInfo, request.ContactInfo);
+
         // Валидация
         var validationResult = await userValidator.ValidateNameAndContactAsync(
             request.LastName,
@@ -32,11 +44,15 @@ public class UpdateUserCommand(
             await userRepo.UpdateAsync(user, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
+            var details = diffLines.Count > 0
+                ? string.Join("\n", diffLines)
+                : "Обновлён профиль (без изменений)";
+
             await auditService.LogAsync(
                 AuditActionType.Update,
                 nameof(User),
                 user.Id.Value,
-                details: $"Обновлён профиль пользователя «{user.FullName}»",
+                details: details,
                 ct: cancellationToken);
         }, cancellationToken);
 

@@ -18,6 +18,22 @@ public class UpdateBookCommand(
         var book = await bookRepo.FirstOrDefaultAsync(b => b.Id == request.Id, cancellationToken);
         if (book == null) throw new BookNotFoundException();
 
+        var diffLines = new List<string>();
+        void AddDiff(string field, object? oldVal, object? newVal)
+        {
+            var diff = AuditDiffBuilder.FormatChange(field, oldVal, newVal);
+            if (!string.IsNullOrEmpty(diff)) diffLines.Add(diff);
+        }
+
+        AddDiff("Изменено название", book.Title, request.Title);
+        AddDiff("Изменён автор", book.Author, request.Author);
+        AddDiff("Изменён год", book.Year, request.Year);
+        AddDiff("Изменено издательство", book.Publisher, request.Publisher);
+        AddDiff("Изменён жанр", book.Genre, request.Genre);
+
+        if (book.Description != request.Description) diffLines.Add("Изменено описание");
+        if (book.CoverUrl != request.CoverUrl) diffLines.Add("Изменён URL обложки");
+
         // Временное DTO для валидации
         var bookDTO = new BookDTO(Guid.NewGuid(),
                                   request.Title,
@@ -49,11 +65,15 @@ public class UpdateBookCommand(
             await bookRepo.UpdateAsync(book, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
+            var details = diffLines.Count > 0
+                ? string.Join("\n", diffLines)
+                : "Обновлена книга (без изменений)";
+
             await auditService.LogAsync(
                 AuditActionType.Update,
                 nameof(Book),
                 book.Id.Value,
-                details: $"Обновлена книга «{book.Title}»",
+                details: details,
                 ct: cancellationToken);
         }, cancellationToken);
 
