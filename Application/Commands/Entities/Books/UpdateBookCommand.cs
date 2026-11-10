@@ -9,11 +9,12 @@ public class UpdateBookCommand(
     BookValidatorAsync bookValidator,
     IConverter<Book, BookDTO> bookConverter,
     IAuditService auditService)
-    : ICreateOrUpdateCommand<UpdateBookRequest, BasicCreateDeleteResponse>, ICommand
+    : AuditedCreateOrUpdateCommand<UpdateBookRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
-    public async Task<BasicCreateDeleteResponse> Execute(UpdateBookRequest request, CancellationToken cancellationToken)
+    protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
+        UpdateBookRequest request, CancellationToken cancellationToken)
     {
-        var bookRepo = unitOfWork.GetRepository<Book>();
+        var bookRepo = UnitOfWork.GetRepository<Book>();
 
         var book = await bookRepo.FirstOrDefaultAsync(b => b.Id == request.Id, cancellationToken);
         if (book == null) throw new BookNotFoundException();
@@ -60,23 +61,19 @@ public class UpdateBookCommand(
         book.Description = request.Description;
         book.CoverUrl = request.CoverUrl;
 
-        await unitOfWork.ExecuteInTransactionAsync(async () =>
-        {
-            await bookRepo.UpdateAsync(book, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        await bookRepo.UpdateAsync(book, cancellationToken);
 
-            var details = diffLines.Count > 0
-                ? string.Join("\n", diffLines)
-                : "Обновлена книга (без изменений)";
+        // SaveChanges и LogAsync выполняет база в одной транзакции.
+        var details = diffLines.Count > 0
+            ? string.Join("\n", diffLines)
+            : "Обновлена книга (без изменений)";
 
-            await auditService.LogAsync(
-                AuditActionType.Update,
-                nameof(Book),
-                book.Id.Value,
-                details: details,
-                ct: cancellationToken);
-        }, cancellationToken);
+        var audit = new AuditEntry(
+            AuditActionType.Update,
+            nameof(Book),
+            book.Id.Value,
+            details);
 
-        return ResponseFactory.Updated<Book>();
+        return (ResponseFactory.Updated<Book>(), audit);
     }
 }
