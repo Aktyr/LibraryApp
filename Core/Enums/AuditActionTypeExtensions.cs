@@ -20,6 +20,7 @@ public static class AuditActionTypeExtensions
         AuditActionType.ApproveBorrowRequest => "Одобрение заявки",
         AuditActionType.RejectBorrowRequest => "Отклонение заявки",
         AuditActionType.PayPenalty => "Оплата штрафа",
+        AuditActionType.PenaltyAccrued => "Начисление штрафов",
         _ => type.ToString()
     };
 }

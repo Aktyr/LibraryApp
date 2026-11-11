@@ -48,9 +48,9 @@ public class DeadlineCheckService : BackgroundService, IService
     {
         using var scope = _serviceProvider.CreateScope();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>(); 
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-
+        var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
 
         var settings = _settingsMonitor.CurrentValue;
         var penaltySettings = _penaltySettingsMonitor.CurrentValue;
@@ -63,12 +63,8 @@ public class DeadlineCheckService : BackgroundService, IService
                 && urb.Deadline.Value.Date == now.AddDays(settings.ReturnReminderInDays).Date,
             cancellationToken);
 
-        var soonDueList = soonDue.ToList();
-
-
-        foreach (var urb in soonDueList)
+        foreach (var urb in soonDue.ToList())
             await notificationService.SendReturnReminderAsync(urb.User, urb, cancellationToken);
-
 
         // Просроченные книги
         var overdue = await userRoomBookRepo.GetAsync(
@@ -77,7 +73,14 @@ public class DeadlineCheckService : BackgroundService, IService
                 && urb.Deadline.Value < now,
             cancellationToken);
 
-        var overdueList = overdue.ToList(); 
+        var overdueList = overdue.ToList();
+
+        // Нет просрочек — нечего сохранять. Аудит не пишем: иначе журнал спамится
+        // пустыми записями каждый цикл.
+        if (overdueList.Count == 0)
+            return;
+
+        decimal totalAccrued = 0m;
 
         foreach (var urb in overdueList)
         {
@@ -86,10 +89,25 @@ public class DeadlineCheckService : BackgroundService, IService
 
             // Обновляем штраф в БД
             urb.Penalty = penalty;
+            totalAccrued += penalty;
             await userRoomBookRepo.UpdateAsync(urb, cancellationToken);
+
             // Отправляем уведомление
             await notificationService.SendOverdueNotificationAsync(urb.User, urb, penalty, cancellationToken);
         }
+
+        // Сводный аудит batch-а: одна запись вместо N. Раз в сутки по числу просрочек
+        // раздуло бы журнал. Детализация по каждой выдаче — в UserRoomBook.Penalty.
+        // userId = null, userName явно — фоновый процесс, ICurrentUserService пуст.
+        await auditService.LogAsync(
+            AuditActionType.PenaltyAccrued,
+            entityType: nameof(UserRoomBook),
+            entityId: null,
+            details: $"Пересчитаны штрафы: {overdueList.Count} выдач, сумма {totalAccrued:0.##} ₽",
+            userId: null,
+            userName: "Система: пересчёт штрафов",
+            ct: cancellationToken);
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 

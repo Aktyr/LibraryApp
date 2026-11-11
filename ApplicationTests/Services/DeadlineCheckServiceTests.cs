@@ -5,13 +5,15 @@ public class DeadlineCheckServiceTests
 {
     private static Mock<IServiceProvider> CreateServiceProvider(
         FakeUnitOfWork unitOfWork,
-        Mock<INotificationService>? notificationMock = null)
+        Mock<INotificationService>? notificationMock = null,
+        Mock<IAuditService>? auditMock = null)
     {
         var scopeMock = new Mock<IServiceScope>();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
         var serviceProviderMock = new Mock<IServiceProvider>();
 
         notificationMock ??= new Mock<INotificationService>();
+        auditMock ??= new Mock<IAuditService>();
 
         serviceProviderMock
             .Setup(x => x.GetService(typeof(IUnitOfWork)))
@@ -20,6 +22,10 @@ public class DeadlineCheckServiceTests
         serviceProviderMock
             .Setup(x => x.GetService(typeof(INotificationService)))
             .Returns(notificationMock.Object);
+
+        serviceProviderMock
+            .Setup(x => x.GetService(typeof(IAuditService)))
+            .Returns(auditMock.Object);
 
         scopeMock.Setup(x => x.ServiceProvider).Returns(serviceProviderMock.Object);
         scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
@@ -31,6 +37,7 @@ public class DeadlineCheckServiceTests
 
         return fullProviderMock;
     }
+
     private static Mock<IOptionsMonitor<PenaltySettings>> CreatePenaltySettingsMonitor(
         PenaltySettings? settings = null)
     {
@@ -45,13 +52,14 @@ public class DeadlineCheckServiceTests
     }
 
     private static DeadlineCheckService CreateService(
-    FakeUnitOfWork unitOfWork,
-    DeadlineCheckSettings? deadlineSettings = null,
-    PenaltySettings? penaltySettings = null,
-    Mock<INotificationService>? notificationMock = null)
+        FakeUnitOfWork unitOfWork,
+        DeadlineCheckSettings? deadlineSettings = null,
+        PenaltySettings? penaltySettings = null,
+        Mock<INotificationService>? notificationMock = null,
+        Mock<IAuditService>? auditMock = null)
     {
         var logger = new Logger<DeadlineCheckService>(new LoggerFactory());
-        var serviceProvider = CreateServiceProvider(unitOfWork, notificationMock);
+        var serviceProvider = CreateServiceProvider(unitOfWork, notificationMock, auditMock);
 
         var deadlineMonitor = new Mock<IOptionsMonitor<DeadlineCheckSettings>>();
         deadlineMonitor.Setup(x => x.CurrentValue).Returns(deadlineSettings ?? new DeadlineCheckSettings
@@ -650,5 +658,114 @@ public class DeadlineCheckServiceTests
         var field = typeof(DeadlineCheckService).GetField("_checkInterval", BindingFlags.NonPublic | BindingFlags.Instance);
         var interval = (TimeSpan)field.GetValue(service);
         Assert.That(interval, Is.EqualTo(TimeSpan.FromHours(12)));
+    }
+
+    [Test]
+    public async Task CheckDeadlines_WithOverdueBooks_WritesPenaltyAccruedAudit()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var notificationMock = new Mock<INotificationService>();
+        var auditMock = new Mock<IAuditService>();
+        var realNow = DateTime.UtcNow;
+
+        var user = new User
+        {
+            Id = new Id(Guid.NewGuid()),
+            Email = "user@test.com",
+            LastName = "Test",
+            FirstName = "User"
+        };
+
+        var overdue = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = user,
+            Deadline = realNow.AddDays(-5),
+            ReturnDate = null,
+            RoomBook = new RoomBook
+            {
+                Id = new Id(Guid.NewGuid()),
+                Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Overdue Book" },
+                Room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" }
+            }
+        };
+        await repo.AddRangeAsync([overdue]);
+
+        var service = CreateService(
+            unitOfWork,
+            penaltySettings: new PenaltySettings { DailyRate = 10m, MaxPenalty = null, GracePeriodDays = 0 },
+            notificationMock: notificationMock,
+            auditMock: auditMock);
+
+        var method = typeof(DeadlineCheckService)
+            .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+        // Act
+        await (Task)method.Invoke(service, [CancellationToken.None])!;
+
+        // Assert
+        auditMock.Verify(a => a.LogAsync(
+            AuditActionType.PenaltyAccrued,
+            nameof(UserRoomBook),
+            null,
+            It.Is<string>(s => s.Contains("1 выдач") && s.Contains("50")),
+            null,
+            "Система: пересчёт штрафов",
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task CheckDeadlines_WhenNoOverdueBooks_DoesNotWriteAudit()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
+        var auditMock = new Mock<IAuditService>();
+
+        var user = new User
+        {
+            Id = new Id(Guid.NewGuid()),
+            Email = "user@test.com",
+            LastName = "Test",
+            FirstName = "User"
+        };
+
+        // Книга возвращена — не должна попасть в overdue
+        var returned = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = user,
+            Deadline = DateTime.UtcNow.AddDays(-5),
+            ReturnDate = DateTime.UtcNow.AddDays(-3),
+            RoomBook = new RoomBook
+            {
+                Id = new Id(Guid.NewGuid()),
+                Book = new Book { Id = new Id(Guid.NewGuid()), Title = "Returned Book" },
+                Room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" }
+            }
+        };
+        await repo.AddRangeAsync([returned]);
+
+        var service = CreateService(unitOfWork, auditMock: auditMock);
+
+        var method = typeof(DeadlineCheckService)
+            .GetMethod("CheckDeadlines", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+        // Act
+        await (Task)method.Invoke(service, [CancellationToken.None])!;
+
+        // Assert: журнал не спамится, когда начислений не было
+        auditMock.Verify(a => a.LogAsync(
+            It.IsAny<AuditActionType>(),
+            It.IsAny<string>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string>(),
+            It.IsAny<Id?>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

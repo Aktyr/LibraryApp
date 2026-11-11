@@ -17,6 +17,7 @@ public static class AuditActionStyle
         AuditActionType.ApproveBorrowRequest => ("#e6f7eb", "#0a7f2e"),
         AuditActionType.RejectBorrowRequest => ("#fde7e9", "#a30000"),
         AuditActionType.PayPenalty => ("#e6f7eb", "#0a7f2e"),
+        AuditActionType.PenaltyAccrued => ("#fff3d9", "#8a4b00"),
         AuditActionType.LoginFailed => ("#fde7e9", "#a30000"),
         _ => ("#f3f3f3", "#555")
     };
