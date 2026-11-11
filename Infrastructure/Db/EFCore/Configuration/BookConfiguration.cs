@@ -25,10 +25,6 @@ public class BookConfiguration : IEntityTypeConfiguration<Book>
                .HasMaxLength(BookPolicy.MaxDescriptionLength)
                .HasDefaultValue(string.Empty);
 
-        builder.Property(b => b.CoverUrl)
-               .HasMaxLength(BookPolicy.MaxCoverUrlLength)
-               .HasDefaultValue(string.Empty);
-
         builder.Property(b => b.IsDiscarded)
                .IsRequired()
                .HasDefaultValue(false);

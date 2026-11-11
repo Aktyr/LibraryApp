@@ -133,13 +133,6 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("CoverUrl")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasDefaultValue("");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -179,6 +172,34 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.HasIndex("Title");
 
                     b.ToTable("Book", "library");
+                });
+
+            modelBuilder.Entity("LibApp.Core.Entities.BookImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BookId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookId");
+
+                    b.HasIndex("BookId", "SortOrder");
+
+                    b.ToTable("BookImage", "library");
                 });
 
             modelBuilder.Entity("LibApp.Core.Entities.PenaltyPayment", b =>
@@ -408,6 +429,17 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Navigation("Room");
                 });
 
+            modelBuilder.Entity("LibApp.Core.Entities.BookImage", b =>
+                {
+                    b.HasOne("LibApp.Core.Entities.Book", "Book")
+                        .WithMany("Images")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+                });
+
             modelBuilder.Entity("LibApp.Core.Entities.PenaltyPayment", b =>
                 {
                     b.HasOne("LibApp.Core.Entities.User", "PaidByUser")
@@ -475,6 +507,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
             modelBuilder.Entity("LibApp.Core.Entities.Book", b =>
                 {
+                    b.Navigation("Images");
+
                     b.Navigation("RoomBook");
                 });
 

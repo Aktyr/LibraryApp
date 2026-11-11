@@ -9,5 +9,11 @@ public record BookDTO(Guid Id,
                       ICollection<RoomBookDTO> RoomBook,
                       bool IsDiscarded = false,
                       string Description = "",
-                      string CoverUrl = "")
-{ public BookDTO() : this(default, default!, default!, default!, default!, default!, default!, default, "", "") { } }
+                      ICollection<BookImageDTO>? Images = null)
+{
+    public BookDTO() : this(default, default!, default!, default!, default!, default!, default!, default, "", []) { }
+
+    /// <summary>Удобный доступ к основной обложке для карточек каталога.</summary>
+    public string? MainCoverUrl => Images?.FirstOrDefault(i => i.IsMain)?.Url
+                                   ?? Images?.FirstOrDefault()?.Url;
+}

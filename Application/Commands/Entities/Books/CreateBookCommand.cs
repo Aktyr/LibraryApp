@@ -10,7 +10,7 @@ public class CreateBookCommand(
     IAuditService auditService) : AuditedCreateOrUpdateCommand<CreateBookRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
     protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
-        CreateBookRequest request, CancellationToken cancellationToken)
+    CreateBookRequest request, CancellationToken cancellationToken)
     {
         var bookRepo = UnitOfWork.GetRepository<Book>();
 
@@ -23,7 +23,8 @@ public class CreateBookCommand(
                                   request.Genre,
                                   [],
                                   Description: request.Description,
-                                  CoverUrl: request.CoverUrl);
+                                  Images: request.ImageUrls.Select((url, idx) => new BookImageDTO(Guid.NewGuid(), Guid.Empty, url, idx, idx == 0)).ToList());
+
         var book = bookConverter.ToEntity(bookDTO);
 
         // Валидация

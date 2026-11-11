@@ -13,5 +13,5 @@ public class UpdateBookRequest : IAddOrUpdateRequest
     public string Description { get; set; } = string.Empty;
 
     /// <summary>URL обложки. Необязателен; пустая строка стирает прежнее значение.</summary>
-    public string CoverUrl { get; set; } = string.Empty;
+    public ICollection<string> ImageUrls { get; set; } = [];
 }

@@ -28,7 +28,14 @@ public class SearchBooksCommand(IUnitOfWork unitOfWork)
                 b.Genre,
                 b.IsDiscarded,
                 b.Description,
-                b.CoverUrl,
+                Images = b.Images.OrderBy(i => i.SortOrder).Select(i => new
+                {
+                    i.Id,
+                    i.BookId,
+                    i.Url,
+                    i.SortOrder,
+                    i.IsMain
+                }).ToList(),
                 RoomBook = b.RoomBook.Select(rb => new
                 {
                     rb.Id,
@@ -56,7 +63,13 @@ public class SearchBooksCommand(IUnitOfWork unitOfWork)
             )).ToList(),
             x.IsDiscarded,
             x.Description,
-            x.CoverUrl
+            x.Images.Select(i => new BookImageDTO(
+                i.Id.Value,
+                i.BookId.Value,
+                i.Url,
+                i.SortOrder,
+                i.IsMain
+            )).ToList()
         )).ToArray();
 
         return ResponseFactory.Found<Book, BookDTO, BookResponse>(dtos);

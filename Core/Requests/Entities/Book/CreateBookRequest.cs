@@ -11,6 +11,6 @@ public class CreateBookRequest : IAddOrUpdateRequest
     /// <summary>Аннотация. Необязательна.</summary>
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>URL обложки. Необязателен.</summary>
-    public string CoverUrl { get; set; } = string.Empty;
+    /// <summary>URL-ы изображений в порядке отображения. Первый становится основной обложкой.</summary>
+    public ICollection<string> ImageUrls { get; set; } = [];
 }

@@ -193,7 +193,7 @@ public class BookValidatorAsyncTests
             Year = 1869,
             Publisher = "Русский вестник",
             Description = "",
-            CoverUrl = ""
+            Images = [new BookImage { Url = "" }]
         };
 
         // Act
@@ -246,7 +246,7 @@ public class BookValidatorAsyncTests
             Author = "Valid Author",
             Year = 2000,
             Publisher = "Valid Publisher",
-            CoverUrl = "/images/cover.png"
+            Images = [ new BookImage { Url = "/images/cover.png" } ]
         };
 
         // Act
@@ -275,7 +275,7 @@ public class BookValidatorAsyncTests
                 Author = "Valid Author",
                 Year = 2000,
                 Publisher = "Valid Publisher",
-                CoverUrl = unsafeUrl
+                Images = [new BookImage { Url = unsafeUrl }]
             };
 
             // Act
@@ -302,7 +302,7 @@ public class BookValidatorAsyncTests
             Author = "Valid Author",
             Year = 2000,
             Publisher = "Valid Publisher",
-            CoverUrl = "https://example.com/cover.png"
+            Images = [new BookImage { Url = "https://example.com/cover.png" }]
         };
 
         // Act

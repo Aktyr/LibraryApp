@@ -82,12 +82,9 @@ else if (books != null)
                 <ValidationMessage For="() => draft.Genre" class="text-danger" />
             </div>
             <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-baseline">
-                    <label class="form-label">URL обложки</label>
-                    <CharCounter Current="@(draft.CoverUrl?.Length ?? 0)" Max="@BookPolicy.MaxCoverUrlLength" />
-                </div>
-                <InputTextLive @bind-Value="draft.CoverUrl" class="form-control" placeholder="https://..." />
-                <ValidationMessage For="() => draft.CoverUrl" class="text-danger" />
+                <label class="form-label">URL-ы обложек (по одному на строку)</label>
+                <InputTextAreaLive @bind-Value="draft.ImageUrlsRaw" class="form-control" rows="3" placeholder="https://..." />
+                <small class="text-muted">Первый URL станет основной обложкой.</small>
             </div>
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-baseline">
@@ -118,9 +115,9 @@ else if (books != null)
 
         <div class="row g-3 mt-1">
             <div class="col-md-4">
-                @if (!string.IsNullOrWhiteSpace(detailsBook.CoverUrl))
+                @if (!string.IsNullOrWhiteSpace(detailsBook.MainCoverUrl))
                 {
-                    <img src="@detailsBook.CoverUrl"
+                    <img src="@detailsBook.MainCoverUrl"
                          alt="Обложка «@detailsBook.Title»"
                          style="max-width: 100%; max-height: 400px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
                 }
@@ -276,7 +273,7 @@ else if (books != null)
             Publisher = book.Publisher,
             Genre = book.Genre,
             Description = book.Description,
-            CoverUrl = book.CoverUrl
+            ImageUrlsRaw = string.Join(Environment.NewLine, book.Images?.OrderBy(i => i.SortOrder).Select(i => i.Url) ?? [])
         };
         dialogError = null;
         await InvokeAsync(StateHasChanged);
@@ -312,7 +309,7 @@ else if (books != null)
                     Publisher = draft.Publisher,
                     Genre = draft.Genre,
                     Description = draft.Description,
-                    CoverUrl = draft.CoverUrl
+                    ImageUrls = draft.ImageUrls
                 });
                 Toast.ShowSuccess($"Книга «{draft.Title}» добавлена");
             }
@@ -327,7 +324,7 @@ else if (books != null)
                     Publisher = draft.Publisher,
                     Genre = draft.Genre,
                     Description = draft.Description,
-                    CoverUrl = draft.CoverUrl
+                    ImageUrls = draft.ImageUrls
                 });
                 Toast.ShowSuccess($"Книга «{draft.Title}» обновлена");
             }
@@ -385,21 +382,27 @@ else if (books != null)
 
         public string Genre { get; set; } = "";
         public string Description { get; set; } = "";
-        public string CoverUrl { get; set; } = "";
 
-        public IEnumerable<ValidationResult> Validate(
-            ValidationContext validationContext)
+        // Сырой ввод из textarea (по одному URL на строку)
+        public string ImageUrlsRaw { get; set; } = "";
+
+        // Вычисляемое свойство для передачи в запрос и валидатор
+        public List<string> ImageUrls => ImageUrlsRaw
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(u => u.Trim())
+            .Where(u => !string.IsNullOrWhiteSpace(u))
+            .ToList();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            var errors = BookPolicy.Validate(Title, Author, Year, Publisher, Genre, Description, CoverUrl);
+            var errors = BookPolicy.Validate(Title, Author, Year, Publisher, Genre, Description, ImageUrls);
             foreach (var error in errors)
             {
-                // Ошибки BookPolicy приходят без привязки к полю. Привязываем вручную —
-                // иначе ValidationMessage ниже не покажет их пользователю.
                 string[]? memberNames = error switch
                 {
                     _ when error.Contains("Год") => [nameof(Year)],
                     _ when error.Contains("Описание") => [nameof(Description)],
-                    _ when error.Contains("URL обложки") => [nameof(CoverUrl)],
+                    _ when error.Contains("URL") => [nameof(ImageUrlsRaw)], // Привязка к полю ввода
                     _ => null
                 };
                 yield return new ValidationResult(error, memberNames);

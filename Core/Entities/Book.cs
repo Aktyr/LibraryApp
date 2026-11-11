@@ -12,11 +12,9 @@ public class Book : IEntity
     /// <summary>Аннотация. Необязательна; ограничение длины — в BookPolicy.MaxDescriptionLength.</summary>
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>URL обложки (http/https). Необязателен; формат проверяется в BookPolicy.</summary>
-    public string CoverUrl { get; set; } = string.Empty;
-
     public bool IsDiscarded { get; set; }
     public virtual ICollection<RoomBook> RoomBook { get; set; } = [];
+    public virtual ICollection<BookImage> Images { get; set; } = [];
 
     public override string ToString() =>
         $"Название: {Title}\nАвтор: {Author}\nГод: {Year}";

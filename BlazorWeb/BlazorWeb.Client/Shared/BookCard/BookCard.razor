@@ -3,9 +3,9 @@
 @* Карточка книги для витрины каталога (Ozon-style). Только отображение, действия — в модалке. *@
 <div class="book-card" @onclick="() => OnClick.InvokeAsync(Book)">
     <div class="book-cover">
-        @if (!string.IsNullOrWhiteSpace(Book.CoverUrl))
+        @if (!string.IsNullOrWhiteSpace(Book.MainCoverUrl))
         {
-            <img src="@Book.CoverUrl" alt="@Book.Title" loading="lazy" />
+            <img src="@Book.MainCoverUrl" alt="@Book.Title" loading="lazy" />
         }
         else
         {

@@ -7,6 +7,7 @@ public static class IncludePaths
         public const string RoomBook = nameof(Core.Entities.Book.RoomBook);
         public const string RoomBookRoom = nameof(Core.Entities.Book.RoomBook) + "." + nameof(Core.Entities.RoomBook.Room);
         public const string RoomBookBook = nameof(Core.Entities.Book.RoomBook) + "." + nameof(Core.Entities.RoomBook.Book);
+        public const string Images = nameof(Core.Entities.Book.Images);
     }
 
     public static class Room

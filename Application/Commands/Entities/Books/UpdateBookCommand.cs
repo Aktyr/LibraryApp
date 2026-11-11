@@ -12,12 +12,16 @@ public class UpdateBookCommand(
     : AuditedCreateOrUpdateCommand<UpdateBookRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
     protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
-        UpdateBookRequest request, CancellationToken cancellationToken)
+    UpdateBookRequest request, CancellationToken cancellationToken)
     {
         var bookRepo = UnitOfWork.GetRepository<Book>();
 
-        var book = await bookRepo.FirstOrDefaultAsync(b => b.Id == request.Id, cancellationToken);
-        if (book == null) throw new BookNotFoundException();
+        var books = await bookRepo.GetAsync(
+            b => b.Id == request.Id,
+            cancellationToken: cancellationToken,
+            includePaths: IncludePaths.Book.Images);
+
+        var book = books.FirstOrDefault() ?? throw new BookNotFoundException();
 
         var diffLines = new List<string>();
         void AddDiff(string field, object? oldVal, object? newVal)
@@ -33,7 +37,12 @@ public class UpdateBookCommand(
         AddDiff("Изменён жанр", book.Genre, request.Genre);
 
         if (book.Description != request.Description) diffLines.Add("Изменено описание");
-        if (book.CoverUrl != request.CoverUrl) diffLines.Add("Изменён URL обложки");
+
+        // Сравнение галереи картинок
+        var oldUrls = book.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList();
+        var newUrls = request.ImageUrls.ToList();
+        if (!oldUrls.SequenceEqual(newUrls))
+            diffLines.Add("Изменена галерея изображений");
 
         // Временное DTO для валидации
         var bookDTO = new BookDTO(Guid.NewGuid(),
@@ -44,11 +53,11 @@ public class UpdateBookCommand(
                                   request.Genre,
                                   [],
                                   Description: request.Description,
-                                  CoverUrl: request.CoverUrl);
+                                  Images: request.ImageUrls.Select((url, idx) => new BookImageDTO(Guid.NewGuid(), Guid.Empty, url, idx, idx == 0)).ToList());
+
         var bookForValidation = bookConverter.ToEntity(bookDTO);
 
         var validationResult = await bookValidator.ValidateAsync(bookForValidation, cancellationToken);
-
         if (!validationResult.IsValid)
             throw new LibValidationException { ExceptionDetails = validationResult.Errors };
 
@@ -59,7 +68,22 @@ public class UpdateBookCommand(
         book.Publisher = request.Publisher;
         book.Genre = request.Genre;
         book.Description = request.Description;
-        book.CoverUrl = request.CoverUrl;
+
+        // Синхронизация Images: удаляем старые, добавляем новые
+        book.Images.Clear();
+        int order = 0;
+        foreach (var url in request.ImageUrls)
+        {
+            book.Images.Add(new BookImage
+            {
+                Id = new Id(Guid.NewGuid()),
+                BookId = book.Id,
+                Url = url,
+                SortOrder = order,
+                IsMain = order == 0
+            });
+            order++;
+        }
 
         await bookRepo.UpdateAsync(book, cancellationToken);
 

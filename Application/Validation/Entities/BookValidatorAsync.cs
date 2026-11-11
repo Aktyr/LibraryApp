@@ -4,6 +4,7 @@ public class BookValidatorAsync : IValidator
 {
     public async Task<ValidationResponse> ValidateAsync(Book book, CancellationToken cancellationToken = default)
     {
+        var imageUrls = book.Images?.Select(i => i.Url).ToList();
         var errors = BookPolicy.Validate(
             book.Title,
             book.Author,
@@ -11,7 +12,7 @@ public class BookValidatorAsync : IValidator
             book.Publisher,
             book.Genre,
             book.Description,
-            book.CoverUrl);
+            imageUrls);
 
         await Task.CompletedTask;
         return new ValidationResponse(errors.Count == 0, errors);

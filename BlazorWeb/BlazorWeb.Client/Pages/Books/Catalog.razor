@@ -77,9 +77,9 @@ else
         {
             <div class="row g-4">
                 <div class="col-md-4">
-                    @if (!string.IsNullOrWhiteSpace(selectedBook.CoverUrl))
+                    @if (!string.IsNullOrWhiteSpace(selectedBook.MainCoverUrl))
                     {
-                        <img src="@selectedBook.CoverUrl" alt="Обложка" class="img-fluid rounded shadow-sm" />
+                        <img src="@selectedBook.MainCoverUrl" alt="Обложка" class="img-fluid rounded shadow-sm" />
                     }
                     else
                     {
