@@ -15,15 +15,12 @@ JWT_SECRET_KEY=<случайная строка, минимум 32 символ�
 ADMIN_PASSWORD=<пароль админа, минимум 8 символов с заглавной/строчной/цифрой/спецсимволом>
 ```
 
-text
-
 2. Запустить:
 
 ```
 docker-compose up --build
 ```
 
-text
 
 3. Открыть:
 - **UI**: http://localhost:5271
@@ -36,7 +33,6 @@ text
 ```
 docker-compose up -d postgres
 ```
-text
 
 2. Секреты в user-secrets:
 
@@ -45,7 +41,6 @@ dotnet user-secrets set "ApplicationSettings:Jwt:SecretKey" "<32+ символа
 dotnet user-secrets set "ApplicationSettings:Jwt:SecretKey" "<32+ символа>" --project BlazorWeb/BlazorWeb  
 dotnet user-secrets set "Seed:AdminPassword" "<пароль>" --project BlazorWeb/BlazorWeb
 ```
-text
 
 3. Запустить `WebAPI` и `BlazorWeb` (в двух терминалах, F5 в Visual Studio или `dotnet run`).
 ## Тесты
@@ -53,8 +48,6 @@ text
 ```
 dotnet test
 ```
-
-text
 
 ## Статус
 Проект в активной разработке. Аудит команд, проверки инвариантов БД, Identity.
