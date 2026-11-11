@@ -106,6 +106,15 @@ public class Program
 
         #region Инициализация данных (Seed)
 
+        // Identity-миграции применяются только в Development (docker-compose).
+        // В production — отдельный job/migration-runner, не стартап приложения.
+        if (app.Environment.IsDevelopment())
+        {
+            using var scope = app.Services.CreateScope();
+            var identityDb = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            identityDb.Database.Migrate();
+        }
+
         // Выполняется при старте, чтобы гарантировать наличие администратора в системе
         {
             var logger = app.Services.GetRequiredService<ILogger<Program>>();

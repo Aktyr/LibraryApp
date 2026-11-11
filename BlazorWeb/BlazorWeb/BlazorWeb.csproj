@@ -32,4 +32,10 @@
 	  <Folder Include="Data\Migrations\" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Include="..\..\.dockerignore" Link=".dockerignore">
+	    <DependentUpon>$(DockerDefaultDockerfile)</DependentUpon>
+	  </None>
+	</ItemGroup>
+
 </Project>

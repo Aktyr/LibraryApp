@@ -17,6 +17,55 @@ services:
       timeout: 5s
       retries: 10
 
+  webapi:
+    build:
+      context: .
+      dockerfile: WebAPI/Dockerfile
+    container_name: libapp-webapi
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      # "postgres" — DNS-имя сервиса внутри docker-сети, порт внутренний 5432 (не 5434).
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=libapp;Username=postgres;Password=postgres"
+      ApplicationSettings__Jwt__SecretKey: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      ApplicationSettings__Jwt__Issuer: LibraryApp
+      ApplicationSettings__Jwt__Audience: LibraryApp
+      ApplicationSettings__Jwt__ExpiryMinutes: 60
+    ports:
+      - "5096:8080"
+
+  blazorweb:
+    build:
+      context: .
+      dockerfile: BlazorWeb/BlazorWeb/Dockerfile
+    container_name: libapp-blazorweb
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      webapi:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=libapp;Username=postgres;Password=postgres"
+      # BFF ходит в WebAPI по внутреннему DNS. Наружу WebAPI доступен как localhost:5096.
+      ApiBaseUrl: "http://webapi:8080/"
+      ApplicationSettings__Jwt__SecretKey: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      ApplicationSettings__Jwt__Issuer: LibraryApp
+      ApplicationSettings__Jwt__Audience: LibraryApp
+      ApplicationSettings__Jwt__ExpiryMinutes: 60
+      Seed__AdminEmail: admin@library.local
+      Seed__AdminPassword: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      Seed__AdminLastName: Administrator
+      Seed__AdminFirstName: System
+    ports:
+      - "5271:8080"
+
 volumes:
   libapp-pgdata:
     name: libapp-pgdata
