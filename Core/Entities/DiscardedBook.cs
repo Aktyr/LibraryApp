@@ -1,4 +1,7 @@
-﻿public class DiscardedBook : IEntity
+﻿namespace LibApp.Core.Entities;
+
+
+public class DiscardedBook : IEntity
 {
     public Id Id { get; set; }
     public virtual Book Book { get; set; } = null!;

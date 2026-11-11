@@ -8,7 +8,7 @@ public class GetAllBooksCommand(IUnitOfWork unitOfWork, IConverter<Book, BookDTO
         var bookRepo = unitOfWork.GetRepository<Book>();
         var books = await bookRepo.GetWithoutTrackingAsync(
             cancellationToken: cancellationToken,
-            includePaths: [IncludePaths.Book.RoomBookRoom]);
+            includePaths: [IncludePaths.Book.RoomBook, IncludePaths.Book.Images]);
         var bookDTOs = books.Select(book => bookConverter.ToDto(book)).ToArray();
         return ResponseFactory.List<Book, BookDTO, BookResponse>(bookDTOs);
     }

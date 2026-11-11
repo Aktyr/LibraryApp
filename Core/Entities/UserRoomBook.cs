@@ -10,7 +10,10 @@ public class UserRoomBook : IEntity
     public bool IsReturned => ReturnDate.HasValue;
     public decimal? Penalty { get; set; }
 
+    public Id UserId { get; set; }
     public virtual User User { get; set; } = null!;
+
+    public Id RoomBookId { get; set; }
     public virtual RoomBook RoomBook { get; set; } = null!;
 
     /// <summary>Оплаты штрафа. По правилу — не более одной (уникальный индекс в конфиге EF).</summary>

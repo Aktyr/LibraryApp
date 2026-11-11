@@ -1,0 +1,171 @@
+﻿@page "/catalog/{Id:guid}"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Shared
+@using LibApp.Core.DTO.Entities
+@using Microsoft.AspNetCore.Authorization
+@inject IBookApiClient BookClient
+@inject NavigationManager Nav
+@inject IToastService Toast
+@attribute [Authorize]
+
+<PageTitle>@(book?.Title ?? "Загрузка...")</PageTitle>
+
+<PageHeader BackUrl="/catalog" BackText="в каталог" OnRefresh="LoadAsync" IsLoading="@isLoading" />
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Загрузка книги...</p>
+    </div>
+}
+else if (book == null)
+{
+    <div class="alert alert-warning mt-4">
+        <h4 class="alert-heading">Книга не найдена</h4>
+        <p class="mb-0">Возможно, она была удалена из фонда.</p>
+    </div>
+}
+else
+{
+    <div class="row g-4 mt-1">
+        @* Левая колонка: Галерея *@
+        <div class="col-md-4">
+            <div class="book-gallery">
+                @if (book.Images != null && book.Images.Any())
+                {
+                    var sortedImages = book.Images.OrderByDescending(i => i.IsMain).ThenBy(i => i.SortOrder).ToList();
+                    <img src="@sortedImages[0].Url" alt="@book.Title" class="main-cover shadow-sm" />
+
+                    @if (sortedImages.Count > 1)
+                    {
+                        <div class="thumbnails-grid mt-3">
+                            @foreach (var img in sortedImages.Skip(1))
+                            {
+                                <img src="@img.Url" alt="@book.Title" class="thumbnail" />
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="detail-cover-placeholder">📖</div>
+                }
+            </div>
+        </div>
+
+        @* Правая колонка: Информация *@
+        <div class="col-md-8">
+            <h1 class="fw-bold mb-1">@book.Title</h1>
+            <p class="fs-5 text-muted mb-3">@book.Author</p>
+
+            <div class="mb-4">
+                <span class="badge bg-secondary me-2">@book.Genre</span>
+                <span class="badge bg-light text-dark border">@book.Year</span>
+            </div>
+
+            <table class="table table-sm table-borderless w-50 mb-4">
+                <tbody>
+                    <tr>
+                        <td class="text-muted">Издательство</td>
+                        <td>@book.Publisher</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">В фонде</td>
+                        <td>
+                            @{
+                                var available = book.RoomBook?.Sum(rb => rb.AvailableCount) ?? 0;
+                                var total = book.RoomBook?.Sum(rb => rb.BookCount) ?? 0;
+                            }
+                            @if (available > 0)
+                            {
+                                <span class="text-success fw-bold">Доступно @available из @total</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger fw-bold">Все экземпляры выданы</span>
+                            }
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            @if (!string.IsNullOrWhiteSpace(book.Description))
+            {
+                <h5 class="mt-4 mb-2">Описание</h5>
+                <p style="white-space: pre-wrap; line-height: 1.6;">@book.Description</p>
+            }
+            else
+            {
+                <p class="text-muted fst-italic mt-4">Описание пока не добавлено.</p>
+            }
+
+            @* Здесь позже появится кнопка «Запросить» (BorrowRequest) и Рейтинг *@
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private bool isLoading = true;
+    private BookDTO? book;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var resp = await BookClient.GetBookByIdAsync(Id);
+            book = resp.Book.FirstOrDefault();
+            if (book == null) Toast.ShowError("Книга не найдена");
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}
+<style>
+    .book-gallery {
+        position: sticky;
+        top: 20px;
+    }
+
+    .main-cover {
+        width: 100%;
+        border-radius: 8px;
+        object-fit: contain;
+        max-height: 600px;
+    }
+
+    .thumbnails-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 8px;
+    }
+
+    .thumbnail {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px solid #eee;
+        transition: border-color 0.2s;
+    }
+
+        .thumbnail:hover {
+            border-color: #0078d4;
+        }
+</style>

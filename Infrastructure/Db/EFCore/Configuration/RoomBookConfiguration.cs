@@ -8,12 +8,12 @@ public class RoomBookConfiguration : IEntityTypeConfiguration<RoomBook>
 
         builder.HasOne(rb => rb.Room)
                .WithMany(r => r.RoomBooks)
-               .HasForeignKey("RoomId")
+                .HasForeignKey(rb => rb.RoomId)
                .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(rb => rb.Book)
                .WithMany(b => b.RoomBook)
-               .HasForeignKey("BookId")
+               .HasForeignKey(rb => rb.BookId)
                .OnDelete(DeleteBehavior.Cascade);
 
         // Инварианты БД: код уже держит их в командах, но прямой SQL или баг

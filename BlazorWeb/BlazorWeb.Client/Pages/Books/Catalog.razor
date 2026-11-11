@@ -1,13 +1,14 @@
 ﻿@page "/catalog"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @attribute [Authorize]
-@using BlazorWeb.Client.Shared
+@using BlazorWeb.Client.Shared.BookCard
 @using LibApp.Core.DTO.Entities
 @using LibApp.Core.Requests.Search
 @using Microsoft.AspNetCore.Authorization
-@using BlazorWeb.Client.Shared.BookCard
 @inject IBookApiClient BookClient
 @inject IToastService Toast
+@inject NavigationManager Nav
+
 
 <PageTitle>Каталог книг</PageTitle>
 
@@ -65,79 +66,26 @@ else
     <div class="catalog-grid">
         @foreach (var book in books)
         {
-            <BookCard Book="book" OnClick="OpenDetails" />
+            <BookCard Book="book" OnClick="OpenBookDetails" />
         }
     </div>
 }
 
-@* Модалка с деталями книги *@
-<ModalDialog IsVisible="@(selectedBook != null)" OnClose="CloseDetails" Title="@(selectedBook?.Title)">
-    <ChildContent>
-        @if (selectedBook != null)
-        {
-            <div class="row g-4">
-                <div class="col-md-4">
-                    @if (!string.IsNullOrWhiteSpace(selectedBook.MainCoverUrl))
-                    {
-                        <img src="@selectedBook.MainCoverUrl" alt="Обложка" class="img-fluid rounded shadow-sm" />
-                    }
-                    else
-                    {
-                        <div class="detail-cover-placeholder">📖</div>
-                    }
-                </div>
-                <div class="col-md-8">
-                    <p class="mb-2 fs-5"><strong>@selectedBook.Author</strong></p>
-                    <p class="mb-2 text-muted">@selectedBook.Year · @selectedBook.Publisher</p>
-                    <p class="mb-3"><span class="badge bg-secondary">@selectedBook.Genre</span></p>
-                    
-                    <div class="mb-4">
-                        <strong>Наличие:</strong>
-                        @{
-                            var available = selectedBook.RoomBook?.Sum(rb => rb.AvailableCount) ?? 0;
-                            var total = selectedBook.RoomBook?.Sum(rb => rb.BookCount) ?? 0;
-                        }
-                        @if (available > 0)
-                        {
-                            <span class="text-success fw-bold ms-2">Доступно @available из @total</span>
-                        }
-                        else
-                        {
-                            <span class="text-danger fw-bold ms-2">Все экземпляры выданы</span>
-                        }
-                    </div>
-
-                    @if (!string.IsNullOrWhiteSpace(selectedBook.Description))
-                    {
-                        <hr />
-                        <p style="white-space: pre-wrap;">@selectedBook.Description</p>
-                    }
-                    else
-                    {
-                        <hr />
-                        <p class="text-muted fst-italic">Описание пока не добавлено.</p>
-                    }
-                </div>
-            </div>
-        }
-    </ChildContent>
-    <Footer>
-        <button class="btn btn-secondary" @onclick="CloseDetails">Закрыть</button>
-        @* Место под кнопку «Запросить» (Borrow Request), появится в следующей итерации *@
-    </Footer>
-</ModalDialog>
-
 @code {
     private bool isLoading = true;
     private List<BookDTO>? books;
-    private BookDTO? selectedBook;
     
     private SearchBooksRequest request = new()
     {
         SortBy = "Title",
         SortDescending = false,
         AvailableOnly = false
-    };
+    }; 
+    
+    private void OpenBookDetails(BookDTO book)
+    {
+        Nav.NavigateTo($"/catalog/{book.Id}");
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -165,7 +113,4 @@ else
             await InvokeAsync(StateHasChanged);
         }
     }
-
-    private void OpenDetails(BookDTO book) => selectedBook = book;
-    private void CloseDetails() => selectedBook = null;
 }

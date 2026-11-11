@@ -8,12 +8,12 @@ public class UserRoomBookConfiguration : IEntityTypeConfiguration<UserRoomBook>
 
         builder.HasOne(urb => urb.User)
                .WithMany(u => u.RoomBooks)
-               .HasForeignKey("UserId")
+               .HasForeignKey(urb => urb.UserId)
                .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(urb => urb.RoomBook)
                .WithMany()
-               .HasForeignKey("RoomBookId")
+               .HasForeignKey(urb => urb.RoomBookId)
                .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(urb => urb.BorrowDate)
