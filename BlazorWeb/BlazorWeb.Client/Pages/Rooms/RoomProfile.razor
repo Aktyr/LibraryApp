@@ -14,6 +14,9 @@
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthProvider
 @inject IToastService Toast
+@using LibApp.Core.Requests.Search
+@implements IDisposable
+
 
 <PageTitle>Комната — @roomName</PageTitle>
 
@@ -251,9 +254,28 @@ else
 @* ---------- Модалка добавления книг ---------- *@
 <ModalDialog IsVisible="@addBooksDialogOpen" OnClose="CloseAddBooksDialog" Title="Добавить книги в комнату">
     <ChildContent>
-        @if (AvailableBooks.Count == 0)
+        <div class="mb-3">
+            <input type="search"
+                   class="form-control"
+                   placeholder="Начните вводить название, автора или издательство..."
+                   @bind="catalogSearchQuery"
+                   @bind:event="oninput"
+                   @bind:after="OnCatalogSearchInputAsync" />
+        </div>
+
+        @if (isCatalogSearching)
         {
-            <p class="text-muted mt-3">Все книги из каталога уже добавлены в комнату.</p>
+            <p class="text-muted mt-3">Поиск...</p>
+        }
+        else if (!string.IsNullOrEmpty(catalogSearchError))
+        {
+            <div class="alert alert-danger py-2 mb-3">@catalogSearchError</div>
+        }
+        else if (AvailableBooks.Count == 0)
+        {
+            <p class="text-muted mt-3">
+                Нет книг по текущему запросу, которые ещё не добавлены в комнату.
+            </p>
         }
         else
         {
@@ -272,6 +294,7 @@ else
         <button class="btn btn-secondary" @onclick="CloseAddBooksDialog">Закрыть</button>
     </Footer>
 </ModalDialog>
+
 @code {
     [Parameter] public Guid Id { get; set; }
 
@@ -290,8 +313,17 @@ else
     private int TotalBorrowed => roomBooks.Sum(rb => rb.BorrowedCount);
     private int TotalAvailable => TotalCount - TotalBorrowed;
 
+    private List<BookDTO> catalogSearchResults = new();
+    private string catalogSearchQuery = "";
+    private bool isCatalogSearching;
+    private string? catalogSearchError;
+    private CancellationTokenSource? catalogSearchCts;
+
     private List<BookDTO> AvailableBooks =>
-        catalog.Where(b => roomBooks.All(rb => rb.BookId != b.Id)).OrderBy(b => b.Title).ToList();
+        catalogSearchResults
+            .Where(b => roomBooks.All(rb => rb.BookId != b.Id))
+            .OrderBy(b => b.Title)
+            .ToList();
 
     private bool renameDialogOpen;
     private bool addBooksDialogOpen;
@@ -653,14 +685,90 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private void OpenAddBooksDialog()
+    private async Task OpenAddBooksDialog()
     {
         addBooksDialogOpen = true;
+        catalogSearchQuery = "";
+        catalogSearchResults = new();
+        catalogSearchError = null;
+
+        await SearchCatalogAsync(catalogSearchQuery);
     }
 
     private void CloseAddBooksDialog()
     {
         addBooksDialogOpen = false;
+
+        catalogSearchCts?.Cancel();
+        catalogSearchCts?.Dispose();
+        catalogSearchCts = null;
+
+        catalogSearchQuery = "";
+        catalogSearchResults = new();
+        catalogSearchError = null;
+        isCatalogSearching = false;
+    }
+
+    private Task OnCatalogSearchInputAsync() => SearchCatalogAsync(catalogSearchQuery, debounce: true);
+
+    private async Task SearchCatalogAsync(string? query, bool debounce = false)
+    {
+        catalogSearchCts?.Cancel();
+        catalogSearchCts?.Dispose();
+
+        catalogSearchCts = new CancellationTokenSource();
+        var ct = catalogSearchCts.Token;
+
+        isCatalogSearching = true;
+        catalogSearchError = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            // Небольшая задержка гасит лавину запросов при вводе.
+            // Предыдущий запрос уже отменен через CTS.
+            if (debounce)
+                await Task.Delay(300, ct);
+
+            var resp = await BookClient.SearchBooksAsync(
+                new SearchBooksRequest
+                {
+                    Query = query,
+                    PageNumber = 1,
+                    PageSize = 50,
+                    SortBy = "Title",
+                    SortDescending = false
+                },
+                ct);
+
+            if (ct.IsCancellationRequested)
+                return;
+
+            catalogSearchResults = resp.Book.ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            // Штатная отмена предыдущего поиска.
+        }
+        catch (Exception ex)
+        {
+            catalogSearchError = ex.Message;
+            catalogSearchResults = new();
+        }
+        finally
+        {
+            if (!ct.IsCancellationRequested)
+            {
+                isCatalogSearching = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        catalogSearchCts?.Cancel();
+        catalogSearchCts?.Dispose();
     }
 
     private async Task OpenDiscardHistoryDialog()
