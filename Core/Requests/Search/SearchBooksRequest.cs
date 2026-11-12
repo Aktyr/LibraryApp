@@ -13,4 +13,9 @@ public class SearchBooksRequest : IGetRequest
     public bool AvailableOnly { get; set; }      // Только доступные книги
     public string? SortBy { get; set; } = "Title";
     public bool SortDescending { get; set; } = false;
+
+    // Пагинация
+    public int PageNumber { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+
 }

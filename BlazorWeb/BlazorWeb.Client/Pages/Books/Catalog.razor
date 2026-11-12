@@ -9,7 +9,6 @@
 @inject IToastService Toast
 @inject NavigationManager Nav
 
-
 <PageTitle>Каталог книг</PageTitle>
 
 <div class="catalog-header">
@@ -19,30 +18,31 @@
 
 <div class="catalog-filters">
     <div class="search-box">
-        <input type="search" 
-               class="form-control" 
-               placeholder="Поиск по названию, автору, издательству..." 
-               @bind="request.Query" 
-               @bind:event="onchange" 
-               @bind:after="LoadAsync" />
+        <input type="search"
+               class="form-control"
+               placeholder="Поиск по названию, автору, издательству..."
+               @bind="request.Query"
+               @bind:event="onchange"
+               @bind:after="() => LoadAsync(false)" />
     </div>
-    
+
     <div class="filter-group">
-        <select class="form-select" @bind="request.SortBy" @bind:after="LoadAsync">
+        <select class="form-select" value="@request.SortBy" @onchange="OnSortByChanged">
             <option value="Title">По названию</option>
             <option value="Author">По автору</option>
             <option value="Year">По году</option>
             <option value="popularity">По популярности</option>
         </select>
-        <select class="form-select" @bind="request.SortDescending" @bind:after="LoadAsync">
+
+        <select class="form-select" value="@request.SortDescending.ToString().ToLower()" @onchange="OnSortDescendingChanged">
             <option value="false">По возрастанию</option>
             <option value="true">По убыванию</option>
         </select>
     </div>
 
     <div class="form-check form-switch ms-auto">
-        <input class="form-check-input" type="checkbox" id="availCheck" 
-               @bind="request.AvailableOnly" @bind:after="LoadAsync" />
+        <input class="form-check-input" type="checkbox" id="availCheck"
+               @bind="request.AvailableOnly" @bind:after="() => LoadAsync(false)" />
         <label class="form-check-label" for="availCheck">Только в наличии</label>
     </div>
 </div>
@@ -69,48 +69,117 @@ else
             <BookCard Book="book" OnClick="OpenBookDetails" />
         }
     </div>
+
+    @if (books.Count < totalCount)
+    {
+        <div class="text-center mt-4 mb-5">
+            <button class="btn btn-outline-primary px-4 py-2" @onclick="LoadMoreAsync" disabled="@isLoadingMore">
+                @if (isLoadingMore)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span>Загрузка...</span>
+                }
+                else
+                {
+                    <span>Показать ещё</span>
+                }
+            </button>
+        </div>
+    }
 }
 
 @code {
+    #region Состояние компонента
     private bool isLoading = true;
-    private List<BookDTO>? books;
-    
+    private bool isLoadingMore = false;
+    private List<BookDTO> books = new();
+
+    private int totalCount = 0;
+    private int currentPage = 1;
+    private const int PageSize = 20;
+
     private SearchBooksRequest request = new()
     {
         SortBy = "Title",
         SortDescending = false,
-        AvailableOnly = false
-    }; 
-    
+        AvailableOnly = false,
+        PageNumber = 1,
+        PageSize = PageSize
+    };
+    #endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync(append: false);
+    }
+
     private void OpenBookDetails(BookDTO book)
     {
         Nav.NavigateTo($"/catalog/{book.Id}");
     }
 
-    protected override async Task OnInitializedAsync()
+    private async Task OnSortByChanged(ChangeEventArgs e)
     {
-        await LoadAsync();
+        request.SortBy = e.Value?.ToString();
+        await LoadAsync(false);
     }
 
-    private async Task LoadAsync()
+    private async Task OnSortDescendingChanged(ChangeEventArgs e)
     {
-        isLoading = true;
+        // Явно парсим строку "true" или "false" обратно в bool
+        request.SortDescending = bool.Parse(e.Value?.ToString() ?? "false");
+        await LoadAsync(false);
+    }
+
+    private async Task LoadAsync(bool append)
+    {
+        if (append)
+        {
+            isLoadingMore = true;
+        }
+        else
+        {
+            isLoading = true;
+            currentPage = 1;
+        }
+
         await InvokeAsync(StateHasChanged);
 
         try
         {
+            request.PageNumber = currentPage;
             var resp = await BookClient.SearchBooksAsync(request);
-            books = resp.Book.ToList();
+
+            totalCount = resp.TotalCount;
+
+            if (append)
+            {
+                books.AddRange(resp.Book);
+            }
+            else
+            {
+                books = resp.Book.ToList();
+            }
         }
         catch (Exception ex)
         {
             Toast.ShowError($"Ошибка загрузки каталога: {ex.Message}");
-            books = new();
+            if (!append)
+            {
+                books = new();
+            }
         }
         finally
         {
             isLoading = false;
+            isLoadingMore = false;
             await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        currentPage++;
+        await LoadAsync(append: true);
     }
 }

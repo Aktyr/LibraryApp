@@ -1,6 +1,4 @@
-﻿using LibApp.Core.Requests.Reports;
-
-namespace BlazorWeb.Api;
+﻿namespace BlazorWeb.Api;
 
 public static class BooksProxyEndpoints
 {
@@ -78,6 +76,8 @@ public static class BooksProxyEndpoints
         bool? availableOnly,
         string? sortBy,
         bool? sortDescending,
+        int? pageNumber,
+        int? pageSize,
         IHttpClientFactory httpFactory,
         CancellationToken ct)
     {
@@ -92,6 +92,10 @@ public static class BooksProxyEndpoints
         if (availableOnly == true) q.Add("availableOnly=true");
         if (!string.IsNullOrWhiteSpace(sortBy)) q.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
         if (sortDescending == true) q.Add("sortDescending=true");
+
+        // Пагинация
+        if (pageNumber.HasValue) q.Add($"pageNumber={pageNumber.Value}");
+        if (pageSize.HasValue) q.Add($"pageSize={pageSize.Value}");
 
         var qs = q.Count > 0 ? "?" + string.Join("&", q) : "";
         return ProxyForwarder.ForwardAsync(

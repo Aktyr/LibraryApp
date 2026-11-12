@@ -7,6 +7,26 @@ public class SearchBooksCommand(IUnitOfWork unitOfWork)
     {
         var bookRepo = unitOfWork.GetRepository<Book>();
 
+        // Защита от некорректных входных данных
+        var pageNumber = request.PageNumber < 1 ? 1 : request.PageNumber;
+        var pageSize = request.PageSize < 1 ? 20 : request.PageSize;
+
+        // Считаем TotalCount. 
+        // GroupBy(1).Select(Count()) — это трюк, который EF Core транслирует в SQL "SELECT COUNT(*)".
+        // Используем его, чтобы не выгружать все сущности в память ради подсчета.
+        var countResult = await bookRepo.ExecuteQueryAsync(query =>
+        {
+            query = ApplyFilters(query, request);
+
+            if (request.AvailableOnly)
+                query = query.Where(b => b.RoomBook.Any(rb => rb.BookCount > rb.BorrowedCount));
+
+            return query.GroupBy(b => 1).Select(g => g.Count());
+        }, ct);
+
+        var totalCount = countResult.FirstOrDefault();
+
+        // Получаем только нужную страницу
         var raw = await bookRepo.ExecuteQueryAsync(query =>
         {
             query = ApplyFilters(query, request);
@@ -16,8 +36,9 @@ public class SearchBooksCommand(IUnitOfWork unitOfWork)
 
             query = ApplySort(query, request);
 
-            // Проекция в анонимный тип: EF транслирует навигацию RoomBook -> RoomBook.Room/Book
-            // в LEFT JOIN без необходимости явных Include и без N+1.
+            // Применяем пагинацию строго после сортировки
+            query = query.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+
             return query.Select(b => new
             {
                 b.Id,
@@ -39,8 +60,8 @@ public class SearchBooksCommand(IUnitOfWork unitOfWork)
                 RoomBook = b.RoomBook.Select(rb => new
                 {
                     rb.Id,
-                    RoomId = rb.Room.Id,
-                    BookId = rb.Book.Id,
+                    RoomId = rb.RoomId,
+                    BookId = rb.BookId,
                     rb.BookCount,
                     rb.BorrowedCount
                 }).ToList()
@@ -48,31 +69,17 @@ public class SearchBooksCommand(IUnitOfWork unitOfWork)
         }, ct);
 
         var dtos = raw.Select(x => new BookDTO(
-            x.Id.Value,
-            x.Title,
-            x.Author,
-            x.Year,
-            x.Publisher,
-            x.Genre,
+            x.Id.Value, x.Title, x.Author, x.Year, x.Publisher, x.Genre,
             x.RoomBook.Select(rb => new RoomBookDTO(
-                rb.Id.Value,
-                rb.RoomId.Value,
-                rb.BookId.Value,
-                rb.BookCount,
-                rb.BorrowedCount
+                rb.Id.Value, rb.RoomId.Value, rb.BookId.Value, rb.BookCount, rb.BorrowedCount
             )).ToList(),
-            x.IsDiscarded,
-            x.Description,
+            x.IsDiscarded, x.Description,
             x.Images.Select(i => new BookImageDTO(
-                i.Id.Value,
-                i.BookId.Value,
-                i.Url,
-                i.SortOrder,
-                i.IsMain
+                i.Id.Value, i.BookId.Value, i.Url, i.SortOrder, i.IsMain
             )).ToList()
         )).ToArray();
 
-        return ResponseFactory.Found<Book, BookDTO, BookResponse>(dtos);
+        return new BookResponse("Ok", $"Found {dtos.Length} books. Total: {totalCount}.", dtos, totalCount);
     }
 
     private static IQueryable<Book> ApplyFilters(IQueryable<Book> query, SearchBooksRequest request)

@@ -76,15 +76,18 @@ public static class ResponseFactory
         where TResponse : IGetResponse
     {
         // Ищем конструктор с параметрами (string, string, TDto[])
-        var ctor = typeof(TResponse).GetConstructor(new[] { typeof(string), typeof(string), typeof(TDto[]) });
-        if (ctor != null)
-        {
-            return (TResponse)ctor.Invoke(new object[] { "Ok", message, data });
-        }
+        var ctor = typeof(TResponse).GetConstructor([typeof(string), typeof(string), typeof(TDto[])]);
+        if (ctor != null)        
+            return (TResponse)ctor.Invoke(["Ok", message, data]);        
+
+        // Ищем конструктор с TotalCount (string, string, TDto[], int)
+        var ctorWithCount = typeof(TResponse).GetConstructor([typeof(string), typeof(string), typeof(TDto[]), typeof(int)]);
+        if (ctorWithCount != null)        
+            return (TResponse)ctorWithCount.Invoke(["Ok", message, data, data.Length]);        
 
         throw new InvalidOperationException(
             $"Cannot create response of type {typeof(TResponse).Name}. " +
-            $"Expected constructor: (string Status, string Message, {typeof(TDto).Name}[] Data)");
+            $"Expected constructor: (string Status, string Message, {typeof(TDto).Name}[] Data) or with int TotalCount");
     }
 
     private static string GetEntityName<T>()

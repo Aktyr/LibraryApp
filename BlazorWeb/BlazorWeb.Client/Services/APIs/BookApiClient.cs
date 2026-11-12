@@ -61,6 +61,10 @@ public class BookApiClient(HttpClient http) : IBookApiClient
         if (!string.IsNullOrWhiteSpace(request.SortBy)) q.Add($"sortBy={Uri.EscapeDataString(request.SortBy)}");
         if (request.SortDescending) q.Add("sortDescending=true");
 
+        // Пагинация
+        if (request.PageNumber > 0) q.Add($"pageNumber={request.PageNumber}");
+        if (request.PageSize > 0) q.Add($"pageSize={request.PageSize}");
+
         var qs = q.Count > 0 ? "?" + string.Join("&", q) : "";
         return await http.GetFromJsonAsync<BookResponse>($"{BasePath}/search{qs}", ct)
                ?? new BookResponse("Error", "Empty response", []);

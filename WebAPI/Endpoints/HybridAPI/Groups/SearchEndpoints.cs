@@ -17,6 +17,8 @@ public class SearchEndpoints : EndpointBase
         [FromQuery] bool? availableOnly,
         [FromQuery] string? sortBy,
         [FromQuery] bool? sortDescending,
+        [FromQuery] int? pageNumber,
+        [FromQuery] int? pageSize,
         SearchBooksCommand command,
         CancellationToken ct)
     {
@@ -31,7 +33,9 @@ public class SearchEndpoints : EndpointBase
             Publisher = publisher,
             AvailableOnly = availableOnly ?? false,
             SortBy = sortBy ?? "Title",
-            SortDescending = sortDescending ?? false
+            SortDescending = sortDescending ?? false,
+            PageNumber = pageNumber ?? 1,
+            PageSize = pageSize ?? 20
         };
         return Results.Ok(await command.Execute(request, ct));
     }
