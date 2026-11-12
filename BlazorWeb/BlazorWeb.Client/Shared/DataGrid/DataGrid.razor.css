@@ -39,7 +39,8 @@
 }
 
 .dg-filter {
-    padding: 6px 32px 6px 10px;
+    /* 60px справа — это гарантированное место и для крестика, и для спиннера */
+    padding: 6px 60px 6px 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     width: 100%;

@@ -254,41 +254,28 @@ else
 @* ---------- Модалка добавления книг ---------- *@
 <ModalDialog IsVisible="@addBooksDialogOpen" OnClose="CloseAddBooksDialog" Title="Добавить книги в комнату">
     <ChildContent>
-        <div class="mb-3">
-            <input type="search"
-                   class="form-control"
-                   placeholder="Начните вводить название, автора или издательство..."
-                   @bind="catalogSearchQuery"
-                   @bind:event="oninput"
-                   @bind:after="OnCatalogSearchInputAsync" />
-        </div>
+        <div style="height: 480px; display: flex; flex-direction: column;">
+            @if (!string.IsNullOrEmpty(catalogSearchError))
+            {
+                <div class="alert alert-danger py-2 mb-3">@catalogSearchError</div>
+            }
 
-        @if (isCatalogSearching)
-        {
-            <p class="text-muted mt-3">Поиск...</p>
-        }
-        else if (!string.IsNullOrEmpty(catalogSearchError))
-        {
-            <div class="alert alert-danger py-2 mb-3">@catalogSearchError</div>
-        }
-        else if (AvailableBooks.Count == 0)
-        {
-            <p class="text-muted mt-3">
-                Нет книг по текущему запросу, которые ещё не добавлены в комнату.
-            </p>
-        }
-        else
-        {
-            <DataGrid TItem="BookDTO"
-                      Items="AvailableBooks"
-                      PageSize="10"
-                      Columns="CatalogColumns"
-                      Actions="CatalogActions"
-                      ShowExport="false"
-                      Hint=""
-                      SelectionMode="DataGridSelectionMode.Multiple"
-                      OnRowDoubleClick="AddBookToRoomAndRender" />
-        }
+            <div class="flex-grow-1">
+                <DataGrid TItem="BookDTO"
+                          Items="AvailableBooks"
+                          PageSize="10"
+                          Columns="CatalogColumns"
+                          Actions="CatalogActions"
+                          ShowExport="false"
+                          ShowFilterMenu="false"
+                          IsServerSideSearch="true"
+                          OnSearch="HandleCatalogSearch"
+                          IsLoading="isCatalogSearching"
+                          Hint=""
+                          SelectionMode="DataGridSelectionMode.Multiple"
+                          OnRowDoubleClick="AddBookToRoomAndRender" />
+            </div>
+        </div>
     </ChildContent>
     <Footer>
         <button class="btn btn-secondary" @onclick="CloseAddBooksDialog">Закрыть</button>
@@ -314,7 +301,6 @@ else
     private int TotalAvailable => TotalCount - TotalBorrowed;
 
     private List<BookDTO> catalogSearchResults = new();
-    private string catalogSearchQuery = "";
     private bool isCatalogSearching;
     private string? catalogSearchError;
     private CancellationTokenSource? catalogSearchCts;
@@ -688,11 +674,11 @@ else
     private async Task OpenAddBooksDialog()
     {
         addBooksDialogOpen = true;
-        catalogSearchQuery = "";
         catalogSearchResults = new();
         catalogSearchError = null;
 
-        await SearchCatalogAsync(catalogSearchQuery);
+        // При открытии грузим без задержки
+        await SearchCatalogAsync("", debounce: false);
     }
 
     private void CloseAddBooksDialog()
@@ -703,30 +689,28 @@ else
         catalogSearchCts?.Dispose();
         catalogSearchCts = null;
 
-        catalogSearchQuery = "";
         catalogSearchResults = new();
         catalogSearchError = null;
         isCatalogSearching = false;
     }
 
-    private Task OnCatalogSearchInputAsync() => SearchCatalogAsync(catalogSearchQuery, debounce: true);
+    private Task HandleCatalogSearch(string query) => SearchCatalogAsync(query, debounce: true);
 
-    private async Task SearchCatalogAsync(string? query, bool debounce = false)
+    private async Task SearchCatalogAsync(string query, bool debounce)
     {
-        catalogSearchCts?.Cancel();
-        catalogSearchCts?.Dispose();
-
-        catalogSearchCts = new CancellationTokenSource();
-        var ct = catalogSearchCts.Token;
-
-        isCatalogSearching = true;
-        catalogSearchError = null;
-        await InvokeAsync(StateHasChanged);
-
         try
         {
+            catalogSearchCts?.Cancel();
+            catalogSearchCts?.Dispose();
+
+            catalogSearchCts = new CancellationTokenSource();
+            var ct = catalogSearchCts.Token;
+
+            isCatalogSearching = true;
+            catalogSearchError = null;
+            await InvokeAsync(StateHasChanged);
+
             // Небольшая задержка гасит лавину запросов при вводе.
-            // Предыдущий запрос уже отменен через CTS.
             if (debounce)
                 await Task.Delay(300, ct);
 
@@ -757,7 +741,8 @@ else
         }
         finally
         {
-            if (!ct.IsCancellationRequested)
+            // Флаг загрузки сбрасывается ВСЕГДА, если запрос не был отменен
+            if (catalogSearchCts != null && !catalogSearchCts.IsCancellationRequested)
             {
                 isCatalogSearching = false;
                 await InvokeAsync(StateHasChanged);
@@ -849,3 +834,16 @@ else
     #endregion
 
 }
+
+<style>
+    /* Заставляем таблицу занимать ровно 400px */
+    .fixed-grid-height .dg-wrapper {
+        height: 400px !important;
+        max-height: 400px !important;
+    }
+
+    /* Делаем так, чтобы заглушка "Нет данных" растягивалась на всю высоту */
+    .fixed-grid-height .dg-table {
+        height: 100%;
+    }
+</style>

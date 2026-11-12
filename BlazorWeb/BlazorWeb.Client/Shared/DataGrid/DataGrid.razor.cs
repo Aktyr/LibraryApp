@@ -20,6 +20,15 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     [Parameter] public bool NoWrap { get; set; } = true;
     [Parameter] public string FilterPlaceholder { get; set; } = "🔍 Поиск...";
     [Parameter] public Func<TItem, string, bool>? FilterPredicate { get; set; }
+    [Parameter] public bool IsLoading { get; set; } = false;
+
+
+    /// <summary>Включает режим серверного поиска (отключает локальную фильтрацию).</summary>
+    [Parameter] public bool IsServerSideSearch { get; set; } = false;
+
+    /// <summary>Событие, вызываемое при вводе текста в поиск (для серверного поиска).</summary>
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+
 
     [Parameter] public bool ShowStatus { get; set; } = false;
     [Parameter] public string? StatusMessage { get; set; }
@@ -167,8 +176,14 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     private void RefreshFiltered()
     {
         IEnumerable<TItem> result = Items;
-        if (!string.IsNullOrWhiteSpace(filter) || filterClauses.Count > 0)
-            result = result.Where(MatchesFilter);
+
+        // Если это серверный поиск — мы доверяем родителю, он уже прислал отфильтрованные данные
+        if (!IsServerSideSearch)
+        {
+            if (!string.IsNullOrWhiteSpace(filter) || filterClauses.Count > 0)
+                result = result.Where(MatchesFilter);
+        }
+
         result = ApplySort(result);
         filteredItems.Clear();
         filteredItems.AddRange(result);
@@ -300,12 +315,33 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         return sortCriteria.Count == 1 ? arrow : $"{arrow}{idx + 1}";
     }
 
-    private void OnFilterChanged(ChangeEventArgs e) { filter = e.Value?.ToString() ?? ""; currentPage = 1; RefreshFiltered(); }
-    private void ClearFilter()
+    private async Task OnFilterChanged(ChangeEventArgs e)
+    {
+        filter = e.Value?.ToString() ?? "";
+        currentPage = 1;
+
+        if (IsServerSideSearch)
+        {
+            await OnSearch.InvokeAsync(filter);
+        }
+        else
+        {
+            RefreshFiltered();
+        }
+    }
+    private async Task ClearFilter()
     {
         filter = "";
         currentPage = 1;
-        RefreshFiltered();
+
+        if (IsServerSideSearch)
+        {
+            await OnSearch.InvokeAsync(filter);
+        }
+        else
+        {
+            RefreshFiltered();
+        }
         StateHasChanged();
     }
 
