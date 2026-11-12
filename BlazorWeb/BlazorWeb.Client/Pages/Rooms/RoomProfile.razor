@@ -292,7 +292,6 @@ else
 
     private RoomDTO? room;
     private List<RoomBookDTO> roomBooks = new();
-    private List<BookDTO> catalog = new();
     private Dictionary<Guid, BookDTO> bookById = new();
 
     private string roomName => room?.Name ?? "—";
@@ -493,11 +492,24 @@ else
             if (room == null) { Toast.ShowError("Комната не найдена."); return; }
 
             roomBooks = room.RoomBook.ToList();
-            var booksResp = await BookClient.GetAllBooksAsync();
-            catalog = booksResp.Book.ToList();
-            bookById = catalog.ToDictionary(b => b.Id);
+
+            // Загружаем данные только тех книг, которые реально есть в комнате
+            var bookIds = roomBooks.Select(rb => rb.BookId).Distinct().ToList();
+
+            if (bookIds.Count > 0)
+            {
+                var booksResp = await BookClient.GetBooksByIdsAsync(bookIds);
+                bookById = booksResp.Book.ToDictionary(b => b.Id);
+            }
+            else
+            {
+                bookById = new Dictionary<Guid, BookDTO>();
+            }
         }
-        catch (Exception ex) { Toast.ShowError(ex.Message); }
+        catch (Exception ex)
+        {
+            Toast.ShowError(ex.Message);
+        }
 
         await InvokeAsync(StateHasChanged);
     }

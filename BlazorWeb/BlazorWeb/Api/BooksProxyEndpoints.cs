@@ -10,6 +10,7 @@ public static class BooksProxyEndpoints
 
         group.MapGet("/", GetAllAsync);
         group.MapGet("/{id:guid}", GetByIdAsync);
+        group.MapPost("/batch", GetBatchAsync);
         group.MapGet("/search", SearchAsync);
         group.MapPost("/", CreateAsync);
         group.MapPut("/", UpdateAsync);
@@ -21,27 +22,30 @@ public static class BooksProxyEndpoints
 
     private static Task<IResult> GetAllAsync(
         IHttpClientFactory httpFactory, CancellationToken ct)
-        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, "/api/books", null, ct);
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, "/api/books", null, ct);
 
     private static Task<IResult> GetByIdAsync(
         Guid id, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, $"/api/books/{id}", null, ct);
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get, $"/api/books/{id}", null, ct);
+    private static Task<IResult> GetBatchAsync(
+        GetBooksByIdsRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post, "/api/books/batch", request, ct);
 
     private static Task<IResult> CreateAsync(
         CreateBookRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post, "/api/books", request, ct);
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post, "/api/books", request, ct);
 
     private static Task<IResult> UpdateAsync(
         UpdateBookRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Put, "/api/books", request, ct);
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Put, "/api/books", request, ct);
 
     private static Task<IResult> DeleteAsync(
         Guid id, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Delete, $"/api/books/{id}", null, ct);
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Delete, $"/api/books/{id}", null, ct);
 
     private static Task<IResult> DiscardAsync(
         DiscardBookRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
-        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post, "/api/books/discard", request, ct);
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post, "/api/books/discard", request, ct);
     private static Task<IResult> GetDiscardedAsync(
         DateTime? fromDate,
         DateTime? toDate,

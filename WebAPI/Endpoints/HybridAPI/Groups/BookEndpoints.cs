@@ -7,23 +7,33 @@ public class BookEndpoints : EndpointBase
 {
     [HttpGet]
     [EnumAuthorize(UserRole.Reader)]
-    public async Task<IResult> GetAll(GetAllBooksCommand command, CancellationToken ct) => Results.Ok(await command.Execute(new EmptyRequest(), ct));
+    public async Task<IResult> GetAll(GetAllBooksCommand command, CancellationToken ct) 
+        => Results.Ok(await command.Execute(new EmptyRequest(), ct));
 
     [HttpGet("{id:guid}")]
     [EnumAuthorize(UserRole.Reader)]
-    public async Task<IResult> GetById(Guid id, GetBookCommand command, CancellationToken ct) => Results.Ok(await command.Execute(new GetBookRequest { Id = new Id(id) }, ct));
+    public async Task<IResult> GetById(Guid id, GetBookCommand command, CancellationToken ct) 
+        => Results.Ok(await command.Execute(new GetBookRequest { Id = new Id(id) }, ct));
+    
+    [HttpPost("batch")]
+    public async Task<IResult> GetBatch(GetBooksByIdsCommand command, GetBooksByIdsRequest request, CancellationToken ct)
+        => Results.Ok(await command.Execute(request, ct));
 
     [HttpPost]
-    public async Task<IResult> Create(CreateBookCommand command, CreateBookRequest request, CancellationToken ct) => Results.Ok(await command.Execute(request, ct));
+    public async Task<IResult> Create(CreateBookCommand command, CreateBookRequest request, CancellationToken ct) 
+        => Results.Ok(await command.Execute(request, ct));
 
     [HttpPut]
-    public async Task<IResult> Update(UpdateBookCommand command, UpdateBookRequest request, CancellationToken ct) => Results.Ok(await command.Execute(request, ct));
+    public async Task<IResult> Update(UpdateBookCommand command, UpdateBookRequest request, CancellationToken ct) 
+        => Results.Ok(await command.Execute(request, ct));
 
     [HttpDelete("{id:guid}")]
-    public async Task<IResult> Delete(Guid id, DeleteBookCommand command, CancellationToken ct) => Results.Ok(await command.Execute(new DeleteBookRequest { Id = new Id(id) }, ct));
+    public async Task<IResult> Delete(Guid id, DeleteBookCommand command, CancellationToken ct) 
+        => Results.Ok(await command.Execute(new DeleteBookRequest { Id = new Id(id) }, ct));
 
     [HttpPost("/discard")]
-    public async Task<IResult> DiscardBook(DiscardBookCommand command, DiscardBookRequest request, CancellationToken ct) => Results.Ok(await command.Execute(request, ct));
+    public async Task<IResult> DiscardBook(DiscardBookCommand command, DiscardBookRequest request, CancellationToken ct) 
+        => Results.Ok(await command.Execute(request, ct));
 
     [HttpGet("/discarded")]
     public async Task<IResult> GetDiscardedBooks(
@@ -49,5 +59,6 @@ public class BookEndpoints : EndpointBase
     }
 
     [HttpPost("/undo-discard")]
-    public async Task<IResult> UndoDiscard(UndoDiscardCommand command, UndoDiscardRequest request, CancellationToken ct) => Results.Ok(await command.Execute(request, ct));
+    public async Task<IResult> UndoDiscard(UndoDiscardCommand command, UndoDiscardRequest request, CancellationToken ct) 
+        => Results.Ok(await command.Execute(request, ct));
 }

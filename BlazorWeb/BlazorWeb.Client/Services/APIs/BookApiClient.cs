@@ -12,6 +12,17 @@ public class BookApiClient(HttpClient http) : IBookApiClient
         => await http.GetFromJsonAsync<BookResponse>($"{BasePath}/{id}", ct)
            ?? new BookResponse("Error", "Empty response", []);
 
+    public async Task<BookResponse> GetBooksByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync($"{BasePath}/batch", new { Ids = ids }, ct);
+
+        if (!resp.IsSuccessStatusCode)
+            throw await ApiErrorParser.ParseAsync(resp, ct);
+
+        return await resp.Content.ReadFromJsonAsync<BookResponse>(ct)
+               ?? new BookResponse("Error", "Empty response", []);
+    }
+
     public async Task<BasicCreateDeleteResponse> CreateBookAsync(CreateBookRequest request, CancellationToken ct = default)
         => await PostAsync<CreateBookRequest>(request, ct);
 
