@@ -17,6 +17,21 @@ services:
       timeout: 5s
       retries: 10
 
+  # SMTP-ловушка для локальной разработки. Запускается только с профилем dev:
+  #   docker compose --profile dev up
+  # Веб-интерфейс: http://localhost:3000, SMTP-порт на хосте: 2525.
+  # Порты проброшены только на 127.0.0.1 — снаружи недоступны.
+  smtp4dev:
+    image: rnwood/smtp4dev:latest
+    container_name: libapp-smtp4dev
+    profiles: ["dev"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:80"
+      - "127.0.0.1:2525:25"
+    volumes:
+      - smtp4dev-data:/smtp4dev
+
   webapi:
     build:
       context: .
@@ -29,12 +44,20 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
-      # "postgres" — DNS-имя сервиса внутри docker-сети, порт внутренний 5432 (не 5434).
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=libapp;Username=postgres;Password=postgres"
       ApplicationSettings__Jwt__SecretKey: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
       ApplicationSettings__Jwt__Issuer: LibraryApp
       ApplicationSettings__Jwt__Audience: LibraryApp
       ApplicationSettings__Jwt__ExpiryMinutes: 60
+
+      # SMTP-ловушка. noreply@example.com — RFC 2606, проходит MailAddress.
+      # Для Brevo заменить на реальный верифицированный адрес через user-secrets.
+      ApplicationSettings__Notification__SmtpServer: smtp4dev
+      ApplicationSettings__Notification__SmtpPort: 25
+      ApplicationSettings__Notification__SmtpUsername: ""
+      ApplicationSettings__Notification__SmtpPassword: ""
+      ApplicationSettings__Notification__FromEmail: noreply@example.com
+      ApplicationSettings__Notification__Enabled: ${NOTIFICATION_ENABLED:-false}
     ports:
       - "5096:8080"
 
@@ -53,7 +76,6 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=libapp;Username=postgres;Password=postgres"
-      # BFF ходит в WebAPI по внутреннему DNS. Наружу WebAPI доступен как localhost:5096.
       ApiBaseUrl: "http://webapi:8080/"
       ApplicationSettings__Jwt__SecretKey: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
       ApplicationSettings__Jwt__Issuer: LibraryApp
@@ -69,3 +91,5 @@ services:
 volumes:
   libapp-pgdata:
     name: libapp-pgdata
+  smtp4dev-data:
+    name: libapp-smtp4dev-data

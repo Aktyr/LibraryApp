@@ -1,4 +1,6 @@
-﻿namespace LibApp.Application.Services;
+﻿using ISmtpClient = LibApp.Application.Interfaces.ISmtpClient;
+
+namespace LibApp.Application.Services;
 
 public class EmailNotificationService(
     ILogger<EmailNotificationService> logger,

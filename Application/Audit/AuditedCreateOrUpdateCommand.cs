@@ -5,7 +5,9 @@ public abstract class AuditedCreateOrUpdateCommand<TReq, TResp>(IUnitOfWork unit
     where TReq : IAddOrUpdateRequest
     where TResp : IAddOrUpdateResponse
 {
-    public Task<TResp> Execute(TReq request, CancellationToken cancellationToken)
+    // virtual — чтобы команды могли выполнить побочный эффект после коммита
+    // (например, отправить email), не растягивая транзакцию.
+    public virtual Task<TResp> Execute(TReq request, CancellationToken cancellationToken)
         => RunInTransactionAsync(() => ExecuteCore(request, cancellationToken), cancellationToken);
 
     protected abstract Task<(TResp Response, AuditEntry? Audit)> ExecuteCore(

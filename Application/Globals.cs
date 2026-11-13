@@ -49,3 +49,8 @@ global using System.Text.RegularExpressions;
 global using LibApp.Core.Policies;
 global using LibApp.Core.Requests.Entities.Audit;
 global using LibApp.Application.Audit;
+global using MailKit;
+global using MailKit.Net.Smtp;
+global using MailKit.Security;
+global using MimeKit;
+global using System.Net.Mail;
