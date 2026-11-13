@@ -3,6 +3,17 @@
 [TestFixture]
 public class SearchBooksCommandTests
 {
+    private static RoomBook NewRoomBook(Book book, Room room, int bookCount, int borrowedCount) => new()
+    {
+        Id = new Id(Guid.NewGuid()),
+        BookCount = bookCount,
+        BorrowedCount = borrowedCount,
+        RoomId = room.Id,
+        BookId = book.Id,
+        Book = book,
+        Room = room
+    };
+
     [Test]
     public async Task Execute_WhenNoBooks_ReturnsEmptyResult()
     {
@@ -223,28 +234,30 @@ public class SearchBooksCommandTests
         var bookRepo = (FakeRepository<Book>)unitOfWork.GetRepository<Book>();
         var availableBookId = new Id(Guid.NewGuid());
         var unavailableBookId = new Id(Guid.NewGuid());
+        var roomId = new Id(Guid.NewGuid());
 
-        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Test Room" };
+        var room = new Room { Id = roomId, Name = "Test Room" };
 
-        // Создаём RoomBook для доступной книги (BookCount > BorrowedCount)
+        // FK задаются явно: SearchBooksCommand проецирует rb.RoomId.Value и rb.BookId.Value,
+        // без FK проекция бросит NullReferenceException на null.Value.
         var availableRoomBook = new RoomBook
         {
             Id = new Id(Guid.NewGuid()),
             BookCount = 5,
-            BorrowedCount = 2,      // доступно 3 экземпляра
+            BorrowedCount = 2,
+            RoomId = roomId,
             Room = room
         };
 
-        // Создаём RoomBook для недоступной книги (BookCount == BorrowedCount)
         var unavailableRoomBook = new RoomBook
         {
             Id = new Id(Guid.NewGuid()),
             BookCount = 5,
-            BorrowedCount = 5,      // доступно 0 экземпляров
+            BorrowedCount = 5,
+            RoomId = roomId,
             Room = room
         };
 
-        // Создаём книги и сразу добавляем RoomBook в их коллекции
         var availableBook = new Book
         {
             Id = availableBookId,
@@ -260,14 +273,13 @@ public class SearchBooksCommandTests
             RoomBook = new List<RoomBook> { unavailableRoomBook }
         };
 
-        // Устанавливаем обратные ссылки (чтобы навигация работала в обе стороны)
+        availableRoomBook.BookId = availableBookId;
         availableRoomBook.Book = availableBook;
+        unavailableRoomBook.BookId = unavailableBookId;
         unavailableRoomBook.Book = unavailableBook;
 
-        // Сохраняем только книги — RoomBook добавятся автоматически (каскадно)
-        await bookRepo.AddRangeAsync(new[] { availableBook, unavailableBook }, CancellationToken.None);
+        await bookRepo.AddRangeAsync([availableBook, unavailableBook], CancellationToken.None);
 
-        // Выполняем команду поиска с фильтром AvailableOnly = true
         var command = new SearchBooksCommand(unitOfWork);
         var request = new SearchBooksRequest { AvailableOnly = true };
 
@@ -281,6 +293,7 @@ public class SearchBooksCommandTests
             Assert.That(result.Book[0].Title, Is.EqualTo("Available"));
         });
     }
+
     [Test]
     public async Task Execute_WithSortByTitleDescending_ReturnsBooksSorted()
     {
@@ -478,46 +491,20 @@ public class SearchBooksCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var bookRepo = unitOfWork.GetRepository<Book>();
-        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+        var roomId = new Id(Guid.NewGuid());
+        var room = new Room { Id = roomId, Name = "Room" };
 
-        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Room" };
+        var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Popular Book", Author = "Author" };
+        var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Unpopular Book", Author = "Author" };
+        var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Mid Book", Author = "Author" };
 
-        var book1 = new Book
-        {
-            Id = new Id(Guid.NewGuid()),
-            Title = "Popular Book",
-            Author = "Author",
-            RoomBook =
-            [
-                new RoomBook { Id = new Id(Guid.NewGuid()), Room = room, BookCount = 5, BorrowedCount = 10 }
-            ]
-        };
-        book1.RoomBook.First().Book = book1;
-
-        var book2 = new Book
-        {
-            Id = new Id(Guid.NewGuid()),
-            Title = "Unpopular Book",
-            Author = "Author",
-            RoomBook =
-            [
-                new RoomBook { Id = new Id(Guid.NewGuid()), Room = room, BookCount = 5, BorrowedCount = 1 }
-            ]
-        };
-        book2.RoomBook.First().Book = book2;
-
-        var book3 = new Book
-        {
-            Id = new Id(Guid.NewGuid()),
-            Title = "Mid Book",
-            Author = "Author",
-            RoomBook =
-            [
-                new RoomBook { Id = new Id(Guid.NewGuid()), Room = room, BookCount = 5, BorrowedCount = 5 },
-                new RoomBook { Id = new Id(Guid.NewGuid()), Room = room, BookCount = 3, BorrowedCount = 2 }
-            ]
-        };
-        foreach (var rb in book3.RoomBook) rb.Book = book3;
+        book1.RoomBook = [NewRoomBook(book1, room, bookCount: 5, borrowedCount: 10)];
+        book2.RoomBook = [NewRoomBook(book2, room, bookCount: 5, borrowedCount: 1)];
+        book3.RoomBook =
+        [
+            NewRoomBook(book3, room, bookCount: 5, borrowedCount: 5),
+            NewRoomBook(book3, room, bookCount: 3, borrowedCount: 2)
+        ];
 
         await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
@@ -527,9 +514,9 @@ public class SearchBooksCommandTests
         // Act
         var result = await command.Execute(request, CancellationToken.None);
 
-        // Assert
-        // Сортировка по сумме BorrowedCount: book2=1, book3=7, book1=10
-        Assert.That(result.Book.Select(b => b.Title), Is.EqualTo(new[] { "Unpopular Book", "Mid Book", "Popular Book" }));
+        // Assert: сумма BorrowedCount: book2=1, book3=7, book1=10
+        Assert.That(result.Book.Select(b => b.Title),
+            Is.EqualTo(new[] { "Unpopular Book", "Mid Book", "Popular Book" }));
     }
 
     [Test]
@@ -538,46 +525,20 @@ public class SearchBooksCommandTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var bookRepo = unitOfWork.GetRepository<Book>();
-        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+        var roomId = new Id(Guid.NewGuid());
+        var room = new Room { Id = roomId, Name = "Room" };
 
-        var room = new Room { Id = new Id(Guid.NewGuid()), Name = "Room" };
+        var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Popular Book", Author = "Author" };
+        var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Unpopular Book", Author = "Author" };
+        var book3 = new Book { Id = new Id(Guid.NewGuid()), Title = "Mid Book", Author = "Author" };
 
-        var book1 = new Book
-        {
-            Id = new Id(Guid.NewGuid()),
-            Title = "Popular Book",
-            Author = "Author",
-            RoomBook =
-            [
-                new RoomBook { Id = new Id(Guid.NewGuid()), Room = room, BookCount = 5, BorrowedCount = 10 }
-            ]
-        };
-        book1.RoomBook.First().Book = book1;
-
-        var book2 = new Book
-        {
-            Id = new Id(Guid.NewGuid()),
-            Title = "Unpopular Book",
-            Author = "Author",
-            RoomBook =
-            [
-                new RoomBook { Id = new Id(Guid.NewGuid()), Room = room, BookCount = 5, BorrowedCount = 1 }
-            ]
-        };
-        book2.RoomBook.First().Book = book2;
-
-        var book3 = new Book
-        {
-            Id = new Id(Guid.NewGuid()),
-            Title = "Mid Book",
-            Author = "Author",
-            RoomBook =
-            [
-                new RoomBook { Id = new Id(Guid.NewGuid()), Room = room, BookCount = 5, BorrowedCount = 5 },
-                new RoomBook { Id = new Id(Guid.NewGuid()), Room = room, BookCount = 3, BorrowedCount = 2 }
-            ]
-        };
-        foreach (var rb in book3.RoomBook) rb.Book = book3;
+        book1.RoomBook = [NewRoomBook(book1, room, bookCount: 5, borrowedCount: 10)];
+        book2.RoomBook = [NewRoomBook(book2, room, bookCount: 5, borrowedCount: 1)];
+        book3.RoomBook =
+        [
+            NewRoomBook(book3, room, bookCount: 5, borrowedCount: 5),
+            NewRoomBook(book3, room, bookCount: 3, borrowedCount: 2)
+        ];
 
         await bookRepo.AddRangeAsync([book1, book2, book3], CancellationToken.None);
 
@@ -588,7 +549,8 @@ public class SearchBooksCommandTests
         var result = await command.Execute(request, CancellationToken.None);
 
         // Assert
-        Assert.That(result.Book.Select(b => b.Title), Is.EqualTo(new[] { "Popular Book", "Mid Book", "Unpopular Book" }));
+        Assert.That(result.Book.Select(b => b.Title),
+            Is.EqualTo(["Popular Book", "Mid Book", "Unpopular Book"]));
     }
 
     [Test]

@@ -87,20 +87,24 @@ public class GetRoomQueryTests
             Id = roomId,
             Name = "Library Room",
             RoomBooks =
-        [
-            new() {
-                Id = new Id(Guid.NewGuid()),
-                BookCount = 10,
-                Book = new Book { Id = bookId1, Title = "Book 1" },
-                Room = new Room { Id = roomId, Name = "Library Room" }
-            },
-            new() {
-                Id = new Id(Guid.NewGuid()),
-                BookCount = 15,
-                Book = new Book { Id = bookId2, Title = "Book 2" },
-                Room = new Room { Id = roomId, Name = "Library Room" }
-            }
-        ]
+            [
+                new() {
+                    Id = new Id(Guid.NewGuid()),
+                    BookCount = 10,
+                    RoomId = roomId,
+                    BookId = bookId1,
+                    Book = new Book { Id = bookId1, Title = "Book 1" },
+                    Room = new Room { Id = roomId, Name = "Library Room" }
+                },
+                new() {
+                    Id = new Id(Guid.NewGuid()),
+                    BookCount = 15,
+                    RoomId = roomId,
+                    BookId = bookId2,
+                    Book = new Book { Id = bookId2, Title = "Book 2" },
+                    Room = new Room { Id = roomId, Name = "Library Room" }
+                }
+            ]
         };
         await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
@@ -116,7 +120,6 @@ public class GetRoomQueryTests
             Assert.That(result, Is.Not.Null);
             Assert.That(result!.Room[0].RoomBook, Has.Count.EqualTo(2));
 
-            // Используем ToList() для индексирования или First()/Last()
             var roomBookList = result.Room[0].RoomBook.ToList();
 
             Assert.That(roomBookList[0].BookCount, Is.EqualTo(10));

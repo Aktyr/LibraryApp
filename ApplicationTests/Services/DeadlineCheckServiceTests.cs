@@ -4,9 +4,9 @@
 public class DeadlineCheckServiceTests
 {
     private static Mock<IServiceProvider> CreateServiceProvider(
-        FakeUnitOfWork unitOfWork,
-        Mock<INotificationService>? notificationMock = null,
-        Mock<IAuditService>? auditMock = null)
+    FakeUnitOfWork unitOfWork,
+    Mock<INotificationService>? notificationMock = null,
+    Mock<IAuditService>? auditMock = null)
     {
         var scopeMock = new Mock<IServiceScope>();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
@@ -26,6 +26,13 @@ public class DeadlineCheckServiceTests
         serviceProviderMock
             .Setup(x => x.GetService(typeof(IAuditService)))
             .Returns(auditMock.Object);
+
+        // DeadlineCheckService резолвит TimeProvider из scope, чтобы исполь­зовать
+        // единый источник времени. В тестах — системное время, тесты не зависят
+        // от точной даты, только от разницы (deadline в прошлом/будущем).
+        serviceProviderMock
+            .Setup(x => x.GetService(typeof(TimeProvider)))
+            .Returns(TimeProvider.System);
 
         scopeMock.Setup(x => x.ServiceProvider).Returns(serviceProviderMock.Object);
         scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);

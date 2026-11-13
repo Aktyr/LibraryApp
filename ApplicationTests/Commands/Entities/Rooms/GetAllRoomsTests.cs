@@ -75,20 +75,26 @@ public class GetAllRoomsTests
             Id = roomId,
             Name = "Test Room",
             RoomBooks =
-        [
-            new() {
-                Id = new Id(Guid.NewGuid()),
-                BookCount = 5,
-                Book = new Book { Id = bookId1, Title = "Book 1" },
-                Room = new Room { Id = roomId, Name = "Test Room" }
-            },
-            new() {
-                Id = new Id(Guid.NewGuid()),
-                BookCount = 3,
-                Book = new Book { Id = bookId2, Title = "Book 2" },
-                Room = new Room { Id = roomId, Name = "Test Room" }
-            }
-        ]
+            [
+                new() {
+                    Id = new Id(Guid.NewGuid()),
+                    BookCount = 5,
+                    // FK обязательны: RoomBookDTOConverter через BaseConverter мапит
+                    // по имени и без FK оставляет Guid.Empty (Id — record, null пропускается).
+                    RoomId = roomId,
+                    BookId = bookId1,
+                    Book = new Book { Id = bookId1, Title = "Book 1" },
+                    Room = new Room { Id = roomId, Name = "Test Room" }
+                },
+                new() {
+                    Id = new Id(Guid.NewGuid()),
+                    BookCount = 3,
+                    RoomId = roomId,
+                    BookId = bookId2,
+                    Book = new Book { Id = bookId2, Title = "Book 2" },
+                    Room = new Room { Id = roomId, Name = "Test Room" }
+                }
+            ]
         };
         await roomRepo.AddRangeAsync([room], CancellationToken.None);
 
@@ -103,14 +109,11 @@ public class GetAllRoomsTests
         {
             Assert.That(result.Room, Has.Length.EqualTo(1));
 
-            var roomBookList = result.Room[0].RoomBook.ToList(); // Конвертируем в List для индексирования
-            if (roomBookList.Any())
-            {
-                Assert.That(roomBookList[0].RoomId, Is.EqualTo(roomId.Value));
-                Assert.That(roomBookList[0].BookId, Is.EqualTo(bookId1.Value));
-                Assert.That(roomBookList[1].RoomId, Is.EqualTo(roomId.Value));
-                Assert.That(roomBookList[1].BookId, Is.EqualTo(bookId2.Value));
-            }
+            var roomBookList = result.Room[0].RoomBook.ToList();
+            Assert.That(roomBookList[0].RoomId, Is.EqualTo(roomId.Value));
+            Assert.That(roomBookList[0].BookId, Is.EqualTo(bookId1.Value));
+            Assert.That(roomBookList[1].RoomId, Is.EqualTo(roomId.Value));
+            Assert.That(roomBookList[1].BookId, Is.EqualTo(bookId2.Value));
         });
     }
 

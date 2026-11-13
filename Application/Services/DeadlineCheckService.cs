@@ -141,4 +141,11 @@ public class DeadlineCheckService : BackgroundService, IService
         // даже если просрочек нет. Фиксация в одной транзакции с аудитом.
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
+
+    /// <remarks>
+    /// Оставлен для юнит-тестов, которые вызывают формулу через рефлексию по имени.
+    /// В рабочем коде используется <see cref="PenaltyCalculatorService.CalculateFromDays"/>.
+    /// </remarks>
+    private static decimal CalculatePenalty(int daysOverdue, PenaltySettings settings)
+        => PenaltyCalculatorService.CalculateFromDays(daysOverdue, settings);
 }

@@ -256,7 +256,7 @@ public class BookValidatorAsyncTests
         Assert.Multiple(() =>
         {
             Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Contains.Item("URL обложки должен быть абсолютным http/https-адресом"));
+            Assert.That(result.Errors, Contains.Item("URL изображения должен быть абсолютным http/https-адресом"));
         });
     }
 
@@ -285,7 +285,7 @@ public class BookValidatorAsyncTests
             Assert.Multiple(() =>
             {
                 Assert.That(result.IsValid, Is.False, $"URL '{unsafeUrl}' должен быть отклонён");
-                Assert.That(result.Errors, Contains.Item("URL обложки должен быть абсолютным http/https-адресом"));
+                Assert.That(result.Errors, Contains.Item("URL изображения должен быть абсолютным http/https-адресом"));
             });
         }
     }

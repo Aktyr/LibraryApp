@@ -141,7 +141,8 @@ public class RoomBookSynchronizationValidatorTests
         Assert.Multiple(() =>
         {
             Assert.That(result.IsValid, Is.False);
-            Assert.That(result.Errors, Contains.Item($"Нельзя установить общее количество (5) меньше уже выданных (7) для RoomBook Id {existingRoomBookId}"));
+            Assert.That(result.Errors, Contains.Item(
+                $"Нельзя установить общее количество (5) меньше суммы выданных (7) и забронированных (0) для RoomBook Id {existingRoomBookId}"));
         });
     }
 

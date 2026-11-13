@@ -17,6 +17,10 @@ public class UserRoomBookDTOConverterTests
             Id = new Id(entityId),
             BorrowDate = new DateTime(2024, 1, 1, 10, 0, 0),
             Deadline = new DateTime(2024, 1, 15, 10, 0, 0),
+            // FK задаются явно, как приходят из EF: конвертер мапит по имени
+            // и без FK оставляет Guid.Empty. Навигации дублируют FK для полноты графа.
+            UserId = new Id(userId),
+            RoomBookId = new Id(roomBookId),
             User = new User { Id = new Id(userId) },
             RoomBook = new RoomBook { Id = new Id(roomBookId) }
         };
@@ -28,10 +32,8 @@ public class UserRoomBookDTOConverterTests
         Assert.Multiple(() =>
         {
             Assert.That(dto.Id, Is.EqualTo(entityId));
-            // Проверяем только UserId и RoomBookId, так как они маппятся через кастомную логику
             Assert.That(dto.UserId, Is.EqualTo(userId));
             Assert.That(dto.RoomBookId, Is.EqualTo(roomBookId));
-            // Даты не проверяем, так как имена свойств отличаются (BorrowDate vs Borrow)
         });
     }
 

@@ -71,12 +71,18 @@ public class RoomDTOConverterTests
                 new() {
                     Id = new Id(Guid.NewGuid()),
                     BookCount = 5,
+                    // FK обязательны: RoomBookDTOConverter через BaseConverter
+                    // мапит по имени, без FK в DTO уходит Guid.Empty.
+                    RoomId = new Id(roomId),
+                    BookId = new Id(bookId1),
                     Book = new Book { Id = new Id(bookId1), Title = "Book 1" },
                     Room = new Room { Id = new Id(roomId) }
                 },
                 new() {
                     Id = new Id(Guid.NewGuid()),
                     BookCount = 3,
+                    RoomId = new Id(roomId),
+                    BookId = new Id(bookId2),
                     Book = new Book { Id = new Id(bookId2), Title = "Book 2" },
                     Room = new Room { Id = new Id(roomId) }
                 }
