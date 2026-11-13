@@ -47,6 +47,22 @@ public class BorrowRequestApiClient(HttpClient http) : IBorrowRequestApiClient
         return await ReadAsync(resp, ct);
     }
 
+    public async Task<BasicCreateDeleteResponse> IssueAsync(
+        Guid borrowRequestId, IssueBorrowRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync(
+            $"{BasePath}/{borrowRequestId}/issue", request, ct);
+        return await ReadAsync(resp, ct);
+    }
+
+    public async Task<BasicCreateDeleteResponse> CancelAsync(
+        Guid borrowRequestId, CancelBorrowRequest request, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync(
+            $"{BasePath}/{borrowRequestId}/cancel", request, ct);
+        return await ReadAsync(resp, ct);
+    }
+
     private static async Task<BasicCreateDeleteResponse> ReadAsync(
         HttpResponseMessage resp, CancellationToken ct)
     {

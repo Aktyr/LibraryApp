@@ -49,11 +49,11 @@ public class GetBorrowRequestsCommand(IUnitOfWork unitOfWork)
                     br.CreatedAt,
                     br.ProcessedAt,
                     br.ProcessedByUserId,
-                    // ProcessedByUser — nullable navigation. EF транслирует в LEFT JOIN,
-                    // все три поля null при отсутствии обработчика.
                     ProcessedByLastName = br.ProcessedByUser != null ? br.ProcessedByUser.LastName : null,
                     ProcessedByFirstName = br.ProcessedByUser != null ? br.ProcessedByUser.FirstName : null,
                     ProcessedByMiddleName = br.ProcessedByUser != null ? br.ProcessedByUser.MiddleName : null,
+                    br.ExpiresAt,
+                    br.PickedUpAt,
                     br.Comment
                 });
         }, cancellationToken);
@@ -73,6 +73,8 @@ public class GetBorrowRequestsCommand(IUnitOfWork unitOfWork)
             ProcessedByFullName: x.ProcessedByLastName is null
                 ? null
                 : JoinName(x.ProcessedByLastName, x.ProcessedByFirstName, x.ProcessedByMiddleName),
+            ExpiresAt: x.ExpiresAt,
+            PickedUpAt: x.PickedUpAt,
             Comment: x.Comment
         )).ToArray();
 

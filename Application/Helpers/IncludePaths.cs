@@ -34,6 +34,7 @@ public static class IncludePaths
     public static class BorrowRequest
     {
         public const string User = nameof(Core.Entities.BorrowRequest.User);
+        public const string RoomBook = nameof(Core.Entities.BorrowRequest.RoomBook);
         public const string RoomBookBook = nameof(Core.Entities.BorrowRequest.RoomBook) + "." + nameof(Core.Entities.RoomBook.Book);
         public const string RoomBookRoom = nameof(Core.Entities.BorrowRequest.RoomBook) + "." + nameof(Core.Entities.RoomBook.Room);
         public const string ProcessedByUser = nameof(Core.Entities.BorrowRequest.ProcessedByUser);

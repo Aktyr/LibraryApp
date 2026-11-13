@@ -2,13 +2,14 @@
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @attribute [Authorize]
 @using BlazorWeb.Client.Services.Interfaces
+@using BlazorWeb.Client.Shared.CharCounter
 @using BlazorWeb.Components.Shared.DataGrid
 @using LibApp.Core.DTO.Borrowing
 @using LibApp.Core.DTO.Entities
 @using LibApp.Core.Enums
+@using LibApp.Core.Policies
 @using LibApp.Core.Records
 @using Microsoft.AspNetCore.Authorization
-@using BlazorWeb.Client.Shared.CharCounter
 @inject IUserApiClient UserClient
 @inject IBorrowRequestApiClient BorrowRequestClient
 @inject AuthenticationStateProvider AuthProvider
@@ -100,7 +101,8 @@ else
                       Items="myRequests"
                       PageSize="10"
                       Columns="RequestColumns"
-                      Hint="<b>Статус «Выдана»</b> — книга на руках, см. раздел «Мои активные книги» выше | <b>Статус «Возвращена»</b> — книга возвращена, запись закрыта"
+                      Actions="RequestActions"
+                      Hint="<b>Отменить</b> — доступно для ожидающих и забронированных заявок | <b>Забронирована</b> — книга ждёт вас в библиотеке до указанного срока | <b>Выдана</b> — книга на руках, см. раздел «Мои активные книги»"
                       SelectionMode="DataGridSelectionMode.Multiple" />
         }
     </div>
@@ -202,17 +204,28 @@ else
         {
             Title = "Статус",
             Width = 140,
-            Value = r => StatusName(r.Status),
-            FilterText = r => StatusName(r.Status),
+            Value = r => r.Status.DisplayName(),
+            FilterText = r => r.Status.DisplayName(),
             Template = item => b =>
             {
-                var (bg, fg, label) = StatusStyle(item.Status);
+                var (bg, fg) = BorrowRequestStatusStyle.Get(item.Status);
                 b.OpenElement(0, "span");
                 b.AddAttribute(1, "style",
                     $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
-                b.AddContent(2, label);
+                b.AddContent(2, item.Status.DisplayName());
                 b.CloseElement();
             }
+        },
+        new()
+        {
+            // Только у Approved. Читатель видит, до какого момента книга ждёт его в библиотеке.
+            Title = "Забрать до",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = r => r.ExpiresAt,
+            FilterText = r => r.ExpiresAt?.ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0,
+                item.ExpiresAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")
         },
         new()
         {
@@ -230,6 +243,21 @@ else
             Width = 260,
             Value = r => r.Comment ?? "",
             FilterText = r => r.Comment ?? ""
+        }
+    };
+
+    private List<DataGridAction<BorrowRequestDTO>>? _requestActions;
+    private List<DataGridAction<BorrowRequestDTO>> RequestActions => _requestActions ??= new()
+    {
+        new()
+        {
+            Label = "Отменить заявку",
+            Icon = "🚫",
+            MinSelection = 1,
+            CanExecute = s => s.Count == 1
+                && (s[0].Status == BorrowRequestStatus.Pending
+                    || s[0].Status == BorrowRequestStatus.Approved),
+            Handler = s => CancelRequestAsync(s[0])
         }
     };
 
@@ -361,25 +389,7 @@ else
         [Required(ErrorMessage = "Контактная информация обязательна")]
         [StringLength(UserPolicy.MaxContactInfoLength, ErrorMessage = "Не более 200 символов")]
         public string ContactInfo { get; set; } = "";
-    }
-
-    private static string StatusName(BorrowRequestStatus s) => s switch
-    {
-        BorrowRequestStatus.Pending => "Ожидает",
-        BorrowRequestStatus.Approved => "Выдана",
-        BorrowRequestStatus.Rejected => "Отклонена",
-        BorrowRequestStatus.Completed => "Возвращена",
-        _ => s.ToString()
-    };
-
-    private static (string Bg, string Fg, string Label) StatusStyle(BorrowRequestStatus s) => s switch
-    {
-        BorrowRequestStatus.Pending => ("#fff3d9", "#8a4b00", "Ожидает"),
-        BorrowRequestStatus.Approved => ("#e6f7ff", "#005a9e", "Выдана"),
-        BorrowRequestStatus.Rejected => ("#fde7e9", "#a30000", "Отклонена"),
-        BorrowRequestStatus.Completed => ("#f3f3f3", "#555", "Возвращена"),
-        _ => ("#f3f3f3", "#555", s.ToString())
-    };
+    }    
 
     private async Task LoadAsync()
     {
@@ -416,6 +426,34 @@ else
         {
             isLoading = false;
             await InvokeAsync(StateHasChanged);
+        }
+    }
+    private async Task CancelRequestAsync(BorrowRequestDTO request)
+    {
+        // Текст зависит от статуса: для Pending читатель отменяет ожидание,
+        // для Approved — освобождает забронированный экземпляр.
+        var message = request.Status == BorrowRequestStatus.Approved
+            ? $"Отменить бронь на книгу «{request.BookTitle}»?\n\nЗабронированный экземпляр вернётся в фонд, и его сможет взять другой читатель."
+            : $"Отменить заявку на книгу «{request.BookTitle}»?";
+
+        var confirmed = await Confirm.AskAsync(
+            message,
+            title: "Отмена заявки",
+            confirmText: "Отменить заявку",
+            cancelText: "Не отменять");
+
+        if (!confirmed) return;
+
+        try
+        {
+            var resp = await BorrowRequestClient.CancelAsync(
+                request.Id, new CancelBorrowRequest());
+            Toast.ShowSuccess(resp.Message);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка отмены: {ex.Message}");
         }
     }
 }

@@ -63,7 +63,8 @@ public class SearchBooksCommand(IUnitOfWork unitOfWork)
                     RoomId = rb.RoomId,
                     BookId = rb.BookId,
                     rb.BookCount,
-                    rb.BorrowedCount
+                    rb.BorrowedCount,
+                    rb.ReservedCount
                 }).ToList()
             });
         }, ct);
@@ -71,7 +72,8 @@ public class SearchBooksCommand(IUnitOfWork unitOfWork)
         var dtos = raw.Select(x => new BookDTO(
             x.Id.Value, x.Title, x.Author, x.Year, x.Publisher, x.Genre,
             x.RoomBook.Select(rb => new RoomBookDTO(
-                rb.Id.Value, rb.RoomId.Value, rb.BookId.Value, rb.BookCount, rb.BorrowedCount
+                rb.Id.Value, rb.RoomId.Value, rb.BookId.Value,
+                rb.BookCount, rb.BorrowedCount, rb.ReservedCount
             )).ToList(),
             x.IsDiscarded, x.Description,
             x.Images.Select(i => new BookImageDTO(

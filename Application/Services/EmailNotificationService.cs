@@ -103,5 +103,42 @@ public class EmailNotificationService(
 
         await SendEmailAsync(user.Email, subject, body, cancellationToken);
     }
+    public async Task SendBorrowRequestApprovedAsync(
+        User user,
+        BorrowRequest borrowRequest,
+        IReadOnlyCollection<string> warnings,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNull(borrowRequest);
+        ArgumentNullException.ThrowIfNull(warnings);
 
+        // ExpiresAt заполняется только при Approve. Если сюда попала заявка без него —
+        // нарушен инвариант статуса, письмо «заберите до null» бессмысленно.
+        var expiresAt = borrowRequest.ExpiresAt
+            ?? throw new InvalidOperationException(
+                $"Approved borrow request {borrowRequest.Id.Value} has no ExpiresAt");
+
+        var bookTitle = borrowRequest.RoomBook.Book.Title;
+        var subject = "Заявка на книгу одобрена";
+
+        var body = new StringBuilder();
+        body.AppendLine($"Здравствуйте, {user.FullName}!");
+        body.AppendLine();
+        body.AppendLine($"Ваша заявка на книгу \"{bookTitle}\" одобрена.");
+        body.AppendLine($"Заберите книгу до {expiresAt:dd.MM.yyyy HH:mm}.");
+        body.AppendLine();
+
+        if (warnings.Count > 0)
+        {
+            body.AppendLine("Обратите внимание:");
+            foreach (var warning in warnings)
+                body.AppendLine($"- {warning}");
+            body.AppendLine();
+        }
+
+        body.AppendLine("С уважением, Библиотека.");
+
+        await SendEmailAsync(user.Email, subject, body.ToString(), cancellationToken);
+    }
 }

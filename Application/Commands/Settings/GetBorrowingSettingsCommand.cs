@@ -10,7 +10,9 @@ public class GetBorrowingSettingsCommand(IOptionsSnapshot<BorrowingSettings> set
             s.MaxBooksPerUser,
             s.MaxExtendDeadlineDays,
             s.MinBorrowDays,
-            s.MaxBorrowDays);
+            s.MaxBorrowDays,
+            s.ReserveHoldHours,
+            s.MaxActiveRequestsPerUser);
 
         return Task.FromResult(
             new BorrowingSettingsResponse("Ok", "Borrowing settings retrieved successfully.", dto));

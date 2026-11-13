@@ -19,6 +19,12 @@ namespace LibApp.Application.Services;
 /// </summary>
 public sealed class SmtpClientWrapper : ISmtpClient
 {
+    // Таймаут SMTP-операций. Дефолт MailKit — 120 секунд: при недоступном SMTP
+    // ConnectAsync висит всё это время, HTTP-запрос из UI не возвращается,
+    // модалка «Одобрить заявку» крутится. 15 секунд — баланс между «успеть
+    // при медленном, но живом SMTP» и «не блокировать UI на минуты».
+    private const int SmtpTimeoutMs = 15_000;
+
     private readonly NotificationSettings _settings;
 
     public SmtpClientWrapper(IOptions<NotificationSettings> settings)
@@ -32,7 +38,10 @@ public sealed class SmtpClientWrapper : ISmtpClient
 
         var mimeMessage = MimeMessage.CreateFromMailMessage(message);
 
-        using var client = new MailKitSmtpClient();
+        using var client = new MailKitSmtpClient
+        {
+            Timeout = SmtpTimeoutMs
+        };
 
         try
         {
@@ -60,8 +69,6 @@ public sealed class SmtpClientWrapper : ISmtpClient
         }
         catch (MailKitAuthException ex)
         {
-            // SmtpException не имеет 3-аргументного конструктора (statusCode, message, inner).
-            // Сохраняем message и inner: они нужны для логов и диагностики SMTP-проблем.
             throw new NetSmtpException(ex.Message, ex);
         }
         catch (MailKitCommandException ex)
@@ -89,6 +96,13 @@ public sealed class SmtpClientWrapper : ISmtpClient
         catch (MailKitNotAuthenticatedException ex)
         {
             throw new NetSmtpException(ex.Message, ex);
+        }
+        catch (OperationCanceledException)
+        {
+            // Сработал Timeout или внешний CancellationToken.
+            // Оборачиваем в SmtpException, чтобы вызывающий код и тесты не различали
+            // «отмена клиентом» и «сервер не ответил» — для UX это один сценарий.
+            throw new NetSmtpException("SMTP operation timed out or was cancelled");
         }
     }
 

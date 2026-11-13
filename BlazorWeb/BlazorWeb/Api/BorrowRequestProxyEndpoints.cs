@@ -13,19 +13,16 @@ public static class BorrowRequestProxyEndpoints
         group.MapGet("/", GetAllAsync);
         group.MapPost("/{id:guid}/approve", ApproveAsync);
         group.MapPost("/{id:guid}/reject", RejectAsync);
+        group.MapPost("/{id:guid}/issue", IssueAsync);
+        group.MapPost("/{id:guid}/cancel", CancelAsync);
     }
 
-    // Создание заявки читателем
-    // UserId подставит WebAPI из JWT; в теле его нет.
     private static Task<IResult> CreateAsync(
         CreateBorrowRequest request, IHttpClientFactory httpFactory, CancellationToken ct)
         => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post,
             "/api/borrow-requests", request, ct);
 
-    // Мои заявки
     // userId из query игнорируется: WebAPI берёт его из JWT.
-    // BFF пробрасывает остальные фильтры (status, bookId, roomId, даты, пагинация),
-    // но не userId — иначе клиент мог бы подменить цель на /my.
     private static Task<IResult> GetMyAsync(
         BorrowRequestStatus? status,
         Guid? bookId,
@@ -51,10 +48,6 @@ public static class BorrowRequestProxyEndpoints
             $"/api/borrow-requests/my{qs}", null, ct);
     }
 
-    // Список для библиотекаря 
-    // userId проходит через прокси — это легитимно для страницы /users/{id}.
-    // Доступ к общему эндпоинту закрыт на WebAPI ролью Librarian/Admin,
-    // прокси только повторяет `RequireAuthorization` выше.
     private static Task<IResult> GetAllAsync(
         Guid? userId,
         Guid? roomId,
@@ -86,19 +79,29 @@ public static class BorrowRequestProxyEndpoints
             $"/api/borrow-requests{qs}", null, ct);
     }
 
-    // Одобрение 
-    // id из route перезаписывает BorrowRequestId в теле на стороне WebAPI.
-    // Тело содержит только BorrowDays — целевая заявка однозначна из URL.
+    // Тело содержит только специфичные для действия поля: целевая заявка
+    // однозначна из URL, BorrowRequestId в body перезаписывается на стороне WebAPI.
     private static Task<IResult> ApproveAsync(
         Guid id, ApproveBorrowRequest request,
         IHttpClientFactory httpFactory, CancellationToken ct)
         => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post,
             $"/api/borrow-requests/{id}/approve", request, ct);
 
-    // Отклонение
     private static Task<IResult> RejectAsync(
         Guid id, RejectBorrowRequest request,
         IHttpClientFactory httpFactory, CancellationToken ct)
         => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post,
             $"/api/borrow-requests/{id}/reject", request, ct);
+
+    private static Task<IResult> IssueAsync(
+        Guid id, IssueBorrowRequest request,
+        IHttpClientFactory httpFactory, CancellationToken ct)
+        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post,
+            $"/api/borrow-requests/{id}/issue", request, ct);
+
+    private static Task<IResult> CancelAsync(
+        Guid id, CancelBorrowRequest request,
+        IHttpClientFactory httpFactory, CancellationToken ct)
+        => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Post,
+            $"/api/borrow-requests/{id}/cancel", request, ct);
 }

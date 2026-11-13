@@ -16,13 +16,17 @@ public class RoomBookConfiguration : IEntityTypeConfiguration<RoomBook>
                .HasForeignKey(rb => rb.BookId)
                .OnDelete(DeleteBehavior.Cascade);
 
-        // Инварианты БД: код уже держит их в командах, но прямой SQL или баг
-        // в команде не должны ломать данные. Проверка на уровне БД — последняя линия защиты.
+        // Инварианты БД. Старое ограничение BorrowedCount <= BookCount заменено на более
+        // строгое BorrowedCount + ReservedCount <= BookCount: при ReservedCount >= 0
+        // оно влечёт старое, держать оба одновременно нет смысла.
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("CK_RoomBook_BookCount_NonNegative", "\"BookCount\" >= 0");
             t.HasCheckConstraint("CK_RoomBook_BorrowedCount_NonNegative", "\"BorrowedCount\" >= 0");
-            t.HasCheckConstraint("CK_RoomBook_BorrowedCount_LE_BookCount", "\"BorrowedCount\" <= \"BookCount\"");
+            t.HasCheckConstraint("CK_RoomBook_ReservedCount_NonNegative", "\"ReservedCount\" >= 0");
+            t.HasCheckConstraint(
+                "CK_RoomBook_BorrowedPlusReserved_LE_BookCount",
+                "(\"BorrowedCount\" + \"ReservedCount\") <= \"BookCount\"");
         });
 
         builder.Ignore(rb => rb.AvailableCount);

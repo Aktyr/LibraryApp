@@ -21,9 +21,11 @@
                     @bind="statusFilter" @bind:after="LoadAsync">
                 <option value="">Все</option>
                 <option value="@BorrowRequestStatus.Pending">Ожидают</option>
-                <option value="@BorrowRequestStatus.Approved">Выданы</option>
+                <option value="@BorrowRequestStatus.Approved">Забронированы</option>
                 <option value="@BorrowRequestStatus.Rejected">Отклонены</option>
-                <option value="@BorrowRequestStatus.Completed">Возвращены</option>
+                <option value="@BorrowRequestStatus.Cancelled">Отменены</option>
+                <option value="@BorrowRequestStatus.Expired">Истекли</option>
+                <option value="@BorrowRequestStatus.Completed">Выданы</option>
             </select>
         </div>
     </ChildContent>
@@ -46,6 +48,10 @@ else if (requests != null)
             <small class="text-muted d-block">Ожидают</small>
             <span class="fs-5 fw-semibold @(pendingCount > 0 ? "text-warning" : "")">@pendingCount</span>
         </div>
+        <div>
+            <small class="text-muted d-block">Забронированы</small>
+            <span class="fs-5 fw-semibold @(approvedCount > 0 ? "text-info" : "")">@approvedCount</span>
+        </div>
     </div>
 
     @if (requests.Count == 0)
@@ -59,13 +65,14 @@ else if (requests != null)
                   PageSize="20"
                   Columns="Columns"
                   Actions="actions"
-                  Hint="<b>Одобрить</b> — создать выдачу на выбранный срок | <b>Отклонить</b> — обязательный комментарий | <b>Профиль читателя</b> — история выдач и штрафов | <b>Фильтр по статусу</b> — в шапке страницы"
+                  Hint="<b>Одобрить</b> — забронировать экземпляр на ReserveHoldHours | <b>Оформить выдачу</b> — фактическая выдача по брони (читатель пришёл) | <b>Отклонить</b> — обязательный комментарий | <b>Профиль читателя</b> — история выдач и штрафов"
                   SelectionMode="DataGridSelectionMode.Single" />
     }
 }
 
-@* Фильтр по статусу — на сервере, поэтому вынесен в шапку, а не в колонку DataGrid:
-   локальный фильтр грида работал бы по уже отфильтрованному набору и вводил в заблуждение. *@
+@* Фильтр по статусу — на сервере, поэтому в шапке, а не в колонке DataGrid. *@
+
+@* Модалка одобрения: только подтверждение, срок брони определяется настройкой ReserveHoldHours. *@
 @if (approvingRequest != null)
 {
     <div class="modal-backdrop" @onclick="CloseApproveDialog"></div>
@@ -77,16 +84,10 @@ else if (requests != null)
             · Комната: <strong>@approvingRequest.RoomName</strong>
         </p>
 
-        <div class="mb-3">
-            <label class="form-label">Вернуть до</label>
-            <input type="date" class="form-control"
-                   style="max-width: 200px;"
-                   min="@MinBorrowDateIso" max="@MaxBorrowDateIso"
-                   @bind="approveDueDate" />
-            <small class="text-muted">
-                Срок: <strong>@BorrowDaysComputed</strong> дн.
-                (от @MinBorrowDays до @MaxBorrowDays, сегодня @DateTime.Today.ToString("dd.MM.yyyy"))
-            </small>
+        <div class="alert alert-info py-2 mb-3">
+            Экземпляр будет забронирован на <strong>@ReserveHoldHours ч.</strong>.
+            Читатель должен забрать книгу до истечения срока, иначе бронь автоматически снимется.
+            Фактическая выдача оформляется отдельно, когда читатель придёт.
         </div>
 
         @if (!string.IsNullOrEmpty(approveError))
@@ -96,9 +97,9 @@ else if (requests != null)
 
         <div>
             <button class="btn btn-success"
-                    disabled="@(!CanSubmitApprove || approveSaving)"
+                    disabled="@approveSaving"
                     @onclick="SubmitApproveAsync">
-                @(approveSaving ? "Одобрение..." : "Одобрить и выдать")
+                @(approveSaving ? "Одобрение..." : "Одобрить")
             </button>
             <button class="btn btn-secondary ms-2" @onclick="CloseApproveDialog" disabled="@approveSaving">
                 Отмена
@@ -107,6 +108,55 @@ else if (requests != null)
     </div>
 }
 
+@* Модалка оформления выдачи: срок возврата определяется здесь, как в прямой выдаче в UserProfile. *@
+@if (issuingRequest != null)
+{
+    <div class="modal-backdrop" @onclick="CloseIssueDialog"></div>
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
+        <h3>Оформить выдачу</h3>
+        <p class="mb-2"><strong>@issuingRequest.BookTitle</strong> — @issuingRequest.BookAuthor</p>
+        <p class="mb-3 text-muted small">
+            Читатель: <strong>@issuingRequest.UserFullName</strong>
+            · Комната: <strong>@issuingRequest.RoomName</strong>
+        </p>
+        @if (issuingRequest.ExpiresAt.HasValue)
+        {
+            <p class="mb-3 text-muted small">
+                Бронь действует до <strong>@issuingRequest.ExpiresAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</strong>
+            </p>
+        }
+
+        <div class="mb-3">
+            <label class="form-label">Вернуть до</label>
+            <input type="date" class="form-control"
+                   style="max-width: 200px;"
+                   min="@MinBorrowDateIso" max="@MaxBorrowDateIso"
+                   @bind="issueDueDate" />
+            <small class="text-muted">
+                Срок: <strong>@IssueDaysComputed</strong> дн.
+                (от @MinBorrowDays до @MaxBorrowDays, сегодня @DateTime.Today.ToString("dd.MM.yyyy"))
+            </small>
+        </div>
+
+        @if (!string.IsNullOrEmpty(issueError))
+        {
+            <div class="alert alert-danger py-2 mb-3" style="white-space: pre-line;">@issueError</div>
+        }
+
+        <div>
+            <button class="btn btn-primary"
+                    disabled="@(!CanSubmitIssue || issueSaving)"
+                    @onclick="SubmitIssueAsync">
+                @(issueSaving ? "Выдача..." : "Оформить выдачу")
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="CloseIssueDialog" disabled="@issueSaving">
+                Отмена
+            </button>
+        </div>
+    </div>
+}
+
+@* Модалка отклонения. *@
 @if (rejectingRequest != null)
 {
     <div class="modal-backdrop" @onclick="CloseRejectDialog"></div>
@@ -153,21 +203,27 @@ else if (requests != null)
     private BorrowingSettingsDTO? settings;
     private int MinBorrowDays => settings?.MinBorrowDays ?? 1;
     private int MaxBorrowDays => settings?.MaxBorrowDays ?? 30;
+    private int ReserveHoldHours => settings?.ReserveHoldHours ?? 48;
 
     private int pendingCount => requests?.Count(r => r.Status == BorrowRequestStatus.Pending) ?? 0;
+    private int approvedCount => requests?.Count(r => r.Status == BorrowRequestStatus.Approved) ?? 0;
 
     private BorrowRequestDTO? approvingRequest;
-    private DateTime approveDueDate = DateTime.Today.AddDays(14);
     private string? approveError;
     private bool approveSaving;
 
+    private BorrowRequestDTO? issuingRequest;
+    private DateTime issueDueDate = DateTime.Today.AddDays(14);
+    private string? issueError;
+    private bool issueSaving;
+
     private string MinBorrowDateIso => DateTime.Today.ToString("yyyy-MM-dd");
     private string MaxBorrowDateIso => DateTime.Today.AddDays(MaxBorrowDays).ToString("yyyy-MM-dd");
-    private int BorrowDaysComputed => (approveDueDate.Date - DateTime.Today).Days;
-    private bool CanSubmitApprove =>
-        approvingRequest != null
-        && BorrowDaysComputed >= MinBorrowDays
-        && BorrowDaysComputed <= MaxBorrowDays;
+    private int IssueDaysComputed => (issueDueDate.Date - DateTime.Today).Days;
+    private bool CanSubmitIssue =>
+        issuingRequest != null
+        && IssueDaysComputed >= MinBorrowDays
+        && IssueDaysComputed <= MaxBorrowDays;
 
     private BorrowRequestDTO? rejectingRequest;
     private string rejectComment = "";
@@ -204,8 +260,8 @@ else if (requests != null)
         {
             Title = "Статус",
             Width = 130,
-            Value = r => StatusName(r.Status),
-            FilterText = r => StatusName(r.Status),
+            Value = r => r.Status.DisplayName(),
+            FilterText = r => r.Status.DisplayName(),
             Template = item => b =>
             {
                 var (bg, fg, label) = StatusStyle(item.Status);
@@ -227,13 +283,25 @@ else if (requests != null)
         },
         new()
         {
-            Title = "Обработана",
+            // Только у Approved. Показывает, до какого момента читатель должен прийти.
+            Title = "Бронь до",
             Width = 150,
             FilterKind = FilterKind.Date,
-            Value = r => r.ProcessedAt,
-            FilterText = r => r.ProcessedAt?.ToString("yyyy-MM-dd") ?? "",
+            Value = r => r.ExpiresAt,
+            FilterText = r => r.ExpiresAt?.ToString("yyyy-MM-dd") ?? "",
             Template = item => b => b.AddContent(0,
-                item.ProcessedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")
+                item.ExpiresAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")
+        },
+        new()
+        {
+            // Только у Completed. Дата фактической выдачи книги читателю.
+            Title = "Выдана",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = r => r.PickedUpAt,
+            FilterText = r => r.PickedUpAt?.ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0,
+                item.PickedUpAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")
         },
         new()
         {
@@ -277,6 +345,14 @@ else if (requests != null)
             MinSelection = 1,
             CanExecute = s => s.Count == 1 && s[0].Status == BorrowRequestStatus.Pending,
             Handler = s => OpenApproveDialogAsync(s[0])
+        },
+        new()
+        {
+            Label = "Оформить выдачу",
+            Icon = "📖",
+            MinSelection = 1,
+            CanExecute = s => s.Count == 1 && s[0].Status == BorrowRequestStatus.Approved,
+            Handler = s => OpenIssueDialogAsync(s[0])
         },
         new()
         {
@@ -341,8 +417,6 @@ else if (requests != null)
     private async Task OpenApproveDialogAsync(BorrowRequestDTO request)
     {
         approvingRequest = request;
-        // Дефолт — полный максимальный срок: библиотекарь чаще всего выдаёт на максимум.
-        approveDueDate = DateTime.Today.AddDays(MaxBorrowDays);
         approveError = null;
         await InvokeAsync(StateHasChanged);
     }
@@ -355,7 +429,7 @@ else if (requests != null)
 
     private async Task SubmitApproveAsync()
     {
-        if (!CanSubmitApprove || approvingRequest == null) return;
+        if (approvingRequest == null) return;
 
         approveSaving = true;
         approveError = null;
@@ -363,7 +437,7 @@ else if (requests != null)
         {
             var resp = await BorrowRequestClient.ApproveAsync(
                 approvingRequest.Id,
-                new ApproveBorrowRequest { BorrowDays = BorrowDaysComputed });
+                new ApproveBorrowRequest());
 
             Toast.ShowSuccess(resp.Message);
             CloseApproveDialog();
@@ -376,6 +450,48 @@ else if (requests != null)
         finally
         {
             approveSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OpenIssueDialogAsync(BorrowRequestDTO request)
+    {
+        issuingRequest = request;
+        // Дефолт — полный максимальный срок: библиотекарь чаще всего выдаёт на максимум.
+        issueDueDate = DateTime.Today.AddDays(MaxBorrowDays);
+        issueError = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseIssueDialog()
+    {
+        issuingRequest = null;
+        issueError = null;
+    }
+
+    private async Task SubmitIssueAsync()
+    {
+        if (!CanSubmitIssue || issuingRequest == null) return;
+
+        issueSaving = true;
+        issueError = null;
+        try
+        {
+            var resp = await BorrowRequestClient.IssueAsync(
+                issuingRequest.Id,
+                new IssueBorrowRequest { BorrowDays = IssueDaysComputed });
+
+            Toast.ShowSuccess(resp.Message);
+            CloseIssueDialog();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            issueError = ex.Message;
+        }
+        finally
+        {
+            issueSaving = false;
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -420,22 +536,26 @@ else if (requests != null)
             await InvokeAsync(StateHasChanged);
         }
     }
-    // todo вынести в политики
+    // todo : вынести в отдельный класс, чтобы не дублировать
     private static string StatusName(BorrowRequestStatus s) => s switch
     {
         BorrowRequestStatus.Pending => "Ожидает",
-        BorrowRequestStatus.Approved => "Выдана",
+        BorrowRequestStatus.Approved => "Забронирована",
         BorrowRequestStatus.Rejected => "Отклонена",
-        BorrowRequestStatus.Completed => "Возвращена",
+        BorrowRequestStatus.Cancelled => "Отменена",
+        BorrowRequestStatus.Expired => "Истекла",
+        BorrowRequestStatus.Completed => "Выдана",
         _ => s.ToString()
     };
 
     private static (string Bg, string Fg, string Label) StatusStyle(BorrowRequestStatus s) => s switch
     {
         BorrowRequestStatus.Pending => ("#fff3d9", "#8a4b00", "Ожидает"),
-        BorrowRequestStatus.Approved => ("#e6f7ff", "#005a9e", "Выдана"),
+        BorrowRequestStatus.Approved => ("#e6f7ff", "#005a9e", "Забронирована"),
         BorrowRequestStatus.Rejected => ("#fde7e9", "#a30000", "Отклонена"),
-        BorrowRequestStatus.Completed => ("#f3f3f3", "#555", "Возвращена"),
+        BorrowRequestStatus.Cancelled => ("#f3f3f3", "#555", "Отменена"),
+        BorrowRequestStatus.Expired => ("#f3f3f3", "#888", "Истекла"),
+        BorrowRequestStatus.Completed => ("#e6f7eb", "#0a7f2e", "Выдана"),
         _ => ("#f3f3f3", "#555", s.ToString())
     };
 }

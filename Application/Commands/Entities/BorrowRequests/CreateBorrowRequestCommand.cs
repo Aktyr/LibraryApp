@@ -3,13 +3,16 @@
 /// <summary>
 /// Создаёт заявку на выдачу от имени текущего пользователя.
 /// Полная валидация выдачи (лимиты, просрочки, срок) выполняется при одобрении
-/// в <c>IBorrowingService</c>: между созданием и одобрением состояние читателя может
+/// и оформлении выдачи: между созданием и одобрением состояние читателя может
 /// измениться, дублирование проверки в двух местах — источник расхождений.
+/// Anti-spam: не более MaxActiveRequestsPerUser активных заявок на читателя
+/// и не более одной заявки на конкретный RoomBook (Pending + Approved).
 /// </summary>
 public class CreateBorrowRequestCommand(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
     TimeProvider timeProvider,
+    IOptionsSnapshot<BorrowingSettings> settings,
     IAuditService auditService)
     : AuditedCreateOrUpdateCommand<CreateBorrowRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
@@ -51,18 +54,40 @@ public class CreateBorrowRequestCommand(
                 ExceptionDetails = ["Нет доступных экземпляров книги в этой комнате"]
             };
 
-        // Pending-дубликат. Идемпотентности здесь нет: если читатель уже запросил эту книгу,
-        // вторая заявка бессмысленна. Дублирующий guard на уровне БД — частичный
-        // unique-индекс UX_BorrowRequest_Pending, он же защищает от race condition.
+        // Anti-spam: общий лимит активных заявок. Approved считается активной —
+        // экземпляр уже зарезервирован, читатель может забрать его. Считаем одним
+        // запросом, без материализации сущностей: только количество.
+        var activeCount = await borrowRequestRepo.CountAsync(
+            br => br.UserId == userId
+                && (br.Status == BorrowRequestStatus.Pending
+                    || br.Status == BorrowRequestStatus.Approved),
+            cancellationToken);
+
+        var maxActive = settings.Value.MaxActiveRequestsPerUser;
+        if (activeCount >= maxActive)
+            throw new LibValidationException
+            {
+                ExceptionDetails =
+                [
+                    $"У вас уже {activeCount} из {maxActive} активных заявок. " +
+                    "Дождитесь решения по текущим или отмените одну из них."
+                ]
+            };
+
+        // Дубликат на конкретную книгу. Проверяем Pending + Approved:
+        // Approved — уже активная бронь, новую заявку на тот же экземпляр нельзя.
+        // Дублирующий guard на уровне БД — partial unique index по (UserId, RoomBookId)
+        // где Status IN ('Pending', 'Approved'); он же защищает от race condition.
         if (await borrowRequestRepo.AnyAsync(
                 br => br.UserId == userId
                     && br.RoomBookId == roomBookId
-                    && br.Status == BorrowRequestStatus.Pending,
+                    && (br.Status == BorrowRequestStatus.Pending
+                        || br.Status == BorrowRequestStatus.Approved),
                 cancellationToken))
         {
             throw new LibValidationException
             {
-                ExceptionDetails = ["Заявка на эту книгу уже создана и ожидает рассмотрения"]
+                ExceptionDetails = ["Заявка на эту книгу уже создана или одобрена"]
             };
         }
 

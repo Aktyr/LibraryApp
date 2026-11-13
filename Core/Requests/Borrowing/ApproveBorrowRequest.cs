@@ -1,12 +1,11 @@
 ﻿namespace LibApp.Core.Requests.Borrowing;
 
 /// <summary>
-/// Одобрение заявки библиотекарем. <see cref="BorrowDays"/> — срок выдачи в днях,
-/// тот же, что в прямой выдаче; валидируется в <c>BorrowingValidatorAsync</c> по настройкам
-/// <c>BorrowingSettings</c>.
+/// Одобрение заявки библиотекарем. Срок возврата в запросе не передаётся:
+/// Approve — это активация брони (BorrowRequest.ExpiresAt), а не выдача.
+/// Срок выдачи определяется при оформлении IssueBorrowRequestCommand.
 /// </summary>
 public class ApproveBorrowRequest : IAddOrUpdateRequest
 {
     public Guid BorrowRequestId { get; set; }
-    public int BorrowDays { get; set; }
 }

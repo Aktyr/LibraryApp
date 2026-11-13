@@ -32,5 +32,7 @@ public class BorrowingSettingsService(HttpClient http) : IBorrowingSettingsServi
         MaxBooksPerUser: 5,
         MaxExtendDeadlineDays: 14,
         MinBorrowDays: 1,
-        MaxBorrowDays: 30);
+        MaxBorrowDays: 30,
+        ReserveHoldHours: 48,
+        MaxActiveRequestsPerUser: 5);
 }

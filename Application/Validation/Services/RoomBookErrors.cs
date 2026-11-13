@@ -6,6 +6,8 @@
 /// </summary>
 public static class RoomBookErrors
 {
-    public static string BookCountLessThanBorrowed(int bookCount, int borrowedCount, Guid roomBookId)
-        => $"Нельзя установить общее количество ({bookCount}) меньше уже выданных ({borrowedCount}) для RoomBook Id {roomBookId}";
+    public static string BookCountLessThanBorrowedAndReserved(
+        int bookCount, int borrowedCount, int reservedCount, Guid roomBookId)
+            => $"Нельзя установить общее количество ({bookCount}) меньше суммы выданных ({borrowedCount}) " +
+               $"и забронированных ({reservedCount}) для RoomBook Id {roomBookId}";
 }

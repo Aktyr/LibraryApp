@@ -162,6 +162,12 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PickedUpAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("ProcessedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -180,6 +186,9 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ExpiresAt")
+                        .HasFilter("\"Status\" = 'Approved'");
+
                     b.HasIndex("ProcessedByUserId");
 
                     b.HasIndex("RoomBookId");
@@ -190,7 +199,7 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
                     b.HasIndex("UserId", "RoomBookId")
                         .IsUnique()
-                        .HasFilter("\"Status\" = 'Pending'");
+                        .HasFilter("\"Status\" IN ('Pending', 'Approved')");
 
                     b.ToTable("BorrowRequest", "library");
                 });
@@ -313,6 +322,9 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Property<int>("BorrowedCount")
                         .HasColumnType("integer");
 
+                    b.Property<int>("ReservedCount")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 
@@ -326,9 +338,11 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                         {
                             t.HasCheckConstraint("CK_RoomBook_BookCount_NonNegative", "\"BookCount\" >= 0");
 
-                            t.HasCheckConstraint("CK_RoomBook_BorrowedCount_LE_BookCount", "\"BorrowedCount\" <= \"BookCount\"");
-
                             t.HasCheckConstraint("CK_RoomBook_BorrowedCount_NonNegative", "\"BorrowedCount\" >= 0");
+
+                            t.HasCheckConstraint("CK_RoomBook_BorrowedPlusReserved_LE_BookCount", "(\"BorrowedCount\" + \"ReservedCount\") <= \"BookCount\"");
+
+                            t.HasCheckConstraint("CK_RoomBook_ReservedCount_NonNegative", "\"ReservedCount\" >= 0");
                         });
                 });
 

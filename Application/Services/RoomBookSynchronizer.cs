@@ -83,12 +83,15 @@ public class RoomBookSynchronizer : IRoomBookSynchronizer, IService
 
             if (dto.Id != Guid.Empty && existingDict.TryGetValue(dto.Id, out var existing))
             {
-                // Обновление существующей записи
-                // Дублирующая проверка (для безопасности)
-                if (dto.BookCount < existing.BorrowedCount)
-                    throw new LibValidationException 
+                // Уменьшать BookCount можно только до суммы Borrowed + Reserved:
+                // иначе инвариант Borrowed + Reserved <= BookCount нарушится и БД отклонит
+                // UPDATE с 500-й ошибкой. Проверяем здесь, чтобы вернуть понятное 400.
+                var minBookCount = existing.BorrowedCount + existing.ReservedCount;
+                if (dto.BookCount < minBookCount)
+                    throw new LibValidationException
                     {
-                        ExceptionDetails = [RoomBookErrors.BookCountLessThanBorrowed(dto.BookCount, existing.BorrowedCount, dto.Id)]
+                        ExceptionDetails = [RoomBookErrors.BookCountLessThanBorrowedAndReserved(
+                            dto.BookCount, existing.BorrowedCount, existing.ReservedCount, dto.Id)]
                     };
 
                 existing.BookCount = dto.BookCount;

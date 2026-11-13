@@ -16,4 +16,10 @@ public interface IBorrowRequestApiClient
 
     Task<BasicCreateDeleteResponse> RejectAsync(
         Guid borrowRequestId, RejectBorrowRequest request, CancellationToken ct = default);
+
+    Task<BasicCreateDeleteResponse> IssueAsync(
+        Guid borrowRequestId, IssueBorrowRequest request, CancellationToken ct = default);
+
+    Task<BasicCreateDeleteResponse> CancelAsync(
+        Guid borrowRequestId, CancelBorrowRequest request, CancellationToken ct = default);
 }

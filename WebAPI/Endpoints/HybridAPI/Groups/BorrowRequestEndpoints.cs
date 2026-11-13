@@ -6,13 +6,13 @@ public class BorrowRequestEndpoints : EndpointBase
 {
     // Заявку может создать любой аутентифицированный пользователь, включая
     // библиотекаря и админа: они тоже читатели и могут запрашивать книги для себя.
-
     [HttpPost]
     [EnumAuthorize(UserRole.Reader, UserRole.Librarian, UserRole.Admin)]
     public async Task<IResult> Create(
         CreateBorrowRequestCommand command,
         CreateBorrowRequest request,
-        CancellationToken ct) => Results.Ok(await command.Execute(request, ct));
+        CancellationToken ct)
+        => Results.Ok(await command.Execute(request, ct));
 
     // UserId принудительно из токена: query не принимает userId,
     // поэтому подмена невозможна на уровне маршрута, не только команды.
@@ -46,8 +46,8 @@ public class BorrowRequestEndpoints : EndpointBase
         return Results.Ok(await command.Execute(request, ct));
     }
 
-    // Общий роут — только Librarian/Admin.
-    // значит фильтр по userId легитимен.
+    // Общий роут — только Librarian/Admin. Reader сюда не попадёт,
+    // значит фильтр по userId (страница /users/{id}) легитимен.
     [HttpGet]
     [EnumAuthorize(UserRole.Librarian, UserRole.Admin)]
     public async Task<IResult> GetAll(
@@ -81,7 +81,7 @@ public class BorrowRequestEndpoints : EndpointBase
     }
 
     // id из route перезаписывает BorrowRequestId в теле — та же защита,
-    // что в ChangeStatus (request.UserId = new Id(id)): подмена в body невозможна.
+    // что в ChangeStatus: подмена в body невозможна.
     [HttpPost("{id:guid}/approve")]
     [EnumAuthorize(UserRole.Librarian, UserRole.Admin)]
     public async Task<IResult> Approve(
@@ -100,6 +100,35 @@ public class BorrowRequestEndpoints : EndpointBase
         Guid id,
         RejectBorrowRequest request,
         RejectBorrowRequestCommand command,
+        CancellationToken ct)
+    {
+        request.BorrowRequestId = id;
+        return Results.Ok(await command.Execute(request, ct));
+    }
+
+    // Оформление фактической выдачи по брони. Только библиотекарь/админ:
+    // это операция сотрудника (читатель физически пришёл в библиотеку).
+    [HttpPost("{id:guid}/issue")]
+    [EnumAuthorize(UserRole.Librarian, UserRole.Admin)]
+    public async Task<IResult> Issue(
+        Guid id,
+        IssueBorrowRequest request,
+        IssueBorrowRequestCommand command,
+        CancellationToken ct)
+    {
+        request.BorrowRequestId = id;
+        return Results.Ok(await command.Execute(request, ct));
+    }
+
+    // Отмена заявки читателем. Доступно всем аутентифицированным: библиотекарь
+    // тоже может отменить свою бронь. Команда проверяет, что UserId совпадает
+    // с владельцем заявки, — подменить цель через этот эндпоинт нельзя.
+    [HttpPost("{id:guid}/cancel")]
+    [EnumAuthorize(UserRole.Reader, UserRole.Librarian, UserRole.Admin)]
+    public async Task<IResult> Cancel(
+        Guid id,
+        CancelBorrowRequest request,
+        CancelBorrowRequestCommand command,
         CancellationToken ct)
     {
         request.BorrowRequestId = id;

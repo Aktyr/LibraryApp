@@ -13,10 +13,12 @@ public record BorrowRequestDTO(
     DateTime? ProcessedAt,
     Guid? ProcessedByUserId,
     string? ProcessedByFullName,
+    DateTime? ExpiresAt,
+    DateTime? PickedUpAt,
     string? Comment)
 {
     public BorrowRequestDTO() : this(
         default, default, default!, default, default!, default!, default!,
-        default, default, default, default, default, default!)
+        default, default, default, default, default, default, default, default!)
     { }
 }
