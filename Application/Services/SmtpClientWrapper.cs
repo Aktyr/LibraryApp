@@ -45,10 +45,15 @@ public sealed class SmtpClientWrapper : ISmtpClient
 
         try
         {
-            // StartTls на 587 — стандарт для Brevo. SslOnConnect на 465 — альтернативный порт.
-            var socketOptions = _settings.SmtpPort == 465
-                ? SecureSocketOptions.SslOnConnect
-                : SecureSocketOptions.StartTls;
+            // 465 — TLS с самого начала (SMTPS), флаг RequireTls не влияет.
+            // 587/25/2525 — StartTls, если провайдер его поддерживает.
+            // RequireTls = false — для smtp4dev без TLS; в production всегда true.
+            var socketOptions = _settings.SmtpPort switch
+            {
+                465 => SecureSocketOptions.SslOnConnect,
+                _ when _settings.RequireTls => SecureSocketOptions.StartTls,
+                _ => SecureSocketOptions.None
+            };
 
             await client.ConnectAsync(
                 _settings.SmtpServer,

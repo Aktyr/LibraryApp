@@ -429,9 +429,15 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Property<DateTime?>("Deadline")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("OverdueNoticeSentAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<decimal?>("Penalty")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime?>("ReminderSentAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("ReturnDate")
                         .HasColumnType("timestamp with time zone");

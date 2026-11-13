@@ -10,4 +10,11 @@ public class NotificationSettings : ISettings
     [ValidEmail]
     public string FromEmail { get; set; } = string.Empty;
     public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Требовать TLS-апгрейд (STARTTLS). Для production — true (реальный SMTP-провайдер).
+    /// Для smtp4dev — false: TLS mode "None", STARTTLS-команда не поддерживается.
+    /// На порту 465 TLS включается независимо от флага (SslOnConnect).
+    /// </summary>
+    public bool RequireTls { get; set; } = true;
 }

@@ -28,7 +28,12 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:80"
-      - "127.0.0.1:2525:25"
+      - "127.0.0.1:2525:2525"
+    environment:
+      # Внутри контейнера smtp4dev слушает 2525 вместо дефолтного 25.
+      # Причина: на Windows Docker Desktop проброс порта 25 через WSL2
+      # работает нестабильно — соединение есть, EHLO не доходит.
+      ServerOptions__Port: "2525"
     volumes:
       - smtp4dev-data:/smtp4dev
 
@@ -50,12 +55,14 @@ services:
       ApplicationSettings__Jwt__Audience: LibraryApp
       ApplicationSettings__Jwt__ExpiryMinutes: 60
 
-      # SMTP-ловушка. noreply@example.com — RFC 2606, проходит MailAddress.
-      # Для Brevo заменить на реальный верифицированный адрес через user-secrets.
+      # SMTP-ловушка. dev:dev — smtp4dev не проверяет credentials, но
+      # EmailNotificationService требует непустой SmtpUsername, иначе отсеивает
+      # письмо до коннекта. Для production — заменить env на реальные креды
+      # провайдера (SMTP.BZ, Yandex Cloud Postbox и т.п.).
       ApplicationSettings__Notification__SmtpServer: smtp4dev
       ApplicationSettings__Notification__SmtpPort: 25
-      ApplicationSettings__Notification__SmtpUsername: ""
-      ApplicationSettings__Notification__SmtpPassword: ""
+      ApplicationSettings__Notification__SmtpUsername: "dev"
+      ApplicationSettings__Notification__SmtpPassword: "dev"
       ApplicationSettings__Notification__FromEmail: noreply@example.com
       ApplicationSettings__Notification__Enabled: ${NOTIFICATION_ENABLED:-false}
     ports:

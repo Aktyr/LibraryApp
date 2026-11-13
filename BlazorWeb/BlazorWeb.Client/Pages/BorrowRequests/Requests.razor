@@ -13,23 +13,7 @@
 
 <PageTitle>Заявки на выдачу</PageTitle>
 
-<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading">
-    <ChildContent>
-        <div class="d-flex align-items-center gap-2 ms-auto">
-            <label class="small text-muted mb-0">Статус:</label>
-            <select class="form-select form-select-sm" style="width: auto;"
-                    @bind="statusFilter" @bind:after="LoadAsync">
-                <option value="">Все</option>
-                <option value="@BorrowRequestStatus.Pending">Ожидают</option>
-                <option value="@BorrowRequestStatus.Approved">Забронированы</option>
-                <option value="@BorrowRequestStatus.Rejected">Отклонены</option>
-                <option value="@BorrowRequestStatus.Cancelled">Отменены</option>
-                <option value="@BorrowRequestStatus.Expired">Истекли</option>
-                <option value="@BorrowRequestStatus.Completed">Выданы</option>
-            </select>
-        </div>
-    </ChildContent>
-</PageHeader>
+<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading"></PageHeader>
 
 <h2>Заявки на выдачу</h2>
 
@@ -65,7 +49,6 @@ else if (requests != null)
                   PageSize="20"
                   Columns="Columns"
                   Actions="actions"
-                  Hint="<b>Одобрить</b> — забронировать экземпляр на ReserveHoldHours | <b>Оформить выдачу</b> — фактическая выдача по брони (читатель пришёл) | <b>Отклонить</b> — обязательный комментарий | <b>Профиль читателя</b> — история выдач и штрафов"
                   SelectionMode="DataGridSelectionMode.Single" />
     }
 }
@@ -198,7 +181,6 @@ else if (requests != null)
 @code {
     private bool isLoading = true;
     private List<BorrowRequestDTO>? requests;
-    private BorrowRequestStatus? statusFilter;
 
     private BorrowingSettingsDTO? settings;
     private int MinBorrowDays => settings?.MinBorrowDays ?? 1;
@@ -242,6 +224,15 @@ else if (requests != null)
     {
         new()
         {
+            Title = "Создана",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = r => r.CreatedAt,
+            FilterText = r => r.CreatedAt.ToString("yyyy-MM-dd"),
+            Template = item => b => b.AddContent(0, item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+        },
+        new()
+        {
             Title = "Читатель",
             Width = 220,
             Value = r => r.UserFullName,
@@ -271,16 +262,7 @@ else if (requests != null)
                 b.AddContent(2, label);
                 b.CloseElement();
             }
-        },
-        new()
-        {
-            Title = "Создана",
-            Width = 150,
-            FilterKind = FilterKind.Date,
-            Value = r => r.CreatedAt,
-            FilterText = r => r.CreatedAt.ToString("yyyy-MM-dd"),
-            Template = item => b => b.AddContent(0, item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
-        },
+        },       
         new()
         {
             // Только у Approved. Показывает, до какого момента читатель должен прийти.
@@ -391,12 +373,9 @@ else if (requests != null)
         isLoading = true;
         try
         {
-            // PageSize 200 — заведомо больше текущего объёма заявок, чтобы не плодить
-            // серверную пагинацию в этом PR. Когда заявок станет больше — перейдём
-            // на страничную загрузку, как в SearchBooksCommand.
+            // PageSize 200 — заведомо больше текущего объёма заявок, чтобы не плодить серверную пагинацию
             var resp = await BorrowRequestClient.GetAllAsync(new GetBorrowRequestsRequest
             {
-                Status = statusFilter,
                 PageNumber = 1,
                 PageSize = 200
             });

@@ -23,12 +23,23 @@ public class DeadlineCheckService : BackgroundService, IService
         _settingsMonitor.OnChange(newSettings =>
         {
             _checkInterval = TimeSpan.FromHours(newSettings.CheckIntervalInHours);
-            _logger.LogInformation($"Check interval updated to {_checkInterval.TotalHours} hours");
+            _logger.LogInformation("Check interval updated to {Hours} hours", _checkInterval.TotalHours);
         });
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
+        // Стартовый delay: хост поднимается параллельно с миграциями. Без задержки
+        // первый прогон может удариться в БД до применения миграций. Минута — запас.
+        try
+        {
+            await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
         while (!cancellationToken.IsCancellationRequested)
         {
             try
@@ -36,10 +47,15 @@ public class DeadlineCheckService : BackgroundService, IService
                 await CheckDeadlines(cancellationToken);
                 await Task.Delay(_checkInterval, cancellationToken);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking deadlines");
-                await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken);
+                try { await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken); }
+                catch (OperationCanceledException) { return; }
             }
         }
     }
@@ -51,22 +67,31 @@ public class DeadlineCheckService : BackgroundService, IService
         var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
         var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+        var timeProvider = scope.ServiceProvider.GetRequiredService<TimeProvider>();
 
         var settings = _settingsMonitor.CurrentValue;
         var penaltySettings = _penaltySettingsMonitor.CurrentValue;
-        var now = DateTime.UtcNow;
+        var now = timeProvider.GetUtcNow().UtcDateTime;
 
-        // Книги, которые нужно вернуть через N дня
+        // Напоминание: только те, кому ещё не отправляли. ReminderSentAt снимает
+        // повторную отправку при рестарте приложения и на следующем цикле.
         var soonDue = await userRoomBookRepo.GetAsync(
             urb => urb.ReturnDate == null
                 && urb.Deadline.HasValue
-                && urb.Deadline.Value.Date == now.AddDays(settings.ReturnReminderInDays).Date,
+                && urb.Deadline.Value.Date == now.AddDays(settings.ReturnReminderInDays).Date
+                && urb.ReminderSentAt == null,
             cancellationToken);
 
         foreach (var urb in soonDue.ToList())
+        {
             await notificationService.SendReturnReminderAsync(urb.User, urb, cancellationToken);
+            urb.ReminderSentAt = now;
+            await userRoomBookRepo.UpdateAsync(urb, cancellationToken);
+        }
 
-        // Просроченные книги
+        // Просрочки: только те, кому ещё не отправляли уведомление. Штраф
+        // пересчитываем всегда — он растёт, пока книга не возвращена. Но аудит пишем
+        // только если сумма изменилась, иначе журнал спамится одинаковыми записями.
         var overdue = await userRoomBookRepo.GetAsync(
             urb => urb.ReturnDate == null
                 && urb.Deadline.HasValue
@@ -74,47 +99,46 @@ public class DeadlineCheckService : BackgroundService, IService
             cancellationToken);
 
         var overdueList = overdue.ToList();
-
-        // Нет просрочек — нечего сохранять. Аудит не пишем: иначе журнал спамится
-        // пустыми записями каждый цикл.
-        if (overdueList.Count == 0)
-            return;
-
         decimal totalAccrued = 0m;
+        var anyPenaltyChanged = false;
 
         foreach (var urb in overdueList)
         {
             var daysOverdue = (now - urb.Deadline!.Value).Days;
             var penalty = PenaltyCalculatorService.CalculateFromDays(daysOverdue, penaltySettings);
 
-            // Обновляем штраф в БД
-            urb.Penalty = penalty;
-            totalAccrued += penalty;
-            await userRoomBookRepo.UpdateAsync(urb, cancellationToken);
+            if (urb.Penalty != penalty)
+            {
+                urb.Penalty = penalty;
+                totalAccrued += penalty;
+                anyPenaltyChanged = true;
+                await userRoomBookRepo.UpdateAsync(urb, cancellationToken);
+            }
 
-            // Отправляем уведомление
-            await notificationService.SendOverdueNotificationAsync(urb.User, urb, penalty, cancellationToken);
+            if (urb.OverdueNoticeSentAt == null)
+            {
+                await notificationService.SendOverdueNotificationAsync(urb.User, urb, penalty, cancellationToken);
+                urb.OverdueNoticeSentAt = now;
+                await userRoomBookRepo.UpdateAsync(urb, cancellationToken);
+            }
         }
 
-        // Сводный аудит batch-а: одна запись вместо N. Раз в сутки по числу просрочек
-        // раздуло бы журнал. Детализация по каждой выдаче — в UserRoomBook.Penalty.
-        // userId = null, userName явно — фоновый процесс, ICurrentUserService пуст.
-        await auditService.LogAsync(
-            AuditActionType.PenaltyAccrued,
-            entityType: nameof(UserRoomBook),
-            entityId: null,
-            details: $"Пересчитаны штрафы: {overdueList.Count} выдач, сумма {totalAccrued:0.##} ₽",
-            userId: null,
-            userName: "Система: пересчёт штрафов",
-            ct: cancellationToken);
+        // Аудит только при фактическом изменении суммы штрафов. Пустой цикл
+        // (ни одного изменения) не должен порождать запись в журнале.
+        if (anyPenaltyChanged)
+        {
+            await auditService.LogAsync(
+                AuditActionType.PenaltyAccrued,
+                entityType: nameof(UserRoomBook),
+                entityId: null,
+                details: $"Пересчитаны штрафы: {overdueList.Count} выдач, сумма {totalAccrued:0.##} ₽",
+                userId: null,
+                userName: "Система: пересчёт штрафов",
+                ct: cancellationToken);
+        }
 
+        // SaveChanges вызывается всегда: soonDue мог обновить ReminderSentAt,
+        // даже если просрочек нет. Фиксация в одной транзакции с аудитом.
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
-
-    /// <remarks>
-    /// Оставлен для юнит-тестов (проверяют формулу через рефлексию).
-    /// В рабочем коде используем <see cref="PenaltyCalculatorService.CalculateFromDays"/>.
-    /// </remarks>
-    private static decimal CalculatePenalty(int daysOverdue, PenaltySettings settings)
-        => PenaltyCalculatorService.CalculateFromDays(daysOverdue, settings);
 }

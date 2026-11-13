@@ -10,6 +10,21 @@ public class UserRoomBook : IEntity
     public bool IsReturned => ReturnDate.HasValue;
     public decimal? Penalty { get; set; }
 
+    /// <summary>
+    /// Дата отправки напоминания о приближении срока возврата. Заполняется фоновым
+    /// DeadlineCheckService. Повторно не отправляется: при рестарте приложения
+    /// или следующем цикле проверки поле уже не null.
+    /// </summary>
+    public DateTime? ReminderSentAt { get; set; }
+
+    /// <summary>
+    /// Дата отправки уведомления о просрочке. Заполняется фоновым DeadlineCheckService
+    /// один раз, при первом обнаружении просрочки. Дальнейший рост штрафа
+    /// виден в профиле пользователя, письма не дублируются.
+    /// </summary>
+    public DateTime? OverdueNoticeSentAt { get; set; }
+
+
     public Id UserId { get; set; }
     public virtual User User { get; set; } = null!;
 

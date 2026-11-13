@@ -39,6 +39,12 @@ public class UserRoomBookConfiguration : IEntityTypeConfiguration<UserRoomBook>
         builder.Property(urb => urb.ReturnDate)
                .HasConversion<DateTimeToUtcConverter>();
 
+        builder.Property(urb => urb.ReminderSentAt)
+               .HasConversion<DateTimeToUtcConverter>();
+
+        builder.Property(urb => urb.OverdueNoticeSentAt)
+               .HasConversion<DateTimeToUtcConverter>();
+
         builder.Property(urb => urb.Penalty)
                .HasPrecision(18, 2);
 
