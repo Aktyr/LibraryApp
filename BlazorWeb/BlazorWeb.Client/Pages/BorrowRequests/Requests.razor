@@ -1,0 +1,441 @@
+﻿@page "/requests"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Borrowing
+@using LibApp.Core.Enums
+@using LibApp.Core.Requests.Borrowing
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Librarian,Admin")]
+@inject IBorrowRequestApiClient BorrowRequestClient
+@inject IBorrowingSettingsService SettingsService
+@inject NavigationManager Nav
+@inject IToastService Toast
+
+<PageTitle>Заявки на выдачу</PageTitle>
+
+<PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading">
+    <ChildContent>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            <label class="small text-muted mb-0">Статус:</label>
+            <select class="form-select form-select-sm" style="width: auto;"
+                    @bind="statusFilter" @bind:after="LoadAsync">
+                <option value="">Все</option>
+                <option value="@BorrowRequestStatus.Pending">Ожидают</option>
+                <option value="@BorrowRequestStatus.Approved">Выданы</option>
+                <option value="@BorrowRequestStatus.Rejected">Отклонены</option>
+                <option value="@BorrowRequestStatus.Completed">Возвращены</option>
+            </select>
+        </div>
+    </ChildContent>
+</PageHeader>
+
+<h2>Заявки на выдачу</h2>
+
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (requests != null)
+{
+    <div class="d-flex gap-4 mb-3">
+        <div>
+            <small class="text-muted d-block">Всего</small>
+            <span class="fs-5 fw-semibold">@requests.Count</span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Ожидают</small>
+            <span class="fs-5 fw-semibold @(pendingCount > 0 ? "text-warning" : "")">@pendingCount</span>
+        </div>
+    </div>
+
+    @if (requests.Count == 0)
+    {
+        <p class="text-muted">Заявок нет.</p>
+    }
+    else
+    {
+        <DataGrid TItem="BorrowRequestDTO"
+                  Items="requests"
+                  PageSize="20"
+                  Columns="Columns"
+                  Actions="actions"
+                  Hint="<b>Одобрить</b> — создать выдачу на выбранный срок | <b>Отклонить</b> — обязательный комментарий | <b>Профиль читателя</b> — история выдач и штрафов | <b>Фильтр по статусу</b> — в шапке страницы"
+                  SelectionMode="DataGridSelectionMode.Single" />
+    }
+}
+
+@* Фильтр по статусу — на сервере, поэтому вынесен в шапку, а не в колонку DataGrid:
+   локальный фильтр грида работал бы по уже отфильтрованному набору и вводил в заблуждение. *@
+@if (approvingRequest != null)
+{
+    <div class="modal-backdrop" @onclick="CloseApproveDialog"></div>
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
+        <h3>Одобрить заявку</h3>
+        <p class="mb-2"><strong>@approvingRequest.BookTitle</strong> — @approvingRequest.BookAuthor</p>
+        <p class="mb-3 text-muted small">
+            Читатель: <strong>@approvingRequest.UserFullName</strong>
+            · Комната: <strong>@approvingRequest.RoomName</strong>
+        </p>
+
+        <div class="mb-3">
+            <label class="form-label">Вернуть до</label>
+            <input type="date" class="form-control"
+                   style="max-width: 200px;"
+                   min="@MinBorrowDateIso" max="@MaxBorrowDateIso"
+                   @bind="approveDueDate" />
+            <small class="text-muted">
+                Срок: <strong>@BorrowDaysComputed</strong> дн.
+                (от @MinBorrowDays до @MaxBorrowDays, сегодня @DateTime.Today.ToString("dd.MM.yyyy"))
+            </small>
+        </div>
+
+        @if (!string.IsNullOrEmpty(approveError))
+        {
+            <div class="alert alert-danger py-2 mb-3" style="white-space: pre-line;">@approveError</div>
+        }
+
+        <div>
+            <button class="btn btn-success"
+                    disabled="@(!CanSubmitApprove || approveSaving)"
+                    @onclick="SubmitApproveAsync">
+                @(approveSaving ? "Одобрение..." : "Одобрить и выдать")
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="CloseApproveDialog" disabled="@approveSaving">
+                Отмена
+            </button>
+        </div>
+    </div>
+}
+
+@if (rejectingRequest != null)
+{
+    <div class="modal-backdrop" @onclick="CloseRejectDialog"></div>
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
+        <h3>Отклонить заявку</h3>
+        <p class="mb-2"><strong>@rejectingRequest.BookTitle</strong> — @rejectingRequest.BookAuthor</p>
+        <p class="mb-3 text-muted small">
+            Читатель: <strong>@rejectingRequest.UserFullName</strong>
+            · Комната: <strong>@rejectingRequest.RoomName</strong>
+        </p>
+
+        <div class="mb-3">
+            <label class="form-label">Причина <span class="text-danger">*</span></label>
+            <textarea class="form-control" rows="3"
+                      maxlength="1000"
+                      placeholder="Кратко объясните читателю причину отказа"
+                      @bind="rejectComment"></textarea>
+            <small class="text-muted">Обязательное поле, до 1000 символов.</small>
+        </div>
+
+        @if (!string.IsNullOrEmpty(rejectError))
+        {
+            <div class="alert alert-danger py-2 mb-3" style="white-space: pre-line;">@rejectError</div>
+        }
+
+        <div>
+            <button class="btn btn-danger"
+                    disabled="@(!CanSubmitReject || rejectSaving)"
+                    @onclick="SubmitRejectAsync">
+                @(rejectSaving ? "Отклонение..." : "Отклонить")
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="CloseRejectDialog" disabled="@rejectSaving">
+                Отмена
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private List<BorrowRequestDTO>? requests;
+    private BorrowRequestStatus? statusFilter;
+
+    private BorrowingSettingsDTO? settings;
+    private int MinBorrowDays => settings?.MinBorrowDays ?? 1;
+    private int MaxBorrowDays => settings?.MaxBorrowDays ?? 30;
+
+    private int pendingCount => requests?.Count(r => r.Status == BorrowRequestStatus.Pending) ?? 0;
+
+    private BorrowRequestDTO? approvingRequest;
+    private DateTime approveDueDate = DateTime.Today.AddDays(14);
+    private string? approveError;
+    private bool approveSaving;
+
+    private string MinBorrowDateIso => DateTime.Today.ToString("yyyy-MM-dd");
+    private string MaxBorrowDateIso => DateTime.Today.AddDays(MaxBorrowDays).ToString("yyyy-MM-dd");
+    private int BorrowDaysComputed => (approveDueDate.Date - DateTime.Today).Days;
+    private bool CanSubmitApprove =>
+        approvingRequest != null
+        && BorrowDaysComputed >= MinBorrowDays
+        && BorrowDaysComputed <= MaxBorrowDays;
+
+    private BorrowRequestDTO? rejectingRequest;
+    private string rejectComment = "";
+    private string? rejectError;
+    private bool rejectSaving;
+
+    private bool CanSubmitReject =>
+        rejectingRequest != null
+        && !string.IsNullOrWhiteSpace(rejectComment)
+        && rejectComment.Trim().Length <= 1000;
+
+    #region Колонки
+
+    private List<DataGridColumn<BorrowRequestDTO>>? _columns;
+    private List<DataGridColumn<BorrowRequestDTO>> Columns => _columns ??= new()
+    {
+        new()
+        {
+            Title = "Читатель",
+            Width = 220,
+            Value = r => r.UserFullName,
+            FilterText = r => r.UserFullName
+        },
+        new()
+        {
+            Title = "Книга",
+            Width = 260,
+            Value = r => r.BookTitle,
+            FilterText = r => r.BookTitle
+        },
+        new() { Title = "Автор", Width = 180, Value = r => r.BookAuthor },
+        new() { Title = "Комната", Width = 140, Value = r => r.RoomName },
+        new()
+        {
+            Title = "Статус",
+            Width = 130,
+            Value = r => StatusName(r.Status),
+            FilterText = r => StatusName(r.Status),
+            Template = item => b =>
+            {
+                var (bg, fg, label) = StatusStyle(item.Status);
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style",
+                    $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
+                b.AddContent(2, label);
+                b.CloseElement();
+            }
+        },
+        new()
+        {
+            Title = "Создана",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = r => r.CreatedAt,
+            FilterText = r => r.CreatedAt.ToString("yyyy-MM-dd"),
+            Template = item => b => b.AddContent(0, item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+        },
+        new()
+        {
+            Title = "Обработана",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = r => r.ProcessedAt,
+            FilterText = r => r.ProcessedAt?.ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0,
+                item.ProcessedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")
+        },
+        new()
+        {
+            Title = "Обработал",
+            Width = 200,
+            Value = r => r.ProcessedByFullName ?? "—",
+            FilterText = r => r.ProcessedByFullName ?? ""
+        },
+        new()
+        {
+            Title = "Комментарий",
+            Width = 260,
+            Value = r => r.Comment ?? "",
+            FilterText = r => r.Comment ?? "",
+            // Template вместо Value: нужен title с полным текстом и CSS-ellipsis,
+            // чтобы длинный комментарий не растягивал строку.
+            Template = item => b =>
+            {
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "title", item.Comment ?? "");
+                b.AddAttribute(2, "style",
+                    "display: inline-block; max-width: 100%; white-space: nowrap; " +
+                    "overflow: hidden; text-overflow: ellipsis;");
+                b.AddContent(3, item.Comment ?? "—");
+                b.CloseElement();
+            }
+        }
+    };
+
+    #endregion
+
+    #region Действия
+
+    private List<DataGridAction<BorrowRequestDTO>>? _actions;
+    private List<DataGridAction<BorrowRequestDTO>> actions => _actions ??= new()
+    {
+        new()
+        {
+            Label = "Одобрить",
+            Icon = "✅",
+            MinSelection = 1,
+            CanExecute = s => s.Count == 1 && s[0].Status == BorrowRequestStatus.Pending,
+            Handler = s => OpenApproveDialogAsync(s[0])
+        },
+        new()
+        {
+            Label = "Отклонить",
+            Icon = "🚫",
+            MinSelection = 1,
+            CanExecute = s => s.Count == 1 && s[0].Status == BorrowRequestStatus.Pending,
+            Handler = s => OpenRejectDialogAsync(s[0])
+        },
+        new()
+        {
+            Label = "Профиль читателя",
+            Icon = "👤",
+            MinSelection = 1,
+            SeparatorBefore = true,
+            CanExecute = s => s.Count == 1,
+            Handler = s =>
+            {
+                // returnUrl — чтобы кнопка «назад» в профиле вернула к заявкам, а не в общий список.
+                Nav.NavigateTo($"/users/{s[0].UserId}?returnUrl={Uri.EscapeDataString("/requests")}");
+                return Task.CompletedTask;
+            }
+        }
+    };
+
+    #endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        settings = await SettingsService.GetAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        try
+        {
+            // PageSize 200 — заведомо больше текущего объёма заявок, чтобы не плодить
+            // серверную пагинацию в этом PR. Когда заявок станет больше — перейдём
+            // на страничную загрузку, как в SearchBooksCommand.
+            var resp = await BorrowRequestClient.GetAllAsync(new GetBorrowRequestsRequest
+            {
+                Status = statusFilter,
+                PageNumber = 1,
+                PageSize = 200
+            });
+            requests = resp.Data.ToList();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
+            requests = new();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenApproveDialogAsync(BorrowRequestDTO request)
+    {
+        approvingRequest = request;
+        // Дефолт — полный максимальный срок: библиотекарь чаще всего выдаёт на максимум.
+        approveDueDate = DateTime.Today.AddDays(MaxBorrowDays);
+        approveError = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseApproveDialog()
+    {
+        approvingRequest = null;
+        approveError = null;
+    }
+
+    private async Task SubmitApproveAsync()
+    {
+        if (!CanSubmitApprove || approvingRequest == null) return;
+
+        approveSaving = true;
+        approveError = null;
+        try
+        {
+            var resp = await BorrowRequestClient.ApproveAsync(
+                approvingRequest.Id,
+                new ApproveBorrowRequest { BorrowDays = BorrowDaysComputed });
+
+            Toast.ShowSuccess(resp.Message);
+            CloseApproveDialog();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            approveError = ex.Message;
+        }
+        finally
+        {
+            approveSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OpenRejectDialogAsync(BorrowRequestDTO request)
+    {
+        rejectingRequest = request;
+        rejectComment = "";
+        rejectError = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseRejectDialog()
+    {
+        rejectingRequest = null;
+        rejectError = null;
+    }
+
+    private async Task SubmitRejectAsync()
+    {
+        if (!CanSubmitReject || rejectingRequest == null) return;
+
+        rejectSaving = true;
+        rejectError = null;
+        try
+        {
+            var resp = await BorrowRequestClient.RejectAsync(
+                rejectingRequest.Id,
+                new RejectBorrowRequest { Comment = rejectComment.Trim() });
+
+            Toast.ShowSuccess(resp.Message);
+            CloseRejectDialog();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            rejectError = ex.Message;
+        }
+        finally
+        {
+            rejectSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    // todo вынести в политики
+    private static string StatusName(BorrowRequestStatus s) => s switch
+    {
+        BorrowRequestStatus.Pending => "Ожидает",
+        BorrowRequestStatus.Approved => "Выдана",
+        BorrowRequestStatus.Rejected => "Отклонена",
+        BorrowRequestStatus.Completed => "Возвращена",
+        _ => s.ToString()
+    };
+
+    private static (string Bg, string Fg, string Label) StatusStyle(BorrowRequestStatus s) => s switch
+    {
+        BorrowRequestStatus.Pending => ("#fff3d9", "#8a4b00", "Ожидает"),
+        BorrowRequestStatus.Approved => ("#e6f7ff", "#005a9e", "Выдана"),
+        BorrowRequestStatus.Rejected => ("#fde7e9", "#a30000", "Отклонена"),
+        BorrowRequestStatus.Completed => ("#f3f3f3", "#555", "Возвращена"),
+        _ => ("#f3f3f3", "#555", s.ToString())
+    };
+}

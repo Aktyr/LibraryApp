@@ -11,15 +11,18 @@ internal class Program
         builder.Services.AddSingleton<AuthenticationStateProvider, PersistentAuthenticationStateProvider>();
         builder.Services.AddScoped<IUserManagementPolicy, UserManagementPolicy>();
 
+
         #region API-клиенты для компонентов Blazor.WebAssembly (через прокси-эндпоинты)
         builder.Services.AddScoped(sp => new HttpClient
         {
             BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
         });
+        // todo регистрировать через DI ?
         builder.Services.AddScoped<IBookApiClient, BookApiClient>();
         builder.Services.AddScoped<IRoomApiClient, RoomApiClient>();
         builder.Services.AddScoped<IUserApiClient, UserApiClient>();
         builder.Services.AddScoped<IBorrowingApiClient, BorrowingApiClient>();
+        builder.Services.AddScoped<IBorrowRequestApiClient, BorrowRequestApiClient>();
         builder.Services.AddScoped<IReportsApiClient, ReportsApiClient>();
         builder.Services.AddScoped<IBorrowingSettingsService, BorrowingSettingsService>();
         builder.Services.AddScoped<IPenaltySettingsService, PenaltySettingsService>();

@@ -89,11 +89,13 @@ public class Program
 
         #region Эндпоинты API и Identity
 
+        // todo вынести в DI ?
         // Прокси-эндпоинты для работы клиентских компонентов через BFF
         app.MapBooksProxy();
         app.MapRoomsProxy();
         app.MapUsersProxy();
         app.MapBorrowingProxy();
+        app.MapBorrowRequestProxy();
         app.MapReportsProxy();
         app.MapSettingsProxy();
         app.MapAuditProxy();

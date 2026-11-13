@@ -40,6 +40,11 @@ public static partial class DI
 
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
+        // TimeProvider — единый источник времени для сервисов, где важна детерминированность.
+        // Регистрируется один раз, чтобы повторные вызовы AddServices не падали на дубликате.
+        if (!services.Any(d => d.ServiceType == typeof(TimeProvider)))
+            services.AddSingleton(TimeProvider.System);
+
         var serviceTypes = ApplicationAssembly.GetTypes()
             .Where(t => !t.IsInterface && !t.IsAbstract && typeof(IService).IsAssignableFrom(t))
             .Where(t => !t.IsSubclassOf(typeof(BackgroundService))); // исключаем фоновые службы

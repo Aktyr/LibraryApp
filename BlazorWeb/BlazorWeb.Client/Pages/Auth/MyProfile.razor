@@ -10,6 +10,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using BlazorWeb.Client.Shared.CharCounter
 @inject IUserApiClient UserClient
+@inject IBorrowRequestApiClient BorrowRequestClient
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
 @inject IConfirmService Confirm
@@ -88,17 +89,18 @@ else
     </div>
 
     <div class="mb-4">
-        <h4>Мои активные книги (@activeBorrows.Count)</h4>
-        @if (activeBorrows.Count == 0)
+        <h4>Мои заявки (@myRequests.Count)</h4>
+        @if (myRequests.Count == 0)
         {
-            <p class="text-muted">У вас нет активных выдач.</p>
+            <p class="text-muted">Заявок на выдачу нет.</p>
         }
         else
         {
-            <DataGrid TItem="BorrowedBookDTO"
-                      Items="activeBorrows"
+            <DataGrid TItem="BorrowRequestDTO"
+                      Items="myRequests"
                       PageSize="10"
-                      Columns="ActiveColumns"
+                      Columns="RequestColumns"
+                      Hint="<b>Статус «Выдана»</b> — книга на руках, см. раздел «Мои активные книги» выше | <b>Статус «Возвращена»</b> — книга возвращена, запись закрыта"
                       SelectionMode="DataGridSelectionMode.Multiple" />
         }
     </div>
@@ -181,9 +183,60 @@ else
     private readonly List<DataGridColumn<BorrowedBookDTO>> HistoryColumns =
         UserBorrowsColumns.CreateHistory();
 
+    private List<DataGridColumn<BorrowRequestDTO>>? _requestColumns;
+    private List<DataGridColumn<BorrowRequestDTO>> RequestColumns => _requestColumns ??= new()
+    {
+        new() { Title = "Книга", Value = r => r.BookTitle, Width = 240 },
+        new() { Title = "Автор", Value = r => r.BookAuthor, Width = 180 },
+        new() { Title = "Комната", Value = r => r.RoomName, Width = 140 },
+        new()
+        {
+            Title = "Создана",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = r => r.CreatedAt,
+            FilterText = r => r.CreatedAt.ToString("yyyy-MM-dd"),
+            Template = item => b => b.AddContent(0, item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+        },
+        new()
+        {
+            Title = "Статус",
+            Width = 140,
+            Value = r => StatusName(r.Status),
+            FilterText = r => StatusName(r.Status),
+            Template = item => b =>
+            {
+                var (bg, fg, label) = StatusStyle(item.Status);
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style",
+                    $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
+                b.AddContent(2, label);
+                b.CloseElement();
+            }
+        },
+        new()
+        {
+            Title = "Обработана",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = r => r.ProcessedAt,
+            FilterText = r => r.ProcessedAt?.ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0,
+                item.ProcessedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")
+        },
+        new()
+        {
+            Title = "Комментарий",
+            Width = 260,
+            Value = r => r.Comment ?? "",
+            FilterText = r => r.Comment ?? ""
+        }
+    };
+
     private bool isLoading = true;
     private UserDTO? user;
     private List<BorrowedBookDTO> allBorrows = new();
+    private List<BorrowRequestDTO> myRequests = new();
 
     private BorrowingSettingsDTO? settings;
     private int MaxBooksPerUser => settings?.MaxBooksPerUser ?? 5;
@@ -310,6 +363,24 @@ else
         public string ContactInfo { get; set; } = "";
     }
 
+    private static string StatusName(BorrowRequestStatus s) => s switch
+    {
+        BorrowRequestStatus.Pending => "Ожидает",
+        BorrowRequestStatus.Approved => "Выдана",
+        BorrowRequestStatus.Rejected => "Отклонена",
+        BorrowRequestStatus.Completed => "Возвращена",
+        _ => s.ToString()
+    };
+
+    private static (string Bg, string Fg, string Label) StatusStyle(BorrowRequestStatus s) => s switch
+    {
+        BorrowRequestStatus.Pending => ("#fff3d9", "#8a4b00", "Ожидает"),
+        BorrowRequestStatus.Approved => ("#e6f7ff", "#005a9e", "Выдана"),
+        BorrowRequestStatus.Rejected => ("#fde7e9", "#a30000", "Отклонена"),
+        BorrowRequestStatus.Completed => ("#f3f3f3", "#555", "Возвращена"),
+        _ => ("#f3f3f3", "#555", s.ToString())
+    };
+
     private async Task LoadAsync()
     {
         isLoading = true;
@@ -323,7 +394,19 @@ else
             {
                 var booksResp = await UserClient.GetMyBooksAsync();
                 allBorrows = booksResp.Books.ToList();
+
+                // Заявки читателя. PageSize 100 — с запасом: за один заход больше
+                // не бывает, для UI-списка «Мои заявки» этого достаточно.
+                // Отдельный запрос — чтобы не грузить заявки вместе с выдачами в одном
+                // ответе: API-контракты у них разные, склейка на сервере смешала бы слои.
+                var requestsResp = await BorrowRequestClient.GetMyAsync(new GetBorrowRequestsRequest
+                {
+                    PageNumber = 1,
+                    PageSize = 100
+                });
+                myRequests = requestsResp.Data.ToList();
             }
+
         }
         catch (Exception ex)
         {

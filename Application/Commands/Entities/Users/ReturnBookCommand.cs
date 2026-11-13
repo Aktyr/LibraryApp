@@ -10,12 +10,13 @@ public class ReturnBookCommand(
     : AuditedCreateOrUpdateCommand<ReturnBookRequest, BasicCreateDeleteResponse>(unitOfWork, auditService)
 {
     protected override async Task<(BasicCreateDeleteResponse Response, AuditEntry? Audit)> ExecuteCore(
-        ReturnBookRequest request, CancellationToken cancellationToken)
+    ReturnBookRequest request, CancellationToken cancellationToken)
     {
         var userRoomBookRepo = UnitOfWork.GetRepository<UserRoomBook>();
         var roomBookRepo = UnitOfWork.GetRepository<RoomBook>();
         var bookRepo = UnitOfWork.GetRepository<Book>();
         var discardedRepo = UnitOfWork.GetRepository<DiscardedBook>();
+        var borrowRequestRepo = UnitOfWork.GetRepository<BorrowRequest>();
 
         // Валидация
         var userRoomBookId = new Id(request.UserRoomBookId);
@@ -74,6 +75,25 @@ public class ReturnBookCommand(
         roomBook.BorrowedCount--;
         userRoomBook.ReturnDate = DateTime.UtcNow;
 
+        // Связанная заявка закрывается при возврате. Status == Approved — единственный
+        // легитимный статус заявки, по которой есть выдача; Rejected/Completed здесь
+        // означают рассинхрон данных, и трогать их нельзя.
+        // Отдельный AuditLog не пишем: возврат уже фиксируется в AuditActionType.Return,
+        // перевод заявки — следствие, а не самостоятельное бизнес-действие.
+        var requestCompleted = false;
+        if (userRoomBook.BorrowRequestId is { } borrowRequestId)
+        {
+            var borrowRequest = await borrowRequestRepo.FirstOrDefaultAsync(
+                br => br.Id == borrowRequestId, cancellationToken);
+
+            if (borrowRequest is { Status: BorrowRequestStatus.Approved })
+            {
+                borrowRequest.Status = BorrowRequestStatus.Completed;
+                await borrowRequestRepo.UpdateAsync(borrowRequest, cancellationToken);
+                requestCompleted = true;
+            }
+        }
+
         if (request.DiscardReason.HasValue)
         {
             // Списание: экземпляр уходит из фонда.
@@ -127,6 +147,9 @@ public class ReturnBookCommand(
             : $"Возврат книги: «{roomBook.Book.Title}»");
 
         details.Append($". Читатель: {userRoomBook.User.FullName}");
+
+        if (requestCompleted)
+            details.Append(". Заявка переведена в Completed");
 
         if (userRoomBook.Penalty is > 0)
             details.Append($". Штраф: {userRoomBook.Penalty.Value:0.##} руб.");

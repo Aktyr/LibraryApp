@@ -26,58 +26,6 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("DiscardedBook", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ApprovedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<Guid?>("ApprovedById")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BookId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal?>("CompensationAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<string>("DiscardReason")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("DiscardedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ReaderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ReaderName")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApprovedById");
-
-                    b.HasIndex("BookId");
-
-                    b.HasIndex("ReaderId");
-
-                    b.HasIndex("RoomId");
-
-                    b.ToTable("DiscardedBooks", "library");
-                });
-
             modelBuilder.Entity("LibApp.Core.Entities.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -200,6 +148,103 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.HasIndex("BookId", "SortOrder");
 
                     b.ToTable("BookImage", "library");
+                });
+
+            modelBuilder.Entity("LibApp.Core.Entities.BorrowRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ProcessedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RoomBookId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProcessedByUserId");
+
+                    b.HasIndex("RoomBookId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "RoomBookId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 'Pending'");
+
+                    b.ToTable("BorrowRequest", "library");
+                });
+
+            modelBuilder.Entity("LibApp.Core.Entities.DiscardedBook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Amount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("ApprovedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BookId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("CompensationAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("DiscardReason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("DiscardedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReaderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReaderName")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("BookId");
+
+                    b.HasIndex("ReaderId");
+
+                    b.HasIndex("RoomId");
+
+                    b.ToTable("DiscardedBooks", "library");
                 });
 
             modelBuilder.Entity("LibApp.Core.Entities.PenaltyPayment", b =>
@@ -364,6 +409,9 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Property<DateTime>("BorrowDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("BorrowRequestId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("Deadline")
                         .HasColumnType("timestamp with time zone");
 
@@ -387,6 +435,10 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
                     b.HasIndex("BorrowDate");
 
+                    b.HasIndex("BorrowRequestId")
+                        .IsUnique()
+                        .HasFilter("\"BorrowRequestId\" IS NOT NULL");
+
                     b.HasIndex("Deadline");
 
                     b.HasIndex("RoomBookId");
@@ -396,7 +448,44 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.ToTable("UserRoomBook", "library");
                 });
 
-            modelBuilder.Entity("DiscardedBook", b =>
+            modelBuilder.Entity("LibApp.Core.Entities.BookImage", b =>
+                {
+                    b.HasOne("LibApp.Core.Entities.Book", "Book")
+                        .WithMany("Images")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+                });
+
+            modelBuilder.Entity("LibApp.Core.Entities.BorrowRequest", b =>
+                {
+                    b.HasOne("LibApp.Core.Entities.User", "ProcessedByUser")
+                        .WithMany()
+                        .HasForeignKey("ProcessedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LibApp.Core.Entities.RoomBook", "RoomBook")
+                        .WithMany()
+                        .HasForeignKey("RoomBookId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LibApp.Core.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProcessedByUser");
+
+                    b.Navigation("RoomBook");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LibApp.Core.Entities.DiscardedBook", b =>
                 {
                     b.HasOne("LibApp.Core.Entities.User", "ApprovedByUser")
                         .WithMany()
@@ -427,17 +516,6 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                     b.Navigation("Reader");
 
                     b.Navigation("Room");
-                });
-
-            modelBuilder.Entity("LibApp.Core.Entities.BookImage", b =>
-                {
-                    b.HasOne("LibApp.Core.Entities.Book", "Book")
-                        .WithMany("Images")
-                        .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Book");
                 });
 
             modelBuilder.Entity("LibApp.Core.Entities.PenaltyPayment", b =>
@@ -488,6 +566,11 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
 
             modelBuilder.Entity("LibApp.Core.Entities.UserRoomBook", b =>
                 {
+                    b.HasOne("LibApp.Core.Entities.BorrowRequest", "BorrowRequest")
+                        .WithMany()
+                        .HasForeignKey("BorrowRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("LibApp.Core.Entities.RoomBook", "RoomBook")
                         .WithMany()
                         .HasForeignKey("RoomBookId")
@@ -499,6 +582,8 @@ namespace LibApp.Infrastructure.Db.EFCore.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("BorrowRequest");
 
                     b.Navigation("RoomBook");
 

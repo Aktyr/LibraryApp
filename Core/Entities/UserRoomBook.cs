@@ -16,6 +16,13 @@ public class UserRoomBook : IEntity
     public Id RoomBookId { get; set; }
     public virtual RoomBook RoomBook { get; set; } = null!;
 
+    /// <summary>
+    /// Заявка, по которой создана эта выдача. null — выдача оформлена библиотекарем напрямую,
+    /// без предварительной заявки читателя. Устанавливается только при одобрении заявки.
+    /// </summary>
+    public Id? BorrowRequestId { get; set; }
+    public virtual BorrowRequest? BorrowRequest { get; set; }
+
     /// <summary>Оплаты штрафа. По правилу — не более одной (уникальный индекс в конфиге EF).</summary>
     public virtual ICollection<PenaltyPayment> PenaltyPayments { get; set; } = [];
 

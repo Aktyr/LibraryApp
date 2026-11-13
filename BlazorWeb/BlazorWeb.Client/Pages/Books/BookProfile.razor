@@ -2,8 +2,14 @@
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @using BlazorWeb.Client.Shared
 @using LibApp.Core.DTO.Entities
+@using LibApp.Core.Enums
+@using LibApp.Core.Requests.Borrowing
 @using Microsoft.AspNetCore.Authorization
 @inject IBookApiClient BookClient
+@inject IUserApiClient UserClient
+@inject IRoomApiClient RoomClient
+@inject IBorrowRequestApiClient BorrowRequestClient
+@inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
 @inject IToastService Toast
 @attribute [Authorize]
@@ -100,7 +106,86 @@ else
                 <p class="text-muted fst-italic mt-4">Описание пока не добавлено.</p>
             }
 
-            @* Здесь позже появится кнопка «Запросить» (BorrowRequest) и Рейтинг *@
+            @* Блок действий читателя *@
+
+            <div class="mt-4 pt-3 border-top">
+                @if (hasPendingRequest)
+                {
+                    <button class="btn btn-outline-secondary" disabled>
+                        ⏳ Заявка отправлена, ожидает рассмотрения
+                    </button>
+                }
+                else if (!userProfileActive)
+                {
+                    <button class="btn btn-secondary" disabled
+                            title="Заявки на выдачу доступны только пользователям с активным профилем">
+                        Запросить книгу
+                    </button>
+                    <span class="text-warning ms-2 small">
+                        Ваш профиль не активен — запросить книгу нельзя.
+                    </span>
+                }
+                else if (!HasAnyAvailable)
+                {
+                    <button class="btn btn-secondary" disabled>
+                        Все экземпляры выданы
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-primary" @onclick="OpenRequestDialog">
+                        📩 Запросить книгу
+                    </button>
+                }
+            </div>
+
+        </div>
+    </div>
+}
+
+@* Модалка выбора экземпляра и подтверждения заявки *@
+@if (requestDialogOpen)
+{
+    <div class="modal-backdrop" @onclick="CloseRequestDialog"></div>
+    <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
+        <h3>Запрос на выдачу</h3>
+        <p class="mb-3"><strong>@book!.Title</strong> — @book.Author</p>
+
+        @if (availableOptions.Count == 1)
+        {
+            <p class="text-muted small mb-3">
+                Доступно: @availableOptions[0].Available из @availableOptions[0].Total —
+                комната «@availableOptions[0].RoomName»
+            </p>
+        }
+        else
+        {
+            <div class="mb-3">
+                <label class="form-label">Выберите комнату</label>
+                <select class="form-select" @bind="selectedRoomBookId">
+                    <option value="@Guid.Empty">— Выберите комнату —</option>
+                    @foreach (var opt in availableOptions)
+                    {
+                        <option value="@opt.RoomBookId">«@opt.RoomName» — доступно @opt.Available из @opt.Total</option>
+                    }
+                </select>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(requestDialogError))
+        {
+            <div class="alert alert-danger py-2 mb-3" style="white-space: pre-line;">@requestDialogError</div>
+        }
+
+        <div>
+            <button class="btn btn-primary"
+                    disabled="@(selectedRoomBookId == Guid.Empty || isSubmitting)"
+                    @onclick="SubmitRequestAsync">
+                @(isSubmitting ? "Отправка..." : "Отправить заявку")
+            </button>
+            <button class="btn btn-secondary ms-2" @onclick="CloseRequestDialog" disabled="@isSubmitting">
+                Отмена
+            </button>
         </div>
     </div>
 }
@@ -110,6 +195,23 @@ else
 
     private bool isLoading = true;
     private BookDTO? book;
+
+    private bool userProfileActive;
+
+    // Признак того, что у читателя уже есть Pending-заявка на эту книгу.
+    // Запрашивается при каждой загрузке страницы: одной query-строкой через /my?status=Pending&bookId=...
+    private bool hasPendingRequest;
+
+    // Список доступных экземпляров для запроса — по одной строке на комнату,
+    // где AvailableCount > 0. Используется в модалке для выбора комнаты.
+    private List<RoomBookOption> availableOptions = new();
+
+    private bool requestDialogOpen;
+    private Guid selectedRoomBookId;
+    private string? requestDialogError;
+    private bool isSubmitting;
+
+    private bool HasAnyAvailable => availableOptions.Count > 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -123,7 +225,14 @@ else
         {
             var resp = await BookClient.GetBookByIdAsync(Id);
             book = resp.Book.FirstOrDefault();
-            if (book == null) Toast.ShowError("Книга не найдена");
+            if (book == null)
+            {
+                Toast.ShowError("Книга не найдена");
+                return;
+            }
+
+            await LoadUserContextAsync();
+            await BuildAvailableOptionsAsync();
         }
         catch (Exception ex)
         {
@@ -135,7 +244,104 @@ else
             await InvokeAsync(StateHasChanged);
         }
     }
+
+    private async Task LoadUserContextAsync()
+    {
+        // Профиль: нужен статус для показа/скрытия кнопки.
+        var meResp = await UserClient.GetMeAsync();
+        var me = meResp.Users.FirstOrDefault();
+        userProfileActive = me?.SubscriptionStatus == SubscriptionStatus.Active;
+
+        // Pending-заявка читателя на эту книгу. Используем общий /my с фильтром по bookId,
+        // чтобы не дёргать всю историю. Если заявок нет — data будет пустым.
+        var pendingResp = await BorrowRequestClient.GetMyAsync(new GetBorrowRequestsRequest
+        {
+            Status = BorrowRequestStatus.Pending,
+            BookId = Id,
+            PageNumber = 1,
+            PageSize = 1
+        });
+        hasPendingRequest = pendingResp.Data.Length > 0;
+    }
+
+    private async Task BuildAvailableOptionsAsync()
+    {
+        availableOptions = (book!.RoomBook ?? [])
+            .Where(rb => rb.AvailableCount > 0)
+            .Select(rb => new RoomBookOption(
+                RoomBookId: rb.Id,
+                RoomId: rb.RoomId,
+                RoomName: "—", // заполним ниже именами комнат
+                Available: rb.AvailableCount,
+                Total: rb.BookCount))
+            .ToList();
+
+        if (availableOptions.Count == 0) return;
+
+        // Один запрос за именами комнат. Ключ — RoomId, чтобы подставить в options.
+        var roomsResp = await RoomClient.GetAllRoomsAsync();
+        var roomNames = roomsResp.Room.ToDictionary(r => r.Id, r => r.Name);
+
+        availableOptions = availableOptions
+            .Select(o => o with { RoomName = roomNames.TryGetValue(o.RoomId, out var n) ? n : "—" })
+            .ToList();
+
+        // Если комната одна — предвыбираем её; если несколько — пользователь выберет.
+        if (availableOptions.Count == 1)
+            selectedRoomBookId = availableOptions[0].RoomBookId;
+    }
+
+    private void OpenRequestDialog()
+    {
+        requestDialogError = null;
+        requestDialogOpen = true;
+        if (availableOptions.Count == 1)
+            selectedRoomBookId = availableOptions[0].RoomBookId;
+    }
+
+    private void CloseRequestDialog()
+    {
+        requestDialogOpen = false;
+        requestDialogError = null;
+        isSubmitting = false;
+    }
+
+    private async Task SubmitRequestAsync()
+    {
+        if (selectedRoomBookId == Guid.Empty)
+        {
+            requestDialogError = "Выберите комнату";
+            return;
+        }
+
+        isSubmitting = true;
+        requestDialogError = null;
+        try
+        {
+            var resp = await BorrowRequestClient.CreateAsync(new CreateBorrowRequest
+            {
+                RoomBookId = selectedRoomBookId
+            });
+            Toast.ShowSuccess(resp.Message);
+            CloseRequestDialog();
+
+            // Перечитать страницу: hasPendingRequest должен стать true,
+            // иначе кнопка останется «Запросить» и пользователь отправит дубль.
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            requestDialogError = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private record RoomBookOption(Guid RoomBookId, Guid RoomId, string RoomName, int Available, int Total);
 }
+
 <style>
     .book-gallery {
         position: sticky;

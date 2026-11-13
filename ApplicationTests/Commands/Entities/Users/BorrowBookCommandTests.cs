@@ -1,6 +1,4 @@
-﻿using LibApp.Application.Configuration;
-
-namespace LibApp.ApplicationTests.Commands.Entities.Users;
+﻿namespace LibApp.ApplicationTests.Commands.Entities.Users;
 
 [TestFixture]
 public class BorrowBookCommandTests
@@ -12,6 +10,18 @@ public class BorrowBookCommandTests
         return new BorrowingValidatorAsync(options.Object);
     }
 
+    // Конструирует реальный BorrowingService поверх того же UnitOfWork, что передаётся в команду.
+    // Мокать IBorrowingService не нужно: тесты проверяют валидацию (лимит, просрочки, дубликат),
+    // а она теперь живёт в сервисе. Фейковый сервис перестал бы эти тесты покрывать.
+    // TimeProvider.System — поведение то же, что раньше давал DateTime.UtcNow внутри команды.
+    private static BorrowBookCommand CreateCommand(
+        IUnitOfWork unitOfWork,
+        BorrowingSettings? settings = null)
+    {
+        var validator = CreateValidator(settings);
+        var borrowingService = new BorrowingService(unitOfWork, validator, TimeProvider.System);
+        return new BorrowBookCommand(unitOfWork, borrowingService, Mock.Of<IAuditService>());
+    }
     [Test]
     public async Task Execute_WhenUserNotFound_ThrowsUserNotFoundException()
     {
@@ -30,7 +40,7 @@ public class BorrowBookCommandTests
         };
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWork);
         var request = new BorrowBookRequest
         {
             UserId = Guid.NewGuid(),
@@ -62,7 +72,7 @@ public class BorrowBookCommandTests
         };
         await userRepo.AddRangeAsync([user], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWork);
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -104,7 +114,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWork, settings);
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -146,7 +156,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWork, settings);
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -205,7 +215,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(settings), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWork, settings);
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -256,7 +266,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWork);
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -298,7 +308,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWork);
         var request = new BorrowBookRequest
         {
             UserId = user.Id.Value,
@@ -344,7 +354,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWork);
         var request = new BorrowBookRequest
         {
             UserId = userId.Value,
@@ -425,7 +435,7 @@ public class BorrowBookCommandTests
         await userRepo.AddRangeAsync([user1, user2], CancellationToken.None);
         await roomBookRepo.AddRangeAsync([roomBook], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWork);
         var request = new BorrowBookRequest
         {
             UserId = user2.Id.Value,
@@ -468,7 +478,7 @@ public class BorrowBookCommandTests
         var borrow = new UserRoomBook { Id = new Id(Guid.NewGuid()), User = user, RoomBook = roomBook, BorrowDate = DateTime.UtcNow, ReturnDate = null };
         await userRoomBookRepo.AddRangeAsync([borrow], CancellationToken.None);
 
-        var command = new BorrowBookCommand(unitOfWork, CreateValidator(), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWork);
         var request = new BorrowBookRequest { UserId = user.Id.Value, RoomBookId = roomBook.Id.Value, BorrowDays = 7 };
 
         // Act & Assert
@@ -547,7 +557,7 @@ public class BorrowBookCommandTests
         unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
                       .ThrowsAsync(new Exception("DB error"));
 
-        var command = new BorrowBookCommand(unitOfWorkMock.Object, CreateValidator(), Mock.Of<IAuditService>());
+        var command = CreateCommand(unitOfWorkMock.Object);
         var request = new BorrowBookRequest
         {
             UserId = userId.Value,
