@@ -59,4 +59,10 @@ public class DataGridColumn<TItem>
     /// и на вид поля ввода значения.
     /// </summary>
     public FilterKind FilterKind { get; set; } = FilterKind.Text;
+
+    /// <summary>
+    /// Тип перечисления, если FilterKind == FilterKind.Enum.
+    /// Используется для генерации списка значений в выпадающем списке фильтра.
+    /// </summary>
+    public Type? EnumType { get; set; }
 }

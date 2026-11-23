@@ -44,7 +44,16 @@ else if (users != null)
     {
         new() { Title = "ФИО", Value = u => $"{u.LastName} {u.FirstName} {u.MiddleName}".Trim(), Width = 250 },
         new() { Title = "Email", Value = u => u.Email, Width = 200 },
-        new() { Title = "Роль", Value = u => Badges.RoleName(u.Role), Width = 120 }
+        new()
+        {
+            Title = "Роль",
+            Width = 120,
+            Value = u => u.Role,
+            FilterKind = FilterKind.Enum,
+            EnumType = typeof(UserRole),
+            FilterText = u => Badges.RoleName(u.Role),
+            Template = u => Badges.Role(u.Role)
+        }    
     };
 
     protected override async Task OnInitializedAsync() => await LoadAsync();

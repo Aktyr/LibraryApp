@@ -18,7 +18,10 @@ public enum FilterKind
     Date,
 
     /// <summary>Булево значение. Только операторы «да» / «нет».</summary>
-    Bool
+    Bool,
+
+    /// <summary>Для сортировки когда поля имеют Enum тип данных. Позволяет не вводить вручную искомое.</summary>
+    Enum
 }
 
 #endregion

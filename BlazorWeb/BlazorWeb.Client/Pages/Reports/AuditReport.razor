@@ -148,14 +148,16 @@ else if (records != null)
         {
             Title = "Действие",
             Width = 140,
-            Value = l => l.ActionType.DisplayName(),
+            Value = l => l.ActionType,
+            FilterKind = FilterKind.Enum,
+            EnumType = typeof(AuditActionType),
             FilterText = l => l.ActionType.DisplayName(),
             Template = item => b =>
             {
                 var (bg, fg) = AuditActionStyle.Get(item.ActionType);
                 b.OpenElement(0, "span");
                 b.AddAttribute(1, "style",
-                    $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
+                $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
                 b.AddContent(2, item.ActionType.DisplayName());
                 b.CloseElement();
             }

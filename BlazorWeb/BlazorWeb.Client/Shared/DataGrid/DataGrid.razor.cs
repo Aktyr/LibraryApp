@@ -221,32 +221,49 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     {
         var col = Columns.FirstOrDefault(x => x.Id == c.ColumnId);
         if (col is null) return true;
+
         object? raw = col.Value?.Invoke(item);
         string text = col.FilterText?.Invoke(item) ?? raw?.ToString() ?? "";
 
-        switch (c.Operator)
+        // Специальная обработка для Enum: сравниваем по строковому имени значения
+        if (col.FilterKind == FilterKind.Enum && raw != null)
         {
-            case FilterOperator.Contains: return text.Contains(c.Value ?? "", StringComparison.OrdinalIgnoreCase);
-            case FilterOperator.NotContains: return !text.Contains(c.Value ?? "", StringComparison.OrdinalIgnoreCase);
-            case FilterOperator.StartsWith: return text.StartsWith(c.Value ?? "", StringComparison.OrdinalIgnoreCase);
-            case FilterOperator.NotStartsWith: return !text.StartsWith(c.Value ?? "", StringComparison.OrdinalIgnoreCase);
-            case FilterOperator.EndsWith: return text.EndsWith(c.Value ?? "", StringComparison.OrdinalIgnoreCase);
-            case FilterOperator.NotEndsWith: return !text.EndsWith(c.Value ?? "", StringComparison.OrdinalIgnoreCase);
-            case FilterOperator.In: return SplitList(c.Value).Any(v => string.Equals(text, v, StringComparison.OrdinalIgnoreCase));
-            case FilterOperator.NotIn: return !SplitList(c.Value).Any(v => string.Equals(text, v, StringComparison.OrdinalIgnoreCase));
-            case FilterOperator.Equals: return Compare(raw, c.Value, col.FilterKind) == 0;
-            case FilterOperator.NotEquals: return Compare(raw, c.Value, col.FilterKind) != 0;
-            case FilterOperator.Greater: return Compare(raw, c.Value, col.FilterKind) > 0;
-            case FilterOperator.GreaterOrEqual: return Compare(raw, c.Value, col.FilterKind) >= 0;
-            case FilterOperator.Less: return Compare(raw, c.Value, col.FilterKind) < 0;
-            case FilterOperator.LessOrEqual: return Compare(raw, c.Value, col.FilterKind) <= 0;
-            case FilterOperator.Between: return Compare(raw, c.Value, col.FilterKind) >= 0 && Compare(raw, c.Value2, col.FilterKind) <= 0;
-            case FilterOperator.IsEmpty: return string.IsNullOrWhiteSpace(text);
-            case FilterOperator.IsNotEmpty: return !string.IsNullOrWhiteSpace(text);
-            case FilterOperator.IsTrue: return raw is bool tb && tb;
-            case FilterOperator.IsFalse: return raw is bool fb && !fb;
+            var enumStr = raw.ToString() ?? "";
+            return c.Operator switch
+            {
+                FilterOperator.Equals => string.Equals(enumStr, c.Value, StringComparison.OrdinalIgnoreCase),
+                FilterOperator.NotEquals => !string.Equals(enumStr, c.Value, StringComparison.OrdinalIgnoreCase),
+                FilterOperator.In => SplitList(c.Value).Any(v => string.Equals(enumStr, v, StringComparison.OrdinalIgnoreCase)),
+                FilterOperator.NotIn => !SplitList(c.Value).Any(v => string.Equals(enumStr, v, StringComparison.OrdinalIgnoreCase)),
+                FilterOperator.IsEmpty => string.IsNullOrWhiteSpace(enumStr),
+                FilterOperator.IsNotEmpty => !string.IsNullOrWhiteSpace(enumStr),
+                _ => text.Contains(c.Value ?? "", StringComparison.OrdinalIgnoreCase)
+            };
         }
-        return true;
+
+        return c.Operator switch
+        {
+            FilterOperator.Contains => text.Contains(c.Value ?? "", StringComparison.OrdinalIgnoreCase),
+            FilterOperator.NotContains => !text.Contains(c.Value ?? "", StringComparison.OrdinalIgnoreCase),
+            FilterOperator.StartsWith => text.StartsWith(c.Value ?? "", StringComparison.OrdinalIgnoreCase),
+            FilterOperator.NotStartsWith => !text.StartsWith(c.Value ?? "", StringComparison.OrdinalIgnoreCase),
+            FilterOperator.EndsWith => text.EndsWith(c.Value ?? "", StringComparison.OrdinalIgnoreCase),
+            FilterOperator.NotEndsWith => !text.EndsWith(c.Value ?? "", StringComparison.OrdinalIgnoreCase),
+            FilterOperator.In => SplitList(c.Value).Any(v => string.Equals(text, v, StringComparison.OrdinalIgnoreCase)),
+            FilterOperator.NotIn => !SplitList(c.Value).Any(v => string.Equals(text, v, StringComparison.OrdinalIgnoreCase)),
+            FilterOperator.Equals => Compare(raw, c.Value, col.FilterKind) == 0,
+            FilterOperator.NotEquals => Compare(raw, c.Value, col.FilterKind) != 0,
+            FilterOperator.Greater => Compare(raw, c.Value, col.FilterKind) > 0,
+            FilterOperator.GreaterOrEqual => Compare(raw, c.Value, col.FilterKind) >= 0,
+            FilterOperator.Less => Compare(raw, c.Value, col.FilterKind) < 0,
+            FilterOperator.LessOrEqual => Compare(raw, c.Value, col.FilterKind) <= 0,
+            FilterOperator.Between => Compare(raw, c.Value, col.FilterKind) >= 0 && Compare(raw, c.Value2, col.FilterKind) <= 0,
+            FilterOperator.IsEmpty => string.IsNullOrWhiteSpace(text),
+            FilterOperator.IsNotEmpty => !string.IsNullOrWhiteSpace(text),
+            FilterOperator.IsTrue => raw is bool tb && tb,
+            FilterOperator.IsFalse => raw is bool fb && !fb,
+            _ => true
+        };
     }
 
     private static IEnumerable<string> SplitList(string? raw)
@@ -689,25 +706,29 @@ public partial class DataGrid<TItem> : IAsyncDisposable
 
     private static FilterOperator[] OpsFor(FilterKind kind) => kind switch
     {
-        FilterKind.Text => new[]
-        {
-            FilterOperator.Contains, FilterOperator.NotContains, FilterOperator.StartsWith, FilterOperator.NotStartsWith,
-            FilterOperator.EndsWith, FilterOperator.NotEndsWith, FilterOperator.In, FilterOperator.NotIn,
-            FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.Greater, FilterOperator.GreaterOrEqual,
-            FilterOperator.Less, FilterOperator.LessOrEqual, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
-        },
-        FilterKind.Number => new[]
-        {
-            FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.Greater, FilterOperator.GreaterOrEqual,
-            FilterOperator.Less, FilterOperator.LessOrEqual, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
-        },
-        FilterKind.Date => new[]
-        {
-            FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.Greater, FilterOperator.GreaterOrEqual,
-            FilterOperator.Less, FilterOperator.LessOrEqual, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
-        },
-        FilterKind.Bool => new[] { FilterOperator.IsTrue, FilterOperator.IsFalse },
-        _ => new[] { FilterOperator.Contains }
+        FilterKind.Text =>
+        [
+        FilterOperator.Contains, FilterOperator.NotContains, FilterOperator.StartsWith, FilterOperator.NotStartsWith,
+        FilterOperator.EndsWith, FilterOperator.NotEndsWith, FilterOperator.In, FilterOperator.NotIn,
+        FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
+    ],
+        FilterKind.Number =>
+        [
+        FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.Greater, FilterOperator.GreaterOrEqual,
+        FilterOperator.Less, FilterOperator.LessOrEqual, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
+    ],
+        FilterKind.Date =>
+        [
+        FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.Greater, FilterOperator.GreaterOrEqual,
+        FilterOperator.Less, FilterOperator.LessOrEqual, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
+    ],
+        FilterKind.Bool => [FilterOperator.IsTrue, FilterOperator.IsFalse],
+        FilterKind.Enum =>
+        [
+        FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.In, FilterOperator.NotIn,
+        FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
+    ],
+        _ => [FilterOperator.Contains]
     };
 
     private static bool IsValueless(FilterOperator op) =>

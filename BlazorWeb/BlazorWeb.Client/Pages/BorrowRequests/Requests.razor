@@ -251,18 +251,20 @@ else if (requests != null)
         {
             Title = "Статус",
             Width = 130,
-            Value = r => r.Status.DisplayName(),
+            Value = r => r.Status,
+            FilterKind = FilterKind.Enum,
+            EnumType = typeof(BorrowRequestStatus),
             FilterText = r => r.Status.DisplayName(),
             Template = item => b =>
             {
                 var (bg, fg, label) = StatusStyle(item.Status);
                 b.OpenElement(0, "span");
                 b.AddAttribute(1, "style",
-                    $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
+                $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
                 b.AddContent(2, label);
                 b.CloseElement();
             }
-        },       
+        },        
         new()
         {
             // Только у Approved. Показывает, до какого момента читатель должен прийти.

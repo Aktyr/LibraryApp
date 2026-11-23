@@ -146,6 +146,8 @@ else if (users != null)
             Title = "Роль",
             Width = 140,
             Value = u => u.Role,
+            FilterKind = FilterKind.Enum,
+            EnumType = typeof(UserRole),
             FilterText = u => Badges.RoleName(u.Role),
             Template = u => Badges.Role(u.Role)
         },
@@ -178,10 +180,11 @@ else if (users != null)
             Title = "Профиль",
             Width = 140,
             Value = u => u.SubscriptionStatus,
+            FilterKind = FilterKind.Enum,
+            EnumType = typeof(SubscriptionStatus),
             FilterText = u => Badges.StatusName(u.SubscriptionStatus),
             Template = u => Badges.Status(u.SubscriptionStatus)
-        },
-        new()
+        },        new()
         {
             Title = "Ближайший возврат",
             Width = 170,

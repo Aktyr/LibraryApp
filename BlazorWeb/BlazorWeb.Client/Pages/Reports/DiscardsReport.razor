@@ -87,11 +87,13 @@ else if (records != null)
         new() { Title = "Книга", Width = 240, Value = r => r.BookTitle },
         new() { Title = "Комната", Width = 160, Value = r => r.RoomName },
         new() { Title = "Кол-во", Width = 80, FilterKind = FilterKind.Number, Value = r => r.Amount },
-                new()
+        new()
         {
             Title = "Причина",
             Width = 140,
-            Value = r => r.DiscardReason.DisplayName(),
+            Value = r => r.DiscardReason,
+            FilterKind = FilterKind.Enum,
+            EnumType = typeof(DiscardReason),
             FilterText = r => r.DiscardReason.DisplayName(),
             Template = item => b =>
             {
