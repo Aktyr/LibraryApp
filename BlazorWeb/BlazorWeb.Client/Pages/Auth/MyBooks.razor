@@ -1,0 +1,93 @@
+﻿@page "/my-books"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@attribute [Authorize]
+@using BlazorWeb.Client.Shared.BookCard
+@using BlazorWeb.Client.Shared.UserBorrows
+@using LibApp.Core.DTO.Borrowing
+@using LibApp.Core.DTO.Entities
+@using Microsoft.AspNetCore.Authorization
+@inject IUserApiClient UserClient
+@inject IBookApiClient BookClient
+@inject NavigationManager Nav
+@inject IToastService Toast
+
+<PageTitle>Мои активные книги</PageTitle>
+<PageHeader BackUrl="/my-profile" BackText="в профиль" OnRefresh="LoadAsync" IsLoading="@isLoading" />
+<h1>Мои активные книги</h1>
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Загрузка книг...</p>
+    </div>
+}
+else if (activeBooks.Count == 0)
+{
+    <div class="alert alert-info mt-4">
+        <h4 class="alert-heading">Нет активных выдач</h4>
+        <p class="mb-0">У вас нет книг на руках. Перейдите в <a href="/catalog">каталог</a>, чтобы запросить книгу.</p>
+    </div>
+}
+else
+{
+    <div class="catalog-grid">
+        @foreach (var book in activeBooks)
+        {
+            <BookCard Book="book" OnClick="OpenBookDetails" />
+        }
+    </div>
+}
+@code {
+    private bool isLoading = true;
+    private List<BookDTO> activeBooks = new();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var booksResp = await UserClient.GetMyBooksAsync();
+            var allBorrows = booksResp.Books.ToList();
+            var activeBorrows = allBorrows.ActiveBorrows();
+            if (activeBorrows.Count == 0)
+            {
+                activeBooks = new();
+                return;
+            }
+            var bookIds = activeBorrows.Select(b => b.BookId).Distinct().ToList();
+            var booksResp2 = await BookClient.GetBooksByIdsAsync(bookIds);
+            activeBooks = booksResp2.Book.ToList();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    private void OpenBookDetails(BookDTO book)
+    {
+        Nav.NavigateTo($"/catalog/{book.Id}");
+    }
+}
+<style>
+    .catalog-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 24px;
+    }
+
+    @@media (max-width: 768px) {
+        .catalog-grid {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+    }
+</style>

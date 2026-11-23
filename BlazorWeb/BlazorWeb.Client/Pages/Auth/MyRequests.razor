@@ -1,0 +1,198 @@
+﻿@page "/my-requests"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@attribute [Authorize]
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Borrowing
+@using LibApp.Core.Enums
+@using LibApp.Core.Requests.Borrowing
+@using Microsoft.AspNetCore.Authorization
+@inject IBorrowRequestApiClient BorrowRequestClient
+@inject IConfirmService Confirm
+@inject IToastService Toast
+
+<PageTitle>Мои заявки</PageTitle>
+<PageHeader BackUrl="/my-profile" BackText="в профиль" OnRefresh="LoadAsync" IsLoading="@isLoading" />
+<h1>Мои заявки</h1>
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (requests == null)
+{
+    <div class="alert alert-warning">Не удалось загрузить заявки.</div>
+}
+else
+{
+    <div class="d-flex gap-4 mb-3">
+        <div>
+            <small class="text-muted d-block">Всего</small>
+            <span class="fs-5 fw-semibold">@requests.Count</span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Ожидают</small>
+            <span class="fs-5 fw-semibold @(pendingCount > 0 ? "text-warning" : "")">@pendingCount</span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Забронированы</small>
+            <span class="fs-5 fw-semibold @(approvedCount > 0 ? "text-info" : "")">@approvedCount</span>
+        </div>
+    </div>
+    @if (requests.Count == 0)
+    {
+        <div class="alert alert-info mt-4">
+            <h4 class="alert-heading">Заявок нет</h4>
+            <p class="mb-0">Перейдите в <a href="/catalog">каталог</a>, чтобы запросить книгу.</p>
+        </div>
+    }
+    else
+    {
+        <DataGrid TItem="BorrowRequestDTO"
+                  Items="requests"
+                  PageSize="15"
+                  Columns="Columns"
+                  Actions="Actions"
+                  SelectionMode="DataGridSelectionMode.Single" />
+    }
+}
+@code {
+    private bool isLoading = true;
+    private List<BorrowRequestDTO>? requests;
+    private int pendingCount => requests?.Count(r => r.Status == BorrowRequestStatus.Pending) ?? 0;
+    private int approvedCount => requests?.Count(r => r.Status == BorrowRequestStatus.Approved) ?? 0;
+    private List<DataGridColumn<BorrowRequestDTO>>? _columns;
+    private List<DataGridColumn<BorrowRequestDTO>> Columns => _columns ??= new()
+    {
+        new()
+        {
+            Title = "Создана",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = r => r.CreatedAt,
+            FilterText = r => r.CreatedAt.ToString("yyyy-MM-dd"),
+            Template = item => b => b.AddContent(0, item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+        },
+        new() { Title = "Книга", Width = 260, Value = r => r.BookTitle, FilterText = r => r.BookTitle },
+        new() { Title = "Автор", Width = 180, Value = r => r.BookAuthor },
+        new() { Title = "Комната", Width = 140, Value = r => r.RoomName },
+        new()
+        {
+            Title = "Статус",
+            Width = 140,
+            Value = r => r.Status,
+            FilterKind = FilterKind.Enum,
+            EnumType = typeof(BorrowRequestStatus),
+            FilterText = r => r.Status.DisplayName(),
+            Template = item => b =>
+            {
+                var (bg, fg) = BorrowRequestStatusStyle.Get(item.Status);
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style",
+                    $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
+                b.AddContent(2, item.Status.DisplayName());
+                b.CloseElement();
+            }
+        },
+        new()
+        {
+            Title = "Обработана",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = r => r.ProcessedAt,
+            FilterText = r => r.ProcessedAt?.ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0,
+                item.ProcessedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")
+        },
+        new()
+        {
+            Title = "Забрать до",
+            Width = 150,
+            FilterKind = FilterKind.Date,
+            Value = r => r.ExpiresAt,
+            FilterText = r => r.ExpiresAt?.ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0,
+                item.ExpiresAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")
+        },
+        new()
+        {
+            Title = "Комментарий",
+            Width = 260,
+            Value = r => r.Comment ?? "",
+            FilterText = r => r.Comment ?? "",
+            Template = item => b =>
+            {
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "title", item.Comment ?? "");
+                b.AddAttribute(2, "style",
+                    "display: inline-block; max-width: 100%; white-space: nowrap; " +
+                    "overflow: hidden; text-overflow: ellipsis;");
+                b.AddContent(3, item.Comment ?? "—");
+                b.CloseElement();
+            }
+        }
+    };
+    private List<DataGridAction<BorrowRequestDTO>>? _actions;
+    private List<DataGridAction<BorrowRequestDTO>> Actions => _actions ??= new()
+    {
+        new()
+        {
+            Label = "Отменить заявку",
+            Icon = "🚫",
+            MinSelection = 1,
+            CanExecute = s => s.Count == 1
+                && (s[0].Status == BorrowRequestStatus.Pending
+                    || s[0].Status == BorrowRequestStatus.Approved),
+            Handler = s => CancelRequestAsync(s[0])
+        }
+    };
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var resp = await BorrowRequestClient.GetMyAsync(new GetBorrowRequestsRequest
+            {
+                PageNumber = 1,
+                PageSize = 200
+            });
+            requests = resp.Data.ToList();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
+            requests = new();
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    private async Task CancelRequestAsync(BorrowRequestDTO request)
+    {
+        var message = request.Status == BorrowRequestStatus.Approved
+            ? $"Отменить бронь на книгу «{request.BookTitle}»?\n" +
+              "Забронированный экземпляр вернётся в фонд, и его сможет взять другой читатель."
+            : $"Отменить заявку на книгу «{request.BookTitle}»?";
+        var confirmed = await Confirm.AskAsync(
+            message,
+            title: "Отмена заявки",
+            confirmText: "Отменить заявку",
+            cancelText: "Не отменять");
+        if (!confirmed) return;
+        try
+        {
+            var resp = await BorrowRequestClient.CancelAsync(
+                request.Id, new CancelBorrowRequest());
+            Toast.ShowSuccess(resp.Message);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка отмены: {ex.Message}");
+        }
+    }
+}

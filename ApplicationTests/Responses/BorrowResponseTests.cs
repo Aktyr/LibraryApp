@@ -13,6 +13,7 @@ public class BorrowResponseTests
         {
             new BorrowedBookDTO(
                 Id: Guid.NewGuid(),
+                BookId: Guid.NewGuid(),
                 BookTitle: "Book 1",
                 BookAuthor: "Author 1",
                 RoomName: "Room A",
@@ -23,6 +24,7 @@ public class BorrowResponseTests
                 ),
             new BorrowedBookDTO(
                 Id: Guid.NewGuid(),
+                BookId: Guid.NewGuid(),
                 BookTitle: "Book 2",
                 BookAuthor: "Author 2",
                 RoomName: "Room B",

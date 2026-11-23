@@ -3,23 +3,21 @@
 @attribute [Authorize]
 @using BlazorWeb.Client.Services.Interfaces
 @using BlazorWeb.Client.Shared.CharCounter
-@using BlazorWeb.Components.Shared.DataGrid
+@using BlazorWeb.Client.Shared.UserBorrows
 @using LibApp.Core.DTO.Borrowing
 @using LibApp.Core.DTO.Entities
 @using LibApp.Core.Enums
 @using LibApp.Core.Policies
 @using LibApp.Core.Records
+@using LibApp.Core.Requests.Borrowing
 @using Microsoft.AspNetCore.Authorization
 @inject IUserApiClient UserClient
 @inject IBorrowRequestApiClient BorrowRequestClient
-@inject AuthenticationStateProvider AuthProvider
+@inject IBorrowingSettingsService SettingsService
 @inject NavigationManager Nav
 @inject IConfirmService Confirm
 @inject IToastService Toast
-@inject IBorrowingSettingsService SettingsService
-
 <PageTitle>Мой профиль</PageTitle>
-
 <PageHeader OnRefresh="LoadAsync" IsLoading="@isLoading">
     <ChildContent>
         @if (user != null)
@@ -29,7 +27,7 @@
                     disabled="@isLoading">
                 ✏️ Редактировать профиль
             </button>
-            <a class="btn btn-sm btn-outline-secondary" href="Account/Manage">
+            <a class="btn btn-sm btn-outline-secondary" href="Account/Manage/Email">
                 🔐 Безопасность и вход
             </a>
             @if (user.Role != UserRole.Admin)
@@ -45,13 +43,16 @@
         }
     </ChildContent>
 </PageHeader>
+
 @if (isLoading)
 {
     <p>Загрузка...</p>
 }
 else if (user == null)
 {
-    <div class="alert alert-warning">Не удалось загрузить данные профиля. Возможно, ваша учетная запись удалена.</div>
+    <div class="alert alert-warning">
+        Не удалось загрузить данные профиля. Возможно, ваша учетная запись удалена.
+    </div>
 }
 else
 {
@@ -74,54 +75,54 @@ else
         </div>
     }
 
-    <div class="mb-3 d-flex gap-4 align-items-start flex-wrap">
-        <div>
-            <small class="text-muted d-block">Активных выдач</small>
-            <span class="fs-5 fw-semibold">@user.ActiveBorrowedCount / @MaxBooksPerUser</span>
-        </div>
-        <div>
-            <small class="text-muted d-block">Просрочено</small>
-            <span class="fs-5 fw-semibold @(overdueCount > 0 ? "text-danger" : "")">@overdueCount</span>
-        </div>
-        <div>
-            <small class="text-muted d-block">Штрафы</small>
-            <span class="fs-5 fw-semibold @(totalPenalty > 0 ? "text-danger" : "")">@totalPenalty.ToString("0.##") ₽</span>
-        </div>
-    </div>
-
     <div class="mb-4">
-        <h4>Мои заявки (@myRequests.Count)</h4>
-        @if (myRequests.Count == 0)
-        {
-            <p class="text-muted">Заявок на выдачу нет.</p>
-        }
-        else
-        {
-            <DataGrid TItem="BorrowRequestDTO"
-                      Items="myRequests"
-                      PageSize="10"
-                      Columns="RequestColumns"
-                      Actions="RequestActions"
-                      Hint="<b>Отменить</b> — доступно для ожидающих и забронированных заявок | <b>Забронирована</b> — книга ждёт вас в библиотеке до указанного срока | <b>Выдана</b> — книга на руках, см. раздел «Мои активные книги»"
-                      SelectionMode="DataGridSelectionMode.Multiple" />
-        }
+        <h4 class="mb-3">Сводка</h4>
+        <div class="d-flex gap-4 align-items-start flex-wrap">
+            <div>
+                <small class="text-muted d-block">Активных выдач</small>
+                <span class="fs-5 fw-semibold">@user.ActiveBorrowedCount / @MaxBooksPerUser</span>
+            </div>
+            <div>
+                <small class="text-muted d-block">Просрочено</small>
+                <span class="fs-5 fw-semibold @(overdueCount > 0 ? "text-danger" : "")">@overdueCount</span>
+            </div>
+            <div>
+                <small class="text-muted d-block">Штрафы</small>
+                <span class="fs-5 fw-semibold @(totalPenalty > 0 ? "text-danger" : "")">@totalPenalty.ToString("0.##") ₽</span>
+            </div>
+        </div>
     </div>
 
-    @if (returnedBorrows.Count > 0)
-    {
-        <details class="mb-4">
-            <summary class="h5" style="cursor: pointer;">История возвратов (@returnedBorrows.Count)</summary>
-            <div class="mt-2">
-                <DataGrid TItem="BorrowedBookDTO"
-                          Items="returnedBorrows"
-                          PageSize="10"
-                          Columns="HistoryColumns"
-                          SelectionMode="DataGridSelectionMode.Multiple" />
-            </div>
-        </details>
-    }
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <a href="/my-books" class="profile-nav-card text-decoration-none">
+                <div class="profile-nav-icon">📚</div>
+                <div class="profile-nav-title">Мои активные книги</div>
+                <div class="profile-nav-count">@activeBorrows.Count</div>
+                <div class="profile-nav-hint">Книги на руках</div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="/my-history" class="profile-nav-card text-decoration-none">
+                <div class="profile-nav-icon">📖</div>
+                <div class="profile-nav-title">История прочитанного</div>
+                <div class="profile-nav-count">@returnedBorrows.Count</div>
+                <div class="profile-nav-hint">Возвращённые книги</div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="/my-requests" class="profile-nav-card text-decoration-none">
+                <div class="profile-nav-icon">📩</div>
+                <div class="profile-nav-title">Мои заявки</div>
+                <div class="profile-nav-count">@myRequests.Count</div>
+                <div class="profile-nav-hint">
+                    Ожидают: @pendingCount · Забронированы: @approvedCount
+                </div>
+            </a>
+        </div>
+    </div>
 }
-@* Модалка редактирования профиля *@
+
 @if (editDialogOpen)
 {
     <div class="modal-backdrop" @onclick="CloseEditDialog"></div>
@@ -129,7 +130,6 @@ else
         <h3>Редактирование профиля</h3>
         <EditForm Model="draft" OnValidSubmit="SaveProfileAsync">
             <DataAnnotationsValidator />
-
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-baseline">
                     <label class="form-label">Фамилия <span class="text-danger">*</span></label>
@@ -162,17 +162,16 @@ else
                 <InputTextLive @bind-Value="draft.ContactInfo" class="form-control" />
                 <ValidationMessage For="() => draft.ContactInfo" class="text-danger" />
             </div>
-
             @if (!string.IsNullOrEmpty(editError))
             {
                 <div class="alert alert-danger mb-3" style="white-space: pre-line;">@editError</div>
             }
-
             <button type="submit" class="btn btn-primary">Сохранить</button>
             <button type="button" class="btn btn-secondary ms-2" @onclick="CloseEditDialog">Отмена</button>
         </EditForm>
     </div>
 }
+
 @code {
     private string FullName => user.FullName();
     private List<BorrowedBookDTO> activeBorrows => allBorrows.ActiveBorrows();
@@ -180,96 +179,14 @@ else
     private int overdueCount => activeBorrows.OverdueCount();
     private decimal totalPenalty => allBorrows.TotalPenalty();
 
-    private readonly List<DataGridColumn<BorrowedBookDTO>> ActiveColumns =
-        UserBorrowsColumns.CreateActive(penaltyDisplay: b => b.Penalty ?? 0m);
-    private readonly List<DataGridColumn<BorrowedBookDTO>> HistoryColumns =
-        UserBorrowsColumns.CreateHistory();
-
-    private List<DataGridColumn<BorrowRequestDTO>>? _requestColumns;
-    private List<DataGridColumn<BorrowRequestDTO>> RequestColumns => _requestColumns ??= new()
-    {
-        new() { Title = "Книга", Value = r => r.BookTitle, Width = 240 },
-        new() { Title = "Автор", Value = r => r.BookAuthor, Width = 180 },
-        new() { Title = "Комната", Value = r => r.RoomName, Width = 140 },
-        new()
-        {
-            Title = "Создана",
-            Width = 150,
-            FilterKind = FilterKind.Date,
-            Value = r => r.CreatedAt,
-            FilterText = r => r.CreatedAt.ToString("yyyy-MM-dd"),
-            Template = item => b => b.AddContent(0, item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
-        },
-        new()
-        {
-            Title = "Статус",
-            Width = 140,
-            Value = r => r.Status,
-            FilterKind = FilterKind.Enum,
-            EnumType = typeof(BorrowRequestStatus),
-            FilterText = r => r.Status.DisplayName(),
-            Template = item => b =>
-            {
-                var (bg, fg) = BorrowRequestStatusStyle.Get(item.Status);
-                b.OpenElement(0, "span");
-                b.AddAttribute(1, "style",
-                $"background:{bg};color:{fg};padding:2px 10px;border-radius:10px;font-size:12px;");
-                b.AddContent(2, item.Status.DisplayName());
-                b.CloseElement();
-            }
-        },
-        new()
-        {
-            // Только у Approved. Читатель видит, до какого момента книга ждёт его в библиотеке.
-            Title = "Забрать до",
-            Width = 150,
-            FilterKind = FilterKind.Date,
-            Value = r => r.ExpiresAt,
-            FilterText = r => r.ExpiresAt?.ToString("yyyy-MM-dd") ?? "",
-            Template = item => b => b.AddContent(0,
-                item.ExpiresAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")
-        },
-        new()
-        {
-            Title = "Обработана",
-            Width = 150,
-            FilterKind = FilterKind.Date,
-            Value = r => r.ProcessedAt,
-            FilterText = r => r.ProcessedAt?.ToString("yyyy-MM-dd") ?? "",
-            Template = item => b => b.AddContent(0,
-                item.ProcessedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")
-        },
-        new()
-        {
-            Title = "Комментарий",
-            Width = 260,
-            Value = r => r.Comment ?? "",
-            FilterText = r => r.Comment ?? ""
-        }
-    };
-
-    private List<DataGridAction<BorrowRequestDTO>>? _requestActions;
-    private List<DataGridAction<BorrowRequestDTO>> RequestActions => _requestActions ??= new()
-    {
-        new()
-        {
-            Label = "Отменить заявку",
-            Icon = "🚫",
-            MinSelection = 1,
-            CanExecute = s => s.Count == 1
-                && (s[0].Status == BorrowRequestStatus.Pending
-                    || s[0].Status == BorrowRequestStatus.Approved),
-            Handler = s => CancelRequestAsync(s[0])
-        }
-    };
-
     private bool isLoading = true;
     private UserDTO? user;
     private List<BorrowedBookDTO> allBorrows = new();
     private List<BorrowRequestDTO> myRequests = new();
-
     private BorrowingSettingsDTO? settings;
     private int MaxBooksPerUser => settings?.MaxBooksPerUser ?? 5;
+    private int pendingCount => myRequests.Count(r => r.Status == BorrowRequestStatus.Pending);
+    private int approvedCount => myRequests.Count(r => r.Status == BorrowRequestStatus.Approved);
 
     protected override async Task OnInitializedAsync()
     {
@@ -348,25 +265,20 @@ else
     private async Task DeleteAccountAsync()
     {
         if (user == null || !CanDeleteAccount) return;
-
-
         var confirmed = await Confirm.AskAsync(
-            "Удалить аккаунт?\n\n" +
+            "Удалить аккаунт?\n" +
             "Аккаунт будет деактивирован, вы выйдете из системы. " +
-            "Восстановить можно в любой момент по email и паролю на странице входа.\n\n" +
+            "Восстановить можно в любой момент по email и паролю на странице входа.\n" +
             "История выдач и штрафов сохранится.",
             title: "Удаление аккаунта",
             confirmText: "Удалить",
             requireConfirmationWord: true,
             confirmationWord: "УДАЛИТЬ");
-
         if (!confirmed) return;
-
         try
         {
             var resp = await UserClient.DeleteMyProfileAsync();
             Toast.ShowSuccess(resp.Message);
-            // forceLoad: полный reload, чтобы сбросить WASM-состояние и cookie Identity.
             Nav.NavigateTo("/Account/Login", forceLoad: true);
         }
         catch (Exception ex)
@@ -391,7 +303,7 @@ else
         [Required(ErrorMessage = "Контактная информация обязательна")]
         [StringLength(UserPolicy.MaxContactInfoLength, ErrorMessage = "Не более 200 символов")]
         public string ContactInfo { get; set; } = "";
-    }    
+    }
 
     private async Task LoadAsync()
     {
@@ -401,16 +313,10 @@ else
             settings = await SettingsService.GetAsync();
             var resp = await UserClient.GetMeAsync();
             user = resp.Users.FirstOrDefault();
-
             if (user != null)
             {
                 var booksResp = await UserClient.GetMyBooksAsync();
                 allBorrows = booksResp.Books.ToList();
-
-                // Заявки читателя. PageSize 100 — с запасом: за один заход больше
-                // не бывает, для UI-списка «Мои заявки» этого достаточно.
-                // Отдельный запрос — чтобы не грузить заявки вместе с выдачами в одном
-                // ответе: API-контракты у них разные, склейка на сервере смешала бы слои.
                 var requestsResp = await BorrowRequestClient.GetMyAsync(new GetBorrowRequestsRequest
                 {
                     PageNumber = 1,
@@ -418,7 +324,6 @@ else
                 });
                 myRequests = requestsResp.Data.ToList();
             }
-
         }
         catch (Exception ex)
         {
@@ -430,32 +335,46 @@ else
             await InvokeAsync(StateHasChanged);
         }
     }
-    private async Task CancelRequestAsync(BorrowRequestDTO request)
-    {
-        // Текст зависит от статуса: для Pending читатель отменяет ожидание,
-        // для Approved — освобождает забронированный экземпляр.
-        var message = request.Status == BorrowRequestStatus.Approved
-            ? $"Отменить бронь на книгу «{request.BookTitle}»?\n\nЗабронированный экземпляр вернётся в фонд, и его сможет взять другой читатель."
-            : $"Отменить заявку на книгу «{request.BookTitle}»?";
-
-        var confirmed = await Confirm.AskAsync(
-            message,
-            title: "Отмена заявки",
-            confirmText: "Отменить заявку",
-            cancelText: "Не отменять");
-
-        if (!confirmed) return;
-
-        try
-        {
-            var resp = await BorrowRequestClient.CancelAsync(
-                request.Id, new CancelBorrowRequest());
-            Toast.ShowSuccess(resp.Message);
-            await LoadAsync();
-        }
-        catch (Exception ex)
-        {
-            Toast.ShowError($"Ошибка отмены: {ex.Message}");
-        }
-    }
 }
+
+<style>
+    .profile-nav-card {
+        display: block;
+        padding: 20px;
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+        height: 100%;
+    }
+
+        .profile-nav-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            border-color: #0078d4;
+        }
+
+    .profile-nav-icon {
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+
+    .profile-nav-title {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #222;
+        margin-bottom: 4px;
+    }
+
+    .profile-nav-count {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0078d4;
+        margin-bottom: 4px;
+    }
+
+    .profile-nav-hint {
+        font-size: 0.85rem;
+        color: #666;
+    }
+</style>

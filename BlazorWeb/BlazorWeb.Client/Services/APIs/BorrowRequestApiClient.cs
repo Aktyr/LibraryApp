@@ -56,11 +56,24 @@ public class BorrowRequestApiClient(HttpClient http) : IBorrowRequestApiClient
     }
 
     public async Task<BasicCreateDeleteResponse> CancelAsync(
-        Guid borrowRequestId, CancelBorrowRequest request, CancellationToken ct = default)
+    Guid borrowRequestId, CancelBorrowRequest request, CancellationToken ct = default)
     {
         var resp = await http.PostAsJsonAsync(
             $"{BasePath}/{borrowRequestId}/cancel", request, ct);
         return await ReadAsync(resp, ct);
+    }
+
+    public async Task<int> GetCountByStatusAsync(BorrowRequestStatus status, CancellationToken ct = default)
+    {
+        var request = new GetBorrowRequestsRequest
+        {
+            Status = status,
+            PageNumber = 1,
+            PageSize = 1
+        };
+        var qs = BuildQuery(request, includeUserId: false);
+        var resp = await http.GetFromJsonAsync<BorrowRequestResponse>($"{BasePath}{qs}", ct);
+        return resp?.TotalCount ?? 0;
     }
 
     private static async Task<BasicCreateDeleteResponse> ReadAsync(
@@ -76,7 +89,6 @@ public class BorrowRequestApiClient(HttpClient http) : IBorrowRequestApiClient
     private static string BuildQuery(GetBorrowRequestsRequest request, bool includeUserId)
     {
         var q = new List<string>();
-
         if (includeUserId && request.UserId.HasValue)
             q.Add($"userId={request.UserId.Value}");
         if (request.RoomId.HasValue)
@@ -97,7 +109,6 @@ public class BorrowRequestApiClient(HttpClient http) : IBorrowRequestApiClient
             q.Add($"pageNumber={request.PageNumber}");
         if (request.PageSize > 0)
             q.Add($"pageSize={request.PageSize}");
-
         return q.Count > 0 ? "?" + string.Join("&", q) : "";
     }
 }

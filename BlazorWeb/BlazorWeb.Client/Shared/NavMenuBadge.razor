@@ -1,0 +1,28 @@
+﻿@* Бейдж с числом для пункта меню. Показывается только если Count > 0. *@
+@if (Count > 0)
+{
+    <span class="nav-badge" title="@Title">@Count</span>
+}
+@code {
+    /// <summary>Число для отображения.</summary>
+    [Parameter] public int Count { get; set; }
+    /// <summary>Текст подсказки при наведении.</summary>
+    [Parameter] public string Title { get; set; } = "";
+}
+<style>
+    .nav-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        margin-left: 8px;
+        background: #dc3545;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 10px;
+        line-height: 1;
+    }
+</style>

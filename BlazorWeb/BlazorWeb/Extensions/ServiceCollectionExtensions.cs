@@ -95,6 +95,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IBookApiClient, BookApiClient>();
         services.AddScoped<IRoomApiClient, RoomApiClient>();
+        services.AddScoped<IBorrowRequestApiClient, BorrowRequestApiClient>();
 
         return services;
     }

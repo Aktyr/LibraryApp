@@ -25,11 +25,9 @@
                         <span class="nav-emoji">🛍️</span><span class="nav-text">Витрина книг</span>
                     </NavLink>
                 </div>
-
                 @if (context.User.IsInRole("Librarian") || context.User.IsInRole("Admin"))
                 {
                     <div class="nav-section-title">Библиотека</div>
-
                     <div class="nav-item">
                         <NavLink class="nav-link" href="books">
                             <span class="nav-emoji">📚</span><span class="nav-text">Книги</span>
@@ -56,7 +54,6 @@
                         </NavLink>
                     </div>
                 }
-
                 <div class="nav-section-title">Аккаунт</div>
                 <div class="nav-item">
                     <NavLink class="nav-link" href="my-profile">
@@ -64,7 +61,6 @@
                     </NavLink>
                 </div>
             </Authorized>
-
             <NotAuthorized>
                 <div class="nav-item">
                     <NavLink class="nav-link" href="Account/Login">
@@ -78,19 +74,16 @@
 
 @code {
     private string? currentUrl;
-
     protected override void OnInitialized()
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
     }
-
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
         StateHasChanged();
     }
-
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;

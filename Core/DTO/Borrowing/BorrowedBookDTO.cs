@@ -2,6 +2,7 @@
 
 public record BorrowedBookDTO(
     Guid Id,
+    Guid BookId,
     string BookTitle,
     string BookAuthor,
     string RoomName,
@@ -14,7 +15,7 @@ public record BorrowedBookDTO(
 )
 {
     public BorrowedBookDTO() : this(
-        default, default!, default!, default!,
+        default, default, default!, default!, default!,
         default, default, default, default, default, default)
     { }
 }

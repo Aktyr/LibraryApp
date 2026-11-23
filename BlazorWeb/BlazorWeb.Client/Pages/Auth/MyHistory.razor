@@ -1,0 +1,93 @@
+﻿@page "/my-history"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@attribute [Authorize]
+@using BlazorWeb.Client.Shared.BookCard
+@using BlazorWeb.Client.Shared.UserBorrows
+@using LibApp.Core.DTO.Borrowing
+@using LibApp.Core.DTO.Entities
+@using Microsoft.AspNetCore.Authorization
+@inject IUserApiClient UserClient
+@inject IBookApiClient BookClient
+@inject NavigationManager Nav
+@inject IToastService Toast
+
+<PageTitle>История прочитанного</PageTitle>
+<PageHeader BackUrl="/my-profile" BackText="в профиль" OnRefresh="LoadAsync" IsLoading="@isLoading" />
+<h1>История прочитанного</h1>
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Загрузка истории...</p>
+    </div>
+}
+else if (readBooks.Count == 0)
+{
+    <div class="alert alert-info mt-4">
+        <h4 class="alert-heading">История пуста</h4>
+        <p class="mb-0">Вы ещё не вернули ни одной книги. Перейдите в <a href="/catalog">каталог</a>, чтобы взять книгу.</p>
+    </div>
+}
+else
+{
+    <div class="catalog-grid">
+        @foreach (var book in readBooks)
+        {
+            <BookCard Book="book" OnClick="OpenBookDetails" />
+        }
+    </div>
+}
+@code {
+    private bool isLoading = true;
+    private List<BookDTO> readBooks = new();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var booksResp = await UserClient.GetMyBooksAsync();
+            var allBorrows = booksResp.Books.ToList();
+            var returnedBorrows = allBorrows.ReturnedBorrows();
+            if (returnedBorrows.Count == 0)
+            {
+                readBooks = new();
+                return;
+            }
+            var bookIds = returnedBorrows.Select(b => b.BookId).Distinct().ToList();
+            var booksResp2 = await BookClient.GetBooksByIdsAsync(bookIds);
+            readBooks = booksResp2.Book.ToList();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    private void OpenBookDetails(BookDTO book)
+    {
+        Nav.NavigateTo($"/catalog/{book.Id}");
+    }
+}
+<style>
+    .catalog-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 24px;
+    }
+
+    @@media (max-width: 768px) {
+        .catalog-grid {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+    }
+</style>

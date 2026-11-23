@@ -20,6 +20,7 @@ public class BorrowDTOConverter : IConverter<UserRoomBook, BorrowedBookDTO>
 
         return new BorrowedBookDTO(
             Id: entity.Id.Value,
+            BookId: entity.RoomBook.BookId.Value,
             BookTitle: entity.RoomBook.Book.Title,
             BookAuthor: entity.RoomBook.Book.Author,
             RoomName: entity.RoomBook.Room.Name,

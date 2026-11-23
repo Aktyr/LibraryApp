@@ -15,6 +15,7 @@ public class BorrowDTOConverterTests
 
         var dto = new BorrowedBookDTO(
             Id: Guid.NewGuid(),
+            BookId: Guid.NewGuid(),
             BookTitle: "Test Book",
             BookAuthor: "Test Author",
             RoomName: "Test Room",
