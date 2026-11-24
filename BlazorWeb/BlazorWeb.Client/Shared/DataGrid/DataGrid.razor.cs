@@ -224,6 +224,9 @@ public partial class DataGrid<TItem> : IAsyncDisposable
 
         object? raw = col.Value?.Invoke(item);
         string text = col.FilterText?.Invoke(item) ?? raw?.ToString() ?? "";
+        // Даты сравниваем по локальному дню из FilterText: Value хранит UTC-инстант,
+        // и строка, видимая как 25.11, иначе не попадёт в фильтр «= 25.11».
+        object? comparable = col.FilterKind == FilterKind.Date ? LocalDay(raw, text) : raw;
 
         // Специальная обработка для Enum: сравниваем по строковому имени значения
         if (col.FilterKind == FilterKind.Enum && raw != null)
@@ -251,13 +254,15 @@ public partial class DataGrid<TItem> : IAsyncDisposable
             FilterOperator.NotEndsWith => !text.EndsWith(c.Value ?? "", StringComparison.OrdinalIgnoreCase),
             FilterOperator.In => SplitList(c.Value).Any(v => string.Equals(text, v, StringComparison.OrdinalIgnoreCase)),
             FilterOperator.NotIn => !SplitList(c.Value).Any(v => string.Equals(text, v, StringComparison.OrdinalIgnoreCase)),
-            FilterOperator.Equals => Compare(raw, c.Value, col.FilterKind) == 0,
-            FilterOperator.NotEquals => Compare(raw, c.Value, col.FilterKind) != 0,
-            FilterOperator.Greater => Compare(raw, c.Value, col.FilterKind) > 0,
-            FilterOperator.GreaterOrEqual => Compare(raw, c.Value, col.FilterKind) >= 0,
-            FilterOperator.Less => Compare(raw, c.Value, col.FilterKind) < 0,
-            FilterOperator.LessOrEqual => Compare(raw, c.Value, col.FilterKind) <= 0,
-            FilterOperator.Between => Compare(raw, c.Value, col.FilterKind) >= 0 && Compare(raw, c.Value2, col.FilterKind) <= 0,
+            FilterOperator.Equals => Compare(comparable, c.Value, col.FilterKind) == 0,
+            FilterOperator.NotEquals => Compare(comparable, c.Value, col.FilterKind) != 0,
+            FilterOperator.Greater => Compare(comparable, c.Value, col.FilterKind) > 0,
+            FilterOperator.GreaterOrEqual => Compare(comparable, c.Value, col.FilterKind) >= 0,
+            FilterOperator.Less => Compare(comparable, c.Value, col.FilterKind) < 0,
+            FilterOperator.LessOrEqual => Compare(comparable, c.Value, col.FilterKind) <= 0,
+            FilterOperator.Between => comparable is not null
+                && Compare(comparable, c.Value, col.FilterKind) >= 0
+                && Compare(comparable, c.Value2, col.FilterKind) <= 0,
             FilterOperator.IsEmpty => string.IsNullOrWhiteSpace(text),
             FilterOperator.IsNotEmpty => !string.IsNullOrWhiteSpace(text),
             FilterOperator.IsTrue => raw is bool tb && tb,
@@ -294,6 +299,15 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         }
         catch { }
         return string.Compare(a.ToString(), b, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static DateTime? LocalDay(object? raw, string text)
+    {
+        // FilterText для дат задан как yyyy-MM-dd в локальном дне. Если колонка его не задала,
+        // берём Value с переводом зоны: сравнение с датой из datepicker должно совпадать по дню.
+        if (DateTime.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day))
+            return day;
+        return raw is DateTime dt ? dt.ToLocalTime().Date : null;
     }
 
     private IEnumerable<TItem> ApplySort(IEnumerable<TItem> source)
@@ -680,11 +694,19 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     private void ApplyFilter()
     {
         if (string.IsNullOrEmpty(editingClause.ColumnId)) { CloseFilterMenu(); return; }
-        if (!IsValueless(editingClause.Operator) && string.IsNullOrWhiteSpace(editingClause.Value) && editingClause.Operator != FilterOperator.Between) { CloseFilterMenu(); return; }
+        if (editingClause.Operator == FilterOperator.Between)
+        {
+            if (string.IsNullOrWhiteSpace(editingClause.Value) || string.IsNullOrWhiteSpace(editingClause.Value2)) { CloseFilterMenu(); return; }
+            // Дата из datepicker приходит как yyyy-MM-dd: лексикографический порядок совпадает с хронологическим.
+            if (string.CompareOrdinal(editingClause.Value, editingClause.Value2) > 0)
+                (editingClause.Value, editingClause.Value2) = (editingClause.Value2, editingClause.Value);
+        }
+        else if (!IsValueless(editingClause.Operator) && string.IsNullOrWhiteSpace(editingClause.Value)) { CloseFilterMenu(); return; }
         if (editingIndex >= 0 && editingIndex < filterClauses.Count) filterClauses[editingIndex] = editingClause.Clone();
         else filterClauses.Add(editingClause.Clone());
         CloseFilterMenu(); currentPage = 1; RefreshFiltered(); StateHasChanged();
     }
+
     private void OnColumnChanged(ChangeEventArgs e) { editingClause.ColumnId = e.Value?.ToString() ?? ""; NormalizeOperatorForColumn(); }
     private void SelectOperator(FilterOperator op) { editingClause.Operator = op; if (IsValueless(op)) { editingClause.Value = null; editingClause.Value2 = null; } if (op != FilterOperator.Between) editingClause.Value2 = null; operatorMenuOpen = false; }
     private void ToggleOperatorMenu() => operatorMenuOpen = !operatorMenuOpen;
@@ -711,23 +733,24 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         FilterOperator.Contains, FilterOperator.NotContains, FilterOperator.StartsWith, FilterOperator.NotStartsWith,
         FilterOperator.EndsWith, FilterOperator.NotEndsWith, FilterOperator.In, FilterOperator.NotIn,
         FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
-    ],
+        ],
         FilterKind.Number =>
         [
         FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.Greater, FilterOperator.GreaterOrEqual,
         FilterOperator.Less, FilterOperator.LessOrEqual, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
-    ],
+        ],
         FilterKind.Date =>
         [
-        FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.Greater, FilterOperator.GreaterOrEqual,
-        FilterOperator.Less, FilterOperator.LessOrEqual, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
-    ],
+            FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.Greater, FilterOperator.GreaterOrEqual,
+                FilterOperator.Less, FilterOperator.LessOrEqual, FilterOperator.Between,
+                FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
+        ],
         FilterKind.Bool => [FilterOperator.IsTrue, FilterOperator.IsFalse],
         FilterKind.Enum =>
         [
         FilterOperator.Equals, FilterOperator.NotEquals, FilterOperator.In, FilterOperator.NotIn,
         FilterOperator.IsEmpty, FilterOperator.IsNotEmpty
-    ],
+        ],
         _ => [FilterOperator.Contains]
     };
 
@@ -763,6 +786,7 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         var col = Columns.FirstOrDefault(x => x.Id == c.ColumnId);
         var title = col?.Title ?? "?";
         if (IsValueless(c.Operator)) return $"{title} {OperatorMenuLabel(c.Operator)}";
+        if (c.Operator == FilterOperator.Between) return $"{title} {OperatorMenuLabel(c.Operator)} {c.Value} и {c.Value2}";
         var val = col?.FilterKind == FilterKind.Bool ? (c.Value == "true" ? "да" : "нет") : $"«{c.Value}»";
         if (col?.FilterKind is FilterKind.Number or FilterKind.Date) val = c.Value ?? "";
         return $"{title} {OperatorMenuLabel(c.Operator)} {val}";

@@ -310,7 +310,7 @@ else
     <div class="modal-dialog modal-dialog-wide" @onclick:stopPropagation="true">
         <h3>Продлить выдачу</h3>
         <p class="mb-1"><strong>@extendingBorrow.BookTitle</strong> — @extendingBorrow.RoomName</p>
-        <p class="mb-1">Текущий срок: <strong>@(extendingBorrow.Deadline?.ToString("dd.MM.yyyy") ?? "—")</strong></p>
+        <p class="mb-1">Текущий срок: <strong>@(extendingBorrow.Deadline?.ToLocalTime().ToString("dd.MM.yyyy") ?? "—")</strong></p>
         <p class="mb-3">
             Продлено: <strong>@extendingBorrow.TotalExtendedDays</strong> из @MaxExtendDeadlineDays дн.
             (доступно ещё <strong>@MaxAvailableExtend</strong>)
@@ -324,7 +324,7 @@ else
                        style="width: 120px;"
                        @bind="extendDays" />
                 <small class="text-muted">
-                    Новый срок: @(NewDeadline?.ToString("dd.MM.yyyy") ?? "—")
+                    Новый срок: @(NewDeadline?.ToLocalTime().ToString("dd.MM.yyyy") ?? "—")
                 </small>
             </div>
         }
@@ -351,7 +351,7 @@ else
         <h3>Возврат книги</h3>
         <p class="mb-1"><strong>@returnDialogBorrow.BookTitle</strong> — @returnDialogBorrow.RoomName</p>
         <p class="mb-3 text-muted small">
-            Срок возврата: @(returnDialogBorrow.Deadline?.ToString("dd.MM.yyyy") ?? "—")
+            Срок возврата: @(returnDialogBorrow.Deadline?.ToLocalTime().ToString("dd.MM.yyyy") ?? "—")
         </p>
 
         <div class="mb-3">

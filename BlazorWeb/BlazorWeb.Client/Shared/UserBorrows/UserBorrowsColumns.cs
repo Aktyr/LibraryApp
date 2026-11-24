@@ -7,6 +7,8 @@ namespace BlazorWeb.Client.Shared.UserBorrows;
 /// Фабрики колонок для таблиц выдач. Отличия MyProfile/UserProfile — только
 /// в наборе колонок: библиотекарю нужны «Выдана», «Штраф», «Продлено»,
 /// читателю — компактный набор.
+/// Даты в DTO приходят в UTC: Template и FilterText приводятся к локальному дню,
+/// Value остаётся UTC для сортировки.
 /// </summary>
 public static class UserBorrowsColumns
 {
@@ -35,8 +37,8 @@ public static class UserBorrowsColumns
                 Width = 100,
                 FilterKind = FilterKind.Date,
                 Value = b => b.Borrow,
-                FilterText = b => b.Borrow.ToString("yyyy-MM-dd"),
-                Template = item => b => b.AddContent(0, item.Borrow.ToString("dd.MM.yyyy"))
+                FilterText = b => b.Borrow.ToLocalTime().ToString("yyyy-MM-dd"),
+                Template = item => b => b.AddContent(0, item.Borrow.ToLocalTime().ToString("dd.MM.yyyy"))
             });
         }
 
@@ -46,7 +48,7 @@ public static class UserBorrowsColumns
             Width = 150,
             FilterKind = FilterKind.Date,
             Value = b => b.Deadline,
-            FilterText = b => b.Deadline?.ToString("yyyy-MM-dd") ?? "",
+            FilterText = b => b.Deadline?.ToLocalTime().ToString("yyyy-MM-dd") ?? "",
             Template = item => b =>
             {
                 if (!item.Deadline.HasValue) { b.AddContent(0, "—"); return; }
@@ -56,12 +58,12 @@ public static class UserBorrowsColumns
                     b.OpenElement(0, "span");
                     b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
                     b.AddAttribute(2, "title", $"Просрочено на {daysOverdue} дн.");
-                    b.AddContent(3, $"{item.Deadline.Value:dd.MM.yyyy} ⚠");
+                    b.AddContent(3, $"{item.Deadline.Value.ToLocalTime():dd.MM.yyyy} ⚠");
                     b.CloseElement();
                 }
                 else
                 {
-                    b.AddContent(0, item.Deadline.Value.ToString("dd.MM.yyyy"));
+                    b.AddContent(0, item.Deadline.Value.ToLocalTime().ToString("dd.MM.yyyy"));
                 }
             }
         });
@@ -118,14 +120,14 @@ public static class UserBorrowsColumns
     {
         new() { Title = "Книга",   Value = b => b.BookTitle, Width = 240 },
         new() { Title = "Комната", Value = b => b.RoomName,  Width = 130 },
-        new()
+                new()
         {
             Title = "Выдана",
             Width = 100,
             FilterKind = FilterKind.Date,
             Value = b => b.Borrow,
-            FilterText = b => b.Borrow.ToString("yyyy-MM-dd"),
-            Template = item => b => b.AddContent(0, item.Borrow.ToString("dd.MM.yyyy"))
+            FilterText = b => b.Borrow.ToLocalTime().ToString("yyyy-MM-dd"),
+            Template = item => b => b.AddContent(0, item.Borrow.ToLocalTime().ToString("dd.MM.yyyy"))
         },
         new()
         {
@@ -133,8 +135,8 @@ public static class UserBorrowsColumns
             Width = 110,
             FilterKind = FilterKind.Date,
             Value = b => b.Deadline,
-            FilterText = b => b.Deadline?.ToString("yyyy-MM-dd") ?? "",
-            Template = item => b => b.AddContent(0, item.Deadline?.ToString("dd.MM.yyyy") ?? "—")
+            FilterText = b => b.Deadline?.ToLocalTime().ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0, item.Deadline?.ToLocalTime().ToString("dd.MM.yyyy") ?? "—")
         },
         new()
         {
@@ -142,8 +144,8 @@ public static class UserBorrowsColumns
             Width = 120,
             FilterKind = FilterKind.Date,
             Value = b => b.ReturnDate,
-            FilterText = b => b.ReturnDate?.ToString("yyyy-MM-dd") ?? "",
-            Template = item => b => b.AddContent(0, item.ReturnDate?.ToString("dd.MM.yyyy") ?? "—")
+            FilterText = b => b.ReturnDate?.ToLocalTime().ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0, item.ReturnDate?.ToLocalTime().ToString("dd.MM.yyyy") ?? "—")
         },
         new()
         {

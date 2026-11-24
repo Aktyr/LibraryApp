@@ -361,26 +361,34 @@
             </div>
         </div>
         @if (!IsValueless(editingClause.Operator))
+            @if (!IsValueless(editingClause.Operator))
+            {
+                <label class="dg-filter-row">
+                    <span>@(editingClause.Operator == FilterOperator.Between ? "С" : "Значение")</span>
+                    @{
+                        var enumCol = CurrentEditingColumn();
+                    }
+                    @if (enumCol is not null && enumCol.FilterKind == FilterKind.Enum && enumCol.EnumType is not null)
+                    {
+                        <select value="@editingClause.Value" @onchange="e => editingClause.Value = e.Value?.ToString()">
+                            <option value="">— Любое —</option>
+                            @foreach (var val in Enum.GetValues(enumCol.EnumType))
+                            {
+                                <option value="@val">@val.ToString()</option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <input type="@InputType()" value="@editingClause.Value" placeholder="@InputPlaceholder()" @oninput="e => editingClause.Value = e.Value?.ToString()" />
+                    }
+                </label>
+            }
+        @if (editingClause.Operator == FilterOperator.Between)
         {
             <label class="dg-filter-row">
-                <span>Значение</span>
-                @{
-                    var enumCol = CurrentEditingColumn();
-                }
-                @if (enumCol is not null && enumCol.FilterKind == FilterKind.Enum && enumCol.EnumType is not null)
-                {
-                    <select value="@editingClause.Value" @onchange="e => editingClause.Value = e.Value?.ToString()">
-                        <option value="">— Любое —</option>
-                        @foreach (var val in Enum.GetValues(enumCol.EnumType))
-                        {
-                            <option value="@val">@val.ToString()</option>
-                        }
-                    </select>
-                }
-                else
-                {
-                    <input type="@InputType()" value="@editingClause.Value" placeholder="@InputPlaceholder()" @oninput="e => editingClause.Value = e.Value?.ToString()" />
-                }
+                <span>По</span>
+                <input type="@InputType()" value="@editingClause.Value2" @oninput="e => editingClause.Value2 = e.Value?.ToString()" />
             </label>
         }
         <div class="dg-filter-popover-actions">
