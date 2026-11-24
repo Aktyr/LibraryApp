@@ -1,0 +1,164 @@
+﻿@page "/reports/current-issues"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using BlazorWeb.Client.Services.Interfaces
+@using BlazorWeb.Components.Shared.DataGrid
+@using LibApp.Core.DTO.Reports
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Librarian,Admin")]
+@inject IReportsApiClient ReportsClient
+@inject NavigationManager Nav
+@inject IToastService Toast
+
+<PageTitle>Текущие выдачи</PageTitle>
+
+<PageHeader BackUrl="/reports" OnRefresh="LoadAsync" IsLoading="@isLoading" />
+
+<h2>Текущие выдачи</h2>
+
+@if (isLoading)
+{
+    <p>Загрузка...</p>
+}
+else if (issues != null)
+{
+    <div class="d-flex gap-4 mb-3" title="По всем загруженным записям, без учёта фильтров таблицы">
+        <div>
+            <small class="text-muted d-block">Книг на руках</small>
+            <span class="fs-5 fw-semibold">@issues.Count</span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Просрочено</small>
+            <span class="fs-5 fw-semibold @(overdueCount > 0 ? "text-danger" : "")">@overdueCount</span>
+        </div>
+        <div>
+            <small class="text-muted d-block">Начислено штрафов</small>
+            <span class="fs-5 fw-semibold @(totalPenalty > 0 ? "text-danger" : "")">@totalPenalty.ToString("0.##") ₽</span>
+        </div>
+    </div>
+
+    @if (issues.Count == 0)
+    {
+        <p class="text-muted">Книг на руках нет.</p>
+    }
+    else
+    {
+        <DataGrid TItem="CurrentIssueReportDTO"
+                  Items="issues"
+                  PageSize="20"
+                  Columns="columns"
+                  Hint="<b>Двойной клик</b> по строке: профиль читателя | <b>Фильтр</b>: период по дате выдачи или срока, комната, книга | <b>Экспорт</b>: выгрузка отчёта"
+                  SelectionMode="DataGridSelectionMode.Multiple"
+                  OnRowDoubleClick="OnRowDoubleClick" />
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private List<CurrentIssueReportDTO>? issues;
+
+    private int overdueCount => issues?.Count(r => r.DaysOverdue > 0) ?? 0;
+    private decimal totalPenalty => issues?.Where(r => r.Penalty.HasValue).Sum(r => r.Penalty!.Value) ?? 0m;
+
+    private readonly List<DataGridColumn<CurrentIssueReportDTO>> columns = new()
+    {
+        new() { Title = "Книга", Width = 260, Value = r => r.BookTitle },
+        new() { Title = "Автор", Width = 180, Value = r => r.BookAuthor },
+        new() { Title = "Комната", Width = 140, Value = r => r.RoomName },
+        new()
+        {
+            Title = "Читатель",
+            Width = 240,
+            Value = r => r.UserFullName,
+            FilterText = r => r.UserFullName,
+            Template = item => b =>
+            {
+                b.AddContent(0, item.UserFullName);
+                if (item.IsUserDeleted)
+                {
+                    b.OpenElement(1, "span");
+                    b.AddAttribute(2, "title", "Читатель деактивирован, вход в систему закрыт");
+                    b.AddAttribute(3, "style",
+                        "background:#f3f3f3;color:#555;padding:2px 8px;border-radius:10px;font-size:11px;margin-left:6px;");
+                    b.AddContent(4, "деактивирован");
+                    b.CloseElement();
+                }
+            }
+        },
+        new()
+        {
+            Title = "Выдана",
+            Width = 110,
+            FilterKind = FilterKind.Date,
+            Value = r => r.BorrowDate,
+            FilterText = r => r.BorrowDate.ToLocalTime().ToString("yyyy-MM-dd"),
+            Template = item => b => b.AddContent(0, item.BorrowDate.ToLocalTime().ToString("dd.MM.yyyy"))
+        },
+        new()
+        {
+            Title = "Срок",
+            Width = 120,
+            FilterKind = FilterKind.Date,
+            Value = r => r.Deadline,
+            FilterText = r => r.Deadline?.ToLocalTime().ToString("yyyy-MM-dd") ?? "",
+            Template = item => b => b.AddContent(0, item.Deadline?.ToLocalTime().ToString("dd.MM.yyyy") ?? "—")
+        },
+        new()
+        {
+            Title = "Просрочка, дн.",
+            Width = 130,
+            FilterKind = FilterKind.Number,
+            Value = r => r.DaysOverdue,
+            Template = item => b =>
+            {
+                if (item.DaysOverdue <= 0) { b.AddContent(0, "0"); return; }
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
+                b.AddContent(2, item.DaysOverdue.ToString());
+                b.CloseElement();
+            }
+        },
+        new()
+        {
+            Title = "Штраф, ₽",
+            Width = 120,
+            FilterKind = FilterKind.Number,
+            Value = r => r.Penalty,
+            FilterText = r => r.Penalty?.ToString("0.##") ?? "",
+            Template = item => b =>
+            {
+                // null и 0 различаем: null означает, что начисления ещё не было.
+                if (!item.Penalty.HasValue) { b.AddContent(0, "—"); return; }
+                if (item.Penalty.Value <= 0) { b.AddContent(0, "0"); return; }
+                b.OpenElement(0, "span");
+                b.AddAttribute(1, "style", "color:#a30000;font-weight:600;");
+                b.AddContent(2, $"{item.Penalty.Value:0.##}");
+                b.CloseElement();
+            }
+        }
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private void OnRowDoubleClick(CurrentIssueReportDTO row)
+        => Nav.NavigateTo($"/users/{row.UserId}?returnUrl={Uri.EscapeDataString("/reports/current-issues")}");
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var resp = await ReportsClient.GetCurrentIssuesAsync();
+            issues = resp.Data.ToList();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Ошибка загрузки: {ex.Message}");
+            issues = new();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+}
