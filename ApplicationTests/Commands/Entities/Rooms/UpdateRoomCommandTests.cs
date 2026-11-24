@@ -433,4 +433,92 @@ public class UpdateRoomCommandTests
             () => command.Execute(request, CancellationToken.None));
         Assert.That(ex, Is.SameAs(saveException));
     }
+
+    [Test]
+    public async Task Execute_WhenRoomBooksChanged_WritesAddedRemovedAndCountDiffToAudit()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var roomRepo = unitOfWork.GetRepository<Room>();
+        var bookRepo = unitOfWork.GetRepository<Book>();
+        var auditMock = new Mock<IAuditService>();
+
+        var roomId = new Id(Guid.NewGuid());
+        var keptBook = new Book { Id = new Id(Guid.NewGuid()), Title = "Clean Code" };
+        var untouchedBook = new Book { Id = new Id(Guid.NewGuid()), Title = "Untouched Book" };
+        var removedBook = new Book { Id = new Id(Guid.NewGuid()), Title = "Refactoring" };
+        var addedBook = new Book { Id = new Id(Guid.NewGuid()), Title = "Domain-Driven Design" };
+
+        var room = new Room { Id = roomId, Name = "Читальный зал", RoomBooks = [] };
+        var keptRoomBook = new RoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            BookCount = 5,
+            Book = keptBook,
+            Room = room
+        };
+        var untouchedRoomBook = new RoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            BookCount = 3,
+            Book = untouchedBook,
+            Room = room
+        };
+        var removedRoomBook = new RoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            BookCount = 2,
+            Book = removedBook,
+            Room = room
+        };
+        room.RoomBooks.Add(keptRoomBook);
+        room.RoomBooks.Add(untouchedRoomBook);
+        room.RoomBooks.Add(removedRoomBook);
+
+        await bookRepo.AddRangeAsync([keptBook, untouchedBook, removedBook, addedBook], CancellationToken.None);
+        await roomRepo.AddRangeAsync([room], CancellationToken.None);
+
+        var command = new UpdateRoomCommand(
+            unitOfWork,
+            CreateRoomValidator,
+            new FakeRoomBookSynchronizer(),
+            auditMock.Object,
+            NullLogger<UpdateRoomCommand>.Instance);
+
+        var request = new UpdateRoomRequest
+        {
+            Id = roomId,
+            Name = room.Name,
+            RoomBookDTO =
+            [
+                new RoomBookDTO(keptRoomBook.Id.Value, roomId.Value, keptBook.Id.Value, 7),
+                new RoomBookDTO(untouchedRoomBook.Id.Value, roomId.Value, untouchedBook.Id.Value, 3),
+                new RoomBookDTO(Guid.Empty, roomId.Value, addedBook.Id.Value, 3)
+            ]
+        };
+
+        // Act
+        var response = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(response.Status, Is.EqualTo("Ok"));
+            // Книга с неизменным количеством в запросе есть, но строки про неё в diff быть не должно:
+            // иначе журнал заполняется шумом при каждом сохранении комнаты.
+            auditMock.Verify(a => a.LogAsync(
+                AuditActionType.Update,
+                nameof(Room),
+                roomId.Value,
+                It.Is<string?>(details => details != null
+                    && details.Contains("Добавлена книга «Domain-Driven Design»: 3 экз.")
+                    && details.Contains("Удалена книга «Refactoring»")
+                    && details.Contains("Изменено количество «Clean Code»: 5 → 7")
+                    && !details.Contains("Untouched Book")),
+                It.IsAny<Id?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+    }
 }

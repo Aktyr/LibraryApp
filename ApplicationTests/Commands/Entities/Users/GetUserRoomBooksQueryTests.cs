@@ -39,18 +39,21 @@ public class GetUserRoomBooksQueryTests
         // Arrange
         var unitOfWork = new FakeUnitOfWork();
         var repo = (FakeRepository<UserRoomBook>)unitOfWork.GetRepository<UserRoomBook>();
-        var converter = CreateConverter();
 
+        var converter = CreateConverter();
         var userId = Guid.NewGuid();
         var user = new User { Id = new Id(userId) };
-
+        // FK обязательны: BorrowDTOConverter читает RoomBook.BookId.Value,
+        // без FK поле Id остаётся null и .Value бросает NullReferenceException.
+        var book1 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 1", Author = "Author 1" };
+        var book2 = new Book { Id = new Id(Guid.NewGuid()), Title = "Book 2", Author = "Author 2" };
         var urb1 = new UserRoomBook
         {
             Id = new Id(Guid.NewGuid()),
             User = user,
             Deadline = DateTime.Now.AddDays(10), // Сдавать позже
             BorrowDate = DateTime.Now.AddDays(-2),
-            RoomBook = new RoomBook { Book = new Book { Title = "Book 1", Author = "Author 1" }, Room = new Room { Name = "Room A" } }
+            RoomBook = new RoomBook { BookId = book1.Id, Book = book1, Room = new Room { Name = "Room A" } }
         };
 
         var urb2 = new UserRoomBook
@@ -59,7 +62,7 @@ public class GetUserRoomBooksQueryTests
             User = user,
             Deadline = DateTime.Now.AddDays(2), // Сдавать раньше
             BorrowDate = DateTime.Now.AddDays(-5),
-            RoomBook = new RoomBook { Book = new Book { Title = "Book 2", Author = "Author 2" }, Room = new Room { Name = "Room B" } }
+            RoomBook = new RoomBook { BookId = book2.Id, Book = book2, Room = new Room { Name = "Room B" } }
         };
 
         await repo.AddRangeAsync([urb1, urb2], CancellationToken.None);
@@ -83,6 +86,7 @@ public class GetUserRoomBooksQueryTests
             // Проверка работы конвертера
             Assert.That(result.Books[0].RoomName, Is.EqualTo("Room B"));
             Assert.That(result.Books[0].Borrow, Is.EqualTo(urb2.BorrowDate));
+            Assert.That(result.Books[0].BookId, Is.EqualTo(book2.Id.Value));
         });
     }
 }
