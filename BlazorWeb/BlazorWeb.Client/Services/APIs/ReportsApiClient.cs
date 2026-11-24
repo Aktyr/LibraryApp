@@ -21,5 +21,9 @@ public class ReportsApiClient(HttpClient http) : IReportsApiClient
         bool onlyWithOverdue = false, bool onlyActive = false, CancellationToken ct = default)
         => await http.GetFromJsonAsync<UserActivityReportResponse>(
             $"{BasePath}/user-activity?onlyWithOverdue={onlyWithOverdue}&onlyActive={onlyActive}", ct)
-           ?? new UserActivityReportResponse("Error", "Empty response", []);
+            ?? new UserActivityReportResponse("Error", "Empty response", []);
+
+    public async Task<CurrentIssueReportResponse> GetCurrentIssuesAsync(CancellationToken ct = default)
+        => await http.GetFromJsonAsync<CurrentIssueReportResponse>($"{BasePath}/current-issues", ct)
+            ?? new CurrentIssueReportResponse("Error", "Empty response", []);
 }

@@ -12,4 +12,9 @@ public class ReportsEndpoints : EndpointBase
     [HttpGet("/user-activity")]
     public async Task<IResult> UserActivity([FromQuery] bool onlyWithOverdue, [FromQuery] bool onlyActive, GetUserActivityReportCommand command, CancellationToken ct)
         => Results.Ok(await command.Execute(new GetUserActivityRequest { OnlyWithOverdue = onlyWithOverdue, OnlyActive = onlyActive }, ct));
+
+    /// <summary>Книги на руках сейчас, включая выдачи деактивированных читателей. Фильтры применяет клиент, поэтому параметров нет.</summary>
+    [HttpGet("/current-issues")]
+    public async Task<IResult> CurrentIssues(GetCurrentIssuesReportCommand command, CancellationToken ct)
+        => Results.Ok(await command.Execute(new EmptyRequest(), ct));
 }

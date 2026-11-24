@@ -10,6 +10,7 @@ public static class ReportsProxyEndpoints
 
         group.MapGet("/popular-books", GetPopularBooksAsync);
         group.MapGet("/user-activity", GetUserActivityAsync);
+        group.MapGet("/current-issues", GetCurrentIssuesAsync);
     }
 
     private static Task<IResult> GetPopularBooksAsync(
@@ -32,4 +33,9 @@ public static class ReportsProxyEndpoints
         return ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get,
             $"/api/reports/user-activity{query}", null, ct);
     }
+
+    private static Task<IResult> GetCurrentIssuesAsync(
+        IHttpClientFactory httpFactory, CancellationToken ct)
+            => ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get,
+                "/api/reports/current-issues", null, ct);
 }
