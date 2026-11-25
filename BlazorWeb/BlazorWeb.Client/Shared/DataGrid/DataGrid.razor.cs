@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 
 namespace BlazorWeb.Components.Shared.DataGrid;
 
@@ -29,6 +31,15 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     /// <summary>Событие, вызываемое при вводе текста в поиск (для серверного поиска).</summary>
     [Parameter] public EventCallback<string> OnSearch { get; set; }
 
+    /// <summary>
+    /// Дополнительные колонки, доступные только в окне фильтра и не отображаемые в таблице.
+    /// Нужны для серверных фильтров, которым нет соответствия среди колонок данных, например периода.
+    /// </summary>
+    [Parameter] public IReadOnlyList<DataGridColumn<TItem>> FilterColumns { get; set; } = Array.Empty<DataGridColumn<TItem>>();
+
+    /// <summary>Событие изменения набора чип-фильтров: добавление, изменение, удаление или очистка.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<FilterClause>> OnFiltersChanged { get; set; }
+
 
     [Parameter] public bool ShowStatus { get; set; } = false;
     [Parameter] public string? StatusMessage { get; set; }
@@ -48,7 +59,7 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         "<b>Клик по заголовку</b> — сортировка | " +
         "<b>Двойной клик</b> по записи — открыть (если доступно) | " +
         "<b>Правый клик</b> по записи — контекстное меню | " +
-        "<b>📥 Экспорт</b> — скачать CSV (выделенные или все) | " +
+        "<b>📤 Экспорт</b> — выпадающее меню CSV / JSON (выделенные или все) | " +
         "<b>⚙️ Настройки</b> — сброс сортировки и ширины колонок";
     [Parameter] public EventCallback<TItem> OnRowDoubleClick { get; set; }
     [Parameter] public EventCallback<TItem> OnRowClick { get; set; }
@@ -93,6 +104,7 @@ public partial class DataGrid<TItem> : IAsyncDisposable
     private bool operatorMenuOpen;
     private bool hintOpen;
     private bool settingsMenuOpen;
+    private bool exportMenuOpen;
 
     public IReadOnlyList<TItem> SelectedItems => _selected;
 
@@ -535,18 +547,48 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         contextMenuX = e.ClientX; contextMenuY = e.ClientY;
         contextMenuVisible = true;
     }
-    private void CloseContextMenu() { contextMenuVisible = false; hintOpen = false; settingsMenuOpen = false; }
-    private void ClosePopovers() { hintOpen = false; settingsMenuOpen = false; }
-    private void ToggleSettingsMenu() => settingsMenuOpen = !settingsMenuOpen;
-    private void ToggleHint() => hintOpen = !hintOpen;
+    private void CloseContextMenu() { contextMenuVisible = false; hintOpen = false; settingsMenuOpen = false; exportMenuOpen = false; }
+    private void ClosePopovers() { hintOpen = false; settingsMenuOpen = false; exportMenuOpen = false; }
+
+    private void ToggleSettingsMenu()
+    {
+        settingsMenuOpen = !settingsMenuOpen;
+        if (settingsMenuOpen) { hintOpen = false; exportMenuOpen = false; }
+    }
+
+    private void ToggleHint()
+    {
+        hintOpen = !hintOpen;
+        if (hintOpen) { settingsMenuOpen = false; exportMenuOpen = false; }
+    }
+
+    private void ToggleExportMenu()
+    {
+        exportMenuOpen = !exportMenuOpen;
+        if (exportMenuOpen) { settingsMenuOpen = false; hintOpen = false; }
+    }
 
     #endregion
 
     #region Экспорт
 
+    /// <summary>Экспорт из выпадающего меню: меню закрывается до скачивания.</summary>
+    private async Task ExportCsvFromMenu()
+    {
+        exportMenuOpen = false;
+        await ExportToCsv();
+    }
+
+    /// <summary>Экспорт из выпадающего меню: меню закрывается до скачивания.</summary>
+    private async Task ExportJsonFromMenu()
+    {
+        exportMenuOpen = false;
+        await ExportToJson();
+    }
+
     private async Task ExportToCsv()
     {
-        var itemsToExport = _selected.Count > 0 ? _selected.ToList() : filteredItems.ToList();
+        var itemsToExport = ExportItems();
         if (itemsToExport.Count == 0) return;
 
         var sb = new StringBuilder();
@@ -563,8 +605,47 @@ public partial class DataGrid<TItem> : IAsyncDisposable
             sb.AppendLine(string.Join(";", cells));
         }
 
-        // Если явно задан ExportFileName (и это не дефолтный "export"), используем его.
-        // Иначе берём из URL: /reports/user-activity -> user_activity
+        var filename = $"{ExportBaseName()}_{DateTime.Now:yyyyMMdd_HHmm}.csv";
+
+        if (resizeModule != null)
+        {
+            await resizeModule.InvokeVoidAsync("downloadFile", filename, sb.ToString());
+        }
+    }
+
+    private async Task ExportToJson()
+    {
+        var itemsToExport = ExportItems();
+        if (itemsToExport.Count == 0) return;
+
+        var rows = itemsToExport.Select(item => Columns.ToDictionary(
+            c => c.Title,
+            c => c.FilterText?.Invoke(item) ?? c.Value?.Invoke(item)?.ToString() ?? ""));
+
+        // UnsafeRelaxedJsonEscaping: иначе кириллица экранируется в \uXXXX и файл нечитаем глазами.
+        var json = JsonSerializer.Serialize(rows, new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        });
+        var filename = $"{ExportBaseName()}_{DateTime.Now:yyyyMMdd_HHmm}.json";
+
+        if (resizeModule != null)
+        {
+            await resizeModule.InvokeVoidAsync("downloadJsonFile", filename, json);
+        }
+    }
+
+    /// <summary>Выделенные строки, а если ничего не выделено — все строки с учётом фильтров и сортировки.</summary>
+    private List<TItem> ExportItems() =>
+        _selected.Count > 0 ? _selected.ToList() : filteredItems.ToList();
+
+    /// <summary>
+    /// Базовое имя файла экспорта. Если ExportFileName не задан явно,
+    /// берётся из URL: /reports/user-activity -> export_reports_user_activity.
+    /// </summary>
+    private string ExportBaseName()
+    {
         var baseName = ExportFileName;
         if (string.IsNullOrWhiteSpace(baseName) || baseName == "export")
         {
@@ -583,16 +664,9 @@ public partial class DataGrid<TItem> : IAsyncDisposable
             }
         }
 
-        var safeName = baseName.StartsWith("export_", StringComparison.OrdinalIgnoreCase)
+        return baseName.StartsWith("export_", StringComparison.OrdinalIgnoreCase)
             ? baseName
             : "export_" + baseName;
-
-        var filename = $"{safeName}_{DateTime.Now:yyyyMMdd_HHmm}.csv";
-
-        if (resizeModule != null)
-        {
-            await resizeModule.InvokeVoidAsync("downloadFile", filename, sb.ToString());
-        }
     }
 
     #endregion
@@ -605,6 +679,7 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         {
             if (hintOpen) { hintOpen = false; return; }
             if (settingsMenuOpen) { settingsMenuOpen = false; return; }
+            if (exportMenuOpen) { exportMenuOpen = false; return; }
             if (contextMenuVisible) CloseContextMenu();
             else if (filterMenuVisible) CloseFilterMenu();
             else _ = ClearSelection();
@@ -689,9 +764,23 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         editingIndex = index; editingClause = filterClauses[index].Clone(); operatorMenuOpen = false; filterMenuVisible = true;
     }
     private void CloseFilterMenu() { operatorMenuOpen = false; filterMenuVisible = false; }
-    private void RemoveFilter(FilterClause c) { filterClauses.Remove(c); currentPage = 1; RefreshFiltered(); }
-    private void ClearFilters() { filterClauses.Clear(); currentPage = 1; RefreshFiltered(); }
-    private void ApplyFilter()
+    private async Task RemoveFilter(FilterClause c)
+    {
+        filterClauses.Remove(c);
+        currentPage = 1;
+        RefreshFiltered();
+        await NotifyFiltersChangedAsync();
+    }
+
+    private async Task ClearFilters()
+    {
+        filterClauses.Clear();
+        currentPage = 1;
+        RefreshFiltered();
+        await NotifyFiltersChangedAsync();
+    }
+
+    private async Task ApplyFilter()
     {
         if (string.IsNullOrEmpty(editingClause.ColumnId)) { CloseFilterMenu(); return; }
         if (editingClause.Operator == FilterOperator.Between)
@@ -705,6 +794,7 @@ public partial class DataGrid<TItem> : IAsyncDisposable
         if (editingIndex >= 0 && editingIndex < filterClauses.Count) filterClauses[editingIndex] = editingClause.Clone();
         else filterClauses.Add(editingClause.Clone());
         CloseFilterMenu(); currentPage = 1; RefreshFiltered(); StateHasChanged();
+        await NotifyFiltersChangedAsync();
     }
 
     private void OnColumnChanged(ChangeEventArgs e) { editingClause.ColumnId = e.Value?.ToString() ?? ""; NormalizeOperatorForColumn(); }
@@ -715,13 +805,23 @@ public partial class DataGrid<TItem> : IAsyncDisposable
 
     #region Вспомогательные методы фильтра
 
-    private DataGridColumn<TItem>? CurrentEditingColumn() => Columns.FirstOrDefault(c => c.Id == editingClause.ColumnId);
+    private IEnumerable<DataGridColumn<TItem>> FilterableColumns() => Columns.Concat(FilterColumns);
+
+    private DataGridColumn<TItem>? CurrentEditingColumn() => FilterableColumns().FirstOrDefault(c => c.Id == editingClause.ColumnId);
+
+    private async Task NotifyFiltersChangedAsync()
+        => await OnFiltersChanged.InvokeAsync(filterClauses.Select(c => c.Clone()).ToList());
 
     private void NormalizeOperatorForColumn()
     {
         var col = CurrentEditingColumn(); if (col is null) return;
         var ops = OpsFor(col.FilterKind);
-        if (!ops.Contains(editingClause.Operator)) { editingClause.Operator = ops[0]; editingClause.Value = null; editingClause.Value2 = null; }
+        if (!ops.Contains(editingClause.Operator))
+        {
+            editingClause.Operator = col.DefaultFilterOperator is { } def && ops.Contains(def) ? def : ops[0];
+            editingClause.Value = null;
+            editingClause.Value2 = null;
+        }
     }
 
     private IEnumerable<FilterOperator> AvailableOperators() { var col = CurrentEditingColumn(); return col is null ? Array.Empty<FilterOperator>() : OpsFor(col.FilterKind); }
@@ -783,7 +883,7 @@ public partial class DataGrid<TItem> : IAsyncDisposable
 
     private string FormatChip(FilterClause c)
     {
-        var col = Columns.FirstOrDefault(x => x.Id == c.ColumnId);
+        var col = FilterableColumns().FirstOrDefault(x => x.Id == c.ColumnId);
         var title = col?.Title ?? "?";
         if (IsValueless(c.Operator)) return $"{title} {OperatorMenuLabel(c.Operator)}";
         if (c.Operator == FilterOperator.Between) return $"{title} {OperatorMenuLabel(c.Operator)} {c.Value} и {c.Value2}";

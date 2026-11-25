@@ -15,7 +15,7 @@
 
 <h2>Архив пользователей</h2>
 
-@if (isLoading)
+@if (isLoading && users == null)
 {
     <p>Загрузка...</p>
 }
@@ -31,6 +31,7 @@ else if (users != null)
                   Items="users"
                   PageSize="15"
                   Columns="columns"
+                  IsLoading="isLoading"
                   SelectionMode="DataGridSelectionMode.Single"
                   OnRowDoubleClick="OnRowDoubleClick" />
     }

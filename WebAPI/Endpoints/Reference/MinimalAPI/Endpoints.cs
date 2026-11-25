@@ -95,15 +95,15 @@ public static class Endpoints
 
         #region Reports
         var reports = app.MapGroup("/api/reports").RequireRoles(UserRole.Admin, UserRole.Librarian).WithTags(_reportsGroup);
-        reports.MapGet("/popular-books", async (int? topCount, IServiceProvider sp, CancellationToken ct) =>
+        reports.MapGet("/popular-books", async (int? topCount, DateTime? fromDate, DateTime? toDate, IServiceProvider sp, CancellationToken ct) =>
         {
-            var request = new GetPopularBooksRequest { TopCount = topCount ?? 10 };
+            var request = new GetPopularBooksRequest { TopCount = topCount, FromDate = fromDate, ToDate = toDate };
             var result = await MinimalApiController.ExecuteAsync<GetPopularBooksReportCommand, GetPopularBooksRequest, BookPopularityReportResponse>(sp, request, ct);
             return Results.Ok(result);
         });
-        reports.MapGet("/user-activity", async (bool onlyWithOverdue, bool onlyActive, IServiceProvider sp, CancellationToken ct) =>
+        reports.MapGet("/user-activity", async (bool onlyWithOverdue, bool onlyActive, DateTime? fromDate, DateTime? toDate, IServiceProvider sp, CancellationToken ct) =>
         {
-            var request = new GetUserActivityRequest { OnlyWithOverdue = onlyWithOverdue, OnlyActive = onlyActive };
+            var request = new GetUserActivityRequest { OnlyWithOverdue = onlyWithOverdue, OnlyActive = onlyActive, FromDate = fromDate, ToDate = toDate };
             var result = await MinimalApiController.ExecuteAsync<GetUserActivityReportCommand, GetUserActivityRequest, UserActivityReportResponse>(sp, request, ct);
             return Results.Ok(result);
         });

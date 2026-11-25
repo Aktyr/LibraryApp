@@ -24,13 +24,13 @@ public class DtoConstructorTests
     }
 
     [Test]
-    public void GetPopularBooksRequest_DefaultConstructor_InitializesTopCount()
+    public void GetPopularBooksRequest_DefaultConstructor_LeavesTopCountUnlimited()
     {
         // Act
         var request = new GetPopularBooksRequest();
 
         // Assert
-        Assert.That(request.TopCount, Is.EqualTo(10));
+        Assert.That(request.TopCount, Is.Null);
     }
 
     [Test]

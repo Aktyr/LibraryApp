@@ -65,4 +65,10 @@ public class DataGridColumn<TItem>
     /// Используется для генерации списка значений в выпадающем списке фильтра.
     /// </summary>
     public Type? EnumType { get; set; }
+
+    /// <summary>
+    /// Оператор по умолчанию для колонки в окне фильтра.
+    /// null — берётся первый доступный оператор для <see cref="FilterKind"/>.
+    /// </summary>
+    public FilterOperator? DefaultFilterOperator { get; set; }
 }

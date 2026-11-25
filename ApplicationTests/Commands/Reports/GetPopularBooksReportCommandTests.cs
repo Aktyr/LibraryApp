@@ -121,4 +121,42 @@ public class GetPopularBooksReportCommandTests
         // Assert
         Assert.That(response.Data, Has.Length.EqualTo(3));
     }
+
+    [Test]
+    public async Task Execute_WithToDate_IncludesWholeDay()
+    {
+        // Arrange
+        var unitOfWork = new FakeUnitOfWork();
+        var bookRepo = unitOfWork.GetRepository<Book>();
+        var roomBookRepo = unitOfWork.GetRepository<RoomBook>();
+        var userRoomBookRepo = unitOfWork.GetRepository<UserRoomBook>();
+
+        var book = new Book { Id = new Id(Guid.NewGuid()), Title = "Book" };
+        await bookRepo.AddRangeAsync(new[] { book }, CancellationToken.None);
+        var room = new Room { Id = new Id(Guid.NewGuid()) };
+        var rb = new RoomBook { Id = new Id(Guid.NewGuid()), Book = book, Room = room };
+        await roomBookRepo.AddRangeAsync(new[] { rb }, CancellationToken.None);
+
+        var user = new User { Id = new Id(Guid.NewGuid()), Email = "u@test.com", LastName = "User" };
+        var day = DateTime.UtcNow.Date;
+        // Выдача поздним вечером последнего дня периода должна попасть в отчёт:
+        // ToDate расширяется до конца суток, а не сравнивается с 00:00.
+        var lateBorrow = new UserRoomBook
+        {
+            Id = new Id(Guid.NewGuid()),
+            User = user,
+            RoomBook = rb,
+            BorrowDate = DateTime.SpecifyKind(day.AddHours(23), DateTimeKind.Utc)
+        };
+        await userRoomBookRepo.AddRangeAsync(new[] { lateBorrow }, CancellationToken.None);
+
+        var command = new GetPopularBooksReportCommand(unitOfWork);
+        var request = new GetPopularBooksRequest { ToDate = day };
+
+        // Act
+        var response = await command.Execute(request, CancellationToken.None);
+
+        // Assert
+        Assert.That(response.Data, Has.Length.EqualTo(1));
+    }
 }

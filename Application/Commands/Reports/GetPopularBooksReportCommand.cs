@@ -7,15 +7,26 @@ public class GetPopularBooksReportCommand(IUnitOfWork unitOfWork)
     {
         var repo = unitOfWork.GetRepository<UserRoomBook>();
 
+        // Границы периода: дата приходит без времени, поэтому ToDate расширяем до конца суток.
+        // Kind приводим к Utc — BorrowDate хранится в UTC (см. DateTimeToUtcConverter),
+        // иначе Npgsql ругается на Unspecified.
+        var from = request.FromDate.HasValue
+            ? DateTime.SpecifyKind(request.FromDate.Value, DateTimeKind.Utc)
+            : (DateTime?)null;
+
+        var to = request.ToDate.HasValue
+            ? DateTime.SpecifyKind(request.ToDate.Value, DateTimeKind.Utc).AddDays(1).AddTicks(-1)
+            : (DateTime?)null;
+
         // Формируем запрос, материализуем в анонимный тип
         var rawData = await repo.ExecuteQueryAsync(query =>
         {
-            if (request.FromDate.HasValue)
-                query = query.Where(urb => urb.BorrowDate >= request.FromDate.Value);
-            if (request.ToDate.HasValue)
-                query = query.Where(urb => urb.BorrowDate <= request.ToDate.Value);
+            if (from.HasValue)
+                query = query.Where(urb => urb.BorrowDate >= from.Value);
+            if (to.HasValue)
+                query = query.Where(urb => urb.BorrowDate <= to.Value);
 
-            return query
+            var ordered = query
                 .GroupBy(urb => urb.RoomBook.Book.Id)
                 .Select(g => new
                 {
@@ -25,10 +36,11 @@ public class GetPopularBooksReportCommand(IUnitOfWork unitOfWork)
                     TotalBorrowedCount = g.Count(),
                     CurrentBorrowedCount = g.Count(urb => urb.ReturnDate == null)
                 })
-                .OrderByDescending(x => x.TotalBorrowedCount)
-                // Take после OrderBy: иначе LIMIT срежет произвольные строки до сортировки.
-                // null трактуем как значение по умолчанию — int? в контракте, но смысл всегда «сколько показать».
-                .Take(request.TopCount ?? 10);
+                .OrderByDescending(x => x.TotalBorrowedCount);
+
+            // Take после OrderBy: иначе LIMIT срежет произвольные строки до сортировки.
+            // TopCount == null — без усечения: клиент сортирует полный набор строк.
+            return request.TopCount.HasValue ? ordered.Take(request.TopCount.Value) : ordered;
         }, ct);
 
         // Конвертируем в DTO в памяти

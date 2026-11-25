@@ -16,7 +16,7 @@
 
 <h2>Журнал аудита</h2>
 
-@if (isLoading)
+@if (isLoading && records == null)
 {
     <p>Загрузка...</p>
 }
@@ -39,6 +39,7 @@ else if (records != null)
                   Items="records"
                   PageSize="25"
                   Columns="columns"
+                  IsLoading="isLoading"
                   Hint="<b>Двойной клик</b> по записи — полная информация о действии"
                   SelectionMode="DataGridSelectionMode.Multiple"
                   OnRowDoubleClick="OpenDetails" />

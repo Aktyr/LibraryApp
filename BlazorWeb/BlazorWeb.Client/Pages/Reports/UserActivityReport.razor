@@ -4,7 +4,7 @@
 @using BlazorWeb.Components.Shared.DataGrid
 @using LibApp.Core.DTO.Reports
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Librarian,Admin")]
 @inject IReportsApiClient ReportsClient
 @inject NavigationManager Nav
 @inject IToastService Toast
@@ -28,7 +28,7 @@
 
 <h2>Активность пользователей</h2>
 
-@if (isLoading)
+@if (isLoading && userActivity == null)
 {
     <p>Загрузка...</p>
 }
@@ -38,7 +38,10 @@ else if (userActivity != null)
               Items="userActivity"
               PageSize="15"
               Columns="columns"
-              Hint="<b>Двойной клик</b> по строке — открыть профиль | <b>Только должники</b> / <b>только с активными</b> — переключатели в шапке | <b>📥 Экспорт</b> — выгрузить отчёт"
+              FilterColumns="filterColumns"
+              OnFiltersChanged="OnFiltersChanged"
+              IsLoading="isLoading"
+              Hint="<b>Двойной клик</b> по строке — открыть профиль | <b>Только должники</b> / <b>только с активными</b> — переключатели в шапке | <b>Период</b> — чип-фильтр: только читатели с выдачами за период | <b>📤 Экспорт</b> — выгрузить отчёт в CSV или JSON"
               SelectionMode="DataGridSelectionMode.Multiple"
               OnRowDoubleClick="OnRowDoubleClick" />
 }
@@ -50,6 +53,9 @@ else if (userActivity != null)
     private bool onlyWithOverdue = false;
     private bool onlyActive = false;
 
+    private DateTime? fromDate;
+    private DateTime? toDate;
+
     private readonly List<DataGridColumn<UserActivityReportDTO>> columns = new()
     {
         new() { Title = "Пользователь", Value = u => u.FullName, Width = 250 },
@@ -58,6 +64,20 @@ else if (userActivity != null)
         new() { Title = "Сейчас на руках", Value = u => u.CurrentBorrowedCount, Width = 150, FilterKind = FilterKind.Number },
         new() { Title = "Штрафы", Value = u => u.TotalPenalty, Width = 100, FilterKind = FilterKind.Number },
         new() { Title = "Есть просрочки", Value = u => u.HasOverdue, Width = 140, FilterKind = FilterKind.Bool }
+    };
+
+    // Период живёт в чип-фильтре и уходит на сервер: строки отчёта — агрегаты,
+    // клиентская фильтрация по дате их не пересчитает.
+    private readonly List<DataGridColumn<UserActivityReportDTO>> filterColumns = new()
+    {
+        new()
+        {
+            Id = "period",
+            Title = "Период",
+            FilterKind = FilterKind.Date,
+            Sortable = false,
+            DefaultFilterOperator = FilterOperator.Between
+        }
     };
 
     protected override async Task OnInitializedAsync()
@@ -73,7 +93,7 @@ else if (userActivity != null)
         isLoading = true;
         try
         {
-            var resp = await ReportsClient.GetUserActivityAsync(onlyWithOverdue, onlyActive);
+            var resp = await ReportsClient.GetUserActivityAsync(onlyWithOverdue, onlyActive, fromDate, toDate);
             userActivity = resp.Data.ToList();
         }
         catch (Exception ex)
@@ -85,5 +105,15 @@ else if (userActivity != null)
             isLoading = false;
         }
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnFiltersChanged(IReadOnlyList<FilterClause> clauses)
+    {
+        var (from, to) = clauses.GetDateRange("period");
+        if (from == fromDate && to == toDate) return;
+
+        fromDate = from;
+        toDate = to;
+        await LoadAsync();
     }
 }

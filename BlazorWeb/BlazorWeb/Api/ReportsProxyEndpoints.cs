@@ -17,19 +17,24 @@ public static class ReportsProxyEndpoints
         int? topCount, DateTime? fromDate, DateTime? toDate,
         IHttpClientFactory httpFactory, CancellationToken ct)
     {
-        var query = $"?topCount={topCount ?? 10}";
-        if (fromDate.HasValue) query += $"&fromDate={fromDate.Value:yyyy-MM-dd}";
-        if (toDate.HasValue) query += $"&toDate={toDate.Value:yyyy-MM-dd}";
+        var query = new List<string>();
+        if (topCount.HasValue) query.Add($"topCount={topCount.Value}");
+        if (fromDate.HasValue) query.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+        if (toDate.HasValue) query.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+        var queryString = query.Count > 0 ? "?" + string.Join("&", query) : "";
 
         return ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get,
-            $"/api/reports/popular-books{query}", null, ct);
+            $"/api/reports/popular-books{queryString}", null, ct);
     }
 
     private static Task<IResult> GetUserActivityAsync(
-        bool onlyWithOverdue, bool onlyActive,
+        bool onlyWithOverdue, bool onlyActive, DateTime? fromDate, DateTime? toDate,
         IHttpClientFactory httpFactory, CancellationToken ct)
     {
         var query = $"?onlyWithOverdue={onlyWithOverdue}&onlyActive={onlyActive}";
+        if (fromDate.HasValue) query += $"&fromDate={fromDate.Value:yyyy-MM-dd}";
+        if (toDate.HasValue) query += $"&toDate={toDate.Value:yyyy-MM-dd}";
+
         return ProxyForwarder.ForwardAsync(httpFactory, HttpMethod.Get,
             $"/api/reports/user-activity{query}", null, ct);
     }

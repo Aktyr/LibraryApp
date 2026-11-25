@@ -8,10 +8,12 @@ public class ReportsEndpoints : BaseApiController
 
     [HttpGet("popular-books")]
     public async Task<ActionResult<BookPopularityReportResponse>> GetPopularBooks(
-        [FromQuery] int? topCount = 10,
+        [FromQuery] int? topCount = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
         CancellationToken ct = default)
     {
-        var request = new GetPopularBooksRequest { TopCount = topCount };
+        var request = new GetPopularBooksRequest { TopCount = topCount, FromDate = fromDate, ToDate = toDate };
         var result = await ExecuteQuery<GetPopularBooksReportCommand, GetPopularBooksRequest, BookPopularityReportResponse>(request, ct);
         return Ok(result);
     }
@@ -20,9 +22,11 @@ public class ReportsEndpoints : BaseApiController
     public async Task<ActionResult<UserActivityReportResponse>> GetUserActivity(
         [FromQuery] bool onlyWithOverdue = false,
         [FromQuery] bool onlyActive = false,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
         CancellationToken ct = default)
     {
-        var request = new GetUserActivityRequest { OnlyWithOverdue = onlyWithOverdue, OnlyActive = onlyActive };
+        var request = new GetUserActivityRequest { OnlyWithOverdue = onlyWithOverdue, OnlyActive = onlyActive, FromDate = fromDate, ToDate = toDate };
         var result = await ExecuteQuery<GetUserActivityReportCommand, GetUserActivityRequest, UserActivityReportResponse>(request, ct);
         return Ok(result);
     }

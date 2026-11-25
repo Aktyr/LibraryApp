@@ -49,16 +49,33 @@
     @* --- Правая группа: Экспорт, Настройки, Инфо, Справка --- *@
     <div class="dg-toolbar-right">
 
-        @* --- Кнопка экспорта --- *@
+        @* --- Экспорт (выпадающее меню) --- *@
         @if (ShowExport)
         {
-            <button class="dg-btn dg-btn-export" @onclick="ExportToCsv"
-                    title="Экспорт в CSV.
-                Выгружает выделенные строки.
-                Если ничего не выделено — выгружает все данные.
-                Выгрузка идёт с применением фильтров и сортировки.">
-                📤 Экспорт
-            </button>
+            <div class="dg-settings-wrap">
+                <button class="dg-btn dg-btn-export" @onclick="ToggleExportMenu" title="Экспорт данных">
+                    📤 Экспорт ▾
+                </button>
+                @if (exportMenuOpen)
+                {
+                    <div class="dg-settings-popover dg-export-popover">
+                        <button class="dg-btn" @onclick="ExportCsvFromMenu"
+                                title="CSV для Excel.
+                            Выгружает выделенные строки.
+                            Если ничего не выделено — выгружает все данные.
+                            Выгрузка идёт с применением фильтров и сортировки.">
+                            📤 CSV — таблица
+                        </button>
+                        <button class="dg-btn" @onclick="ExportJsonFromMenu"
+                                title="JSON для программной обработки.
+                            Выгружает выделенные строки.
+                            Если ничего не выделено — выгружает все данные.
+                            Выгрузка идёт с применением фильтров и сортировки.">
+                            📄 JSON — данные
+                        </button>
+                    </div>
+                }
+            </div>
         }
         @* --- Настройки таблицы (выпадающее меню) --- *@
         @if (HasUtilityActions)
@@ -119,7 +136,7 @@
             </div>
         }
     </div>
-    @if (hintOpen || settingsMenuOpen)
+    @if (hintOpen || settingsMenuOpen || exportMenuOpen)
     {
         <div class="dg-overlay" @onclick="ClosePopovers" @oncontextmenu="ClosePopovers" @oncontextmenu:preventDefault="true"></div>
     }
@@ -328,7 +345,7 @@
         <label class="dg-filter-row">
             <span>Колонка</span>
             <select value="@editingClause.ColumnId" @onchange="OnColumnChanged">
-                @foreach (var col in Columns)
+                @foreach (var col in FilterableColumns())
                 {
                     <option value="@col.Id">@col.Title</option>
                 }
